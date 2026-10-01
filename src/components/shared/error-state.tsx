@@ -11,6 +11,8 @@ interface ErrorStateProps {
 
 export function errorMessage(error: unknown) {
   if (error instanceof ApiError) return error.message;
+  if (error instanceof TypeError && /fetch|network/i.test(error.message))
+    return 'Could not reach the server. Check your connection and that the API is running, then try again.';
   if (error instanceof Error) return error.message;
   return 'Something went wrong';
 }

@@ -1,10 +1,10 @@
 import { Activity, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { NavLink } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/lib/auth/auth-context';
-import { visibleMenu } from '@/lib/permissions/menu';
+import { findMenuItem, visibleMenu } from '@/lib/permissions/menu';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -32,6 +32,8 @@ export function BrandMark({ collapsed }: { collapsed?: boolean }) {
 export function SidebarNav({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   const { me, can, isSuperAdmin } = useAuth();
   const groups = visibleMenu(can, isSuperAdmin, me?.role);
+  const { pathname } = useLocation();
+  const activeKey = pathname === '/' ? 'dashboard' : findMenuItem(pathname)?.key;
 
   return (
     <nav className="space-y-5 px-3 py-4" aria-label="Main">
@@ -49,13 +51,13 @@ export function SidebarNav({ collapsed, onNavigate }: { collapsed?: boolean; onN
               <NavLink
                 key={item.key}
                 to={item.path}
-                end={item.path === '/'}
                 onClick={onNavigate}
-                className={({ isActive }) =>
+                className={() =>
                   cn(
                     'group flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-medium text-sidebar-foreground transition-colors duration-150',
                     'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                    isActive && 'bg-sidebar-active text-sidebar-active-foreground hover:bg-sidebar-active',
+                    item.key === activeKey &&
+                      'bg-sidebar-active text-sidebar-active-foreground hover:bg-sidebar-active',
                     collapsed && 'justify-center px-0',
                   )
                 }
@@ -100,10 +102,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       >
         <BrandMark collapsed={collapsed} />
       </div>
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <SidebarNav collapsed={collapsed} />
       </ScrollArea>
-      <div className={cn('border-t border-sidebar-border p-3', collapsed && 'flex justify-center')}>
+      <div className={cn('shrink-0 border-t border-sidebar-border p-3', collapsed && 'flex justify-center')}>
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'sm'}

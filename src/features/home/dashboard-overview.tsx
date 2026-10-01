@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   Bar,
   BarChart,
@@ -25,13 +26,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { ErrorState } from '@/components/shared/error-state';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCompactMoney, formatCount, formatDate, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useDashboard, type DashboardData } from './api';
+import { isCustomPeriod, periodLabel, useDashboard, type DashboardData } from './api';
 import { BranchComparison, PendingDeliveries, StockAlerts, TopProducts } from './dashboard-insights';
 
 const SERIES = {
@@ -147,7 +149,9 @@ function KpiRow({ data }: { data: DashboardData }) {
   const currentYear = Number(data.month.slice(0, 4)) === data.charts.year;
   const index = monthIndex(data);
   const revenueNow = Number(data.sales?.month.revenue ?? 0) + Number(data.appointments?.month.amount ?? 0);
-  const revenuePrevious = currentYear && index > 0 ? monthlyRevenue(data, index - 1) : 0;
+  const custom = isCustomPeriod(data);
+  const revenuePrevious = !custom && currentYear && index > 0 ? monthlyRevenue(data, index - 1) : 0;
+  const suffix = custom ? 'in period' : 'this month';
   const hasRevenue = Boolean(data.sales || data.appointments);
 
   const cards: ReactNode[] = [];
@@ -155,7 +159,7 @@ function KpiRow({ data }: { data: DashboardData }) {
     cards.push(
       <KpiCard
         key="appointments"
-        label="Appointments this month"
+        label={`Appointments ${suffix}`}
         value={formatCount(data.appointments.month.count ?? 0)}
         icon={CalendarDays}
         tone="primary"
@@ -176,7 +180,7 @@ function KpiRow({ data }: { data: DashboardData }) {
     cards.push(
       <KpiCard
         key="revenue"
-        label="Revenue this month"
+        label={`Revenue ${suffix}`}
         value={formatMoney(revenueNow)}
         icon={Wallet}
         tone="warning"
@@ -343,7 +347,11 @@ function RevenueSplit({ data }: { data: DashboardData }) {
   return (
     <ChartCard
       title="Revenue split"
-      description={`This month · ${formatDate(`${data.month}-01`, 'MMMM yyyy')}`}
+      description={
+        isCustomPeriod(data)
+          ? periodLabel(data)
+          : `This month · ${formatDate(`${data.month}-01`, 'MMMM yyyy')}`
+      }
     >
       <div className="relative h-56">
         <ResponsiveContainer width="100%" height="100%">
@@ -394,7 +402,7 @@ function RevenueSplit({ data }: { data: DashboardData }) {
   );
 }
 
-function BranchRevenue({ rows }: { rows: NonNullable<DashboardData['byBranch']> }) {
+function BranchRevenue({ rows, label }: { rows: NonNullable<DashboardData['byBranch']>; label: string }) {
   const points = rows.map((r) => ({
     branch: r.branch,
     name: r.name,
@@ -404,7 +412,7 @@ function BranchRevenue({ rows }: { rows: NonNullable<DashboardData['byBranch']> 
   return (
     <ChartCard
       title="Revenue by branch"
-      description="This month, sales and appointment payments"
+      description={`${label}, sales and appointment payments`}
       className="xl:col-span-3"
     >
       <div className="h-64">
@@ -461,7 +469,21 @@ function BranchRevenue({ rows }: { rows: NonNullable<DashboardData['byBranch']> 
 export function DashboardOverview() {
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);
-  const dashboard = useDashboard(year);
+  const [params, setParams] = useSearchParams();
+  const period = { from: params.get('from') ?? undefined, to: params.get('to') ?? undefined };
+  const dashboard = useDashboard(year, period);
+  const setPeriod = ({ from, to }: { from?: string; to?: string }) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        for (const [key, value] of Object.entries({ from, to: to ?? from })) {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        }
+        return next;
+      },
+      { replace: true },
+    );
   const years = Array.from({ length: 5 }, (_, i) => thisYear - i);
 
   if (dashboard.isLoading)
@@ -482,7 +504,14 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
+        <DateRangePicker
+          from={period.from}
+          to={period.to}
+          onChange={setPeriod}
+          placeholder="This month"
+          className="mr-auto sm:mr-2"
+        />
         <span>
           {data.scope === 'all_branches' ? 'All branches' : 'This branch'} · updated at{' '}
           {formatDate(new Date(dashboard.dataUpdatedAt), 'h:mm a')}
@@ -503,8 +532,8 @@ export function DashboardOverview() {
         <div className="grid gap-6 xl:grid-cols-3">
           <RevenueChart data={data} year={year} years={years} onYearChange={setYear} />
           <RevenueSplit data={data} />
-          {data.byBranch?.length ? <BranchRevenue rows={data.byBranch} /> : null}
-          {data.byBranch?.length ? <BranchComparison rows={data.byBranch} /> : null}
+          {data.byBranch?.length ? <BranchRevenue rows={data.byBranch} label={periodLabel(data)} /> : null}
+          {data.byBranch?.length ? <BranchComparison rows={data.byBranch} label={periodLabel(data)} /> : null}
         </div>
       ) : null}
       {data.scope === 'branch' &&

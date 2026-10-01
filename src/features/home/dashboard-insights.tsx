@@ -138,7 +138,13 @@ export function PendingDeliveries({ count }: { count: number }) {
   );
 }
 
-export function BranchComparison({ rows }: { rows: NonNullable<DashboardData['byBranch']> }) {
+export function BranchComparison({
+  rows,
+  label,
+}: {
+  rows: NonNullable<DashboardData['byBranch']>;
+  label: string;
+}) {
   const { setBranchId } = useAuth();
   const total = (r: (typeof rows)[number]) => Number(r.salesMonth) + Number(r.appointmentsMonth);
   const sorted = [...rows].sort((a, b) => total(b) - total(a));
@@ -146,7 +152,7 @@ export function BranchComparison({ rows }: { rows: NonNullable<DashboardData['by
     <section className="rounded-xl border bg-card shadow-xs xl:col-span-3">
       <header className="border-b px-5 py-4">
         <h2 className="text-sm font-semibold">Branch comparison</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">This month. Open a branch to work inside it.</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{label}. Open a branch to work inside it.</p>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

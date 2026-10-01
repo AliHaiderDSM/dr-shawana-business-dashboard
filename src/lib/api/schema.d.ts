@@ -20114,6 +20114,10 @@ export interface paths {
             parameters: {
                 query?: {
                     year?: number;
+                    /** @description Start of the KPI period (default: first day of this month) */
+                    from?: string;
+                    /** @description End of the KPI period (default: today) */
+                    to?: string;
                     branchId?: string;
                 };
                 header?: never;
