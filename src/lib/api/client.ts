@@ -58,27 +58,32 @@ async function refreshSession(): Promise<StoredSession | null> {
   return refreshing;
 }
 
-function withBranch(request: Request): Request {
+function withBranch(href: string): string {
   const branchId = branchStore.queryValue();
-  if (!branchId) return request;
-  const url = new URL(request.url, window.location.origin);
+  if (!branchId) return href;
+  const url = new URL(href, window.location.origin);
   const path = url.pathname.replace(env.VITE_API_BASE_URL, '');
-  if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return request;
+  if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return href;
   url.searchParams.set('branchId', branchId);
-  return new Request(url, request);
-}
-
-function authorize(request: Request, token: string | undefined): Request {
-  if (!token) return request;
-  const headers = new Headers(request.headers);
-  headers.set('Authorization', `Bearer ${token}`);
-  return new Request(request, { headers });
+  return url.toString();
 }
 
 export async function authFetch(input: Request): Promise<Response> {
-  const request = withBranch(input);
-  const retry = request.clone();
-  const response = await fetch(authorize(request, sessionStore.get()?.accessToken));
+  const url = withBranch(input.url);
+  const body = input.method === 'GET' || input.method === 'HEAD' ? undefined : await input.arrayBuffer();
+  const send = (token: string | undefined) => {
+    const headers = new Headers(input.headers);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return fetch(url, {
+      method: input.method,
+      headers,
+      body,
+      signal: input.signal,
+      credentials: input.credentials,
+      cache: input.cache,
+    });
+  };
+  const response = await send(sessionStore.get()?.accessToken);
   if (response.status !== 401 || !sessionStore.get()) return response;
   const renewed = await refreshSession();
   if (!renewed) {
@@ -86,7 +91,7 @@ export async function authFetch(input: Request): Promise<Response> {
     window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
     return response;
   }
-  return fetch(authorize(retry, renewed.accessToken));
+  return send(renewed.accessToken);
 }
 
 export const api = createClient<paths>({ baseUrl: env.VITE_API_BASE_URL, fetch: authFetch });
