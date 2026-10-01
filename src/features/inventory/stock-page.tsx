@@ -1,0 +1,152 @@
+import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { DataTable } from '@/components/shared/data-table';
+import { FilterSelect } from '@/components/shared/list-filters';
+import { PageHeader } from '@/components/shared/page-header';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { categoriesApi } from '@/features/catalog/api';
+import { useListState } from '@/hooks/use-list-state';
+import { useAuth } from '@/lib/auth/auth-context';
+import { formatQuantity } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { useStockBalances, type StockBalance } from './api';
+
+export function StockPage() {
+  const navigate = useNavigate();
+  const { can } = useAuth();
+  const list = useListState();
+  const query = useStockBalances(list.query);
+  const categories = categoriesApi.useOptions();
+  const lowOnly = list.filters.lowStockOnly === 'true';
+
+  const columns: ColumnDef<StockBalance, unknown>[] = [
+    {
+      id: 'name',
+      header: 'Product',
+      accessorKey: 'name',
+      meta: { hideable: false },
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <div className="font-medium">{row.original.name}</div>
+          {row.original.batchNo ? (
+            <div className="text-xs text-muted-foreground">Batch {row.original.batchNo}</div>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'category',
+      header: 'Category',
+      accessorFn: (r) => r.categoryName ?? '',
+      cell: ({ row }) => row.original.categoryName ?? '—',
+    },
+    {
+      id: 'quantity',
+      header: 'In stock',
+      accessorKey: 'quantity',
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <span className={cn('font-semibold', row.original.isLowStock && 'text-warning-soft-foreground')}>
+          {formatQuantity(row.original.quantity)}{' '}
+          <span className="font-normal text-muted-foreground">{row.original.unit}</span>
+        </span>
+      ),
+    },
+    {
+      id: 'threshold',
+      header: 'Low stock at',
+      accessorKey: 'lowStockThreshold',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatQuantity(row.original.lowStockThreshold),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      accessorFn: (r) => (r.isLowStock ? 'Low stock' : 'OK'),
+      cell: ({ row }) =>
+        row.original.isLowStock ? (
+          <StatusBadge tone="warning">Low stock</StatusBadge>
+        ) : (
+          <StatusBadge tone="success">In stock</StatusBadge>
+        ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      meta: { align: 'right', hideable: false },
+      cell: ({ row }) => (
+        <Button asChild variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+          <Link to={`/stock/${row.original.productId}`}>
+            <History />
+            History
+          </Link>
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <PageHeader
+        title="Stock"
+        description="Current balance of every product, from the stock ledger."
+        actions={
+          can('stock.view') ? (
+            <>
+              <Button asChild variant="outline">
+                <Link to="/stock-in">
+                  <ArrowDownToLine />
+                  Stock in
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/stock-out">
+                  <ArrowUpFromLine />
+                  Stock out
+                </Link>
+              </Button>
+            </>
+          ) : null
+        }
+      />
+      <DataTable
+        columns={columns}
+        data={query.data?.data}
+        meta={query.data?.meta}
+        list={list}
+        isLoading={query.isLoading}
+        isFetching={query.isFetching}
+        error={query.error}
+        onRetry={() => void query.refetch()}
+        searchPlaceholder="Search products"
+        exportFileName="stock"
+        getRowId={(r) => r.productId}
+        onRowClick={(r) => void navigate(`/stock/${r.productId}`)}
+        emptyTitle={lowOnly ? 'Nothing is low on stock' : 'No products yet'}
+        emptyDescription="Products appear here once they are added to the catalog."
+        toolbar={
+          <>
+            <FilterSelect
+              list={list}
+              name="categoryId"
+              allLabel="All categories"
+              className="w-44"
+              options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.name }))}
+            />
+            <label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm shadow-xs">
+              <Switch
+                checked={lowOnly}
+                onCheckedChange={(checked) => list.setFilter('lowStockOnly', checked ? 'true' : undefined)}
+                aria-label="Low stock only"
+              />
+              Low stock only
+            </label>
+          </>
+        }
+      />
+    </>
+  );
+}

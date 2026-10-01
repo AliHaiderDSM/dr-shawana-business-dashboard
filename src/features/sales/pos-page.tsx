@@ -1,0 +1,650 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Loader2,
+  Minus,
+  Plus,
+  Save,
+  ShoppingCart,
+  UserPlus,
+  X,
+} from 'lucide-react';
+import { useId, useState } from 'react';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { Link, useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import { ChoiceField } from '@/components/shared/choice-field';
+import { Combobox } from '@/components/shared/combobox';
+import { ErrorState } from '@/components/shared/error-state';
+import { FieldRow, TextField, TextareaField } from '@/components/shared/form-fields';
+import { MoneyInput } from '@/components/shared/money-input';
+import { PageHeader } from '@/components/shared/page-header';
+import { DetailSkeleton } from '@/components/shared/skeletons';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import {
+  emptyPayment,
+  PaymentFields,
+  paymentSchema,
+  ReceivingAccountsNotice,
+  toPaymentBody,
+  useReceivingAccounts,
+} from '@/features/appointments/payment-fields';
+import { bundlesApi, type Bundle } from '@/features/catalog/api';
+import { usePatientSearch } from '@/features/patients/api';
+import {
+  patientDefaults,
+  PatientFields,
+  patientFieldsSchema,
+  toPatientInput,
+} from '@/features/patients/patient-fields';
+import { ApiError } from '@/lib/api/client';
+import { applyServerErrors } from '@/lib/api/errors';
+import { useAuth } from '@/lib/auth/auth-context';
+import { formatMoney, formatQuantity, isoDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { optionalText } from '@/lib/validation';
+import { SALE_CITIES, salesApi, useCreateSale, type Sale, type SaleInput } from './api';
+import { PosCatalog, type CatalogPick } from './pos-catalog';
+
+const lineSchema = z.object({
+  kind: z.enum(['product', 'bundle']),
+  refId: z.string(),
+  name: z.string(),
+  price: z.string(),
+  qty: z
+    .string()
+    .trim()
+    .regex(/^\d{1,10}(\.\d{1,3})?$/, 'Qty')
+    .refine((v) => Number(v) > 0, 'Qty'),
+});
+
+const schema = z
+  .object({
+    patientMode: z.enum(['existing', 'new']),
+    patientId: z.string(),
+    patient: patientFieldsSchema.partial(),
+    saleType: z.enum(['office', 'online']),
+    city: z.string().trim().max(100),
+    date: z.string().min(1, 'Choose a date'),
+    note: optionalText(2000),
+    items: z.array(lineSchema).min(1, 'Add at least one product'),
+    autoDiscount: z.boolean(),
+    discountPercent: z
+      .string()
+      .trim()
+      .regex(/^(\d{1,3}(\.\d{1,2})?)?$/, 'Use a percentage')
+      .refine((v) => !v || Number(v) <= 100, 'At most 100'),
+    payments: z.array(paymentSchema).max(10),
+  })
+  .superRefine((v, ctx) => {
+    if (v.patientMode === 'existing') {
+      if (!v.patientId) ctx.addIssue({ code: 'custom', path: ['patientId'], message: 'Choose the customer' });
+      return;
+    }
+    const patient = patientFieldsSchema.safeParse(v.patient);
+    if (!patient.success)
+      for (const issue of patient.error.issues)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['patient', ...issue.path.map(String)],
+          message: issue.message,
+        });
+  });
+
+type Values = z.input<typeof schema>;
+
+interface Shortage {
+  productId: string;
+  productName: string;
+  available: string;
+  required: string;
+}
+
+function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
+  const lines: Values['items'] = [];
+  for (const item of sale?.items ?? []) {
+    if (item.bundleId) {
+      if (lines.some((l) => l.kind === 'bundle' && l.refId === item.bundleId)) continue;
+      const bundle = bundles.find((b) => b.id === item.bundleId);
+      const part = bundle?.items.find((b) => b.productId === item.productId);
+      lines.push({
+        kind: 'bundle',
+        refId: item.bundleId,
+        name: item.bundle?.name ?? bundle?.name ?? 'Bundle',
+        price: bundle?.totalPrice ?? '0',
+        qty: String(part ? Number(item.qty) / Number(part.qty) : 1),
+      });
+      continue;
+    }
+    lines.push({
+      kind: 'product',
+      refId: item.productId,
+      name: item.product?.name ?? 'Product',
+      price: item.unitPrice,
+      qty: String(Number(item.qty)),
+    });
+  }
+  return {
+    patientMode: 'existing',
+    patientId: sale?.patientId ?? '',
+    patient: patientDefaults(),
+    saleType: sale?.saleType ?? 'office',
+    city: sale?.city ?? '',
+    date: sale?.date ?? isoDate(),
+    note: sale?.note ?? null,
+    items: lines,
+    autoDiscount: !sale,
+    discountPercent: sale ? String(Number(sale.discountPercent)) : '0',
+    payments: [],
+  };
+}
+
+function Totals({ values, saving }: { values: Values; saving: boolean }) {
+  const subtotal = values.items.reduce((sum, l) => sum + (Number(l.qty) || 0) * (Number(l.price) || 0), 0);
+  const received = values.payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const discount = values.autoDiscount
+    ? Math.max(0, subtotal - received)
+    : (subtotal * (Number(values.discountPercent) || 0)) / 100;
+  const total = subtotal - discount;
+  const qty = values.items.reduce((sum, l) => sum + (Number(l.qty) || 0), 0);
+  const rows: [string, string][] = [
+    ['Total qty', formatQuantity(qty)],
+    ['Sub amount', formatMoney(subtotal)],
+    ['Discount', formatMoney(discount)],
+    ['Received', formatMoney(received)],
+    ['Remaining', formatMoney(Math.max(0, total - received))],
+  ];
+  return (
+    <div className="space-y-1.5 rounded-lg bg-muted/50 p-3 text-sm">
+      {rows.map(([label, value]) => (
+        <div key={label} className="flex justify-between">
+          <span className="text-muted-foreground">{label}</span>
+          <span className="tabular-nums">{value}</span>
+        </div>
+      ))}
+      <div className="flex items-baseline justify-between border-t pt-2">
+        <span className="font-medium">Total</span>
+        <span className="text-lg font-semibold tabular-nums">{formatMoney(total)}</span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {saving ? 'Saving…' : 'Preview. The server prices the sale and calculates the saved totals.'}
+      </p>
+    </div>
+  );
+}
+
+function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
+  const navigate = useNavigate();
+  const { can } = useAuth();
+  const editing = Boolean(sale);
+  const create = useCreateSale();
+  const update = salesApi.useSave();
+  const accounts = useReceivingAccounts(!editing);
+  const cityListId = useId();
+  const [patientSearch, setPatientSearch] = useState('');
+  const patients = usePatientSearch(patientSearch);
+  const [patientLabel, setPatientLabel] = useState<string | null>(
+    sale?.patient ? `${sale.patient.name} · ${sale.patient.phone}` : null,
+  );
+  const [shortages, setShortages] = useState<Shortage[]>([]);
+  const form = useForm<Values, unknown, z.output<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: fromSale(sale, bundles),
+  });
+  const lines = useFieldArray({ control: form.control, name: 'items' });
+  const payments = useFieldArray({ control: form.control, name: 'payments' });
+  const values = useWatch({ control: form.control }) as Values;
+  const patientMode = values.patientMode;
+  const saving = create.isPending || update.isPending;
+  const shortProducts = new Set(shortages.map((s) => s.productId));
+
+  const pick = (item: CatalogPick) => {
+    const current = form.getValues('items');
+    const index = current.findIndex((l) => l.kind === item.kind && l.refId === item.refId);
+    if (index >= 0) {
+      form.setValue(`items.${index}.qty`, String((Number(current[index]?.qty) || 0) + 1), {
+        shouldDirty: true,
+      });
+      return;
+    }
+    lines.append({ ...item, qty: '1' });
+  };
+
+  const step = (index: number, delta: number) => {
+    const qty = (Number(form.getValues(`items.${index}.qty`)) || 0) + delta;
+    if (qty <= 0) lines.remove(index);
+    else form.setValue(`items.${index}.qty`, String(qty), { shouldDirty: true });
+  };
+
+  const handleError = (error: unknown) => {
+    if (error instanceof ApiError && error.status === 422) {
+      const details = error.details as { shortages?: Shortage[] } | undefined;
+      if (details?.shortages?.length) {
+        setShortages(details.shortages);
+        toast.error('Not enough stock for some products');
+        return;
+      }
+    }
+    applyServerErrors(form, error);
+  };
+
+  const submit = form.handleSubmit((v) => {
+    setShortages([]);
+    const items = v.items.map((l) =>
+      l.kind === 'product' ? { productId: l.refId, qty: l.qty } : { bundleId: l.refId, qty: l.qty },
+    );
+    if (sale) {
+      update.mutate(
+        {
+          id: sale.id,
+          body: {
+            patientId: v.patientId,
+            date: v.date,
+            saleType: v.saleType,
+            ...(v.city ? { city: v.city } : {}),
+            note: v.note,
+            items,
+            discountPercent: v.discountPercent || '0',
+          },
+        },
+        {
+          onSuccess: () => {
+            toast.success(`${sale.invoiceNo} updated`);
+            void navigate(`/sales/${sale.id}`);
+          },
+          onError: handleError,
+        },
+      );
+      return;
+    }
+    const proofs: File[] = [];
+    const body: SaleInput = {
+      ...(v.patientMode === 'existing'
+        ? { patientId: v.patientId }
+        : { patient: toPatientInput(patientFieldsSchema.parse(v.patient)) }),
+      date: v.date,
+      saleType: v.saleType,
+      ...(v.city ? { city: v.city } : {}),
+      note: v.note,
+      items,
+      autoDiscount: v.autoDiscount,
+      ...(v.autoDiscount ? {} : { discountPercent: v.discountPercent || '0' }),
+      payments: v.payments.map((p) => {
+        const proofIndex = p.proof ? proofs.push(p.proof) - 1 : undefined;
+        return { ...toPaymentBody(p), ...(proofIndex === undefined ? {} : { proofIndex }) };
+      }),
+    };
+    create.mutate(
+      { body, proofs },
+      {
+        onSuccess: (created) => {
+          toast.success(`Sale ${created.invoiceNo} saved`);
+          void navigate(`/print/bill/${created.id}`);
+        },
+        onError: handleError,
+      },
+    );
+  });
+
+  const itemsError = form.formState.errors.items?.root?.message ?? form.formState.errors.items?.message;
+
+  return (
+    <Form {...form}>
+      <form onSubmit={submit} noValidate className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_28rem]">
+        <section className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
+          <PosCatalog
+            onPick={pick}
+            inCart={(kind, refId) => {
+              const line = values.items.find((l) => l.kind === kind && l.refId === refId);
+              return line ? formatQuantity(line.qty) : undefined;
+            }}
+          />
+        </section>
+
+        <aside className="space-y-4 xl:sticky xl:top-[calc(var(--topbar-height)+1.5rem)] xl:self-start">
+          <section className="space-y-4 rounded-xl border bg-card p-4 shadow-xs">
+            {patientMode === 'existing' ? (
+              <FormField
+                control={form.control}
+                name="patientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Customer<span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Combobox
+                        value={field.value}
+                        onChange={(value, option) => {
+                          field.onChange(value ?? '');
+                          setPatientLabel(option ? `${option.label} · ${option.hint ?? ''}` : null);
+                          const city = option?.hint?.split(' · ')[1];
+                          if (city && !form.getValues('city')) form.setValue('city', city);
+                        }}
+                        selectedLabel={patientLabel}
+                        onSearchChange={setPatientSearch}
+                        loading={patients.isFetching && !patients.data}
+                        placeholder="Search by phone or name"
+                        options={(patients.data ?? []).map((p) => ({
+                          value: p.id,
+                          label: p.name,
+                          hint: `${p.phone} · ${p.city}`,
+                        }))}
+                        footer={
+                          editing || !can('patients.create')
+                            ? undefined
+                            : (close) => (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-start"
+                                  onClick={() => {
+                                    close();
+                                    form.setValue('patientMode', 'new');
+                                    if (/\d{4,}/.test(patientSearch))
+                                      form.setValue('patient.phone', patientSearch.trim());
+                                  }}
+                                >
+                                  <UserPlus />
+                                  Add a new customer
+                                </Button>
+                              )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">New customer</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => form.setValue('patientMode', 'existing')}
+                  >
+                    <X />
+                    Pick existing
+                  </Button>
+                </div>
+                <PatientFields
+                  prefix="patient."
+                  onUseExisting={(existing) => {
+                    form.setValue('patientMode', 'existing');
+                    form.setValue('patientId', existing.id);
+                    setPatientLabel(`${existing.name} · ${existing.phone}`);
+                  }}
+                />
+              </div>
+            )}
+            <ChoiceField
+              control={form.control}
+              name="saleType"
+              label="Sale type"
+              options={[
+                { value: 'office', label: 'Office sale' },
+                { value: 'online', label: 'Online sale' },
+              ]}
+            />
+            <FieldRow>
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sale city</FormLabel>
+                    <FormControl>
+                      <Input list={cityListId} placeholder="Branch city" {...field} />
+                    </FormControl>
+                    <datalist id={cityListId}>
+                      {SALE_CITIES.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <TextField control={form.control} name="date" label="Date" type="date" required />
+            </FieldRow>
+          </section>
+
+          <section className="rounded-xl border bg-card shadow-xs">
+            <header className="flex items-center justify-between border-b px-4 py-3">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <ShoppingCart className="size-4" />
+                Cart
+              </h2>
+              <span className="text-xs text-muted-foreground">{lines.fields.length} lines</span>
+            </header>
+            {shortages.length ? (
+              <div className="m-3 flex gap-2 rounded-lg border border-destructive/40 bg-destructive-soft p-3 text-sm text-destructive-soft-foreground">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                <ul className="space-y-0.5">
+                  {shortages.map((s) => (
+                    <li key={s.productId}>
+                      {s.productName}: need {formatQuantity(s.required)}, only {formatQuantity(s.available)}{' '}
+                      in stock
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {lines.fields.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                {itemsError ?? 'Tap products or scan barcodes to add them.'}
+              </p>
+            ) : (
+              <ul className="max-h-80 divide-y overflow-y-auto">
+                {lines.fields.map((field, index) => {
+                  const line = values.items[index];
+                  const short = field.kind === 'product' && shortProducts.has(field.refId);
+                  return (
+                    <li
+                      key={field.id}
+                      className={cn('flex items-center gap-2 px-4 py-2.5', short && 'bg-destructive-soft/50')}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{field.name}</div>
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {field.kind === 'bundle' ? 'Bundle · ' : ''}
+                          {formatMoney(line?.price)} each
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="size-7"
+                          aria-label="Less"
+                          onClick={() => step(index, -1)}
+                        >
+                          <Minus />
+                        </Button>
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.qty`}
+                          render={({ field: qty }) => (
+                            <MoneyInput
+                              prefix=""
+                              decimals={3}
+                              aria-label={`${field.name} quantity`}
+                              className={cn('mx-1 h-7 w-14 px-1 text-center', short && 'border-destructive')}
+                              {...qty}
+                            />
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="size-7"
+                          aria-label="More"
+                          onClick={() => step(index, 1)}
+                        >
+                          <Plus />
+                        </Button>
+                      </div>
+                      <span className="w-24 text-right text-sm font-medium tabular-nums">
+                        {formatMoney((Number(line?.qty) || 0) * (Number(line?.price) || 0))}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 text-muted-foreground"
+                        aria-label={`Remove ${field.name}`}
+                        onClick={() => lines.remove(index)}
+                      >
+                        <X />
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section className="space-y-4 rounded-xl border bg-card p-4 shadow-xs">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium">Discount</div>
+                <div className="text-xs text-muted-foreground">
+                  {values.autoDiscount
+                    ? 'Auto: whatever is not received is discount.'
+                    : 'Percentage of the sub amount.'}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {!editing ? (
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={values.autoDiscount}
+                      onCheckedChange={(checked) => form.setValue('autoDiscount', checked)}
+                      aria-label="Auto discount"
+                    />
+                    Auto
+                  </label>
+                ) : null}
+                {!values.autoDiscount ? (
+                  <FormField
+                    control={form.control}
+                    name="discountPercent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <MoneyInput
+                            prefix="%"
+                            decimals={2}
+                            className="w-24"
+                            aria-label="Discount percent"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : null}
+              </div>
+            </div>
+
+            {!editing ? (
+              <div className="space-y-3">
+                <ReceivingAccountsNotice error={accounts.error} />
+                {payments.fields.map((field, index) => (
+                  <div key={field.id} className="space-y-3 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Payment {index + 1}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        aria-label="Remove payment"
+                        onClick={() => payments.remove(index)}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                    <PaymentFields prefix={`payments.${index}.`} accounts={accounts.data ?? []} />
+                  </div>
+                ))}
+                {accounts.data ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={payments.fields.length >= 10}
+                    onClick={() => {
+                      const subtotal = values.items.reduce(
+                        (s, l) => s + (Number(l.qty) || 0) * (Number(l.price) || 0),
+                        0,
+                      );
+                      const paid = values.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+                      payments.append(emptyPayment(subtotal > paid ? (subtotal - paid).toFixed(2) : ''));
+                    }}
+                  >
+                    <Plus />
+                    Add payment
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Payments are managed on the sale page.</p>
+            )}
+
+            <Totals values={values} saving={saving} />
+            <TextareaField control={form.control} name="note" label="Note" rows={2} />
+            <Button type="submit" className="h-11 w-full text-base" disabled={saving}>
+              {saving ? <Loader2 className="animate-spin" /> : <Save />}
+              {editing ? 'Save changes' : 'Save sale & print bill'}
+            </Button>
+          </section>
+        </aside>
+      </form>
+    </Form>
+  );
+}
+
+export function PosPage() {
+  const { id } = useParams();
+  const sale = salesApi.useDetail(id);
+  const bundles = bundlesApi.useList({ pageSize: 100 }, Boolean(id));
+
+  if (id && (sale.isLoading || bundles.isLoading)) return <DetailSkeleton />;
+  if (id && (sale.error || !sale.data))
+    return <ErrorState error={sale.error} onRetry={() => void sale.refetch()} />;
+
+  return (
+    <>
+      {id ? (
+        <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground">
+          <Link to={`/sales/${id}`}>
+            <ArrowLeft />
+            {sale.data?.invoiceNo}
+          </Link>
+        </Button>
+      ) : null}
+      <PageHeader
+        title={id ? `Edit sale ${sale.data?.invoiceNo ?? ''}` : 'Add sale'}
+        description={
+          id
+            ? 'Change the customer, items or discount. Payments are managed on the sale page.'
+            : 'Tap products or scan barcodes, choose the customer, take payment and print the bill.'
+        }
+      />
+      <PosForm key={sale.data?.id ?? 'new'} sale={sale.data} bundles={bundles.data?.data ?? []} />
+    </>
+  );
+}

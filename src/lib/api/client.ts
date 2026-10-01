@@ -1,0 +1,160 @@
+import createClient from 'openapi-fetch';
+import { env } from '@/lib/env';
+import { branchStore, sessionStore, type StoredSession } from '@/lib/auth/session';
+import type { paths } from './schema';
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly details: unknown;
+
+  constructor(status: number, code: string, message: string, details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+
+  get fieldErrors(): Record<string, string> {
+    if (!Array.isArray(this.details)) return {};
+    return Object.fromEntries(
+      (this.details as { path?: string; message?: string }[])
+        .filter((d) => d.path)
+        .map((d) => [String(d.path).replace(/^(body|query|params)\./, ''), String(d.message ?? '')]),
+    );
+  }
+}
+
+export const AUTH_EXPIRED_EVENT = 'dsm:auth-expired';
+
+const BRANCHLESS_PREFIXES = ['/auth/', '/admin/', '/health'];
+
+let refreshing: Promise<StoredSession | null> | null = null;
+
+async function refreshSession(): Promise<StoredSession | null> {
+  const current = sessionStore.get();
+  if (!current?.refreshToken) return null;
+  refreshing ??= fetch(`${env.VITE_API_BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: current.refreshToken }),
+  })
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const body = (await res.json()) as { data: StoredSession };
+      const next = {
+        accessToken: body.data.accessToken,
+        refreshToken: body.data.refreshToken,
+        expiresAt: body.data.expiresAt,
+      };
+      sessionStore.set(next);
+      return next;
+    })
+    .catch(() => null)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+function withBranch(request: Request): Request {
+  const branchId = branchStore.queryValue();
+  if (!branchId) return request;
+  const url = new URL(request.url, window.location.origin);
+  const path = url.pathname.replace(env.VITE_API_BASE_URL, '');
+  if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return request;
+  url.searchParams.set('branchId', branchId);
+  return new Request(url, request);
+}
+
+function authorize(request: Request, token: string | undefined): Request {
+  if (!token) return request;
+  const headers = new Headers(request.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  return new Request(request, { headers });
+}
+
+export async function authFetch(input: Request): Promise<Response> {
+  const request = withBranch(input);
+  const retry = request.clone();
+  const response = await fetch(authorize(request, sessionStore.get()?.accessToken));
+  if (response.status !== 401 || !sessionStore.get()) return response;
+  const renewed = await refreshSession();
+  if (!renewed) {
+    sessionStore.clear();
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+    return response;
+  }
+  return fetch(authorize(retry, renewed.accessToken));
+}
+
+export const api = createClient<paths>({ baseUrl: env.VITE_API_BASE_URL, fetch: authFetch });
+
+interface FetchResult<T> {
+  data?: T;
+  error?: unknown;
+  response: Response;
+}
+
+export async function unwrap<T>(promise: Promise<FetchResult<T>>): Promise<NonNullable<T>> {
+  const { data, error, response } = await promise;
+  if (error !== undefined || !response.ok) {
+    const body = (error ?? {}) as { error?: { code?: string; message?: string; details?: unknown } };
+    throw new ApiError(
+      response.status,
+      body.error?.code ?? 'UNKNOWN',
+      body.error?.message ?? response.statusText ?? 'Request failed',
+      body.error?.details,
+    );
+  }
+  return data as NonNullable<T>;
+}
+
+export async function downloadFile(
+  path: string,
+  query: Record<string, string | undefined>,
+  filename: string,
+) {
+  const url = new URL(`${env.VITE_API_BASE_URL}${path}`, window.location.origin);
+  for (const [key, value] of Object.entries(query)) if (value) url.searchParams.set(key, value);
+  const response = await authFetch(new Request(url));
+  if (!response.ok) throw new ApiError(response.status, 'DOWNLOAD_FAILED', 'Download failed');
+  const blob = await response.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+export function jsonFormData(data: unknown, files: Record<string, File[] | File | null | undefined> = {}) {
+  const form = new FormData();
+  form.append('data', JSON.stringify(data));
+  for (const [field, value] of Object.entries(files)) {
+    if (!value) continue;
+    for (const file of Array.isArray(value) ? value : [value]) form.append(field, file);
+  }
+  return form;
+}
+
+export async function uploadForm<T>(
+  path: string,
+  form: FormData,
+  method: 'POST' | 'PATCH' = 'POST',
+): Promise<T> {
+  const response = await authFetch(new Request(`${env.VITE_API_BASE_URL}${path}`, { method, body: form }));
+  const body = (await response.json().catch(() => ({}))) as {
+    data?: T;
+    error?: { code?: string; message?: string; details?: unknown };
+  };
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      body.error?.code ?? 'UNKNOWN',
+      body.error?.message ?? 'Upload failed',
+      body.error?.details,
+    );
+  }
+  return body.data as T;
+}

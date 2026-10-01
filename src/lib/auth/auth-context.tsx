@@ -1,0 +1,112 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { api, AUTH_EXPIRED_EVENT, unwrap } from '@/lib/api/client';
+import type { Me } from '@/lib/api/types';
+import { ALL_BRANCHES, branchStore, sessionStore } from './session';
+
+type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
+
+interface AuthContextValue {
+  status: AuthStatus;
+  me: Me | null;
+  isSuperAdmin: boolean;
+  branchId: string;
+  activeBranchId: string | null;
+  setBranchId: (branchId: string) => void;
+  can: (permission: string) => boolean;
+  canAny: (permissions: string[]) => boolean;
+  login: (identifier: string, password: string) => Promise<Me>;
+  logout: () => void;
+  refreshMe: () => Promise<unknown>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export const ME_QUERY_KEY = ['auth', 'me'] as const;
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const [hasSession, setHasSession] = useState(() => sessionStore.get() !== null);
+  const [branchId, setBranchState] = useState(() => branchStore.get());
+
+  const meQuery = useQuery({
+    queryKey: ME_QUERY_KEY,
+    queryFn: () => unwrap(api.GET('/auth/me')).then((r) => r.data),
+    enabled: hasSession,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  const me = hasSession ? (meQuery.data ?? null) : null;
+  const isSuperAdmin = me?.role === 'super_admin';
+  branchStore.setSuperAdmin(isSuperAdmin);
+
+  const logout = useCallback(() => {
+    sessionStore.clear();
+    setHasSession(false);
+    setBranchState(ALL_BRANCHES);
+    queryClient.clear();
+  }, [queryClient]);
+
+  useEffect(() => {
+    window.addEventListener(AUTH_EXPIRED_EVENT, logout);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, logout);
+  }, [logout]);
+
+  const login = useCallback(
+    async (identifier: string, password: string) => {
+      const { data } = await unwrap(api.POST('/auth/login', { body: { identifier, password } }));
+      sessionStore.set({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresAt: data.expiresAt,
+      });
+      queryClient.setQueryData(ME_QUERY_KEY, data.me);
+      setHasSession(true);
+      return data.me;
+    },
+    [queryClient],
+  );
+
+  const setBranchId = useCallback(
+    (next: string) => {
+      branchStore.set(next);
+      setBranchState(next);
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== ME_QUERY_KEY[0] });
+    },
+    [queryClient],
+  );
+
+  const value = useMemo<AuthContextValue>(() => {
+    const permissions = new Set(me?.permissions ?? []);
+    const can = (permission: string) => permissions.has(permission);
+    const status: AuthStatus =
+      !hasSession || meQuery.isError ? 'anonymous' : me ? 'authenticated' : 'loading';
+    const activeBranchId = isSuperAdmin
+      ? branchId === ALL_BRANCHES
+        ? null
+        : branchId
+      : (me?.branch?.id ?? null);
+    return {
+      status,
+      me,
+      isSuperAdmin,
+      branchId,
+      activeBranchId,
+      setBranchId,
+      can,
+      canAny: (list) => list.some(can),
+      login,
+      logout,
+      refreshMe: () => meQuery.refetch(),
+    };
+  }, [me, hasSession, isSuperAdmin, branchId, setBranchId, login, logout, meQuery]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used inside AuthProvider');
+  return context;
+}
