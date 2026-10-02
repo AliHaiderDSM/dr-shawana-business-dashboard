@@ -25,6 +25,7 @@ import {
   patientDefaults,
   PatientFields,
   patientFieldsSchema,
+  type PatientFieldValues,
   toPatientInput,
 } from '@/features/patients/patient-fields';
 import { applyServerErrors } from '@/lib/api/errors';
@@ -53,7 +54,7 @@ const schema = z
   .object({
     patientMode: z.enum(['existing', 'new']),
     patientId: z.string(),
-    patient: patientFieldsSchema.partial(),
+    patient: z.custom<PatientFieldValues>(),
     doctorId: z.string().min(1, 'Choose a doctor'),
     date: z.string().min(1, 'Choose a date'),
     timeFrom: timeString('Time from'),

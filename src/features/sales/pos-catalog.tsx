@@ -109,7 +109,7 @@ export function PosCatalog({
         refId: product.id,
         name: product.name,
         price: product.salePrice,
-        available: balances.get(product.id)?.quantity ?? '0',
+        available: balances.get(product.id)?.quantity,
       });
     } catch (error) {
       toastError(error);
@@ -185,7 +185,7 @@ export function PosCatalog({
                         refId: p.id,
                         name: p.name,
                         price: p.salePrice,
-                        available: balance?.quantity ?? '0',
+                        available: balance?.quantity,
                       })
                     }
                   />

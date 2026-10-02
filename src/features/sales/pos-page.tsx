@@ -40,10 +40,11 @@ import {
   patientDefaults,
   PatientFields,
   patientFieldsSchema,
+  type PatientFieldValues,
   toPatientInput,
 } from '@/features/patients/patient-fields';
 import { ApiError } from '@/lib/api/client';
-import { applyServerErrors } from '@/lib/api/errors';
+import { applyServerErrors, toastInvalid } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -68,7 +69,7 @@ const schema = z
   .object({
     patientMode: z.enum(['existing', 'new']),
     patientId: z.string(),
-    patient: patientFieldsSchema.partial(),
+    patient: z.custom<PatientFieldValues>(),
     saleType: z.enum(['office', 'online']),
     city: z.string().trim().max(100),
     date: z.string().min(1, 'Choose a date'),
@@ -300,7 +301,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
         onError: handleError,
       },
     );
-  });
+  }, toastInvalid);
 
   const itemsError = form.formState.errors.items?.root?.message ?? form.formState.errors.items?.message;
 
