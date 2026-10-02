@@ -56,6 +56,7 @@ const lineSchema = z.object({
   refId: z.string(),
   name: z.string(),
   price: z.string(),
+  available: z.string().optional(),
   qty: z
     .string()
     .trim()
@@ -203,22 +204,32 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const saving = create.isPending || update.isPending;
   const shortProducts = new Set(shortages.map((s) => s.productId));
 
+  const withinStock = (line: { name: string; available?: string }, qty: number) => {
+    if (line.available === undefined || qty <= Number(line.available)) return true;
+    toast.error(`Only ${formatQuantity(line.available)} ${line.name} in stock`);
+    return false;
+  };
+
   const pick = (item: CatalogPick) => {
     const current = form.getValues('items');
     const index = current.findIndex((l) => l.kind === item.kind && l.refId === item.refId);
-    if (index >= 0) {
-      form.setValue(`items.${index}.qty`, String((Number(current[index]?.qty) || 0) + 1), {
-        shouldDirty: true,
-      });
+    const line = current[index];
+    if (line) {
+      const qty = (Number(line.qty) || 0) + 1;
+      if (!withinStock({ name: line.name, available: line.available ?? item.available }, qty)) return;
+      form.setValue(`items.${index}.qty`, String(qty), { shouldDirty: true });
       return;
     }
+    if (!withinStock(item, 1)) return;
     lines.append({ ...item, qty: '1' });
   };
 
   const step = (index: number, delta: number) => {
-    const qty = (Number(form.getValues(`items.${index}.qty`)) || 0) + delta;
+    const line = form.getValues(`items.${index}`);
+    const qty = (Number(line.qty) || 0) + delta;
     if (qty <= 0) lines.remove(index);
-    else form.setValue(`items.${index}.qty`, String(qty), { shouldDirty: true });
+    else if (delta < 0 || withinStock(line, qty))
+      form.setValue(`items.${index}.qty`, String(qty), { shouldDirty: true });
   };
 
   const handleError = (error: unknown) => {
@@ -447,7 +458,9 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
               <ul className="max-h-80 divide-y overflow-y-auto">
                 {lines.fields.map((field, index) => {
                   const line = values.items[index];
-                  const short = field.kind === 'product' && shortProducts.has(field.refId);
+                  const overStock =
+                    line?.available !== undefined && (Number(line.qty) || 0) > Number(line.available);
+                  const short = (field.kind === 'product' && shortProducts.has(field.refId)) || overStock;
                   return (
                     <li
                       key={field.id}
@@ -458,6 +471,12 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                         <div className="text-xs text-muted-foreground tabular-nums">
                           {field.kind === 'bundle' ? 'Bundle · ' : ''}
                           {formatMoney(line?.price)} each
+                          {line?.available !== undefined ? (
+                            <span className={cn(overStock && 'font-medium text-destructive')}>
+                              {' · '}
+                              {formatQuantity(line.available)} in stock
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                       <div className="flex items-center">

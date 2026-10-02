@@ -16,6 +16,7 @@ export interface CatalogPick {
   refId: string;
   name: string;
   price: string;
+  available?: string;
 }
 
 function useDebounced<T>(value: T, delay = 300) {
@@ -103,7 +104,13 @@ export function PosCatalog({
   const scan = async (code: string) => {
     try {
       const product = await findProductByBarcode(code);
-      onPick({ kind: 'product', refId: product.id, name: product.name, price: product.salePrice });
+      onPick({
+        kind: 'product',
+        refId: product.id,
+        name: product.name,
+        price: product.salePrice,
+        available: balances.get(product.id)?.quantity ?? '0',
+      });
     } catch (error) {
       toastError(error);
     }
@@ -172,7 +179,15 @@ export function PosCatalog({
                     meta={balance ? `${formatQuantity(balance.quantity)} ${balance.unit}` : undefined}
                     low={balance ? Number(balance.quantity) <= 0 || balance.isLowStock : false}
                     inCart={inCart('product', p.id)}
-                    onPick={() => onPick({ kind: 'product', refId: p.id, name: p.name, price: p.salePrice })}
+                    onPick={() =>
+                      onPick({
+                        kind: 'product',
+                        refId: p.id,
+                        name: p.name,
+                        price: p.salePrice,
+                        available: balance?.quantity ?? '0',
+                      })
+                    }
                   />
                 );
               })
