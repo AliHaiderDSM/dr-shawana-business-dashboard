@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { productsApi } from '@/features/catalog/api';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
 import { useBatches, useProductLedger, useSerialSummary, type ItemStatus, type ProductLedger } from './api';
-import { ITEM_STATUS, RegisterLabelsDialog } from './labels-page';
+import { ITEM_STATUS } from './item-status';
+import { RegisterLabelsDialog } from './labels-page';
 import { batchColumns } from './batches-page';
 
 type Movement = ProductLedger['movements'][number];

@@ -11,8 +11,8 @@ import { FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { DetailList, Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
-import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -40,18 +40,8 @@ import {
   type InventoryItemDetail,
   type ItemStatus,
 } from './api';
-
-export const ITEM_STATUS: Record<ItemStatus, { label: string; tone: Tone }> = {
-  in_stock: { label: 'In stock', tone: 'success' },
-  sold: { label: 'Sold', tone: 'info' },
-  returned: { label: 'Awaiting inspection', tone: 'warning' },
-  quarantined: { label: 'Quarantine', tone: 'warning' },
-  damaged: { label: 'Damaged', tone: 'danger' },
-  expired: { label: 'Expired', tone: 'danger' },
-  supplier_returned: { label: 'Sent to supplier', tone: 'neutral' },
-  dispatched: { label: 'Sent out', tone: 'neutral' },
-  written_off: { label: 'Written off', tone: 'danger' },
-};
+import { ITEM_STATUS, ItemStatusBadge } from './item-status';
+import { LabelBatchesView } from './label-batches';
 
 const EVENT_LABELS: Record<InventoryItemDetail['history'][number]['type'], string> = {
   received: 'Received',
@@ -71,10 +61,6 @@ const EVENT_LABELS: Record<InventoryItemDetail['history'][number]['type'], strin
   dispatch_cancelled: 'Stock out cancelled',
   written_off: 'Written off',
 };
-
-export function ItemStatusBadge({ status }: { status: ItemStatus }) {
-  return <StatusBadge tone={ITEM_STATUS[status].tone}>{ITEM_STATUS[status].label}</StatusBadge>;
-}
 
 function referencePath(type: string | null, id: string | null) {
   if (!id) return null;
@@ -293,42 +279,53 @@ export function LabelsPage() {
         className="mb-4 max-w-md"
         placeholder="Scan or type a label, e.g. DSM-000001"
       />
-      <DataTable
-        columns={columns}
-        data={query.data?.data}
-        meta={query.data?.meta}
-        list={list}
-        isLoading={query.isLoading}
-        isFetching={query.isFetching}
-        error={query.error}
-        onRetry={() => void query.refetch()}
-        searchPlaceholder="Label or product"
-        exportFileName="labels"
-        onRowClick={(r) => void navigate(`/inventory/labels/${r.serial}`)}
-        emptyTitle="No labelled pieces yet"
-        emptyDescription="Labels are made on Stock In (Print new labels) or registered for stock already on the shelf."
-        toolbar={
-          <>
-            <FilterSelect
-              list={list}
-              name="productId"
-              allLabel="All products"
-              className="w-48"
-              options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
-            />
-            <FilterSelect
-              list={list}
-              name="status"
-              allLabel="Any status"
-              className="w-44"
-              options={(Object.keys(ITEM_STATUS) as ItemStatus[]).map((s) => ({
-                value: s,
-                label: ITEM_STATUS[s].label,
-              }))}
-            />
-          </>
-        }
-      />
+      <Tabs defaultValue="batches" className="gap-4">
+        <TabsList>
+          <TabsTrigger value="batches">By batch</TabsTrigger>
+          <TabsTrigger value="all">All labels</TabsTrigger>
+        </TabsList>
+        <TabsContent value="batches">
+          <LabelBatchesView />
+        </TabsContent>
+        <TabsContent value="all">
+          <DataTable
+            columns={columns}
+            data={query.data?.data}
+            meta={query.data?.meta}
+            list={list}
+            isLoading={query.isLoading}
+            isFetching={query.isFetching}
+            error={query.error}
+            onRetry={() => void query.refetch()}
+            searchPlaceholder="Label or product"
+            exportFileName="labels"
+            onRowClick={(r) => void navigate(`/inventory/labels/${r.serial}`)}
+            emptyTitle="No labelled pieces yet"
+            emptyDescription="Labels are made on Stock In (Print new labels) or registered for stock already on the shelf."
+            toolbar={
+              <>
+                <FilterSelect
+                  list={list}
+                  name="productId"
+                  allLabel="All products"
+                  className="w-48"
+                  options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
+                />
+                <FilterSelect
+                  list={list}
+                  name="status"
+                  allLabel="Any status"
+                  className="w-44"
+                  options={(Object.keys(ITEM_STATUS) as ItemStatus[]).map((s) => ({
+                    value: s,
+                    label: ITEM_STATUS[s].label,
+                  }))}
+                />
+              </>
+            }
+          />
+        </TabsContent>
+      </Tabs>
       {registering ? <RegisterLabelsDialog onClose={() => setRegistering(false)} /> : null}
     </>
   );

@@ -322,3 +322,13 @@ export function useRegisterLabels() {
     onSuccess: invalidate,
   });
 }
+
+export type LabelBatch = Schemas['LabelBatch'];
+
+export function useLabelBatches(query: Record<string, unknown>) {
+  return useQuery({
+    queryKey: ['stock', 'label-batches', query],
+    queryFn: () => unwrap(api.GET('/branch/inventory/items/batches', { params: { query } })),
+    placeholderData: (previous) => previous,
+  });
+}

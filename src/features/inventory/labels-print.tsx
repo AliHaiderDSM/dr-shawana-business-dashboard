@@ -73,9 +73,11 @@ export function LabelsPrint() {
   const from = params.get('from');
   const to = params.get('to');
   const productId = params.get('productId');
+  const batchId = params.get('batchId');
+  const withoutBatch = params.get('withoutBatch');
 
   const query = useQuery({
-    queryKey: ['stock', 'labels-print', source, sourceIds, from, to, productId],
+    queryKey: ['stock', 'labels-print', source, sourceIds, from, to, productId, batchId, withoutBatch],
     queryFn: async () => {
       if (source && sourceIds.length) {
         const lists = await Promise.all(sourceIds.map((sourceId) => fetchAll({ source, sourceId })));
@@ -84,7 +86,9 @@ export function LabelsPrint() {
       return fetchAll({
         ...(from ? { from } : {}),
         ...(to ? { to } : {}),
-        ...(productId ? { productId, status: 'in_stock' } : {}),
+        ...(batchId ? { batchId } : {}),
+        ...(productId && withoutBatch ? { productId, withoutBatch } : {}),
+        ...(productId && !withoutBatch && !batchId ? { productId, status: 'in_stock' } : {}),
       });
     },
   });

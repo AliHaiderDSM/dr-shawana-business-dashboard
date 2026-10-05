@@ -5627,6 +5627,8 @@ export interface paths {
                     search?: string;
                     productId?: string;
                     batchId?: string;
+                    /** @description Only pieces that have no batch */
+                    withoutBatch?: "true" | "false";
                     saleId?: string;
                     status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
                     source?: "stock_in" | "production" | "labelled";
@@ -5651,6 +5653,99 @@ export interface paths {
                     content: {
                         "application/json": {
                             data: components["schemas"]["InventoryItem"][];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/items/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Labelled pieces grouped by product and batch, with counts by status and the label range */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    productId?: string;
+                    batchId?: string;
+                    /** @description Only batches that have pieces in this status */
+                    status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Batches */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["LabelBatch"][];
                             meta: components["schemas"]["PageMeta"];
                         };
                     };
@@ -21501,6 +21596,23 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        LabelBatch: {
+            key: string;
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            /** Format: uuid */
+            batchId: string | null;
+            batchNo: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            total: number;
+            inStock: number;
+            sold: number;
+            other: number;
+            firstSerial: string;
+            lastSerial: string;
         };
         RegisterLabels: {
             /** Format: uuid */
