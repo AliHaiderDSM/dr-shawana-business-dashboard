@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowUpRight, Pencil, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useNavigate } from 'react-router';
 import { ErrorState } from '@/components/shared/error-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { DetailList, Panel } from '@/components/shared/panel';
@@ -34,6 +34,7 @@ function useBranchStaff(branchId: string) {
 export function BranchDetailPage() {
   const { id = '' } = useParams();
   const { setBranchId } = useAuth();
+  const navigate = useNavigate();
   const branch = useBranch(id);
   const staff = useBranchStaff(id);
   const [editOpen, setEditOpen] = useState(false);
@@ -59,15 +60,20 @@ export function BranchDetailPage() {
             <StatusBadge status={b.status} />
           </span>
         }
-        description={`${b.code} · ${b.city}${b.kind === 'warehouse' ? ' · Main warehouse (Super Admin only)' : ''}`}
+        description={`${b.code} · ${b.city}${b.kind === 'warehouse' ? ' · Super Admin stock' : ''}`}
         actions={
           <>
             <Button variant="outline" onClick={() => setEditOpen(true)}>
               <Pencil />
               Edit
             </Button>
-            <Button onClick={() => setBranchId(b.id)}>
-              Work in this branch
+            <Button
+              onClick={() => {
+                setBranchId(b.id);
+                void navigate('/');
+              }}
+            >
+              Open branch dashboard
               <ArrowUpRight />
             </Button>
           </>

@@ -24,6 +24,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const ME_QUERY_KEY = ['auth', 'me'] as const;
 
+const SUPER_ADMIN_MANAGES = new Set(['branches', 'company', 'staff', 'doctors', 'reports', 'dashboard']);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [hasSession, setHasSession] = useState(() => sessionStore.get() !== null);
@@ -40,6 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const me = hasSession ? (meQuery.data ?? null) : null;
   const isSuperAdmin = me?.role === 'super_admin';
   branchStore.setSuperAdmin(isSuperAdmin);
+  const branchOptions = useQuery({
+    queryKey: ['branches', 'options'],
+    queryFn: () => unwrap(api.GET('/admin/branches/options')).then((r) => r.data),
+    enabled: isSuperAdmin,
+    staleTime: 5 * 60_000,
+  });
 
   const logout = useCallback(() => {
     sessionStore.clear();
@@ -79,7 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(() => {
     const permissions = new Set(me?.permissions ?? []);
-    const can = (permission: string) => permissions.has(permission);
+    const selectedKind = (branchOptions.data ?? []).find((b) => b.id === branchId)?.kind;
+    const can = (permission: string) => {
+      if (!permissions.has(permission)) return false;
+      if (!isSuperAdmin) return true;
+      const [module, action] = permission.split('.');
+      if (action === 'view' || SUPER_ADMIN_MANAGES.has(module ?? '')) return true;
+      return selectedKind === 'warehouse';
+    };
     const status: AuthStatus =
       !hasSession || meQuery.isError ? 'anonymous' : me ? 'authenticated' : 'loading';
     const activeBranchId = isSuperAdmin
@@ -100,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshMe: () => meQuery.refetch(),
     };
-  }, [me, hasSession, isSuperAdmin, branchId, setBranchId, login, logout, meQuery]);
+  }, [me, hasSession, isSuperAdmin, branchId, setBranchId, login, logout, meQuery, branchOptions.data]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

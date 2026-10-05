@@ -93,7 +93,7 @@ function SuperAdminHome() {
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="size-3" />
                       {branch.city}
-                      {branch.kind === 'warehouse' ? ' · Main warehouse' : ''}
+                      {branch.kind === 'warehouse' ? ' · Super Admin stock' : ''}
                     </div>
                   </div>
                 </div>

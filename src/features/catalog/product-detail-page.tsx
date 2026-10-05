@@ -281,7 +281,7 @@ export function ProductDetailPage() {
             emptyDescription={
               canReceive
                 ? 'Add a purchase to bring this product into stock.'
-                : 'Stock of this branch comes from the Main Warehouse.'
+                : 'Stock of this branch comes from the Super Admin stock.'
             }
           />
         </div>

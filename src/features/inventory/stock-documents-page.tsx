@@ -112,7 +112,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
       accessorFn: (r) => stockParty(r)?.name ?? '',
       cell: ({ row }) =>
         isTransferIn(row.original) ? (
-          <StatusBadge tone="primary">From Main Warehouse</StatusBadge>
+          <StatusBadge tone="primary">From Super Admin</StatusBadge>
         ) : (
           (stockParty(row.original)?.name ?? <span className="text-muted-foreground">—</span>)
         ),
@@ -172,7 +172,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
         title={config.title}
         description={
           kind === 'in' && !canReceive
-            ? 'Stock this branch received from the Main Warehouse. Branches do not receive stock directly.'
+            ? 'Stock this branch received from the Super Admin stock. Branches do not receive stock directly.'
             : config.description
         }
         actions={

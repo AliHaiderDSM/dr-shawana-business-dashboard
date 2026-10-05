@@ -91,7 +91,7 @@ function BranchSwitcher() {
             </CommandGroup>
             <CommandSeparator />
             {warehouses.length ? (
-              <CommandGroup heading="Main warehouse">
+              <CommandGroup heading="Super Admin">
                 {warehouses.map((branch) => (
                   <CommandItem
                     key={branch.id}

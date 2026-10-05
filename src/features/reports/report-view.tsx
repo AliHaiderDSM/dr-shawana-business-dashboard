@@ -1,3 +1,4 @@
+import { ReportCharts } from './report-charts';
 import { useBranchOptions } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Download, Printer } from 'lucide-react';
@@ -209,6 +210,7 @@ function ReportBody({ report }: { report: ReportDef }) {
       ) : (
         <>
           {data.data ? <Summary data={data.data} /> : null}
+          {data.data ? <ReportCharts data={data.data} /> : null}
           <DataTable
             columns={data.data ? columnsFor(data.data) : []}
             data={data.data ? rowsWithTotals(data.data) : undefined}
