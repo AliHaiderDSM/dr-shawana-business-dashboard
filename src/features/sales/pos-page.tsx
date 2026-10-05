@@ -105,6 +105,7 @@ interface Shortage {
   productName: string;
   available: string;
   required: string;
+  expired?: string;
 }
 
 function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
@@ -446,6 +447,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                     <li key={s.productId}>
                       {s.productName}: need {formatQuantity(s.required)}, only {formatQuantity(s.available)}{' '}
                       in stock
+                      {s.expired ? ` (${formatQuantity(s.expired)} more are expired and cannot be sold)` : ''}
                     </li>
                   ))}
                 </ul>

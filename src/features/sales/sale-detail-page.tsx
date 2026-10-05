@@ -300,6 +300,40 @@ export function SaleDetailPage() {
             <h2 className="text-sm font-semibold">Items</h2>
             <DataTable columns={itemColumns} data={s.items} emptyTitle="No items" />
           </div>
+          {s.batches?.length ? (
+            <Panel
+              title="Batches"
+              description="Stock is taken from the batch that expires first."
+              bodyClassName="p-0"
+            >
+              <ul className="divide-y">
+                {s.batches.map((b) => (
+                  <li
+                    key={`${b.productId}-${b.batchId ?? 'none'}`}
+                    className="flex items-center gap-3 px-5 py-3 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {s.items.find((i) => i.productId === b.productId)?.product?.name ?? 'Product'}
+                    </span>
+                    {b.batchId ? (
+                      <Link
+                        to={`/inventory/batches/${b.batchId}`}
+                        className="font-mono text-primary hover:underline"
+                      >
+                        {b.batchNo}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">No batch</span>
+                    )}
+                    <span className="w-28 text-muted-foreground">
+                      {b.expiryDate ? `exp ${formatDate(b.expiryDate)}` : ''}
+                    </span>
+                    <span className="w-16 text-right tabular-nums">{formatQuantity(b.qty)}</span>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          ) : null}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Payments</h2>

@@ -212,3 +212,39 @@ export function stockParty(row: StockDocument) {
 export function stockLineDetail(row: StockDocument) {
   return 'destination' in row ? row.destination : 'batch' in row ? row.batch : null;
 }
+
+export type ProductBatch = Schemas['ProductBatch'];
+export type ProductBatchDetail = Schemas['ProductBatchDetail'];
+export type BatchStatus = ProductBatch['status'];
+export type WriteOffInput = Schemas['WriteOff'];
+
+export function useBatches(query: Record<string, unknown>, enabled = true) {
+  return useQuery({
+    queryKey: ['stock', 'batches', query],
+    queryFn: () => unwrap(api.GET('/branch/inventory/batches', { params: { query } })),
+    placeholderData: (previous) => previous,
+    enabled,
+  });
+}
+
+export function useBatch(id: string | undefined) {
+  return useQuery({
+    queryKey: ['stock', 'batch', id],
+    queryFn: () =>
+      unwrap(
+        api.GET('/branch/inventory/batches/{batchId}', { params: { path: { batchId: id ?? '' } } }),
+      ).then((r) => r.data),
+    enabled: Boolean(id),
+  });
+}
+
+export function useWriteOff(batchId: string) {
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (body: WriteOffInput) =>
+      unwrap(
+        api.POST('/branch/inventory/batches/{batchId}/write-off', { params: { path: { batchId } }, body }),
+      ),
+    onSuccess: invalidate,
+  });
+}

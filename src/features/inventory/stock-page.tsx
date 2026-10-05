@@ -52,6 +52,11 @@ export function StockPage() {
         <span className={cn('font-semibold', row.original.isLowStock && 'text-warning-soft-foreground')}>
           {formatQuantity(row.original.quantity)}{' '}
           <span className="font-normal text-muted-foreground">{row.original.unit}</span>
+          {Number(row.original.expiredQuantity) > 0 ? (
+            <span className="block text-xs font-normal text-destructive">
+              {formatQuantity(row.original.expiredQuantity)} expired
+            </span>
+          ) : null}
         </span>
       ),
     },

@@ -100,6 +100,10 @@ export function PosCatalog({
   );
   const stock = useStockBalances({ pageSize: 100, ...(term ? { search: term } : {}) });
   const balances = new Map((stock.data?.data ?? []).map((row) => [row.productId, row]));
+  const sellable = (productId: string) => {
+    const row = balances.get(productId);
+    return row ? String(Number(row.quantity) - Number(row.expiredQuantity)) : undefined;
+  };
 
   const scan = async (code: string) => {
     try {
@@ -109,7 +113,7 @@ export function PosCatalog({
         refId: product.id,
         name: product.name,
         price: product.salePrice,
-        available: balances.get(product.id)?.quantity,
+        available: sellable(product.id),
       });
     } catch (error) {
       toastError(error);
@@ -176,8 +180,8 @@ export function PosCatalog({
                     name={p.name}
                     price={p.salePrice}
                     imageUrl={p.imageUrl}
-                    meta={balance ? `${formatQuantity(balance.quantity)} ${balance.unit}` : undefined}
-                    low={balance ? Number(balance.quantity) <= 0 || balance.isLowStock : false}
+                    meta={balance ? `${formatQuantity(sellable(p.id))} ${balance.unit}` : undefined}
+                    low={balance ? Number(sellable(p.id)) <= 0 || balance.isLowStock : false}
                     inCart={inCart('product', p.id)}
                     onPick={() =>
                       onPick({
@@ -185,7 +189,7 @@ export function PosCatalog({
                         refId: p.id,
                         name: p.name,
                         price: p.salePrice,
-                        available: balance?.quantity,
+                        available: sellable(p.id),
                       })
                     }
                   />

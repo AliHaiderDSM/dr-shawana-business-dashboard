@@ -29,7 +29,12 @@ const lineSchema = z.object({
   productId: z.string().min(1, 'Choose a product'),
   qty: positiveQuantity('Qty'),
   detail: z.string().trim().max(150, 'Use at most 150 characters'),
+  manufacturingDate: z.string(),
+  expiryDate: z.string(),
+  unitCost: z.string().regex(/^(\d{1,10}(\.\d{1,2})?)?$/, 'Use a price'),
 });
+
+const emptyLine = { productId: '', qty: '', detail: '', manufacturingDate: '', expiryDate: '', unitCost: '' };
 
 function buildSchema(config: StockKindConfig) {
   return z.object({
@@ -38,9 +43,17 @@ function buildSchema(config: StockKindConfig) {
     note: optionalText(1000),
     items: z
       .array(
-        config.detailRequired
+        (config.detailRequired
           ? lineSchema.extend({ detail: lineSchema.shape.detail.min(1, `${config.detailLabel} is required`) })
-          : lineSchema,
+          : lineSchema
+        ).superRefine((line, ctx) => {
+          if ((line.manufacturingDate || line.expiryDate) && !line.detail) {
+            ctx.addIssue({ code: 'custom', path: ['detail'], message: 'Enter the batch number' });
+          }
+          if (line.manufacturingDate && line.expiryDate && line.expiryDate < line.manufacturingDate) {
+            ctx.addIssue({ code: 'custom', path: ['expiryDate'], message: 'Before manufacturing' });
+          }
+        }),
       )
       .min(1, 'Add at least one product'),
   });
@@ -98,7 +111,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
       partyId: null,
       date: isoDate(),
       note: null,
-      items: [{ productId: '', qty: '', detail: '' }],
+      items: [emptyLine],
     },
   });
   const lines = useFieldArray({ control: form.control, name: 'items' });
@@ -118,6 +131,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
         return;
       }
       const line = {
+        ...emptyLine,
         productId: product.id,
         qty: '1',
         detail: config.detailField === 'batch' ? (product.batchNo ?? '') : '',
@@ -140,6 +154,13 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
         productId: item.productId,
         qty: item.qty,
         [config.detailField]: item.detail || null,
+        ...(config.batched
+          ? {
+              manufacturingDate: item.manufacturingDate || null,
+              expiryDate: item.expiryDate || null,
+              unitCost: item.unitCost || null,
+            }
+          : {}),
       })),
     };
     create.mutate(
@@ -171,7 +192,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
         onSubmit={submit}
         submitting={create.isPending}
         submitLabel="Save entries"
-        size="lg"
+        size={config.batched ? 'xl' : 'lg'}
       >
         <FieldRow>
           <SelectField
@@ -189,7 +210,14 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
             columns={[
               { header: 'Product', width: 'minmax(0,1fr)' },
               { header: 'Qty', width: '7rem' },
-              { header: config.detailLabel, width: '10rem' },
+              { header: config.detailLabel, width: '9rem' },
+              ...(config.batched
+                ? [
+                    { header: 'Mfg date', width: '9.5rem' },
+                    { header: 'Expiry', width: '9.5rem' },
+                    { header: 'Unit cost', width: '7rem' },
+                  ]
+                : []),
             ]}
             rowKeys={lines.fields.map((f) => f.id)}
             renderRow={(index) => [
@@ -224,8 +252,34 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                   placeholder="Optional"
                 />
               ),
+              ...(config.batched
+                ? [
+                    <InlineTextField
+                      key="mfg"
+                      control={form.control}
+                      name={`items.${index}.manufacturingDate`}
+                      label="Manufacturing date"
+                      type="date"
+                    />,
+                    <InlineTextField
+                      key="expiry"
+                      control={form.control}
+                      name={`items.${index}.expiryDate`}
+                      label="Expiry date"
+                      type="date"
+                    />,
+                    <InlineQuantityField
+                      key="cost"
+                      control={form.control}
+                      name={`items.${index}.unitCost`}
+                      label="Unit cost"
+                      decimals={2}
+                      placeholder="Rs"
+                    />,
+                  ]
+                : []),
             ]}
-            onAdd={() => lines.append({ productId: '', qty: '', detail: '' })}
+            onAdd={() => lines.append(emptyLine)}
             onRemove={(index) => lines.remove(index)}
             addLabel="Add product"
             summary={

@@ -1,4 +1,14 @@
-import { ArrowLeft, Ban, Loader2, PackageCheck, Pencil, Trash2, Truck } from 'lucide-react';
+import {
+  ArrowLeft,
+  Ban,
+  CalendarX,
+  Loader2,
+  PackageCheck,
+  Pencil,
+  ShieldAlert,
+  Trash2,
+  Truck,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -55,17 +65,37 @@ const OUTCOMES: { value: Outcome; label: string; description: string; icon: type
     icon: Ban,
   },
   {
+    value: 'expired',
+    label: 'Expired',
+    description: 'Past its expiry date. Written off, never back in stock.',
+    icon: CalendarX,
+  },
+  {
     value: 'supplier',
     label: 'Send to supplier',
     description: 'Kept out of stock and sent back to the supplier.',
     icon: Truck,
   },
+  {
+    value: 'quarantined',
+    label: 'Quarantine',
+    description: 'Hold it aside for a closer check. Decide the final outcome later.',
+    icon: ShieldAlert,
+  },
 ];
+
+function batchLine(batch: { batchNo: string | null; expiryDate: string | null; qty: string }) {
+  const name = batch.batchNo ? `Batch ${batch.batchNo}` : 'No batch';
+  const expiry = batch.expiryDate ? ` · exp ${formatDate(batch.expiryDate)}` : '';
+  return `${name}${expiry} · ${formatQuantity(batch.qty)}`;
+}
 
 const OUTCOME_TONES: Record<ReturnDisposition, Tone> = {
   pending: 'warning',
+  quarantined: 'warning',
   restocked: 'success',
   damaged: 'danger',
+  expired: 'danger',
   supplier: 'info',
 };
 
@@ -273,7 +303,7 @@ export function ReturnDetailPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Panel
           title="Inspection"
-          description="Decide each item once. Only “Back in stock” changes the stock."
+          description="Decide each item once (quarantine can be decided later). Only “Back in stock” changes the stock, into the batch it was sold from."
           bodyClassName="p-0"
         >
           <ul className="divide-y">
@@ -292,6 +322,20 @@ export function ReturnDetailPage() {
                   {item.product?.barcode ? (
                     <div className="font-mono text-xs text-muted-foreground">{item.product.barcode}</div>
                   ) : null}
+                  {(r.soldBatches ?? [])
+                    .filter((b) => b.productId === item.productId)
+                    .map((b) => (
+                      <div key={`sold-${b.batchId ?? 'none'}`} className="text-xs text-muted-foreground">
+                        Sold from {batchLine(b)}
+                      </div>
+                    ))}
+                  {(r.restockedBatches ?? [])
+                    .filter((b) => b.productId === item.productId)
+                    .map((b) => (
+                      <div key={`back-${b.batchId ?? 'none'}`} className="text-xs text-success">
+                        Restocked into {batchLine(b)}
+                      </div>
+                    ))}
                   {item.resolvedAt ? (
                     <div className="mt-1 text-xs text-muted-foreground">
                       {formatDateTime(item.resolvedAt)}
@@ -299,9 +343,11 @@ export function ReturnDetailPage() {
                     </div>
                   ) : null}
                 </div>
-                {item.disposition === 'pending' && canInspect ? (
+                {(item.disposition === 'pending' || item.disposition === 'quarantined') && canInspect ? (
                   <div className="flex flex-wrap gap-2">
-                    {OUTCOMES.map((outcome) => (
+                    {OUTCOMES.filter(
+                      (outcome) => item.disposition === 'pending' || outcome.value !== 'quarantined',
+                    ).map((outcome) => (
                       <Button
                         key={outcome.value}
                         size="sm"

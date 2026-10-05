@@ -11,6 +11,7 @@ export interface StockKindConfig {
   detailLabel: string;
   detailField: 'batch' | 'destination';
   detailRequired: boolean;
+  batched: boolean;
   slipTitle: string;
   printPath: string;
 }
@@ -27,6 +28,7 @@ export const STOCK_KINDS: Record<StockKind, StockKindConfig> = {
     detailLabel: 'Batch',
     detailField: 'batch',
     detailRequired: false,
+    batched: true,
     slipTitle: 'Stock In Slip',
     printPath: '/print/stock-in',
   },
@@ -41,6 +43,7 @@ export const STOCK_KINDS: Record<StockKind, StockKindConfig> = {
     detailLabel: 'Stock to',
     detailField: 'destination',
     detailRequired: true,
+    batched: false,
     slipTitle: 'Stock Out Slip',
     printPath: '/print/stock-out',
   },

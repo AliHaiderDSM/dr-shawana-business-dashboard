@@ -20,7 +20,7 @@ interface FormSheetProps {
   submitting?: boolean;
   submitLabel?: string;
   children: ReactNode;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'xl';
 }
 
 export function FormSheet({
@@ -37,7 +37,10 @@ export function FormSheet({
   return (
     <Sheet open={open} onOpenChange={(next) => !submitting && onOpenChange(next)}>
       <SheetContent
-        className={cn('flex w-full flex-col gap-0 p-0', size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-lg')}
+        className={cn(
+          'flex w-full flex-col gap-0 p-0',
+          { md: 'sm:max-w-lg', lg: 'sm:max-w-2xl', xl: 'sm:max-w-5xl' }[size],
+        )}
       >
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col" noValidate>
           <SheetHeader className="border-b px-6 py-5">

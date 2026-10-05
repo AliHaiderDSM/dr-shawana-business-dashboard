@@ -100,6 +100,18 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'inventory/batches',
+    element: page(() => import('@/features/inventory/batches-page'), 'BatchesPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'branch',
+  },
+  {
+    path: 'inventory/batches/:id',
+    element: page(() => import('@/features/inventory/batches-page'), 'BatchDetailPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'branch',
+  },
+  {
     path: 'stock-in',
     element: page(() => import('@/features/inventory/stock-documents-page'), 'StockInPage'),
     anyOf: ['stock.view'],

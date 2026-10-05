@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DataTable } from '@/components/shared/data-table';
@@ -76,7 +76,28 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
       id: 'detail',
       header: config.detailLabel,
       accessorFn: (r) => stockLineDetail(r) ?? '',
-      cell: ({ row }) => stockLineDetail(row.original) || <span className="text-muted-foreground">—</span>,
+      cell: ({ row }) => {
+        const detail = stockLineDetail(row.original);
+        if (!detail) return <span className="text-muted-foreground">—</span>;
+        const expiry = 'expiryDate' in row.original ? row.original.expiryDate : null;
+        const batchId = 'batchId' in row.original ? row.original.batchId : null;
+        return (
+          <div>
+            {batchId ? (
+              <Link
+                to={`/inventory/batches/${batchId}`}
+                className="font-mono text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {detail}
+              </Link>
+            ) : (
+              detail
+            )}
+            {expiry ? <div className="text-xs text-muted-foreground">exp {formatDate(expiry)}</div> : null}
+          </div>
+        );
+      },
     },
     {
       id: 'party',

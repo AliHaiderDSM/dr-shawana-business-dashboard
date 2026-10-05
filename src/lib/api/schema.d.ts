@@ -15956,6 +15956,277 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/inventory/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Product batches with stock on hand and expiry status, earliest expiry first */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    productId?: string;
+                    /** @description active: not expired; expiring: expires within 90 days; expired: past expiry */
+                    status?: "active" | "expiring" | "expired";
+                    inStockOnly?: "true" | "false";
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Batches */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ProductBatch"][];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/batches/{batchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One batch with every stock movement that touched it */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    batchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Batch */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ProductBatchDetail"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/batches/{batchId}/write-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove expired, damaged or lost stock of one batch (adjustment movement, audited) */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    batchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["WriteOff"];
+                };
+            };
+            responses: {
+                /** @description Batch after the write-off */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ProductBatchDetail"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/sales": {
         parameters: {
             query?: never;
@@ -16044,6 +16315,8 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
+                                batches?: components["schemas"]["AllocatedBatch"][];
                             }[];
                             meta: components["schemas"]["PageMeta"] & {
                                 totals: {
@@ -17182,7 +17455,7 @@ export interface paths {
                     sort?: "date" | "-date" | "createdAt" | "-createdAt" | "returnSeq" | "-returnSeq";
                     status?: "pending" | "completed";
                     reason?: "damaged" | "expired" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
-                    disposition?: "pending" | "restocked" | "damaged" | "supplier";
+                    disposition?: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
                     productId?: string;
                     saleId?: string;
                     from?: string;
@@ -20689,7 +20962,23 @@ export interface components {
                 productId: string;
                 /** @example 10.000 */
                 qty: string;
+                /** @description Batch number. Same number for the same product adds to that batch. */
                 batch?: string | null;
+                /**
+                 * Format: date
+                 * @example 2026-09-30
+                 */
+                manufacturingDate?: string | null;
+                /**
+                 * Format: date
+                 * @example 2026-09-30
+                 */
+                expiryDate?: string | null;
+                /**
+                 * @description Purchase price per unit
+                 * @example 1250.50
+                 */
+                unitCost?: string;
             }[];
         };
         CreateStockOut: {
@@ -20722,6 +21011,18 @@ export interface components {
             /** @example 10.000 */
             qty?: string;
             batch?: string | null;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            manufacturingDate?: string | null;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            expiryDate?: string | null;
+            /** @example 1250.50 */
+            unitCost?: string;
             note?: string | null;
         };
         UpdateStockOut: {
@@ -20779,6 +21080,14 @@ export interface components {
                 name: string;
             } | null;
             batch: string | null;
+            /** Format: uuid */
+            batchId: string | null;
+            /** Format: date */
+            manufacturingDate: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            /** @example 1250.50 */
+            unitCost: string | null;
         };
         StockOut: {
             /** Format: uuid */
@@ -20832,6 +21141,11 @@ export interface components {
             unit: string;
             /** @example 10.000 */
             quantity: string;
+            /**
+             * @description Part of quantity in batches past their expiry date
+             * @example 10.000
+             */
+            expiredQuantity: string;
             /** @example 10.000 */
             lowStockThreshold: string;
             isLowStock: boolean;
@@ -20918,6 +21232,7 @@ export interface components {
                 /** Format: uuid */
                 referenceId: string;
                 isReversal: boolean;
+                batchNo: string | null;
                 note: string | null;
             }[];
         };
@@ -22780,6 +23095,99 @@ export interface components {
                 }[];
             }[];
         };
+        WriteOff: {
+            /** @example 10.000 */
+            qty: string;
+            /** @enum {string} */
+            reason: "expired" | "damaged" | "lost" | "adjustment";
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+        };
+        ProductBatch: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            unit: string;
+            batchNo: string;
+            /** Format: date */
+            manufacturingDate: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            /** Format: uuid */
+            supplierId: string | null;
+            supplierName: string | null;
+            /** @example 1250.50 */
+            unitCost: string | null;
+            /** @example 10.000 */
+            received: string;
+            /** @example 10.000 */
+            quantity: string;
+            /** @enum {string} */
+            status: "ok" | "expiring" | "expired" | "no_expiry";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ProductBatchDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            unit: string;
+            batchNo: string;
+            /** Format: date */
+            manufacturingDate: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            /** Format: uuid */
+            supplierId: string | null;
+            supplierName: string | null;
+            /** @example 1250.50 */
+            unitCost: string | null;
+            /** @example 10.000 */
+            received: string;
+            /** @example 10.000 */
+            quantity: string;
+            /** @enum {string} */
+            status: "ok" | "expiring" | "expired" | "no_expiry";
+            /** Format: date-time */
+            createdAt: string;
+            movements: {
+                /** Format: uuid */
+                id: string;
+                /** Format: date */
+                date: string;
+                type: string;
+                /** @example 10.000 */
+                qty: string;
+                referenceType: string;
+                /** Format: uuid */
+                referenceId: string;
+                reference: string | null;
+                note: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        AllocatedBatch: {
+            /** Format: uuid */
+            productId: string;
+            /** Format: uuid */
+            batchId: string | null;
+            batchNo: string | null;
+            /** Format: date */
+            manufacturingDate: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            /** @example 10.000 */
+            qty: string;
+        };
         SalePaymentInput: {
             /** @enum {string} */
             method: "cash" | "online";
@@ -22984,6 +23392,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
+            batches?: components["schemas"]["AllocatedBatch"][];
         };
         ReturnRefundInput: {
             /** @example 1250.50 */
@@ -23022,7 +23432,7 @@ export interface components {
         };
         ResolveReturnItem: {
             /** @enum {string} */
-            disposition: "restocked" | "damaged" | "supplier";
+            disposition: "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
             note?: string | null;
         };
         SetReturnRefund: {
@@ -23082,7 +23492,7 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
                 /** @enum {string} */
-                disposition: "pending" | "restocked" | "damaged" | "supplier";
+                disposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
                 /** Format: date-time */
                 resolvedAt: string | null;
                 /** Format: uuid */
@@ -23095,6 +23505,10 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Batches the original sale took its stock from (detail only) */
+            soldBatches?: components["schemas"]["AllocatedBatch"][];
+            /** @description Batches restocked items went back to (detail only) */
+            restockedBatches?: components["schemas"]["AllocatedBatch"][];
         };
         ReturnableSale: {
             /** Format: uuid */

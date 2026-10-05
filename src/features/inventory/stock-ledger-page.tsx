@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { PageHeader } from '@/components/shared/page-header';
@@ -10,7 +10,8 @@ import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { productsApi } from '@/features/catalog/api';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
-import { useProductLedger, type ProductLedger } from './api';
+import { useBatches, useProductLedger, type ProductLedger } from './api';
+import { batchColumns } from './batches-page';
 
 type Movement = ProductLedger['movements'][number];
 
@@ -42,6 +43,13 @@ const columns: ColumnDef<Movement, unknown>[] = [
         {row.original.isReversal ? <span className="text-xs text-muted-foreground">reversal</span> : null}
       </div>
     ),
+  },
+  {
+    id: 'batch',
+    header: 'Batch',
+    accessorFn: (m) => m.batchNo ?? '',
+    cell: ({ row }) =>
+      row.original.batchNo ? <span className="font-mono text-xs">{row.original.batchNo}</span> : '—',
   },
   {
     id: 'note',
@@ -84,6 +92,8 @@ const columns: ColumnDef<Movement, unknown>[] = [
 
 export function StockLedgerPage() {
   const { productId = '' } = useParams();
+  const navigate = useNavigate();
+  const batches = useBatches({ productId, pageSize: 100 });
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
   const product = productsApi.useDetail(productId);
   const ledger = useProductLedger(productId, range);
@@ -109,6 +119,20 @@ export function StockLedgerPage() {
         <StatCard label="Total out" value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'} />
         <StatCard label="Closing" value={data ? `${formatQuantity(data.closing)} ${unit}` : '…'} />
       </div>
+      {batches.data?.data.length ? (
+        <div className="mb-6 space-y-3">
+          <h2 className="text-sm font-semibold">Batches</h2>
+          <DataTable
+            columns={batchColumns(false)}
+            data={batches.data.data}
+            isLoading={batches.isLoading}
+            onRowClick={(b) => void navigate(`/inventory/batches/${b.id}`)}
+            exportFileName={`batches-${product.data?.name ?? productId}`}
+            emptyTitle="No batches"
+          />
+        </div>
+      ) : null}
+      <h2 className="mb-3 text-sm font-semibold">Movements</h2>
       <DataTable
         columns={columns}
         data={data?.movements}

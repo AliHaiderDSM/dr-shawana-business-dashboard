@@ -143,7 +143,8 @@ export function InlineTextField<T extends FieldValues>({
   name,
   label,
   placeholder,
-}: InlineFieldProps<T>) {
+  type = 'text',
+}: InlineFieldProps<T> & { type?: 'text' | 'date' }) {
   return (
     <FormField
       control={control}
@@ -151,7 +152,13 @@ export function InlineTextField<T extends FieldValues>({
       render={({ field }) => (
         <FormItem>
           <FormControl>
-            <Input placeholder={placeholder} aria-label={label} {...field} value={field.value ?? ''} />
+            <Input
+              type={type}
+              placeholder={placeholder}
+              aria-label={label}
+              {...field}
+              value={field.value ?? ''}
+            />
           </FormControl>
           <FormMessage />
         </FormItem>
