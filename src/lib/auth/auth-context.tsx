@@ -25,6 +25,21 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const ME_QUERY_KEY = ['auth', 'me'] as const;
 
 const SUPER_ADMIN_MANAGES = new Set(['branches', 'company', 'staff', 'doctors', 'reports', 'dashboard']);
+const SUPER_ADMIN_STOCK_MODULES = new Set([
+  'stock',
+  'inventoryReport',
+  'products',
+  'categories',
+  'bundles',
+  'suppliers',
+  'materials',
+  'materialCategories',
+  'recipes',
+  'labTransfers',
+  'production',
+  'finishedGoods',
+  'materialReport',
+]);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -48,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     enabled: isSuperAdmin,
     staleTime: 5 * 60_000,
   });
+  const superAdminStock = (branchOptions.data ?? []).find((b) => b.kind === 'warehouse')?.id ?? null;
+  branchStore.setWarehouse(superAdminStock);
 
   const logout = useCallback(() => {
     sessionStore.clear();
@@ -85,28 +102,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
+  const knownBranch = (branchOptions.data ?? []).some((b) => b.id === branchId);
+  const effectiveBranchId = isSuperAdmin && superAdminStock && !knownBranch ? superAdminStock : branchId;
+
+  useEffect(() => {
+    if (effectiveBranchId !== branchId) branchStore.set(effectiveBranchId);
+  }, [effectiveBranchId, branchId]);
+
   const value = useMemo<AuthContextValue>(() => {
     const permissions = new Set(me?.permissions ?? []);
-    const selectedKind = (branchOptions.data ?? []).find((b) => b.id === branchId)?.kind;
+    const selectedKind = (branchOptions.data ?? []).find((b) => b.id === effectiveBranchId)?.kind;
     const can = (permission: string) => {
       if (!permissions.has(permission)) return false;
       if (!isSuperAdmin) return true;
-      const [module, action] = permission.split('.');
-      if (action === 'view' || SUPER_ADMIN_MANAGES.has(module ?? '')) return true;
-      return selectedKind === 'warehouse';
+      const [module = '', action] = permission.split('.');
+      if (action === 'view' || SUPER_ADMIN_MANAGES.has(module)) return true;
+      return selectedKind === 'warehouse' && SUPER_ADMIN_STOCK_MODULES.has(module);
     };
     const status: AuthStatus =
       !hasSession || meQuery.isError ? 'anonymous' : me ? 'authenticated' : 'loading';
     const activeBranchId = isSuperAdmin
-      ? branchId === ALL_BRANCHES
+      ? effectiveBranchId === ALL_BRANCHES
         ? null
-        : branchId
+        : effectiveBranchId
       : (me?.branch?.id ?? null);
     return {
       status,
       me,
       isSuperAdmin,
-      branchId,
+      branchId: effectiveBranchId,
       activeBranchId,
       setBranchId,
       can,
@@ -115,7 +139,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshMe: () => meQuery.refetch(),
     };
-  }, [me, hasSession, isSuperAdmin, branchId, setBranchId, login, logout, meQuery, branchOptions.data]);
+  }, [
+    me,
+    hasSession,
+    isSuperAdmin,
+    effectiveBranchId,
+    setBranchId,
+    login,
+    logout,
+    meQuery,
+    branchOptions.data,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

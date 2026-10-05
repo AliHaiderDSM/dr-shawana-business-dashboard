@@ -184,6 +184,15 @@ export const REPORTS: ReportDef[] = [
     filters: [source('categoryId', 'Category', 'categories'), source('productId', 'Product', 'products')],
   },
   {
+    key: 'branch-stock',
+    title: 'Branch stock',
+    description: 'Per branch and product: stock received, sold, returned and now in the branch.',
+    icon: Package,
+    group: 'Inventory',
+    allowed: roles('branch_admin', 'accountant'),
+    filters: [source('productId', 'Product', 'products')],
+  },
+  {
     key: 'finance',
     title: 'Finance',
     description: 'Every movement in and out of the accounts.',

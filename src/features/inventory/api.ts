@@ -195,6 +195,9 @@ export function useInventoryReport(query: {
   to?: string;
   categoryId?: string;
   productId?: string;
+  supplierId?: string;
+  dispatcherId?: string;
+  toBranchId?: string;
 }) {
   return useQuery({
     queryKey: stockKeys.report(query),

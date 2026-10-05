@@ -39,11 +39,13 @@ function reportQuery(params: URLSearchParams) {
 function SourceFilter({
   list,
   filter,
+  branchId,
 }: {
   list: ListState;
   filter: Extract<ReportFilter, { kind: 'source' }>;
+  branchId?: string;
 }) {
-  const options = useSourceOptions(filter.source);
+  const options = useSourceOptions(filter.source, branchId);
   return (
     <FilterSelect
       list={list}
@@ -158,9 +160,10 @@ function ReportBody({ report }: { report: ReportDef }) {
   const query = reportQuery(params);
   const data = useReport(report.key, query);
   const [downloading, setDownloading] = useState(false);
-  const { isSuperAdmin, activeBranchId } = useAuth();
+  const { isSuperAdmin } = useAuth();
   const branches = useBranchOptions(isSuperAdmin);
-  const current = (branches.data ?? []).find((b) => b.id === activeBranchId);
+  const superAdminStock = (branches.data ?? []).find((b) => b.kind === 'warehouse')?.id;
+  const sourceBranch = isSuperAdmin ? (list.filters.branchId ?? superAdminStock) : undefined;
   const branchOptions = (branches.data ?? [])
     .filter((b) => b.kind === 'branch')
     .map((b) => ({ value: b.id, label: `${b.name} · ${b.code}` }));
@@ -175,11 +178,7 @@ function ReportBody({ report }: { report: ReportDef }) {
       </Button>
       <PageHeader
         title={data.data?.title ?? report.title}
-        description={
-          isSuperAdmin && current
-            ? `${report.description} Showing ${current.name} only. Choose "All branches" at the top to see every branch.`
-            : report.description
-        }
+        description={report.description}
         actions={
           <>
             <Button
@@ -222,7 +221,7 @@ function ReportBody({ report }: { report: ReportDef }) {
             emptyDescription="Change the dates or filters."
             toolbar={
               <>
-                {isSuperAdmin && !activeBranchId ? (
+                {isSuperAdmin ? (
                   <FilterSelect
                     list={list}
                     name="branchId"
@@ -234,7 +233,7 @@ function ReportBody({ report }: { report: ReportDef }) {
                 <DateRangeFilter list={list} placeholder="This month" />
                 {report.filters.map((filter) =>
                   filter.kind === 'source' ? (
-                    <SourceFilter key={filter.key} list={list} filter={filter} />
+                    <SourceFilter key={filter.key} list={list} filter={filter} branchId={sourceBranch} />
                   ) : filter.kind === 'text' ? (
                     <TextFilter key={filter.key} list={list} filter={filter} />
                   ) : (
@@ -273,7 +272,11 @@ export function ReportPrint() {
   const query = reportQuery(params);
   const data = useReport(key ?? '', query);
   return (
-    <PrintPage isLoading={data.isLoading} error={data.error ?? (report ? null : new Error('Unknown report'))}>
+    <PrintPage
+      paper={(data.data?.columns.length ?? 0) > 6 ? 'landscape' : 'a4'}
+      isLoading={data.isLoading}
+      error={data.error ?? (report ? null : new Error('Unknown report'))}
+    >
       {() => {
         const d = data.data;
         if (!d || !report) return null;
@@ -285,6 +288,7 @@ export function ReportPrint() {
           <div className="space-y-5 text-xs">
             <Letterhead title={d.title} subtitle={period} />
             <PrintTable
+              dense
               head={d.columns.map((c) => c.label)}
               rows={rows.map((row) =>
                 d.columns.map((c, index) =>

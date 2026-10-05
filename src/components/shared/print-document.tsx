@@ -66,14 +66,18 @@ export function PrintTable({
   head,
   rows,
   foot,
+  dense,
 }: {
   head: ReactNode[];
   rows: ReactNode[][];
   foot?: ReactNode[];
+  dense?: boolean;
 }) {
-  const cell = 'border px-2 py-1.5 text-center';
+  const cell = dense
+    ? 'border px-1 py-1 text-center align-top [overflow-wrap:anywhere]'
+    : 'border px-2 py-1.5 text-center';
   return (
-    <table className="w-full border-collapse text-sm">
+    <table className={cn('w-full border-collapse', dense ? 'text-[10px] leading-tight' : 'text-sm')}>
       <thead>
         <tr className="bg-muted">
           {head.map((h, i) => (
@@ -113,7 +117,7 @@ interface PrintPageProps {
   isLoading: boolean;
   error: unknown;
   onRetry?: () => void;
-  paper?: 'a4' | 'a5' | 'receipt';
+  paper?: 'a4' | 'a5' | 'receipt' | 'landscape';
   children: () => ReactNode;
 }
 

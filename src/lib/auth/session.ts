@@ -37,6 +37,7 @@ export const sessionStore = {
 };
 
 let superAdmin = false;
+let warehouseId: string | null = null;
 
 export const branchStore = {
   get: () => read<string>(BRANCH_KEY) ?? ALL_BRANCHES,
@@ -44,6 +45,10 @@ export const branchStore = {
   setSuperAdmin: (value: boolean) => {
     superAdmin = value;
   },
+  setWarehouse: (id: string | null) => {
+    warehouseId = id;
+  },
+  inWarehouse: () => superAdmin && warehouseId !== null && read<string>(BRANCH_KEY) === warehouseId,
   queryValue: () => {
     if (!superAdmin) return null;
     const value = read<string>(BRANCH_KEY);

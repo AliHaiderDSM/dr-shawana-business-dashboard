@@ -39,14 +39,15 @@ export function downloadReportCsv(key: string, query: Record<string, string>) {
   return downloadFile(reportPath(key), { ...query, format: 'csv' }, `${key}.csv`);
 }
 
-export function useSourceOptions(source: OptionSource) {
-  const doctors = doctorsApi.useOptions({}, source === 'doctors');
-  const products = productsApi.useOptions({}, source === 'products');
-  const categories = categoriesApi.useOptions({}, source === 'categories');
-  const suppliers = suppliersApi.useOptions({}, source === 'suppliers');
-  const accounts = accountSheetsApi.useOptions({}, source === 'accounts');
-  const expenseCategories = expenseCategoriesApi.useOptions({}, source === 'expenseCategories');
-  const staff = useStaffList({ pageSize: 100 }, source === 'staff');
+export function useSourceOptions(source: OptionSource, branchId?: string) {
+  const scope = branchId ? { branchId } : {};
+  const doctors = doctorsApi.useOptions(scope, source === 'doctors');
+  const products = productsApi.useOptions(scope, source === 'products');
+  const categories = categoriesApi.useOptions(scope, source === 'categories');
+  const suppliers = suppliersApi.useOptions(scope, source === 'suppliers');
+  const accounts = accountSheetsApi.useOptions(scope, source === 'accounts');
+  const expenseCategories = expenseCategoriesApi.useOptions(scope, source === 'expenseCategories');
+  const staff = useStaffList({ pageSize: 100, ...scope }, source === 'staff');
   switch (source) {
     case 'doctors':
       return (doctors.data ?? []).map((d) => ({ value: d.id, label: d.name }));
@@ -67,7 +68,10 @@ export function useSourceOptions(source: OptionSource) {
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 
+const PHONE_LIKE = /^\+?\d{10,}$/;
+
 export function isNumeric(value: ReportValue) {
+  if (typeof value === 'string' && PHONE_LIKE.test(value)) return false;
   return typeof value === 'number' || (typeof value === 'string' && NUMBER.test(value));
 }
 

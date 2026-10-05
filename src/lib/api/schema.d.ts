@@ -1315,7 +1315,7 @@ export interface paths {
                                 /** @enum {string} */
                                 status: "active" | "inactive";
                                 /**
-                                 * @description warehouse: the Main Warehouse (Super Admin only); branch: a selling branch
+                                 * @description warehouse: the Super Admin stock (Super Admin only); branch: a selling branch
                                  * @enum {string}
                                  */
                                 kind: "branch" | "warehouse";
@@ -7619,7 +7619,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Batches in stock that expire within the next days (default 90) or have expired. Super Admin without branchId gets every branch and the Main Warehouse. */
+        /** Batches in stock that expire within the next days (default 90) or have expired. Super Admin without branchId gets every branch and the Super Admin stock. */
         get: {
             parameters: {
                 query?: {
@@ -7714,6 +7714,12 @@ export interface paths {
                     branchId?: string;
                     categoryId?: string;
                     productId?: string;
+                    /** @description Only stock in and purchases from this supplier */
+                    supplierId?: string;
+                    /** @description Only stock out through this dispatcher */
+                    dispatcherId?: string;
+                    /** @description Super Admin Stock: only transfers to this branch, plus its sales and stock left (posSoft Stock To) */
+                    toBranchId?: string;
                 };
                 header?: never;
                 path?: never;
@@ -16952,6 +16958,13 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                /** @description The selling branch (list only) */
+                                branch?: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    code: string;
+                                    name: string;
+                                } | null;
                                 /** @description Labelled pieces sold on this sale (detail only) */
                                 serials?: {
                                     serial: string;
@@ -20349,6 +20362,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/reports/branch-stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Branch stock (posSoft inventory report): per branch and product, stock transferred in, sold, returned and now in the branch. Add format=csv to download. super_admin without branchId gets every branch with a branch breakdown. */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description csv downloads the rows as a CSV file */
+                    format?: "json" | "csv";
+                    /** @description super_admin: one branch; leave out for every branch */
+                    branchId?: string;
+                    month?: string;
+                    from?: string;
+                    to?: string;
+                    /** @description A Super Admin Stock product matches the branch products made from it */
+                    productId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report (JSON) or CSV file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Report"];
+                        };
+                        "text/csv": string;
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/reports/appointments": {
         parameters: {
             query?: never;
@@ -21266,7 +21373,7 @@ export interface components {
             email: string | null;
             logoPath: string | null;
             /**
-             * @description warehouse: the Main Warehouse (Super Admin only); branch: a selling branch
+             * @description warehouse: the Super Admin stock (Super Admin only); branch: a selling branch
              * @enum {string}
              */
             kind: "branch" | "warehouse";
@@ -21764,7 +21871,7 @@ export interface components {
             dispatcherId?: string | null;
             /**
              * Format: uuid
-             * @description Main Warehouse only: the branch that receives the stock. Its Stock In is created automatically.
+             * @description Super Admin stock only: the branch that receives the stock. Its Stock In is created automatically.
              */
             toBranchId?: string | null;
             /**
@@ -21875,7 +21982,7 @@ export interface components {
             batchId: string | null;
             /**
              * Format: uuid
-             * @description Set when the stock came from the Main Warehouse
+             * @description Set when the stock came from the Super Admin stock
              */
             transferOutId: string | null;
             /** Format: date */
@@ -21987,6 +22094,16 @@ export interface components {
                 adjusted: string;
                 /** @example 10.000 */
                 closing: string;
+                /**
+                 * @description Sold at the toBranchId branch (0 without it)
+                 * @example 10.000
+                 */
+                branchSold: string;
+                /**
+                 * @description Left at the toBranchId branch on the last day (0 without it)
+                 * @example 10.000
+                 */
+                inBranch: string;
             }[];
             totals: {
                 /** @example 10.000 */
@@ -22007,6 +22124,16 @@ export interface components {
                 adjusted: string;
                 /** @example 10.000 */
                 closing: string;
+                /**
+                 * @description Sold at the toBranchId branch (0 without it)
+                 * @example 10.000
+                 */
+                branchSold: string;
+                /**
+                 * @description Left at the toBranchId branch on the last day (0 without it)
+                 * @example 10.000
+                 */
+                inBranch: string;
             };
         };
         ProductLedger: {
@@ -24226,6 +24353,13 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description The selling branch (list only) */
+            branch?: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+            } | null;
             /** @description Labelled pieces sold on this sale (detail only) */
             serials?: {
                 serial: string;

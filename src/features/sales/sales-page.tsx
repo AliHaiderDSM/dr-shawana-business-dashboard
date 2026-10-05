@@ -1,3 +1,5 @@
+import { productsApi } from '@/features/catalog/api';
+import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCheck, Eye, Pencil, Plus, Printer, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
@@ -70,8 +72,15 @@ export function useDeliveryAction() {
 
 export function SalesPage() {
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, setBranchId } = useAuth();
   const canChange = useCanChangeSale();
+  const inWarehouse = useInWarehouse();
+  const branches = useBranchOptions(inWarehouse);
+  const products = productsApi.useOptions();
+  const open = (sale: SaleListItem, path = `/sales/${sale.id}`) => {
+    if (inWarehouse && sale.branch) setBranchId(sale.branch.id);
+    void navigate(path);
+  };
   const list = useListState({ defaultSort: '-invoiceSeq' });
   const query = useSales(list.query);
   const staff = useStaffList({ pageSize: 100 }, can('staff.view'));
@@ -88,6 +97,16 @@ export function SalesPage() {
       meta: { sortKey: 'invoiceSeq', hideable: false },
       cell: ({ row }) => <span className="font-medium">{row.original.invoiceNo}</span>,
     },
+    ...(inWarehouse
+      ? [
+          {
+            id: 'branch',
+            header: 'Branch',
+            accessorFn: (r: SaleListItem) => r.branch?.name ?? '',
+            cell: ({ row }: { row: { original: SaleListItem } }) => row.original.branch?.name ?? '—',
+          } satisfies ColumnDef<SaleListItem, unknown>,
+        ]
+      : []),
     {
       id: 'date',
       header: 'Date',
@@ -165,8 +184,8 @@ export function SalesPage() {
         return (
           <RowActions
             actions={[
-              { label: 'Open', icon: Eye, onSelect: () => void navigate(`/sales/${s.id}`) },
-              { label: 'Print bill', icon: Printer, onSelect: () => void navigate(`/print/bill/${s.id}`) },
+              { label: 'Open', icon: Eye, onSelect: () => open(s) },
+              { label: 'Print bill', icon: Printer, onSelect: () => open(s, `/print/bill/${s.id}`) },
               {
                 label: 'Edit',
                 icon: Pencil,
@@ -228,7 +247,7 @@ export function SalesPage() {
         onRetry={() => void query.refetch()}
         searchPlaceholder="Invoice, customer or phone"
         exportFileName="sales"
-        onRowClick={(s) => void navigate(`/sales/${s.id}`)}
+        onRowClick={(s) => open(s)}
         emptyTitle="No sales yet"
         footer={
           totals ? (
@@ -254,6 +273,24 @@ export function SalesPage() {
         toolbar={
           <>
             <DateRangeFilter list={list} />
+            {inWarehouse ? (
+              <FilterSelect
+                list={list}
+                name="branchId"
+                allLabel="All branches"
+                className="w-44"
+                options={(branches.data ?? [])
+                  .filter((b) => b.kind === 'branch')
+                  .map((b) => ({ value: b.id, label: b.name }))}
+              />
+            ) : null}
+            <FilterSelect
+              list={list}
+              name="productId"
+              allLabel="All products"
+              className="w-48"
+              options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
+            />
             <FilterSelect
               list={list}
               name="saleType"

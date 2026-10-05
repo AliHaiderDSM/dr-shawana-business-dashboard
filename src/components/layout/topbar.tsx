@@ -24,7 +24,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command';
 import {
   DropdownMenu,
@@ -41,7 +40,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/lib/auth/auth-context';
-import { ALL_BRANCHES } from '@/lib/auth/session';
 import { initials, titleCase } from '@/lib/format';
 import { findMenuItem } from '@/lib/permissions/menu';
 
@@ -67,7 +65,7 @@ function BranchSwitcher() {
           ) : (
             <Building2 className="text-muted-foreground" />
           )}
-          <span className="truncate">{current ? current.name : 'All branches'}</span>
+          <span className="truncate">{current ? current.name : 'Super Admin Stock'}</span>
           <ChevronsUpDown className="text-muted-foreground" />
         </Button>
       </PopoverTrigger>
@@ -76,20 +74,6 @@ function BranchSwitcher() {
           <CommandInput placeholder="Find a branch…" />
           <CommandList>
             <CommandEmpty>No branch found.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem
-                value="all branches"
-                onSelect={() => {
-                  setBranchId(ALL_BRANCHES);
-                  setOpen(false);
-                }}
-              >
-                <Building2 />
-                All branches
-                {branchId === ALL_BRANCHES ? <Check className="ml-auto" /> : null}
-              </CommandItem>
-            </CommandGroup>
-            <CommandSeparator />
             {warehouses.length ? (
               <CommandGroup heading="Super Admin">
                 {warehouses.map((branch) => (

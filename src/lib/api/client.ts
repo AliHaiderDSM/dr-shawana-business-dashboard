@@ -28,7 +28,8 @@ export class ApiError extends Error {
 
 export const AUTH_EXPIRED_EVENT = 'dsm:auth-expired';
 
-const BRANCHLESS_PREFIXES = ['/auth/', '/admin/', '/health'];
+const BRANCHLESS_PREFIXES = ['/auth/', '/admin/', '/health', '/branch/reports/'];
+const OVERVIEW_PATHS = ['/branch/dashboard', '/branch/inventory/expiry-alerts', '/branch/sales'];
 
 let refreshing: Promise<StoredSession | null> | null = null;
 
@@ -64,6 +65,7 @@ function withBranch(href: string): string {
   const url = new URL(href, window.location.origin);
   const path = url.pathname.replace(env.VITE_API_BASE_URL, '');
   if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return href;
+  if (branchStore.inWarehouse() && OVERVIEW_PATHS.includes(path)) return href;
   url.searchParams.set('branchId', branchId);
   return url.toString();
 }

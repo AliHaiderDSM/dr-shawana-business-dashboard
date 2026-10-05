@@ -49,6 +49,7 @@ export interface MenuItem {
   phase?: string;
   superAdminOnly?: boolean;
   warehouseOnly?: boolean;
+  showInWarehouse?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
 }
 
@@ -169,6 +170,7 @@ export const MENU: MenuGroup[] = [
         icon: Receipt,
         anyOf: ['sales.view'],
         scope: 'branch',
+        showInWarehouse: true,
       },
       {
         key: 'delivery',
@@ -414,19 +416,18 @@ export function visibleMenu(
   role?: Role,
   inWarehouse = false,
 ): MenuGroup[] {
-  return MENU.filter((group) => !(inWarehouse && group.notInWarehouse))
-    .map((group) => ({
-      ...group,
-      items: group.items
-        .filter(
-          (item) =>
-            (!item.superAdminOnly || isSuperAdmin) &&
-            (!item.warehouseOnly || inWarehouse) &&
-            item.anyOf.some((p) => can(p)),
-        )
-        .map((item) => ({ ...item, label: (role && item.roleLabels?.[role]) ?? item.label })),
-    }))
-    .filter((group) => group.items.length > 0);
+  return MENU.map((group) => ({
+    ...group,
+    items: group.items
+      .filter(
+        (item) =>
+          (!item.superAdminOnly || isSuperAdmin) &&
+          (!item.warehouseOnly || inWarehouse) &&
+          (!(inWarehouse && group.notInWarehouse) || item.showInWarehouse) &&
+          item.anyOf.some((p) => can(p)),
+      )
+      .map((item) => ({ ...item, label: (role && item.roleLabels?.[role]) ?? item.label })),
+  })).filter((group) => group.items.length > 0);
 }
 
 export function findMenuItem(pathname: string): MenuItem | undefined {

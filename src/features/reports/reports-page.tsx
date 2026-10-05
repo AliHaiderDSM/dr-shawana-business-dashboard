@@ -8,7 +8,7 @@ import { REPORT_ICON, REPORTS, type ReportDef } from './reports-config';
 const GROUPS: ReportDef['group'][] = ['Sales', 'Clinic', 'Inventory', 'Finance'];
 
 export function ReportsPage() {
-  const { can, me, isSuperAdmin, activeBranchId } = useAuth();
+  const { can, me, isSuperAdmin } = useAuth();
   const available = REPORTS.filter((r) => r.allowed(can, me?.role));
 
   return (
@@ -16,8 +16,8 @@ export function ReportsPage() {
       <PageHeader
         title="Reports"
         description={
-          isSuperAdmin && !activeBranchId
-            ? 'All branches together, with a per-branch breakdown. Pick a branch in the top bar to see one branch.'
+          isSuperAdmin
+            ? 'Every branch together, with charts and a per-branch breakdown. Each report has a Branch filter for one branch.'
             : 'Filter, export to CSV or print any report.'
         }
       />

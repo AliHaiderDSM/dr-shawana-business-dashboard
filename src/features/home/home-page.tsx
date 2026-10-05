@@ -45,7 +45,7 @@ function SuperAdminHome() {
     <>
       <PageHeader
         title={greeting()}
-        description="The whole system at a glance. Open a branch to work inside it."
+        description="Every branch at a glance. Pick a branch at the top to look inside it."
         actions={
           <Button asChild>
             <Link to="/admin/branches?new=1">
@@ -168,5 +168,6 @@ function BranchHome() {
 
 export function HomePage() {
   const { isSuperAdmin, activeBranchId } = useAuth();
-  return isSuperAdmin && !activeBranchId ? <SuperAdminHome /> : <BranchHome />;
+  const inWarehouse = useInWarehouse();
+  return isSuperAdmin && (!activeBranchId || inWarehouse) ? <SuperAdminHome /> : <BranchHome />;
 }
