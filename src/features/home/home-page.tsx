@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api, unwrap } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatMoney, titleCase } from '@/lib/format';
+import { useInWarehouse } from '@/lib/auth/branches';
 import { visibleMenu } from '@/lib/permissions/menu';
 import { useDashboard } from './api';
 import { DashboardOverview } from './dashboard-overview';
@@ -90,7 +91,7 @@ function SuperAdminHome() {
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="size-3" />
                       {branch.city}
-                      {branch.isHeadOffice ? ' · Head office' : ''}
+                      {branch.kind === 'warehouse' ? ' · Main warehouse' : ''}
                     </div>
                   </div>
                 </div>
@@ -122,7 +123,8 @@ function SuperAdminHome() {
 
 function BranchHome() {
   const { me, can, isSuperAdmin } = useAuth();
-  const links = visibleMenu(can, isSuperAdmin, me?.role)
+  const inWarehouse = useInWarehouse();
+  const links = visibleMenu(can, isSuperAdmin, me?.role, inWarehouse)
     .flatMap((g) => g.items)
     .filter((i) => i.path !== '/');
 

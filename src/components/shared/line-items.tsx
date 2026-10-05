@@ -59,11 +59,13 @@ export function LineItems({
                 className="grid items-start gap-2 px-3 py-2.5"
                 style={{ gridTemplateColumns: template }}
               >
-                {renderRow(index).map((cell, cellIndex) => (
-                  <div key={cellIndex} className="min-w-0">
-                    {cell}
-                  </div>
-                ))}
+                {renderRow(index)
+                  .filter((cell) => cell !== null)
+                  .map((cell, cellIndex) => (
+                    <div key={cellIndex} className="min-w-0">
+                      {cell}
+                    </div>
+                  ))}
                 {onRemove ? (
                   <Button
                     type="button"

@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
   Check,
@@ -10,10 +9,12 @@ import {
   Moon,
   Sun,
   UserRound,
+  Warehouse,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTheme, type Theme } from '@/components/theme-provider';
+import { useBranchOptions } from '@/lib/auth/branches';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,7 +40,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { api, unwrap } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ALL_BRANCHES } from '@/lib/auth/session';
 import { initials, titleCase } from '@/lib/format';
@@ -48,11 +48,10 @@ import { findMenuItem } from '@/lib/permissions/menu';
 function BranchSwitcher() {
   const { branchId, setBranchId } = useAuth();
   const [open, setOpen] = useState(false);
-  const branches = useQuery({
-    queryKey: ['branches', 'options'],
-    queryFn: () => unwrap(api.GET('/admin/branches/options')).then((r) => r.data),
-  });
+  const branches = useBranchOptions();
   const current = branches.data?.find((b) => b.id === branchId);
+  const warehouses = (branches.data ?? []).filter((b) => b.kind === 'warehouse');
+  const shops = (branches.data ?? []).filter((b) => b.kind !== 'warehouse');
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -63,7 +62,11 @@ function BranchSwitcher() {
           className="h-9 max-w-64 justify-between gap-2"
           aria-label="Switch branch"
         >
-          <Building2 className="text-muted-foreground" />
+          {current?.kind === 'warehouse' ? (
+            <Warehouse className="text-muted-foreground" />
+          ) : (
+            <Building2 className="text-muted-foreground" />
+          )}
           <span className="truncate">{current ? current.name : 'All branches'}</span>
           <ChevronsUpDown className="text-muted-foreground" />
         </Button>
@@ -87,8 +90,26 @@ function BranchSwitcher() {
               </CommandItem>
             </CommandGroup>
             <CommandSeparator />
+            {warehouses.length ? (
+              <CommandGroup heading="Main warehouse">
+                {warehouses.map((branch) => (
+                  <CommandItem
+                    key={branch.id}
+                    value={`${branch.name} ${branch.code}`}
+                    onSelect={() => {
+                      setBranchId(branch.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Warehouse />
+                    <span className="truncate">{branch.name}</span>
+                    {branchId === branch.id ? <Check className="ml-auto" /> : null}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ) : null}
             <CommandGroup heading="Branches">
-              {(branches.data ?? []).map((branch) => (
+              {shops.map((branch) => (
                 <CommandItem
                   key={branch.id}
                   value={`${branch.name} ${branch.code}`}

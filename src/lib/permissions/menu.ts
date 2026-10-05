@@ -54,6 +54,7 @@ export interface MenuItem {
 export interface MenuGroup {
   label: string;
   items: MenuItem[];
+  notInWarehouse?: boolean;
 }
 
 export const MENU: MenuGroup[] = [
@@ -103,6 +104,7 @@ export const MENU: MenuGroup[] = [
   },
   {
     label: 'Patients & Care',
+    notInWarehouse: true,
     items: [
       {
         key: 'patients',
@@ -149,6 +151,7 @@ export const MENU: MenuGroup[] = [
   },
   {
     label: 'Sales',
+    notInWarehouse: true,
     items: [
       {
         key: 'sales-new',
@@ -407,13 +410,16 @@ export function visibleMenu(
   can: (permission: string) => boolean,
   isSuperAdmin: boolean,
   role?: Role,
+  inWarehouse = false,
 ): MenuGroup[] {
-  return MENU.map((group) => ({
-    ...group,
-    items: group.items
-      .filter((item) => (!item.superAdminOnly || isSuperAdmin) && item.anyOf.some((p) => can(p)))
-      .map((item) => ({ ...item, label: (role && item.roleLabels?.[role]) ?? item.label })),
-  })).filter((group) => group.items.length > 0);
+  return MENU.filter((group) => !(inWarehouse && group.notInWarehouse))
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .filter((item) => (!item.superAdminOnly || isSuperAdmin) && item.anyOf.some((p) => can(p)))
+        .map((item) => ({ ...item, label: (role && item.roleLabels?.[role]) ?? item.label })),
+    }))
+    .filter((group) => group.items.length > 0);
 }
 
 export function findMenuItem(pathname: string): MenuItem | undefined {

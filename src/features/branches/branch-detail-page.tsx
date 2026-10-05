@@ -59,7 +59,7 @@ export function BranchDetailPage() {
             <StatusBadge status={b.status} />
           </span>
         }
-        description={`${b.code} · ${b.city}${b.isHeadOffice ? ' · Head office' : ''}`}
+        description={`${b.code} · ${b.city}${b.kind === 'warehouse' ? ' · Main warehouse (Super Admin only)' : ''}`}
         actions={
           <>
             <Button variant="outline" onClick={() => setEditOpen(true)}>

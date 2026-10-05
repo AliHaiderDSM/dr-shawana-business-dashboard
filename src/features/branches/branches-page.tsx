@@ -47,7 +47,7 @@ export function BranchesPage() {
           <div className="min-w-0">
             <div className="truncate font-medium">{row.original.name}</div>
             <div className="text-xs text-muted-foreground">
-              {row.original.isHeadOffice ? 'Head office' : 'Branch'}
+              {row.original.kind === 'warehouse' ? 'Main warehouse' : 'Branch'}
             </div>
           </div>
         </div>

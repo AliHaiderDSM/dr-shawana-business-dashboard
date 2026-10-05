@@ -22,6 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { findProductByBarcode, productsApi, suppliersApi } from '@/features/catalog/api';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import { formatQuantity, isoDate } from '@/lib/format';
 import { optionalText, positiveQuantity } from '@/lib/validation';
 import { findItemBySerial, isSerial, STOCK_DESTINATIONS, useCreateStockDocument } from './api';
@@ -57,14 +59,15 @@ const LABEL_OPTIONS = [
   { value: 'existing', label: 'Already labelled' },
 ];
 
-function buildSchema(config: StockKindConfig) {
+function buildSchema(config: StockKindConfig, transfer = false) {
   return z.object({
     partyId: z.string().nullable(),
+    toBranchId: transfer ? z.string().min(1, 'Choose the branch') : z.string(),
     date: z.string().min(1, 'Choose a date'),
     note: optionalText(1000),
     items: z
       .array(
-        (config.detailRequired
+        (config.detailRequired && !transfer
           ? lineSchema.extend({ detail: lineSchema.shape.detail.min(1, `${config.detailLabel} is required`) })
           : lineSchema
         ).superRefine((line, ctx) => {
@@ -177,16 +180,22 @@ interface StockDocumentSheetProps {
 }
 
 export function StockDocumentSheet({ config, open, onOpenChange }: StockDocumentSheetProps) {
+  const inWarehouse = useInWarehouse();
+  const { isSuperAdmin } = useAuth();
+  const branchOptions = useBranchOptions(isSuperAdmin && config.kind === 'out');
   const navigate = useNavigate();
   const create = useCreateStockDocument(config.kind);
   const products = productsApi.useOptions({}, open);
   const parties = suppliersApi.useOptions({ type: config.partyType }, open);
   const [files, setFiles] = useState<File[]>([]);
-  const schema = buildSchema(config);
+  const transfer = config.kind === 'out' && inWarehouse;
+  const schema = buildSchema(config, transfer);
+  const targets = (branchOptions.data ?? []).filter((b) => b.kind === 'branch' && b.status === 'active');
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       partyId: null,
+      toBranchId: '',
       date: isoDate(),
       note: null,
       items: [emptyLine],
@@ -262,12 +271,13 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
   const submit = form.handleSubmit((values) => {
     const body = {
       [config.partyField]: values.partyId,
+      ...(transfer ? { toBranchId: values.toBranchId } : {}),
       date: values.date,
       note: values.note,
       items: values.items.map((item) => ({
         productId: item.productId,
         qty: item.qty,
-        [config.detailField]: item.detail || null,
+        ...(transfer ? {} : { [config.detailField]: item.detail || null }),
         ...(config.batched
           ? {
               manufacturingDate: item.manufacturingDate || null,
@@ -334,6 +344,17 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
           />
           <TextField control={form.control} name="date" label="Date" type="date" required />
         </FieldRow>
+        {transfer ? (
+          <SelectField
+            control={form.control}
+            name="toBranchId"
+            label="Transfer to branch"
+            required
+            placeholder="Choose the branch that receives this stock"
+            description="The branch gets this stock straight away, with the same batches and labels."
+            options={targets.map((b) => ({ value: b.id, label: `${b.name} · ${b.code}` }))}
+          />
+        ) : null}
         <FormSection
           title="Products"
           description={
@@ -347,7 +368,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
             columns={[
               { header: 'Product', width: config.batched ? 'minmax(12rem,1fr)' : 'minmax(0,1fr)' },
               { header: 'Qty', width: '7rem' },
-              { header: config.detailLabel, width: '9rem' },
+              ...(transfer ? [] : [{ header: config.detailLabel, width: '9rem' }]),
               ...(config.batched
                 ? [
                     { header: 'Mfg date', width: '9.5rem' },
@@ -374,7 +395,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                 name={`items.${index}.qty`}
                 label="Qty"
               />,
-              config.detailField === 'destination' ? (
+              transfer ? null : config.detailField === 'destination' ? (
                 <DestinationInput
                   key="detail"
                   control={form.control}

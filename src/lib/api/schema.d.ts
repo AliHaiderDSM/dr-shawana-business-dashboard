@@ -1314,6 +1314,11 @@ export interface paths {
                                 city: string;
                                 /** @enum {string} */
                                 status: "active" | "inactive";
+                                /**
+                                 * @description warehouse: the Main Warehouse (Super Admin only); branch: a selling branch
+                                 * @enum {string}
+                                 */
+                                kind: "branch" | "warehouse";
                             }[];
                         };
                     };
@@ -21057,7 +21062,6 @@ export interface components {
             /** Format: email */
             email?: string | null;
             logoPath?: string | null;
-            isHeadOffice?: boolean;
         };
         UpdateBranch: {
             name?: string;
@@ -21068,7 +21072,6 @@ export interface components {
             /** Format: email */
             email?: string | null;
             logoPath?: string | null;
-            isHeadOffice?: boolean;
         };
         Branch: {
             /** Format: uuid */
@@ -21080,7 +21083,11 @@ export interface components {
             phone: string | null;
             email: string | null;
             logoPath: string | null;
-            isHeadOffice: boolean;
+            /**
+             * @description warehouse: the Main Warehouse (Super Admin only); branch: a selling branch
+             * @enum {string}
+             */
+            kind: "branch" | "warehouse";
             /** @enum {string} */
             status: "active" | "inactive";
             /** Format: date-time */
@@ -21557,6 +21564,11 @@ export interface components {
             /** Format: uuid */
             dispatcherId?: string | null;
             /**
+             * Format: uuid
+             * @description Main Warehouse only: the branch that receives the stock. Its Stock In is created automatically.
+             */
+            toBranchId?: string | null;
+            /**
              * Format: date
              * @example 2026-09-30
              */
@@ -21567,7 +21579,7 @@ export interface components {
                 productId: string;
                 /** @example 10.000 */
                 qty: string;
-                destination: string;
+                destination?: string | null;
                 /** @description Scanned piece labels. Required for products tracked by label. */
                 serials?: string[];
             }[];
@@ -21662,6 +21674,11 @@ export interface components {
             batch: string | null;
             /** Format: uuid */
             batchId: string | null;
+            /**
+             * Format: uuid
+             * @description Set when the stock came from the Main Warehouse
+             */
+            transferOutId: string | null;
             /** Format: date */
             manufacturingDate: string | null;
             /** Format: date */
@@ -21715,6 +21732,13 @@ export interface components {
                 name: string;
             } | null;
             destination: string;
+            /** Format: uuid */
+            toBranchId: string | null;
+            toBranch: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
         };
         StockBalance: {
             /** Format: uuid */

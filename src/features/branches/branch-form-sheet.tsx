@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { FieldRow, SwitchField, TextField, TextareaField } from '@/components/shared/form-fields';
+import { FieldRow, TextField, TextareaField } from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
@@ -20,7 +20,6 @@ const schema = z.object({
   address: optionalText(500),
   phone: optionalText(30),
   email: optionalEmail,
-  isHeadOffice: z.boolean(),
 });
 
 type Values = z.input<typeof schema>;
@@ -42,7 +41,6 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
       address: branch?.address ?? null,
       phone: branch?.phone ?? null,
       email: branch?.email ?? null,
-      isHeadOffice: branch?.isHeadOffice ?? false,
     },
   });
 
@@ -94,12 +92,6 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
           <TextField control={form.control} name="email" label="Email" type="email" />
         </FieldRow>
         <TextareaField control={form.control} name="address" label="Address" rows={2} />
-        <SwitchField
-          control={form.control}
-          name="isHeadOffice"
-          label="Head office"
-          description="Only one branch can be the head office."
-        />
       </FormSheet>
     </Form>
   );

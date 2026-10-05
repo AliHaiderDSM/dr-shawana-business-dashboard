@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -29,6 +30,10 @@ import { StockEntrySheet } from './stock-entry-sheet';
 
 function sameSlip(a: StockDocument, b: StockDocument) {
   return a.createdAt === b.createdAt && a.createdBy === b.createdBy;
+}
+
+function isTransferIn(doc: StockDocument) {
+  return 'transferOutId' in doc && Boolean(doc.transferOutId);
 }
 
 export function StockDocumentsPage({ kind }: { kind: StockKind }) {
@@ -103,7 +108,12 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
       id: 'party',
       header: config.partyLabel,
       accessorFn: (r) => stockParty(r)?.name ?? '',
-      cell: ({ row }) => stockParty(row.original)?.name ?? <span className="text-muted-foreground">—</span>,
+      cell: ({ row }) =>
+        isTransferIn(row.original) ? (
+          <StatusBadge tone="primary">From Main Warehouse</StatusBadge>
+        ) : (
+          (stockParty(row.original)?.name ?? <span className="text-muted-foreground">—</span>)
+        ),
     },
     {
       id: 'note',
@@ -137,7 +147,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
             {
               label: 'Edit',
               icon: Pencil,
-              hidden: !can('stock.update'),
+              hidden: !can('stock.update') || isTransferIn(row.original),
               onSelect: () => setEditing(row.original),
             },
             {
@@ -145,7 +155,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
               icon: Trash2,
               destructive: true,
               separatorBefore: true,
-              hidden: !can('stock.delete'),
+              hidden: !can('stock.delete') || isTransferIn(row.original),
               onSelect: () => setRemoving(row.original),
             },
           ]}
@@ -179,7 +189,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
         onRetry={() => void query.refetch()}
         searchPlaceholder="Search product or note"
         exportFileName={kind === 'in' ? 'stock-in' : 'stock-out'}
-        onRowClick={can('stock.update') ? setEditing : undefined}
+        onRowClick={can('stock.update') ? (r) => !isTransferIn(r) && setEditing(r) : undefined}
         emptyTitle={`No ${config.title.toLowerCase()} entries`}
         emptyDescription={config.description}
         toolbar={
