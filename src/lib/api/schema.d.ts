@@ -7441,6 +7441,7 @@ export interface paths {
                     search?: string;
                     categoryId?: string;
                     lowStockOnly?: "true" | "false";
+                    productId?: string;
                     branchId?: string;
                 };
                 header?: never;
@@ -7458,6 +7459,92 @@ export interface paths {
                         "application/json": {
                             data: components["schemas"]["StockBalance"][];
                             meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/expiry-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batches in stock that expire within the next days (default 90) or have expired. Super Admin without branchId gets every branch and the Main Warehouse. */
+        get: {
+            parameters: {
+                query?: {
+                    days?: number;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Alerts, soonest first */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ExpiryAlert"][];
                         };
                     };
                 };
@@ -21845,6 +21932,25 @@ export interface components {
                 batchNo: string | null;
                 note: string | null;
             }[];
+        };
+        ExpiryAlert: {
+            /** Format: uuid */
+            batchId: string;
+            /** Format: uuid */
+            branchId: string;
+            branchName: string;
+            /** @enum {string} */
+            branchKind: "branch" | "warehouse";
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            unit: string;
+            batchNo: string;
+            /** Format: date */
+            expiryDate: string;
+            daysLeft: number;
+            /** @example 10.000 */
+            quantity: string;
         };
         CreateMaterialCategory: {
             name: string;

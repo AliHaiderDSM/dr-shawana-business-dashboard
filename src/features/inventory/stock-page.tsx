@@ -1,3 +1,4 @@
+import { ExpiryAlertsPanel } from './expiry-alerts';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
@@ -117,6 +118,7 @@ export function StockPage() {
           ) : null
         }
       />
+      <ExpiryAlertsPanel className="mb-6" />
       <DataTable
         columns={columns}
         data={query.data?.data}

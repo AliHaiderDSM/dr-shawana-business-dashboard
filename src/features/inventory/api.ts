@@ -171,11 +171,22 @@ export async function stockAttachmentUrl(kind: StockKind, id: string, attachment
   return result.data;
 }
 
-export function useStockBalances(query: Record<string, unknown>) {
+export function useStockBalances(query: Record<string, unknown>, enabled = true) {
   return useQuery({
     queryKey: stockKeys.balances(query),
     queryFn: () => unwrap(api.GET('/branch/inventory/stock', { params: { query } })),
     placeholderData: (previous) => previous,
+    enabled,
+  });
+}
+
+export type ExpiryAlert = Schemas['ExpiryAlert'];
+
+export function useExpiryAlerts(days = 90) {
+  return useQuery({
+    queryKey: ['stock', 'expiry-alerts', days],
+    queryFn: () =>
+      unwrap(api.GET('/branch/inventory/expiry-alerts', { params: { query: { days } } })).then((r) => r.data),
   });
 }
 

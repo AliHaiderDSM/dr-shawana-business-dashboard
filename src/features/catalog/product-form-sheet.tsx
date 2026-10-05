@@ -1,3 +1,4 @@
+import { useCanReceiveStock } from '@/lib/auth/branches';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ScanLine } from 'lucide-react';
 import { useState } from 'react';
@@ -113,6 +114,7 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
   });
 
   const withPurchase = useWatch({ control: form.control, name: 'withPurchase' });
+  const canReceive = useCanReceiveStock();
 
   const submit = form.handleSubmit((values) => {
     const { withPurchase: includePurchase, purchase, sizeGrams, salePrice, ...rest } = values;
@@ -245,7 +247,7 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
           )}
         </FormSection>
 
-        {product ? null : (
+        {product || !canReceive ? null : (
           <FormSection
             title="First purchase"
             description="Optional. Adds opening stock and sets the sale price."

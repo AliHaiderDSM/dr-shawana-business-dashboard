@@ -19,3 +19,9 @@ export function useCurrentBranch() {
 export function useInWarehouse() {
   return useCurrentBranch()?.kind === 'warehouse';
 }
+
+export function useCanReceiveStock() {
+  const { isSuperAdmin } = useAuth();
+  const inWarehouse = useInWarehouse();
+  return isSuperAdmin && inWarehouse;
+}

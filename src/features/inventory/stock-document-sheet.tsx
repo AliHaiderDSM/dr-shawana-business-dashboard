@@ -24,9 +24,17 @@ import { findProductByBarcode, productsApi, suppliersApi } from '@/features/cata
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
-import { formatQuantity, isoDate } from '@/lib/format';
+import { formatDate, formatQuantity, isoDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { optionalText, positiveQuantity } from '@/lib/validation';
-import { findItemBySerial, isSerial, STOCK_DESTINATIONS, useCreateStockDocument } from './api';
+import {
+  findItemBySerial,
+  isSerial,
+  STOCK_DESTINATIONS,
+  useBatches,
+  useCreateStockDocument,
+  useStockBalances,
+} from './api';
 import type { StockKindConfig } from './stock-config';
 
 const lineSchema = z.object({
@@ -119,6 +127,41 @@ export function DestinationInput({
         </FormItem>
       )}
     />
+  );
+}
+
+function StockHint({ productId }: { productId: string }) {
+  const balance = useStockBalances({ productId, pageSize: 1 });
+  const batches = useBatches({ productId, inStockOnly: 'true', pageSize: 20 });
+  const row = balance.data?.data[0];
+  if (!row) return <span className="text-xs text-muted-foreground">Checking stock…</span>;
+  const expired = Number(row.expiredQuantity);
+  return (
+    <div className="space-y-1 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
+      <div>
+        <span className="font-medium">
+          {formatQuantity(row.quantity)} {row.unit} in stock
+        </span>
+        {expired > 0 ? <span className="text-destructive"> · {formatQuantity(expired)} expired</span> : null}
+      </div>
+      {(batches.data?.data ?? []).length ? (
+        <div className="flex flex-wrap gap-1">
+          {(batches.data?.data ?? []).map((b) => (
+            <span
+              key={b.id}
+              className={cn(
+                'rounded border bg-background px-1.5 py-0.5 tabular-nums',
+                b.status === 'expired' && 'border-destructive/50 text-destructive',
+                b.status === 'expiring' && 'border-warning/60 text-warning-soft-foreground',
+              )}
+            >
+              <span className="font-mono">{b.batchNo}</span> · {formatQuantity(b.quantity)}
+              {b.expiryDate ? ` · exp ${formatDate(b.expiryDate, 'MMM yy')}` : ''}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -380,15 +423,19 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
             ]}
             rowKeys={lines.fields.map((f) => f.id)}
             renderRow={(index) => [
-              <ComboboxField
-                key="product"
-                control={form.control}
-                name={`items.${index}.productId`}
-                options={productOptions}
-                placeholder="Choose product"
-                searchPlaceholder="Search products…"
-                loading={products.isLoading}
-              />,
+              <div key="product" className="space-y-1.5">
+                <ComboboxField
+                  control={form.control}
+                  name={`items.${index}.productId`}
+                  options={productOptions}
+                  placeholder="Choose product"
+                  searchPlaceholder="Search products…"
+                  loading={products.isLoading}
+                />
+                {!config.batched && items[index]?.productId ? (
+                  <StockHint productId={items[index]!.productId} />
+                ) : null}
+              </div>,
               <InlineQuantityField
                 key="qty"
                 control={form.control}

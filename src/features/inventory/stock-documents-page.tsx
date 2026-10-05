@@ -1,3 +1,4 @@
+import { useCanReceiveStock } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -48,6 +49,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<StockDocument | null>(null);
   const [removing, setRemoving] = useState<StockDocument | null>(null);
+  const canReceive = useCanReceiveStock();
   const rows = query.data?.data ?? [];
 
   const printSlip = (row: StockDocument) => {
@@ -168,9 +170,13 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
     <>
       <PageHeader
         title={config.title}
-        description={config.description}
+        description={
+          kind === 'in' && !canReceive
+            ? 'Stock this branch received from the Main Warehouse. Branches do not receive stock directly.'
+            : config.description
+        }
         actions={
-          can('stock.create') ? (
+          can('stock.create') && (kind === 'out' || canReceive) ? (
             <Button onClick={() => setCreating(true)}>
               <Plus />
               New {config.title.toLowerCase()}

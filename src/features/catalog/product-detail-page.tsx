@@ -1,3 +1,4 @@
+import { useCanReceiveStock } from '@/lib/auth/branches';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -135,6 +136,7 @@ export function ProductDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [entry, setEntry] = useState<PurchaseEntry | null>(null);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const canReceive = useCanReceiveStock();
   const [removing, setRemoving] = useState<PurchaseEntry | null>(null);
 
   if (product.isLoading) return <DetailSkeleton />;
@@ -235,7 +237,7 @@ export function ProductDetailPage() {
                 Edit
               </Button>
             ) : null}
-            {can('products.create') ? (
+            {can('products.create') && canReceive ? (
               <Button
                 onClick={() => {
                   setEntry(null);
@@ -276,7 +278,11 @@ export function ProductDetailPage() {
             error={purchases.error}
             onRetry={() => void purchases.refetch()}
             emptyTitle="No purchases yet"
-            emptyDescription="Add a purchase to bring this product into stock."
+            emptyDescription={
+              canReceive
+                ? 'Add a purchase to bring this product into stock.'
+                : 'Stock of this branch comes from the Main Warehouse.'
+            }
           />
         </div>
         <Panel title="Recent stock movements" bodyClassName="p-0">

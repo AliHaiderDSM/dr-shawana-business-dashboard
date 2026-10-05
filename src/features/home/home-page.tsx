@@ -1,3 +1,4 @@
+import { ExpiryAlertsPanel } from '@/features/inventory/expiry-alerts';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Building2, MapPin, Plus } from 'lucide-react';
 import { Link } from 'react-router';
@@ -54,6 +55,7 @@ function SuperAdminHome() {
           </Button>
         }
       />
+      <ExpiryAlertsPanel className="mb-6" />
       <DashboardOverview />
       <h2 className="mt-8 mb-3 text-sm font-semibold">Branches</h2>
       {branches.isLoading ? (
@@ -134,6 +136,7 @@ function BranchHome() {
         title={`${greeting()}, ${me?.profile.firstName ?? ''}`}
         description={`${titleCase(me?.role ?? '')}${me?.branch ? ` · ${me.branch.name}` : ''}`}
       />
+      <ExpiryAlertsPanel className="mb-6" />
       <DashboardOverview />
       <div className="mt-8 rounded-xl border bg-card shadow-xs">
         <div className="border-b px-5 py-4">
