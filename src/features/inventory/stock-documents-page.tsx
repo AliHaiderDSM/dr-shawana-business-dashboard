@@ -176,7 +176,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
             : config.description
         }
         actions={
-          can('stock.create') && (kind === 'out' || canReceive) ? (
+          can('stock.create') && canReceive ? (
             <Button onClick={() => setCreating(true)}>
               <Plus />
               New {config.title.toLowerCase()}

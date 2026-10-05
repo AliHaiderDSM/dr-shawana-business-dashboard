@@ -1,3 +1,4 @@
+import { useInWarehouse } from '@/lib/auth/branches';
 import { ExpiryAlertsPanel } from './expiry-alerts';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowDownToLine, ArrowUpFromLine, History } from 'lucide-react';
@@ -22,6 +23,7 @@ export function StockPage() {
   const query = useStockBalances(list.query);
   const categories = categoriesApi.useOptions();
   const lowOnly = list.filters.lowStockOnly === 'true';
+  const inWarehouse = useInWarehouse();
 
   const columns: ColumnDef<StockBalance, unknown>[] = [
     {
@@ -108,12 +110,14 @@ export function StockPage() {
                   Stock in
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link to="/stock-out">
-                  <ArrowUpFromLine />
-                  Stock out
-                </Link>
-              </Button>
+              {inWarehouse ? (
+                <Button asChild variant="outline">
+                  <Link to="/stock-out">
+                    <ArrowUpFromLine />
+                    Stock out
+                  </Link>
+                </Button>
+              ) : null}
             </>
           ) : null
         }

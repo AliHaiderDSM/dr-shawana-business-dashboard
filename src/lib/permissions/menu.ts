@@ -48,6 +48,7 @@ export interface MenuItem {
   scope: BranchScope;
   phase?: string;
   superAdminOnly?: boolean;
+  warehouseOnly?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
 }
 
@@ -266,6 +267,7 @@ export const MENU: MenuGroup[] = [
         icon: ArrowUpFromLine,
         anyOf: ['stock.view'],
         scope: 'branch',
+        warehouseOnly: true,
       },
       {
         key: 'inventory-report',
@@ -416,7 +418,12 @@ export function visibleMenu(
     .map((group) => ({
       ...group,
       items: group.items
-        .filter((item) => (!item.superAdminOnly || isSuperAdmin) && item.anyOf.some((p) => can(p)))
+        .filter(
+          (item) =>
+            (!item.superAdminOnly || isSuperAdmin) &&
+            (!item.warehouseOnly || inWarehouse) &&
+            item.anyOf.some((p) => can(p)),
+        )
         .map((item) => ({ ...item, label: (role && item.roleLabels?.[role]) ?? item.label })),
     }))
     .filter((group) => group.items.length > 0);
