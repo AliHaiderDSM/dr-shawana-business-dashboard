@@ -207,22 +207,14 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
               </FormItem>
             )}
           />
-          <FieldRow>
-            <TextField
-              control={form.control}
-              name="batchNo"
-              label="Batch / Gram"
-              description="posSoft's “Gram” label."
-            />
-            <MoneyField
-              control={form.control}
-              name="sizeGrams"
-              label="Size (grams)"
-              prefix=""
-              decimals={3}
-              placeholder="0"
-            />
-          </FieldRow>
+          <MoneyField
+            control={form.control}
+            name="sizeGrams"
+            label="Size (grams)"
+            prefix=""
+            decimals={3}
+            placeholder="0"
+          />
           <FieldRow>
             <MoneyField control={form.control} name="salePrice" label="Sale price" />
             <MoneyField

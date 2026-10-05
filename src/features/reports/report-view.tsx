@@ -1,3 +1,4 @@
+import { useBranchOptions } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Download, Printer } from 'lucide-react';
 import { useState } from 'react';
@@ -156,6 +157,12 @@ function ReportBody({ report }: { report: ReportDef }) {
   const query = reportQuery(params);
   const data = useReport(report.key, query);
   const [downloading, setDownloading] = useState(false);
+  const { isSuperAdmin, activeBranchId } = useAuth();
+  const branches = useBranchOptions(isSuperAdmin);
+  const current = (branches.data ?? []).find((b) => b.id === activeBranchId);
+  const branchOptions = (branches.data ?? [])
+    .filter((b) => b.kind === 'branch')
+    .map((b) => ({ value: b.id, label: `${b.name} · ${b.code}` }));
 
   return (
     <>
@@ -167,7 +174,11 @@ function ReportBody({ report }: { report: ReportDef }) {
       </Button>
       <PageHeader
         title={data.data?.title ?? report.title}
-        description={report.description}
+        description={
+          isSuperAdmin && current
+            ? `${report.description} Showing ${current.name} only. Choose "All branches" at the top to see every branch.`
+            : report.description
+        }
         actions={
           <>
             <Button
@@ -209,6 +220,15 @@ function ReportBody({ report }: { report: ReportDef }) {
             emptyDescription="Change the dates or filters."
             toolbar={
               <>
+                {isSuperAdmin && !activeBranchId ? (
+                  <FilterSelect
+                    list={list}
+                    name="branchId"
+                    allLabel="All branches"
+                    className="w-48"
+                    options={branchOptions}
+                  />
+                ) : null}
                 <DateRangeFilter list={list} placeholder="This month" />
                 {report.filters.map((filter) =>
                   filter.kind === 'source' ? (
