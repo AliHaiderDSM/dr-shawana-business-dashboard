@@ -319,6 +319,14 @@ export function ReturnDetailPage() {
                       {DISPOSITION_LABELS[item.disposition]}
                     </StatusBadge>
                   </div>
+                  {item.serial ? (
+                    <Link
+                      to={`/inventory/labels/${item.serial}`}
+                      className="font-mono text-xs text-primary hover:underline"
+                    >
+                      {item.serial}
+                    </Link>
+                  ) : null}
                   {item.product?.barcode ? (
                     <div className="font-mono text-xs text-muted-foreground">{item.product.barcode}</div>
                   ) : null}

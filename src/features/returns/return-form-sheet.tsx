@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { ChoiceField } from '@/components/shared/choice-field';
+import { BarcodeScanInput } from '@/components/shared/barcode-scan-input';
 import { Combobox } from '@/components/shared/combobox';
 import {
   FieldRow,
@@ -22,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ReceivingAccountsNotice, useReceivingAccounts } from '@/features/appointments/payment-fields';
 import { applyServerErrors } from '@/lib/api/errors';
 import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
 import { REASON_LABELS, useCreateReturn, useReturnable, useSaleSearch, type ReturnReason } from './api';
 
@@ -40,6 +42,7 @@ const schema = z
         .trim()
         .regex(/^(\d{1,10}(\.\d{1,3})?)?$/, 'Use a number'),
     ),
+    serials: z.record(z.string(), z.array(z.string())),
     withRefund: z.boolean(),
     refundAmount: z.string(),
     refundMethod: z.enum(['cash', 'online']),
@@ -65,12 +68,48 @@ function emptyValues(saleId = ''): Values {
     reason: undefined as unknown as ReturnReason,
     note: null,
     qty: {},
+    serials: {},
     withRefund: false,
     refundAmount: '',
     refundMethod: 'cash',
     refundAccountId: '',
     refundDate: isoDate(),
   };
+}
+
+function PieceChooser({
+  serials,
+  picked,
+  onToggle,
+}: {
+  serials: string[];
+  picked: string[];
+  onToggle: (serial: string) => void;
+}) {
+  if (serials.length === 0)
+    return <span className="flex h-9 items-center text-xs text-muted-foreground">None left</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-medium tabular-nums">{picked.length} picked</span>
+      <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto">
+        {serials.map((serial) => (
+          <button
+            key={serial}
+            type="button"
+            onClick={() => onToggle(serial)}
+            className={cn(
+              'rounded-md border px-1.5 py-0.5 font-mono text-[11px] transition-colors',
+              picked.includes(serial)
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'bg-muted/40 text-muted-foreground hover:bg-muted',
+            )}
+          >
+            {serial}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function ReturnFormSheet({
@@ -102,7 +141,30 @@ export function ReturnFormSheet({
   const chooseSale = (id: string | null, label: string | null) => {
     form.setValue('saleId', id ?? '', { shouldValidate: true });
     form.setValue('qty', {});
+    form.setValue('serials', {});
     setSaleLabel(label);
+  };
+
+  const togglePiece = (productId: string, serial: string) => {
+    const current = form.getValues(`serials.${productId}`) ?? [];
+    const next = current.includes(serial) ? current.filter((x) => x !== serial) : [...current, serial];
+    form.setValue(`serials.${productId}`, next);
+    form.setValue(`qty.${productId}`, next.length ? String(next.length) : '', { shouldValidate: true });
+  };
+
+  const scanPiece = async (code: string) => {
+    const serial = code.trim().toUpperCase();
+    const item = items.find((i) => i.serials.includes(serial));
+    if (!item) {
+      toast.error(`${serial} was not sold on this sale, or it is already returned`);
+      return;
+    }
+    if ((form.getValues(`serials.${item.productId}`) ?? []).includes(serial)) {
+      toast.error(`${serial} is already picked`);
+      return;
+    }
+    togglePiece(item.productId, serial);
+    toast.success(`${item.product?.name ?? 'Item'} · ${serial}`);
   };
 
   const submit = form.handleSubmit((values) => {
@@ -118,7 +180,11 @@ export function ReturnFormSheet({
         note: values.note,
         items: Object.entries(values.qty)
           .filter(([, qty]) => Number(qty) > 0)
-          .map(([productId, qty]) => ({ productId, qty })),
+          .map(([productId, qty]) => ({
+            productId,
+            qty,
+            ...(values.serials[productId]?.length ? { serials: values.serials[productId] } : {}),
+          })),
         ...(values.withRefund
           ? {
               refund: {
@@ -144,6 +210,7 @@ export function ReturnFormSheet({
   });
 
   const qtyError = arrayError(form.formState.errors.qty);
+  const pickedSerials = useWatch({ control: form.control, name: 'serials' });
 
   return (
     <Form {...form}>
@@ -184,7 +251,13 @@ export function ReturnFormSheet({
         </FormItem>
 
         {saleId ? (
-          <FormSection title="Products coming back" description="Enter only what came back.">
+          <FormSection
+            title="Products coming back"
+            description="Enter only what came back. For labelled products scan or tick the label of each piece."
+          >
+            {items.some((i) => i.trackSerials) ? (
+              <BarcodeScanInput onScan={scanPiece} placeholder="Scan the DSM label of a returned piece" />
+            ) : null}
             {returnable.isLoading ? (
               <Skeleton className="h-28 w-full" />
             ) : (
@@ -214,13 +287,22 @@ export function ReturnFormSheet({
                     <span key="returnable" className="flex h-9 items-center justify-end text-sm tabular-nums">
                       {formatQuantity(item.returnable)}
                     </span>,
-                    <InlineQuantityField
-                      key="qty"
-                      control={form.control}
-                      name={`qty.${item.productId}`}
-                      label={`Returning ${item.product?.name ?? ''}`}
-                      placeholder="0"
-                    />,
+                    item.trackSerials ? (
+                      <PieceChooser
+                        key="qty"
+                        serials={item.serials}
+                        picked={pickedSerials[item.productId] ?? []}
+                        onToggle={(serial) => togglePiece(item.productId, serial)}
+                      />
+                    ) : (
+                      <InlineQuantityField
+                        key="qty"
+                        control={form.control}
+                        name={`qty.${item.productId}`}
+                        label={`Returning ${item.product?.name ?? ''}`}
+                        placeholder="0"
+                      />
+                    ),
                   ];
                 }}
                 error={qtyError}

@@ -3,6 +3,7 @@ import { ArrowLeft, Loader2, PackageMinus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+import { BarcodeScanInput } from '@/components/shared/barcode-scan-input';
 import { DataTable } from '@/components/shared/data-table';
 import { ErrorState } from '@/components/shared/error-state';
 import { FilterSelect } from '@/components/shared/list-filters';
@@ -31,6 +32,8 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
+  findItemBySerial,
+  useSerialSummary,
   useBatch,
   useBatches,
   useWriteOff,
@@ -204,7 +207,23 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
     batch.status === 'expired' ? 'expired' : 'damaged',
   );
   const [note, setNote] = useState('');
-  const invalid = !(Number(qty) > 0) || Number(qty) > Number(batch.quantity);
+  const [serials, setSerials] = useState<string[]>([]);
+  const summary = useSerialSummary(batch.productId);
+  const tracked = summary.data?.trackSerials ?? false;
+  const count = tracked && serials.length > 0 ? String(serials.length) : qty;
+  const invalid = !(Number(count) > 0) || Number(count) > Number(batch.quantity);
+
+  const scan = async (code: string) => {
+    try {
+      const piece = await findItemBySerial(code);
+      if (piece.batchId !== batch.id) toast.error(`${piece.serial} belongs to another batch`);
+      else if (piece.status !== 'in_stock') toast.error(`${piece.serial} is not in stock`);
+      else if (serials.includes(piece.serial)) toast.error(`${piece.serial} is already scanned`);
+      else setSerials((current) => [...current, piece.serial]);
+    } catch (error) {
+      toastError(error);
+    }
+  };
 
   return (
     <Dialog open onOpenChange={(open) => !open && !writeOff.isPending && onClose()}>
@@ -224,7 +243,8 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
                 id="write-off-qty"
                 prefix=""
                 decimals={3}
-                value={qty}
+                value={count}
+                readOnly={tracked && serials.length > 0}
                 onChange={(e) => setQty(e.target.value)}
               />
               <span className="text-xs text-muted-foreground">
@@ -247,6 +267,30 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
               </Select>
             </div>
           </div>
+          {tracked ? (
+            <div className="grid gap-2">
+              <Label>Labels</Label>
+              <BarcodeScanInput onScan={scan} placeholder="Scan the label of each piece" />
+              {serials.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {serials.map((serial) => (
+                    <button
+                      key={serial}
+                      type="button"
+                      className="rounded-md border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px] hover:line-through"
+                      onClick={() => setSerials((current) => current.filter((x) => x !== serial))}
+                    >
+                      {serial}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  Labelled product: scan each piece. Without scans only unlabelled stock can be written off.
+                </span>
+              )}
+            </div>
+          ) : null}
           <div className="grid gap-2">
             <Label htmlFor="write-off-note">Note</Label>
             <Textarea id="write-off-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
@@ -261,9 +305,14 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
             disabled={invalid || writeOff.isPending}
             onClick={() =>
               writeOff
-                .mutateAsync({ qty, reason, note: note.trim() || null })
+                .mutateAsync({
+                  qty: count,
+                  reason,
+                  note: note.trim() || null,
+                  ...(serials.length ? { serials } : {}),
+                })
                 .then(() => {
-                  toast.success(`${formatQuantity(qty)} written off from ${batch.batchNo}`);
+                  toast.success(`${formatQuantity(count)} written off from ${batch.batchNo}`);
                   onClose();
                 })
                 .catch(toastError)

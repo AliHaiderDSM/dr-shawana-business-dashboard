@@ -32,6 +32,7 @@ import { ReturnStatusBadge } from '@/features/returns/returns-page';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import {
   SALE_TYPE_LABELS,
   salePaymentProofUrl,
@@ -300,6 +301,25 @@ export function SaleDetailPage() {
             <h2 className="text-sm font-semibold">Items</h2>
             <DataTable columns={itemColumns} data={s.items} emptyTitle="No items" />
           </div>
+          {s.serials?.length ? (
+            <Panel title="Labelled pieces" description="The exact packs on this sale." bodyClassName="p-4">
+              <div className="flex flex-wrap gap-1.5">
+                {s.serials.map((p) => (
+                  <Link
+                    key={p.serial}
+                    to={`/inventory/labels/${p.serial}`}
+                    title={`${s.items.find((i) => i.productId === p.productId)?.product?.name ?? ''} · ${p.status}`}
+                    className={cn(
+                      'rounded-md border px-2 py-0.5 font-mono text-xs hover:border-primary hover:text-primary',
+                      p.status !== 'sold' && 'text-muted-foreground line-through',
+                    )}
+                  >
+                    {p.serial}
+                  </Link>
+                ))}
+              </div>
+            </Panel>
+          ) : null}
           {s.batches?.length ? (
             <Panel
               title="Batches"

@@ -100,6 +100,18 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'inventory/labels',
+    element: page(() => import('@/features/inventory/labels-page'), 'LabelsPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'branch',
+  },
+  {
+    path: 'inventory/labels/:serial',
+    element: page(() => import('@/features/inventory/labels-page'), 'LabelDetailPage'),
+    anyOf: ['stock.view', 'inventoryReport.view', 'sales.create', 'returns.create'],
+    scope: 'branch',
+  },
+  {
     path: 'inventory/batches',
     element: page(() => import('@/features/inventory/batches-page'), 'BatchesPage'),
     anyOf: ['stock.view', 'inventoryReport.view'],
@@ -329,6 +341,12 @@ export const screenRoutes: ScreenRoute[] = [
 ];
 
 export const printRoutes: ScreenRoute[] = [
+  {
+    path: 'labels',
+    element: page(() => import('@/features/inventory/labels-print'), 'LabelsPrint'),
+    anyOf: ['stock.view'],
+    scope: 'branch',
+  },
   {
     path: 'stock-in',
     element: page(() => import('@/features/inventory/stock-slip-print'), 'StockInSlipPrint'),

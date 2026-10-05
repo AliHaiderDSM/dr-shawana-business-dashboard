@@ -5605,6 +5605,456 @@ export interface paths {
         };
         trace?: never;
     };
+    "/branch/inventory/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Labelled pieces (one row per DSM-xxxxxx label) with product, batch, status and sale */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    sort?: "serial" | "-serial";
+                    search?: string;
+                    productId?: string;
+                    batchId?: string;
+                    saleId?: string;
+                    status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                    source?: "stock_in" | "production" | "labelled";
+                    sourceId?: string;
+                    /** @description First label of a range */
+                    from?: string;
+                    /** @description Last label of a range */
+                    to?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Pieces */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["InventoryItem"][];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/items/serial/{serial}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find a piece by its scanned label, with its full history */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    serial: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Piece */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["InventoryItemDetail"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One piece with its full history */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Piece */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["InventoryItemDetail"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/items/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register labels already stuck on stock that is on hand: a run of consecutive numbers from firstSerial. The product becomes tracked by label. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RegisterLabels"];
+                };
+            };
+            responses: {
+                /** @description Registered */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["RegisteredLabels"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/inventory/products/{productId}/serials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pieces of a product by status, and stock still without labels per batch */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    productId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Summary */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SerialSummary"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/stock-ins": {
         parameters: {
             query?: never;
@@ -16315,6 +16765,14 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                /** @description Labelled pieces sold on this sale (detail only) */
+                                serials?: {
+                                    serial: string;
+                                    /** Format: uuid */
+                                    productId: string;
+                                    /** @enum {string} */
+                                    status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                                }[];
                                 /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
                                 batches?: components["schemas"]["AllocatedBatch"][];
                             }[];
@@ -20801,6 +21259,8 @@ export interface components {
             salePrice: string;
             /** @enum {string} */
             status: "active" | "inactive";
+            /** @description Every piece carries a DSM label; sales, stock out and returns scan them */
+            trackSerials: boolean;
             imagePath: string | null;
             imageUrl: string | null;
             /** Format: date-time */
@@ -20948,6 +21408,111 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        RegisterLabels: {
+            /** Format: uuid */
+            productId: string;
+            /** Format: uuid */
+            batchId?: string | null;
+            /** @example DSM-000001 */
+            firstSerial: string;
+            qty: number;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+        };
+        InventoryItem: {
+            /** Format: uuid */
+            id: string;
+            serial: string;
+            /** @enum {string} */
+            status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            /** Format: uuid */
+            batchId: string | null;
+            batchNo: string | null;
+            /** Format: date */
+            manufacturingDate: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            /** Format: date */
+            receivedOn: string;
+            /** Format: uuid */
+            saleId: string | null;
+            invoiceNo: string | null;
+            /** Format: date */
+            soldOn: string | null;
+        };
+        InventoryItemDetail: {
+            /** Format: uuid */
+            id: string;
+            serial: string;
+            /** @enum {string} */
+            status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            /** Format: uuid */
+            batchId: string | null;
+            batchNo: string | null;
+            /** Format: date */
+            manufacturingDate: string | null;
+            /** Format: date */
+            expiryDate: string | null;
+            /** Format: date */
+            receivedOn: string;
+            /** Format: uuid */
+            saleId: string | null;
+            invoiceNo: string | null;
+            /** Format: date */
+            soldOn: string | null;
+            /** Format: uuid */
+            branchId: string;
+            branchName: string;
+            salePrice: string;
+            /** Format: uuid */
+            patientId: string | null;
+            patientName: string | null;
+            history: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "received" | "produced" | "labelled" | "sold" | "sale_edited" | "sale_deleted" | "returned" | "return_cancelled" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "dispatch_cancelled" | "written_off";
+                referenceType: string | null;
+                /** Format: uuid */
+                referenceId: string | null;
+                referenceLabel: string | null;
+                note: string | null;
+                branchName: string;
+                by: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        SerialSummary: {
+            /** Format: uuid */
+            productId: string;
+            trackSerials: boolean;
+            byStatus: {
+                [key: string]: number;
+            };
+            unlabelled: {
+                /** Format: uuid */
+                batchId: string | null;
+                batchNo: string | null;
+                /** @example 10.000 */
+                qty: string;
+            }[];
+        };
+        RegisteredLabels: {
+            count: number;
+            firstSerial: string;
+            lastSerial: string;
+        };
         CreateStockIn: {
             /** Format: uuid */
             supplierId?: string | null;
@@ -20979,6 +21544,13 @@ export interface components {
                  * @example 1250.50
                  */
                 unitCost?: string;
+                /**
+                 * @description generate: the system numbers a new label for every piece; existing: the packs already carry consecutive labels starting at firstSerial
+                 * @enum {string}
+                 */
+                labels?: "none" | "generate" | "existing";
+                /** @example DSM-000001 */
+                firstSerial?: string;
             }[];
         };
         CreateStockOut: {
@@ -20996,6 +21568,8 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
                 destination: string;
+                /** @description Scanned piece labels. Required for products tracked by label. */
+                serials?: string[];
             }[];
         };
         UpdateStockIn: {
@@ -21066,6 +21640,12 @@ export interface components {
                 /** Format: date-time */
                 createdAt: string;
             }[];
+            /** @description Labelled pieces of this entry */
+            labels: {
+                count: number;
+                firstSerial: string;
+                lastSerial: string;
+            } | null;
             /** Format: uuid */
             createdBy: string | null;
             /** Format: date-time */
@@ -21115,6 +21695,12 @@ export interface components {
                 /** Format: date-time */
                 createdAt: string;
             }[];
+            /** @description Labelled pieces of this entry */
+            labels: {
+                count: number;
+                firstSerial: string;
+                lastSerial: string;
+            } | null;
             /** Format: uuid */
             createdBy: string | null;
             /** Format: date-time */
@@ -23106,6 +23692,8 @@ export interface components {
              */
             date?: string;
             note?: string | null;
+            /** @description Scanned piece labels. Required for products tracked by label. */
+            serials?: string[];
         };
         ProductBatch: {
             /** Format: uuid */
@@ -23241,6 +23829,8 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
             }[];
+            /** @description Scanned piece labels. Required for products tracked by label. */
+            serials?: string[];
             /** @default [] */
             payments: components["schemas"]["SalePaymentInput"][];
             /** @description posSoft "Auto": any unpaid part becomes the discount (the percent is then fixed) */
@@ -23268,6 +23858,8 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
             }[];
+            /** @description Every label on the sale after the edit. Leave out to keep the labels already sold. */
+            serials?: string[];
             /** @example 10 */
             discountPercent?: string;
         };
@@ -23392,6 +23984,14 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Labelled pieces sold on this sale (detail only) */
+            serials?: {
+                serial: string;
+                /** Format: uuid */
+                productId: string;
+                /** @enum {string} */
+                status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+            }[];
             /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
             batches?: components["schemas"]["AllocatedBatch"][];
         };
@@ -23427,6 +24027,8 @@ export interface components {
                 productId: string;
                 /** @example 10.000 */
                 qty: string;
+                /** @description Scanned piece labels. Required for products tracked by label. */
+                serials?: string[];
             }[];
             refund?: components["schemas"]["ReturnRefundInput"];
         };
@@ -23498,6 +24100,8 @@ export interface components {
                 /** Format: uuid */
                 resolvedBy: string | null;
                 resolutionNote: string | null;
+                /** @description The returned label (detail only) */
+                serial?: string | null;
             }[];
             /** Format: uuid */
             createdBy: string | null;
@@ -23533,6 +24137,9 @@ export interface components {
                 returned: string;
                 /** @example 10.000 */
                 returnable: string;
+                trackSerials: boolean;
+                /** @description Labels sold on the sale and not returned yet */
+                serials: string[];
             }[];
         };
         CreateJournalEntry: {

@@ -44,13 +44,14 @@ import {
   toPatientInput,
 } from '@/features/patients/patient-fields';
 import { ApiError } from '@/lib/api/client';
-import { applyServerErrors, toastInvalid } from '@/lib/api/errors';
+import { applyServerErrors, toastError, toastInvalid } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatMoney, formatQuantity, isoDate } from '@/lib/format';
+import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
 import { SALE_CITIES, salesApi, useCreateSale, type Sale, type SaleInput } from './api';
 import { PosCatalog, type CatalogPick } from './pos-catalog';
+import { findItemBySerial } from '@/features/inventory/api';
 
 const lineSchema = z.object({
   kind: z.enum(['product', 'bundle']),
@@ -58,6 +59,8 @@ const lineSchema = z.object({
   name: z.string(),
   price: z.string(),
   available: z.string().optional(),
+  tracked: z.boolean().optional(),
+  parts: z.array(z.object({ productId: z.string(), qty: z.string() })).optional(),
   qty: z
     .string()
     .trim()
@@ -75,6 +78,7 @@ const schema = z
     date: z.string().min(1, 'Choose a date'),
     note: optionalText(2000),
     items: z.array(lineSchema).min(1, 'Add at least one product'),
+    pieces: z.array(z.object({ serial: z.string(), productId: z.string(), productName: z.string() })),
     autoDiscount: z.boolean(),
     discountPercent: z
       .string()
@@ -121,6 +125,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
         name: item.bundle?.name ?? bundle?.name ?? 'Bundle',
         price: bundle?.totalPrice ?? '0',
         qty: String(part ? Number(item.qty) / Number(part.qty) : 1),
+        parts: bundle?.items.map((i) => ({ productId: i.productId, qty: i.qty })),
       });
       continue;
     }
@@ -130,8 +135,17 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
       name: item.product?.name ?? 'Product',
       price: item.unitPrice,
       qty: String(Number(item.qty)),
+      tracked: (sale?.serials ?? []).some((p) => p.productId === item.productId),
     });
   }
+  const names = new Map((sale?.items ?? []).map((i) => [i.productId, i.product?.name ?? 'Product']));
+  const pieces = (sale?.serials ?? [])
+    .filter((p) => p.status === 'sold')
+    .map((p) => ({
+      serial: p.serial,
+      productId: p.productId,
+      productName: names.get(p.productId) ?? 'Product',
+    }));
   return {
     patientMode: 'existing',
     patientId: sale?.patientId ?? '',
@@ -141,6 +155,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
     date: sale?.date ?? isoDate(),
     note: sale?.note ?? null,
     items: lines,
+    pieces,
     autoDiscount: !sale,
     discountPercent: sale ? String(Number(sale.discountPercent)) : '0',
     payments: [],
@@ -226,6 +241,68 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     lines.append({ ...item, qty: '1' });
   };
 
+  const bundleNeed = (productId: string) =>
+    form
+      .getValues('items')
+      .filter((l) => l.kind === 'bundle')
+      .reduce(
+        (sum, l) =>
+          sum +
+          (Number(l.qty) || 0) *
+            (l.parts ?? []).filter((p) => p.productId === productId).reduce((n, p) => n + Number(p.qty), 0),
+        0,
+      );
+
+  const syncPieces = (productId: string, name: string, price: string) => {
+    const count = form.getValues('pieces').filter((p) => p.productId === productId).length;
+    const qty = Math.max(0, count - bundleNeed(productId));
+    const current = form.getValues('items');
+    const index = current.findIndex((l) => l.kind === 'product' && l.refId === productId);
+    if (index >= 0 && qty === 0) lines.remove(index);
+    else if (index >= 0) form.setValue(`items.${index}.qty`, String(qty), { shouldDirty: true });
+    else if (qty > 0)
+      lines.append({ kind: 'product', refId: productId, name, price, tracked: true, qty: String(qty) });
+  };
+
+  const addPiece = async (code: string) => {
+    try {
+      const piece = await findItemBySerial(code);
+      if (piece.status !== 'in_stock') {
+        toast.error(
+          `${piece.serial} ${piece.status === 'sold' ? `is already sold (${piece.invoiceNo ?? ''})` : `is ${piece.status.replace('_', ' ')}`}`,
+        );
+        return;
+      }
+      if (piece.expiryDate && piece.expiryDate < form.getValues('date')) {
+        toast.error(`${piece.serial} expired on ${formatDate(piece.expiryDate)}`);
+        return;
+      }
+      if (form.getValues('pieces').some((p) => p.serial === piece.serial)) {
+        toast.error(`${piece.serial} is already in the cart`);
+        return;
+      }
+      form.setValue('pieces', [
+        ...form.getValues('pieces'),
+        { serial: piece.serial, productId: piece.productId, productName: piece.productName },
+      ]);
+      syncPieces(piece.productId, piece.productName, piece.salePrice);
+      toast.success(`${piece.productName} · ${piece.serial}`);
+    } catch (error) {
+      toastError(error);
+    }
+  };
+
+  const removePiece = (serial: string) => {
+    const piece = form.getValues('pieces').find((p) => p.serial === serial);
+    if (!piece) return;
+    form.setValue(
+      'pieces',
+      form.getValues('pieces').filter((p) => p.serial !== serial),
+    );
+    const line = form.getValues('items').find((l) => l.kind === 'product' && l.refId === piece.productId);
+    syncPieces(piece.productId, piece.productName, line?.price ?? '0');
+  };
+
   const step = (index: number, delta: number) => {
     const line = form.getValues(`items.${index}`);
     const qty = (Number(line.qty) || 0) + delta;
@@ -251,6 +328,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     const items = v.items.map((l) =>
       l.kind === 'product' ? { productId: l.refId, qty: l.qty } : { bundleId: l.refId, qty: l.qty },
     );
+    const serials = v.pieces.map((p) => p.serial);
     if (sale) {
       update.mutate(
         {
@@ -262,6 +340,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
             ...(v.city ? { city: v.city } : {}),
             note: v.note,
             items,
+            serials,
             discountPercent: v.discountPercent || '0',
           },
         },
@@ -285,6 +364,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       ...(v.city ? { city: v.city } : {}),
       note: v.note,
       items,
+      ...(serials.length ? { serials } : {}),
       autoDiscount: v.autoDiscount,
       ...(v.autoDiscount ? {} : { discountPercent: v.discountPercent || '0' }),
       payments: v.payments.map((p) => {
@@ -312,6 +392,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
         <section className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
           <PosCatalog
             onPick={pick}
+            onPiece={addPiece}
             inCart={(kind, refId) => {
               const line = values.items.find((l) => l.kind === kind && l.refId === refId);
               return line ? formatQuantity(line.qty) : undefined;
@@ -481,6 +562,28 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                             </span>
                           ) : null}
                         </div>
+                        {field.kind === 'product' && line?.tracked ? (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {(values.pieces ?? [])
+                              .filter((p) => p.productId === field.refId)
+                              .map((p) => (
+                                <span
+                                  key={p.serial}
+                                  className="inline-flex items-center gap-0.5 rounded-md border bg-muted/50 py-0.5 pr-0.5 pl-1.5 font-mono text-[11px]"
+                                >
+                                  {p.serial}
+                                  <button
+                                    type="button"
+                                    className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    aria-label={`Remove ${p.serial}`}
+                                    onClick={() => removePiece(p.serial)}
+                                  >
+                                    <X className="size-3" />
+                                  </button>
+                                </span>
+                              ))}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="flex items-center">
                         <Button
@@ -489,6 +592,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                           size="icon"
                           className="size-7"
                           aria-label="Less"
+                          disabled={line?.tracked}
                           onClick={() => step(index, -1)}
                         >
                           <Minus />
@@ -503,6 +607,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                               aria-label={`${field.name} quantity`}
                               className={cn('mx-1 h-7 w-14 px-1 text-center', short && 'border-destructive')}
                               {...qty}
+                              readOnly={line?.tracked}
                             />
                           )}
                         />
@@ -512,6 +617,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                           size="icon"
                           className="size-7"
                           aria-label="More"
+                          disabled={line?.tracked}
                           onClick={() => step(index, 1)}
                         >
                           <Plus />
@@ -526,7 +632,15 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                         size="icon"
                         className="size-7 text-muted-foreground"
                         aria-label={`Remove ${field.name}`}
-                        onClick={() => lines.remove(index)}
+                        onClick={() => {
+                          if (line?.tracked) {
+                            form.setValue(
+                              'pieces',
+                              form.getValues('pieces').filter((p) => p.productId !== field.refId),
+                            );
+                          }
+                          lines.remove(index);
+                        }}
                       >
                         <X />
                       </Button>

@@ -25,6 +25,7 @@ import {
   Shapes,
   ShoppingCart,
   Stethoscope,
+  Tags,
   TestTubes,
   Truck,
   type LucideIcon,
@@ -229,6 +230,14 @@ export const MENU: MenuGroup[] = [
         path: '/stock',
         icon: Warehouse,
         anyOf: ['stock.view'],
+        scope: 'branch',
+      },
+      {
+        key: 'labels',
+        label: 'Labels',
+        path: '/inventory/labels',
+        icon: Tags,
+        anyOf: ['stock.view', 'inventoryReport.view'],
         scope: 'branch',
       },
       {

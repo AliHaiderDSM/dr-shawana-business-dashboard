@@ -10,6 +10,8 @@ import { useStockBalances } from '@/features/inventory/api';
 import { toastError } from '@/lib/api/errors';
 import { formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { isSerial } from '@/features/inventory/api';
+import { toast } from 'sonner';
 
 export interface CatalogPick {
   kind: 'product' | 'bundle';
@@ -17,6 +19,7 @@ export interface CatalogPick {
   name: string;
   price: string;
   available?: string;
+  parts?: { productId: string; qty: string }[];
 }
 
 function useDebounced<T>(value: T, delay = 300) {
@@ -77,9 +80,11 @@ function Card({
 
 export function PosCatalog({
   onPick,
+  onPiece,
   inCart,
 }: {
   onPick: (pick: CatalogPick) => void;
+  onPiece: (serial: string) => Promise<void>;
   inCart: (kind: CatalogPick['kind'], refId: string) => string | undefined;
 }) {
   const [tab, setTab] = useState<'products' | 'bundles'>('products');
@@ -107,7 +112,15 @@ export function PosCatalog({
 
   const scan = async (code: string) => {
     try {
+      if (isSerial(code)) {
+        await onPiece(code);
+        return;
+      }
       const product = await findProductByBarcode(code);
+      if (product.trackSerials) {
+        toast.error(`${product.name} is labelled. Scan the DSM label on the pack.`);
+        return;
+      }
       onPick({
         kind: 'product',
         refId: product.id,
@@ -184,13 +197,15 @@ export function PosCatalog({
                     low={balance ? Number(sellable(p.id)) <= 0 || balance.isLowStock : false}
                     inCart={inCart('product', p.id)}
                     onPick={() =>
-                      onPick({
-                        kind: 'product',
-                        refId: p.id,
-                        name: p.name,
-                        price: p.salePrice,
-                        available: sellable(p.id),
-                      })
+                      p.trackSerials
+                        ? toast.error(`${p.name} is labelled. Scan the DSM label on the pack.`)
+                        : onPick({
+                            kind: 'product',
+                            refId: p.id,
+                            name: p.name,
+                            price: p.salePrice,
+                            available: sellable(p.id),
+                          })
                     }
                   />
                 );
@@ -203,7 +218,15 @@ export function PosCatalog({
                   imageUrl={b.imageUrl}
                   meta={`${b.items.length} items`}
                   inCart={inCart('bundle', b.id)}
-                  onPick={() => onPick({ kind: 'bundle', refId: b.id, name: b.name, price: b.totalPrice })}
+                  onPick={() =>
+                    onPick({
+                      kind: 'bundle',
+                      refId: b.id,
+                      name: b.name,
+                      price: b.totalPrice,
+                      parts: b.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+                    })
+                  }
                 />
               ))}
       </div>

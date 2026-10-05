@@ -248,3 +248,66 @@ export function useWriteOff(batchId: string) {
     onSuccess: invalidate,
   });
 }
+
+export type InventoryItem = Schemas['InventoryItem'];
+export type InventoryItemDetail = Schemas['InventoryItemDetail'];
+export type ItemStatus = InventoryItem['status'];
+export type SerialSummary = Schemas['SerialSummary'];
+export type RegisterLabelsInput = Schemas['RegisterLabels'];
+
+export const SERIAL_PATTERN = /^DSM-\d+$/i;
+
+export function isSerial(code: string) {
+  return SERIAL_PATTERN.test(code.trim());
+}
+
+export function useItems(query: Record<string, unknown>, enabled = true) {
+  return useQuery({
+    queryKey: ['stock', 'items', query],
+    queryFn: () => unwrap(api.GET('/branch/inventory/items', { params: { query } })),
+    placeholderData: (previous) => previous,
+    enabled,
+  });
+}
+
+export function useItem(id: string | undefined) {
+  return useQuery({
+    queryKey: ['stock', 'item', id],
+    queryFn: () =>
+      unwrap(api.GET('/branch/inventory/items/{itemId}', { params: { path: { itemId: id ?? '' } } })).then(
+        (r) => r.data,
+      ),
+    enabled: Boolean(id),
+  });
+}
+
+export async function findItemBySerial(serial: string) {
+  const result = await unwrap(
+    api.GET('/branch/inventory/items/serial/{serial}', {
+      params: { path: { serial: serial.trim().toUpperCase() } },
+    }),
+  );
+  return result.data;
+}
+
+export function useSerialSummary(productId: string | undefined) {
+  return useQuery({
+    queryKey: ['stock', 'serials', productId],
+    queryFn: () =>
+      unwrap(
+        api.GET('/branch/inventory/products/{productId}/serials', {
+          params: { path: { productId: productId ?? '' } },
+        }),
+      ).then((r) => r.data),
+    enabled: Boolean(productId),
+  });
+}
+
+export function useRegisterLabels() {
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (body: RegisterLabelsInput) =>
+      unwrap(api.POST('/branch/inventory/items/register', { body })).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}

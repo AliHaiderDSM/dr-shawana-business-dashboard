@@ -17,12 +17,14 @@ import {
 import { FormSheet } from '@/components/shared/form-sheet';
 import { arrayError, InlineQuantityField, InlineTextField, LineItems } from '@/components/shared/line-items';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { findProductByBarcode, productsApi, suppliersApi } from '@/features/catalog/api';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { formatQuantity, isoDate } from '@/lib/format';
 import { optionalText, positiveQuantity } from '@/lib/validation';
-import { STOCK_DESTINATIONS, useCreateStockDocument } from './api';
+import { findItemBySerial, isSerial, STOCK_DESTINATIONS, useCreateStockDocument } from './api';
 import type { StockKindConfig } from './stock-config';
 
 const lineSchema = z.object({
@@ -32,9 +34,28 @@ const lineSchema = z.object({
   manufacturingDate: z.string(),
   expiryDate: z.string(),
   unitCost: z.string().regex(/^(\d{1,10}(\.\d{1,2})?)?$/, 'Use a price'),
+  labels: z.enum(['none', 'generate', 'existing']),
+  firstSerial: z.string().trim(),
+  serials: z.array(z.string()),
 });
 
-const emptyLine = { productId: '', qty: '', detail: '', manufacturingDate: '', expiryDate: '', unitCost: '' };
+const emptyLine = {
+  productId: '',
+  qty: '',
+  detail: '',
+  manufacturingDate: '',
+  expiryDate: '',
+  unitCost: '',
+  labels: 'none' as const,
+  firstSerial: '',
+  serials: [] as string[],
+};
+
+const LABEL_OPTIONS = [
+  { value: 'none', label: 'No labels' },
+  { value: 'generate', label: 'Print new labels' },
+  { value: 'existing', label: 'Already labelled' },
+];
 
 function buildSchema(config: StockKindConfig) {
   return z.object({
@@ -52,6 +73,12 @@ function buildSchema(config: StockKindConfig) {
           }
           if (line.manufacturingDate && line.expiryDate && line.expiryDate < line.manufacturingDate) {
             ctx.addIssue({ code: 'custom', path: ['expiryDate'], message: 'Before manufacturing' });
+          }
+          if (line.labels !== 'none' && !Number.isInteger(Number(line.qty))) {
+            ctx.addIssue({ code: 'custom', path: ['qty'], message: 'Whole pieces' });
+          }
+          if (line.labels === 'existing' && !isSerial(line.firstSerial)) {
+            ctx.addIssue({ code: 'custom', path: ['firstSerial'], message: 'Like DSM-000001' });
           }
         }),
       )
@@ -92,6 +119,57 @@ export function DestinationInput({
   );
 }
 
+function LabelsCell({ control, index }: { control: Control<Values>; index: number }) {
+  const mode = useWatch({ control, name: `items.${index}.labels` });
+  return (
+    <div className="space-y-1.5">
+      <FormField
+        control={control}
+        name={`items.${index}.labels`}
+        render={({ field }) => (
+          <FormItem>
+            <Select value={field.value} onValueChange={field.onChange}>
+              <FormControl>
+                <SelectTrigger className="w-full" aria-label="Labels">
+                  <SelectValue />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {LABEL_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+      {mode === 'existing' ? (
+        <InlineTextField
+          control={control}
+          name={`items.${index}.firstSerial`}
+          label="First label"
+          placeholder="DSM-000001"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ScannedCell({ serials, onClear }: { serials: string[]; onClear: () => void }) {
+  if (serials.length === 0)
+    return <span className="flex h-9 items-center text-xs text-muted-foreground">Not scanned</span>;
+  return (
+    <div className="flex h-9 items-center gap-1 text-xs" title={serials.join(', ')}>
+      <span className="font-medium">{serials.length} scanned</span>
+      <Button type="button" variant="ghost" size="sm" className="h-7 px-1.5" onClick={onClear}>
+        Clear
+      </Button>
+    </div>
+  );
+}
+
 interface StockDocumentSheetProps {
   config: StockKindConfig;
   open: boolean;
@@ -119,8 +197,44 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
   const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
   const productOptions = (products.data ?? []).map((p) => ({ value: p.id, label: p.name }));
 
+  const addPiece = async (code: string) => {
+    const piece = await findItemBySerial(code);
+    if (piece.status !== 'in_stock') {
+      toast.error(`${piece.serial} is ${piece.status.replace('_', ' ')}`);
+      return;
+    }
+    const current = form.getValues('items');
+    if (current.some((line) => line.serials.includes(piece.serial))) {
+      toast.error(`${piece.serial} is already on this entry`);
+      return;
+    }
+    const index = current.findIndex((line) => line.productId === piece.productId);
+    if (index >= 0) {
+      const serials = [...(current[index]?.serials ?? []), piece.serial];
+      form.setValue(`items.${index}.serials`, serials, { shouldDirty: true });
+      form.setValue(`items.${index}.qty`, String(serials.length), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    } else {
+      const line = { ...emptyLine, productId: piece.productId, qty: '1', serials: [piece.serial] };
+      const empty = current.findIndex((item) => !item.productId);
+      if (empty >= 0) lines.update(empty, { ...line, detail: current[empty]?.detail ?? '' });
+      else lines.append(line);
+    }
+    toast.success(`${piece.serial} · ${piece.productName}`);
+  };
+
   const addScanned = async (code: string) => {
     try {
+      if (isSerial(code)) {
+        if (config.batched) {
+          toast.error('Labels are made when this entry is saved. Scan the product barcode here.');
+          return;
+        }
+        await addPiece(code);
+        return;
+      }
       const product = await findProductByBarcode(code);
       const current = form.getValues('items');
       const existing = current.findIndex((item) => item.productId === product.id);
@@ -159,20 +273,36 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
               manufacturingDate: item.manufacturingDate || null,
               expiryDate: item.expiryDate || null,
               unitCost: item.unitCost || null,
+              labels: item.labels,
+              ...(item.labels === 'existing' ? { firstSerial: item.firstSerial.toUpperCase() } : {}),
             }
-          : {}),
+          : item.serials.length
+            ? { serials: item.serials }
+            : {}),
       })),
     };
     create.mutate(
       { body: body as never, files },
       {
         onSuccess: (rows) => {
-          toast.success(`${config.title} saved`, {
-            action: {
-              label: 'Print slip',
-              onClick: () => void navigate(`${config.printPath}?ids=${rows.map((r) => r.id).join(',')}`),
-            },
-          });
+          const labelled = rows.filter((r) => r.labels);
+          const slip = () => void navigate(`${config.printPath}?ids=${rows.map((r) => r.id).join(',')}`);
+          const count = labelled.reduce((sum, r) => sum + (r.labels?.count ?? 0), 0);
+          if (config.batched && labelled.length > 0) {
+            toast.success(`${config.title} saved · ${count} labelled pieces created`, {
+              duration: 15000,
+              action: {
+                label: 'Print labels',
+                onClick: () =>
+                  void navigate(
+                    `/print/labels?source=stock_in&sourceIds=${labelled.map((r) => r.id).join(',')}`,
+                  ),
+              },
+              cancel: { label: 'Print slip', onClick: slip },
+            });
+          } else {
+            toast.success(`${config.title} saved`, { action: { label: 'Print slip', onClick: slip } });
+          }
           setFiles([]);
           form.reset();
           onOpenChange(false);
@@ -204,11 +334,18 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
           />
           <TextField control={form.control} name="date" label="Date" type="date" required />
         </FieldRow>
-        <FormSection title="Products" description="Scan each pack, or choose products by hand.">
+        <FormSection
+          title="Products"
+          description={
+            config.batched
+              ? 'Choose products by hand or scan the product barcode. Labelled products need "Print new labels" or the first label already on the packs.'
+              : 'Scan the DSM label of every labelled piece that goes out. Other products are chosen by hand.'
+          }
+        >
           <BarcodeScanInput onScan={addScanned} autoFocus />
           <LineItems
             columns={[
-              { header: 'Product', width: 'minmax(0,1fr)' },
+              { header: 'Product', width: config.batched ? 'minmax(12rem,1fr)' : 'minmax(0,1fr)' },
               { header: 'Qty', width: '7rem' },
               { header: config.detailLabel, width: '9rem' },
               ...(config.batched
@@ -216,8 +353,9 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                     { header: 'Mfg date', width: '9.5rem' },
                     { header: 'Expiry', width: '9.5rem' },
                     { header: 'Unit cost', width: '7rem' },
+                    { header: 'Labels', width: '11rem' },
                   ]
-                : []),
+                : [{ header: 'Labels', width: '8rem' }]),
             ]}
             rowKeys={lines.fields.map((f) => f.id)}
             renderRow={(index) => [
@@ -276,8 +414,17 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                       decimals={2}
                       placeholder="Rs"
                     />,
+                    <LabelsCell key="labels" control={form.control} index={index} />,
                   ]
-                : []),
+                : [
+                    <ScannedCell
+                      key="labels"
+                      serials={items[index]?.serials ?? []}
+                      onClear={() => {
+                        form.setValue(`items.${index}.serials`, []);
+                      }}
+                    />,
+                  ]),
             ]}
             onAdd={() => lines.append(emptyLine)}
             onRemove={(index) => lines.remove(index)}

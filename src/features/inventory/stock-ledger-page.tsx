@@ -1,16 +1,18 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Printer, Tags } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { PageHeader } from '@/components/shared/page-header';
+import { Panel } from '@/components/shared/panel';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { productsApi } from '@/features/catalog/api';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
-import { useBatches, useProductLedger, type ProductLedger } from './api';
+import { useBatches, useProductLedger, useSerialSummary, type ItemStatus, type ProductLedger } from './api';
+import { ITEM_STATUS, RegisterLabelsDialog } from './labels-page';
 import { batchColumns } from './batches-page';
 
 type Movement = ProductLedger['movements'][number];
@@ -94,6 +96,10 @@ export function StockLedgerPage() {
   const { productId = '' } = useParams();
   const navigate = useNavigate();
   const batches = useBatches({ productId, pageSize: 100 });
+  const serials = useSerialSummary(productId);
+  const [registering, setRegistering] = useState(false);
+  const unlabelled = (serials.data?.unlabelled ?? []).reduce((sum, u) => sum + Number(u.qty), 0);
+  const tracked = serials.data?.trackSerials ?? false;
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
   const product = productsApi.useDetail(productId);
   const ledger = useProductLedger(productId, range);
@@ -119,6 +125,62 @@ export function StockLedgerPage() {
         <StatCard label="Total out" value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'} />
         <StatCard label="Closing" value={data ? `${formatQuantity(data.closing)} ${unit}` : '…'} />
       </div>
+      {tracked || unlabelled > 0 ? (
+        <Panel
+          className="mb-6"
+          title="Labels"
+          description={
+            tracked
+              ? 'Every piece of this product carries a DSM label. Sales, stock out and returns scan it.'
+              : 'This product is not labelled yet.'
+          }
+          actions={
+            <div className="flex flex-wrap gap-2">
+              {tracked ? (
+                <>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/inventory/labels?productId=${productId}`}>
+                      <Tags />
+                      View labels
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/print/labels?productId=${productId}`}>
+                      <Printer />
+                      Print in-stock labels
+                    </Link>
+                  </Button>
+                </>
+              ) : null}
+              {unlabelled > 0 ? (
+                <Button size="sm" onClick={() => setRegistering(true)}>
+                  <Tags />
+                  Register labels
+                </Button>
+              ) : null}
+            </div>
+          }
+        >
+          <div className="flex flex-wrap gap-2">
+            {(Object.entries(serials.data?.byStatus ?? {}) as [ItemStatus, number][]).map(
+              ([status, count]) => (
+                <StatusBadge key={status} tone={ITEM_STATUS[status].tone}>
+                  {ITEM_STATUS[status].label}: {count}
+                </StatusBadge>
+              ),
+            )}
+          </div>
+          {tracked && unlabelled > 0 ? (
+            <p className="mt-3 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
+              {formatQuantity(unlabelled)} {unit} in stock have no label yet and cannot be sold until their
+              labels are registered.
+            </p>
+          ) : null}
+        </Panel>
+      ) : null}
+      {registering ? (
+        <RegisterLabelsDialog productId={productId} onClose={() => setRegistering(false)} />
+      ) : null}
       {batches.data?.data.length ? (
         <div className="mb-6 space-y-3">
           <h2 className="text-sm font-semibold">Batches</h2>
