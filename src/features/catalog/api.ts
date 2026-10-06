@@ -21,7 +21,7 @@ export const productsApi = createCrud<
   Product,
   ProductInput,
   Schemas['UpdateProduct'],
-  { id: string; name: string; salePrice?: string }
+  { id: string; name: string; salePrice?: string; trackSerials?: boolean }
 >('products', '/branch/products');
 export const bundlesApi = createCrud<Bundle, BundleInput>('bundles', '/branch/bundles');
 export const suppliersApi = createCrud<

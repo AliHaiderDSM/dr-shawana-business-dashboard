@@ -185,7 +185,8 @@ export function AppointmentFormSheet({
         : { patient: toPatientInput(patientFieldsSchema.parse(values.patient)) }),
       ...(values.recordNote || recordFiles.length ? { medicalRecord: { note: values.recordNote } } : {}),
       payments: values.payments.map((payment) => {
-        const proofIndex = payment.proof ? proofs.push(payment.proof) - 1 : undefined;
+        const proof = payment.proofs[0];
+        const proofIndex = proof ? proofs.push(proof) - 1 : undefined;
         return { ...toPaymentBody(payment), ...(proofIndex === undefined ? {} : { proofIndex }) };
       }),
     };

@@ -15,7 +15,7 @@ import { productsApi, suppliersApi } from '@/features/catalog/api';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatQuantity } from '@/lib/format';
+import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
   STOCK_DESTINATIONS,
   stockLineDetail,
@@ -32,6 +32,13 @@ import { StockEntrySheet } from './stock-entry-sheet';
 function sameSlip(a: StockDocument, b: StockDocument) {
   return a.createdAt === b.createdAt && a.createdBy === b.createdBy;
 }
+
+const dateOrDash = (value: string | null | undefined) =>
+  value ? (
+    <span className="whitespace-nowrap">{formatDate(value)}</span>
+  ) : (
+    <span className="text-muted-foreground">—</span>
+  );
 
 function isTransferIn(doc: StockDocument) {
   return 'transferOutId' in doc && Boolean(doc.transferOutId);
@@ -86,26 +93,77 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
       cell: ({ row }) => {
         const detail = stockLineDetail(row.original);
         if (!detail) return <span className="text-muted-foreground">—</span>;
-        const expiry = 'expiryDate' in row.original ? row.original.expiryDate : null;
         const batchId = 'batchId' in row.original ? row.original.batchId : null;
-        return (
-          <div>
-            {batchId ? (
-              <Link
-                to={`/inventory/batches/${batchId}`}
-                className="font-mono text-primary hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {detail}
-              </Link>
-            ) : (
-              detail
-            )}
-            {expiry ? <div className="text-xs text-muted-foreground">exp {formatDate(expiry)}</div> : null}
-          </div>
+        return batchId ? (
+          <Link
+            to={`/inventory/batches/${batchId}`}
+            className="font-mono text-primary hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {detail}
+          </Link>
+        ) : (
+          detail
         );
       },
     },
+    ...(kind === 'in'
+      ? ([
+          {
+            id: 'manufacturingDate',
+            header: 'Mfg date',
+            accessorFn: (r) => ('manufacturingDate' in r ? (r.manufacturingDate ?? '') : ''),
+            cell: ({ row }) =>
+              dateOrDash('manufacturingDate' in row.original ? row.original.manufacturingDate : null),
+          },
+          {
+            id: 'expiryDate',
+            header: 'Expiry',
+            accessorFn: (r) => ('expiryDate' in r ? (r.expiryDate ?? '') : ''),
+            cell: ({ row }) => dateOrDash('expiryDate' in row.original ? row.original.expiryDate : null),
+          },
+          {
+            id: 'unitCost',
+            header: 'Unit cost',
+            accessorFn: (r) => ('unitCost' in r ? (r.unitCost ?? '') : ''),
+            meta: { align: 'right' },
+            cell: ({ row }) =>
+              'unitCost' in row.original && row.original.unitCost ? (
+                formatMoney(row.original.unitCost)
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              ),
+          },
+        ] satisfies ColumnDef<StockDocument, unknown>[])
+      : ([
+          {
+            id: 'batches',
+            header: 'Batches',
+            accessorFn: (r) =>
+              'batches' in r
+                ? r.batches
+                    .map((b) => `${b.batchNo} ${b.qty}${b.expiryDate ? ` exp ${b.expiryDate}` : ''}`)
+                    .join('; ')
+                : '',
+            cell: ({ row }) => {
+              const used = 'batches' in row.original ? row.original.batches : [];
+              if (used.length === 0) return <span className="text-muted-foreground">—</span>;
+              return (
+                <div className="space-y-0.5 text-xs">
+                  {used.map((b) => (
+                    <div key={b.batchNo} className="whitespace-nowrap tabular-nums">
+                      <span className="font-mono font-medium">{b.batchNo}</span> · {formatQuantity(b.qty)}
+                      <span className="text-muted-foreground">
+                        {b.manufacturingDate ? ` · mfg ${formatDate(b.manufacturingDate)}` : ''}
+                        {b.expiryDate ? ` · exp ${formatDate(b.expiryDate)}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            },
+          },
+        ] satisfies ColumnDef<StockDocument, unknown>[])),
     {
       id: 'party',
       header: config.partyLabel,

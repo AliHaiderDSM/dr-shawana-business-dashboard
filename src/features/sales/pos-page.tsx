@@ -368,8 +368,8 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       autoDiscount: v.autoDiscount,
       ...(v.autoDiscount ? {} : { discountPercent: v.discountPercent || '0' }),
       payments: v.payments.map((p) => {
-        const proofIndex = p.proof ? proofs.push(p.proof) - 1 : undefined;
-        return { ...toPaymentBody(p), ...(proofIndex === undefined ? {} : { proofIndex }) };
+        const proofIndexes = p.method === 'online' ? p.proofs.map((file) => proofs.push(file) - 1) : [];
+        return { ...toPaymentBody(p), ...(proofIndexes.length ? { proofIndexes } : {}) };
       }),
     };
     create.mutate(
@@ -713,7 +713,11 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                         <X />
                       </Button>
                     </div>
-                    <PaymentFields prefix={`payments.${index}.`} accounts={accounts.data ?? []} />
+                    <PaymentFields
+                      prefix={`payments.${index}.`}
+                      accounts={accounts.data ?? []}
+                      maxProofs={5}
+                    />
                   </div>
                 ))}
                 {accounts.data ? (

@@ -2789,6 +2789,7 @@ export interface paths {
                                 salePrice: string;
                                 batchNo: string | null;
                                 barcode: string | null;
+                                trackSerials: boolean;
                             }[];
                         };
                     };
@@ -17909,7 +17910,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Add a payment (JSON, or multipart "data" + "proof"); totals are recomputed */
+        /** Add a payment (JSON, or multipart "data" + up to 5 "proof" files); totals are recomputed */
         post: {
             parameters: {
                 query?: {
@@ -17941,8 +17942,7 @@ export interface paths {
                     };
                     "multipart/form-data": {
                         data: string;
-                        /** Format: binary */
-                        proof?: string;
+                        proof?: string[];
                     };
                 };
             };
@@ -18180,7 +18180,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Upload or replace an online payment screenshot (multipart "proof") */
+        /** Add screenshots to an online payment (multipart "proof", up to 5 per payment) */
         post: {
             parameters: {
                 query?: {
@@ -18196,8 +18196,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "multipart/form-data": {
-                        /** Format: binary */
-                        proof: string;
+                        proof: string[];
                     };
                 };
             };
@@ -18266,6 +18265,187 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/sales/{id}/payments/{paymentId}/proofs/{proofId}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download link for one payment screenshot */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    paymentId: string;
+                    proofId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Signed URL */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                url: string;
+                                expiresIn: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/{id}/payments/{paymentId}/proofs/{proofId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove one payment screenshot */
+        delete: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    paymentId: string;
+                    proofId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated sale */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Sale"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/sales/{id}/payments/{paymentId}/proof-url": {
         parameters: {
             query?: never;
@@ -18273,7 +18453,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Download link for a payment screenshot */
+        /** Download link for the first payment screenshot */
         get: {
             parameters: {
                 query?: {
@@ -22306,6 +22486,16 @@ export interface components {
                 id: string;
                 name: string;
             } | null;
+            /** @description Batches this entry took stock from (FEFO, or the batches of the scanned labels) */
+            batches: {
+                batchNo: string;
+                /** Format: date */
+                manufacturingDate: string | null;
+                /** Format: date */
+                expiryDate: string | null;
+                /** @example 10.000 */
+                qty: string;
+            }[];
         };
         StockBalance: {
             /** Format: uuid */
@@ -24495,6 +24685,8 @@ export interface components {
             senderAccountTitle?: string | null;
             senderAccountNo?: string | null;
             proofIndex?: number;
+            /** @description Positions in "paymentProofs" of the screenshots for this payment */
+            proofIndexes?: number[];
         };
         CreateSale: {
             /** Format: uuid */
@@ -24610,6 +24802,12 @@ export interface components {
             senderAccountNo: string | null;
             hasProof: boolean;
             proofOriginalName: string | null;
+            proofs: {
+                /** Format: uuid */
+                id: string;
+                originalName: string;
+                contentType: string;
+            }[];
             /** Format: uuid */
             createdBy: string | null;
             /** Format: date-time */

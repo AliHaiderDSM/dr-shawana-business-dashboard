@@ -116,7 +116,8 @@ export function InlineQuantityField<T extends FieldValues>({
   placeholder = '0',
   decimals = 3,
   prefix = '',
-}: InlineFieldProps<T> & { decimals?: number; prefix?: string }) {
+  readOnly = false,
+}: InlineFieldProps<T> & { decimals?: number; prefix?: string; readOnly?: boolean }) {
   return (
     <FormField
       control={control}
@@ -131,6 +132,9 @@ export function InlineQuantityField<T extends FieldValues>({
               aria-label={label}
               {...field}
               value={field.value ?? ''}
+              readOnly={readOnly}
+              tabIndex={readOnly ? -1 : undefined}
+              className={readOnly ? 'bg-muted/50 text-foreground focus-visible:ring-0' : undefined}
             />
           </FormControl>
           <FormMessage />

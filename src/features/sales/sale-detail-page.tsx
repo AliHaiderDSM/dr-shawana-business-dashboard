@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, CheckCheck, FileImage, Pencil, Plus, Printer, Trash2, Undo2 } from 'lucide-react';
+import { ArrowLeft, CheckCheck, FileImage, Pencil, Plus, Printer, Trash2, Undo2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -38,6 +38,7 @@ import {
   salePaymentProofUrl,
   salesApi,
   useRemoveSalePayment,
+  useRemoveSalePaymentProof,
   useSaveSalePayment,
   type Sale,
   type SalePayment,
@@ -109,14 +110,18 @@ function SalePaymentSheet({
           senderBank: payment.senderBank,
           senderAccountTitle: payment.senderAccountTitle,
           senderAccountNo: payment.senderAccountNo,
-          proof: null,
+          proofs: [],
         }
       : emptyPayment(suggested),
   });
 
   const submit = form.handleSubmit((values) =>
     save.mutate(
-      { paymentId: payment?.id, body: toPaymentBody(values), proof: values.proof },
+      {
+        paymentId: payment?.id,
+        body: toPaymentBody(values),
+        proofs: values.method === 'online' ? values.proofs : [],
+      },
       {
         onSuccess: () => {
           toast.success(payment ? 'Payment updated' : 'Payment added');
@@ -139,7 +144,7 @@ function SalePaymentSheet({
         submitLabel={payment ? 'Save changes' : 'Add payment'}
       >
         <ReceivingAccountsNotice error={accounts.error} />
-        <PaymentFields accounts={accounts.data ?? []} />
+        <PaymentFields accounts={accounts.data ?? []} maxProofs={5 - (payment?.proofs.length ?? 0)} />
       </FormSheet>
     </Form>
   );
@@ -153,6 +158,7 @@ export function SaleDetailPage() {
   const sale = salesApi.useDetail(id);
   const returns = useReturns({ saleId: id, pageSize: 50 });
   const removePayment = useRemoveSalePayment(id);
+  const removeProof = useRemoveSalePaymentProof(id);
   const delivery = useDeliveryAction();
   const [payment, setPayment] = useState<SalePayment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -205,19 +211,48 @@ export function SaleDetailPage() {
     },
     {
       id: 'proof',
-      header: 'Screenshot',
-      accessorFn: (p) => (p.hasProof ? 'Yes' : ''),
+      header: 'Screenshots',
+      accessorFn: (p) => p.proofs.length,
       cell: ({ row }) =>
-        row.original.hasProof ? (
-          <Button
-            variant="link"
-            size="sm"
-            className="h-auto p-0"
-            onClick={() => void openSignedUrl(() => salePaymentProofUrl(s.id, row.original.id))}
-          >
-            <FileImage />
-            View
-          </Button>
+        row.original.proofs.length ? (
+          <div className="flex flex-col items-start gap-1">
+            {row.original.proofs.map((proof, i) => (
+              <div key={proof.id} className="flex items-center gap-1">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  title={proof.originalName}
+                  onClick={() =>
+                    void openSignedUrl(() => salePaymentProofUrl(s.id, row.original.id, proof.id))
+                  }
+                >
+                  <FileImage />
+                  Screenshot {i + 1}
+                </Button>
+                {editable ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-muted-foreground hover:text-destructive"
+                    aria-label={`Remove screenshot ${i + 1}`}
+                    disabled={removeProof.isPending}
+                    onClick={() =>
+                      removeProof.mutate(
+                        { paymentId: row.original.id, proofId: proof.id },
+                        {
+                          onSuccess: () => toast.success('Screenshot removed'),
+                          onError: (error) => toastError(error),
+                        },
+                      )
+                    }
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                ) : null}
+              </div>
+            ))}
+          </div>
         ) : (
           '—'
         ),

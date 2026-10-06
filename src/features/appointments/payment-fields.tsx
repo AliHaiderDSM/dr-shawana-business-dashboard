@@ -19,7 +19,7 @@ export const paymentSchema = z.object({
   senderBank: optionalText(150),
   senderAccountTitle: optionalText(150),
   senderAccountNo: optionalText(100),
-  proof: z.instanceof(File).nullable(),
+  proofs: z.array(z.instanceof(File)),
 });
 
 export type PaymentValues = z.input<typeof paymentSchema>;
@@ -33,7 +33,7 @@ export function emptyPayment(amount = ''): PaymentValues {
     senderBank: null,
     senderAccountTitle: null,
     senderAccountNo: null,
-    proof: null,
+    proofs: [],
   };
 }
 
@@ -74,14 +74,16 @@ export function ReceivingAccountsNotice({ error }: { error: unknown }) {
 export function PaymentFields({
   prefix = '',
   accounts,
+  maxProofs = 1,
 }: {
   prefix?: string;
   accounts: { id: string; accountName: string; type: string }[];
+  maxProofs?: number;
 }) {
   const form = useFormContext();
   const name = (field: keyof PaymentValues) => `${prefix}${field}`;
   const method = useWatch({ control: form.control, name: name('method') }) as PaymentValues['method'];
-  const proof = useWatch({ control: form.control, name: name('proof') }) as File | null;
+  const proofs = (useWatch({ control: form.control, name: name('proofs') }) ?? []) as File[];
 
   return (
     <div className="space-y-4">
@@ -118,12 +120,12 @@ export function PaymentFields({
           <FieldRow>
             <TextField control={form.control} name={name('senderAccountNo')} label="Sender account no" />
             <FormItem>
-              <FormLabel>Screenshot</FormLabel>
+              <FormLabel>{maxProofs > 1 ? 'Screenshots' : 'Screenshot'}</FormLabel>
               <FilePicker
-                files={proof ? [proof] : []}
-                maxFiles={1}
+                files={proofs}
+                maxFiles={maxProofs}
                 accept={IMAGE_TYPES}
-                onChange={(files) => form.setValue(name('proof'), files[0] ?? null)}
+                onChange={(files) => form.setValue(name('proofs'), files)}
               />
             </FormItem>
           </FieldRow>

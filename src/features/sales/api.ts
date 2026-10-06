@@ -84,24 +84,24 @@ export function useSaveSalePayment(saleId: string) {
     mutationFn: async ({
       paymentId,
       body,
-      proof,
+      proofs,
     }: {
       paymentId?: string;
       body: Schemas['UpdateSalePayment'] &
         Pick<Schemas['SalePaymentInput'], 'method' | 'amount' | 'accountSheetId'>;
-      proof: File | null;
+      proofs: File[];
     }) => {
       if (!paymentId)
-        return uploadForm<Sale>(`/branch/sales/${saleId}/payments`, jsonFormData(body, { proof }));
+        return uploadForm<Sale>(`/branch/sales/${saleId}/payments`, jsonFormData(body, { proof: proofs }));
       const updated = await unwrap(
         api.PATCH('/branch/sales/{id}/payments/{paymentId}', {
           params: { path: { id: saleId, paymentId } },
           body,
         }),
       );
-      if (!proof) return updated.data;
+      if (proofs.length === 0) return updated.data;
       const form = new FormData();
-      form.append('proof', proof);
+      for (const file of proofs) form.append('proof', file);
       return uploadForm<Sale>(`/branch/sales/${saleId}/payments/${paymentId}/proof`, form);
     },
     onSuccess: invalidate,
@@ -121,12 +121,25 @@ export function useRemoveSalePayment(saleId: string) {
   });
 }
 
-export function salePaymentProofUrl(saleId: string, paymentId: string) {
+export function salePaymentProofUrl(saleId: string, paymentId: string, proofId: string) {
   return unwrap(
-    api.GET('/branch/sales/{id}/payments/{paymentId}/proof-url', {
-      params: { path: { id: saleId, paymentId } },
+    api.GET('/branch/sales/{id}/payments/{paymentId}/proofs/{proofId}/url', {
+      params: { path: { id: saleId, paymentId, proofId } },
     }),
   ).then((r) => r.data);
+}
+
+export function useRemoveSalePaymentProof(saleId: string) {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ paymentId, proofId }: { paymentId: string; proofId: string }) =>
+      unwrap(
+        api.DELETE('/branch/sales/{id}/payments/{paymentId}/proofs/{proofId}', {
+          params: { path: { id: saleId, paymentId, proofId } },
+        }),
+      ),
+    onSuccess: invalidate,
+  });
 }
 
 export interface BillData {

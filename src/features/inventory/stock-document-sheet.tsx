@@ -136,30 +136,47 @@ function StockHint({ productId }: { productId: string }) {
   const row = balance.data?.data[0];
   if (!row) return <span className="text-xs text-muted-foreground">Checking stock…</span>;
   const expired = Number(row.expiredQuantity);
+  const list = batches.data?.data ?? [];
   return (
-    <div className="space-y-1 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
+    <div className="space-y-1.5 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
       <div>
         <span className="font-medium">
           {formatQuantity(row.quantity)} {row.unit} in stock
         </span>
         {expired > 0 ? <span className="text-destructive"> · {formatQuantity(expired)} expired</span> : null}
       </div>
-      {(batches.data?.data ?? []).length ? (
-        <div className="flex flex-wrap gap-1">
-          {(batches.data?.data ?? []).map((b) => (
-            <span
-              key={b.id}
-              className={cn(
-                'rounded border bg-background px-1.5 py-0.5 tabular-nums',
-                b.status === 'expired' && 'border-destructive/50 text-destructive',
-                b.status === 'expiring' && 'border-warning/60 text-warning-soft-foreground',
-              )}
-            >
-              <span className="font-mono">{b.batchNo}</span> · {formatQuantity(b.quantity)}
-              {b.expiryDate ? ` · exp ${formatDate(b.expiryDate, 'MMM yy')}` : ''}
-            </span>
-          ))}
-        </div>
+      {list.length ? (
+        <table className="w-full tabular-nums">
+          <thead className="text-muted-foreground">
+            <tr>
+              <th className="py-0.5 pr-2 text-left font-normal">Batch</th>
+              <th className="py-0.5 pr-2 text-left font-normal">Mfg</th>
+              <th className="py-0.5 pr-2 text-left font-normal">Expiry</th>
+              <th className="py-0.5 text-right font-normal">Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((b) => (
+              <tr
+                key={b.id}
+                className={cn(
+                  'border-t border-border/60',
+                  b.status === 'expired' && 'text-destructive',
+                  b.status === 'expiring' && 'text-warning-soft-foreground',
+                )}
+              >
+                <td className="py-0.5 pr-2 font-mono">{b.batchNo}</td>
+                <td className="py-0.5 pr-2 whitespace-nowrap">
+                  {b.manufacturingDate ? formatDate(b.manufacturingDate) : '—'}
+                </td>
+                <td className="py-0.5 pr-2 whitespace-nowrap">
+                  {b.expiryDate ? formatDate(b.expiryDate) : '—'}
+                </td>
+                <td className="py-0.5 text-right">{formatQuantity(b.quantity)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       ) : null}
     </div>
   );
@@ -248,6 +265,9 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
   const items = useWatch({ control: form.control, name: 'items' });
   const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
   const productOptions = (products.data ?? []).map((p) => ({ value: p.id, label: p.name }));
+  const tracked = new Set((products.data ?? []).filter((p) => p.trackSerials).map((p) => p.id));
+  const scansOnly = (productId: string | undefined) =>
+    !config.batched && Boolean(productId && tracked.has(productId));
 
   const addPiece = async (code: string) => {
     const piece = await findItemBySerial(code);
@@ -288,6 +308,10 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
         return;
       }
       const product = await findProductByBarcode(code);
+      if (scansOnly(product.id)) {
+        toast.error(`${product.name} carries DSM labels. Scan the label of each piece.`);
+        return;
+      }
       const current = form.getValues('items');
       const existing = current.findIndex((item) => item.productId === product.id);
       if (existing >= 0) {
@@ -403,7 +427,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
           description={
             config.batched
               ? 'Choose products by hand or scan the product barcode. Labelled products need "Print new labels" or the first label already on the packs.'
-              : 'Scan the DSM label of every labelled piece that goes out. Other products are chosen by hand.'
+              : 'Scan the DSM label of every labelled piece that goes out: its batch comes from the label and the qty counts the scans. For other products the batch that expires first goes out first.'
           }
         >
           <BarcodeScanInput onScan={addScanned} autoFocus />
@@ -441,6 +465,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                 control={form.control}
                 name={`items.${index}.qty`}
                 label="Qty"
+                readOnly={scansOnly(items[index]?.productId)}
               />,
               transfer ? null : config.detailField === 'destination' ? (
                 <DestinationInput
@@ -490,6 +515,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                       serials={items[index]?.serials ?? []}
                       onClear={() => {
                         form.setValue(`items.${index}.serials`, []);
+                        if (scansOnly(items[index]?.productId)) form.setValue(`items.${index}.qty`, '');
                       }}
                     />,
                   ]),

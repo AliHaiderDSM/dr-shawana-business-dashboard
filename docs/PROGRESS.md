@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Stock batch details and payment screenshots (2026-10-06)
+
+- **Stock out form:** each product row shows a batch table (batch, mfg, expiry, qty) with full dates. "Oct 26" read like a day of the month, so short dates are no longer used.
+  - For a labelled product, Qty is read-only and counts the scanned labels.
+  - Scanning the product barcode of a labelled product asks for its labels instead.
+- **Stock in list:** has Batch, Mfg date, Expiry and Unit cost columns.
+- **Stock out list:** has a Batches column showing the batches each entry took.
+- **Edit stock in:** can change mfg date, expiry and unit cost. New dates apply to the whole batch.
+- **POS and sale detail payments:** take up to 5 screenshots. Each screenshot opens and can be removed on its own.
+- **Appointments and returns:** still keep one screenshot. `PaymentFields` has `maxProofs` for this.
+
 ## Patient link, login redirect and Excel export (2026-10-06)
 
 - **Copy link** on an appointment asks the API for a signed token and copies `/p/{token}`.

@@ -40,8 +40,19 @@ const schema = z.object({
   date: z.string().min(1, 'Choose a date'),
   qty: positiveQuantity('Qty'),
   detail: z.string().trim().max(150, 'Use at most 150 characters'),
+  manufacturingDate: z.string(),
+  expiryDate: z.string(),
+  unitCost: z.string().regex(/^(d{1,10}(.d{1,2})?)?$/, 'Use a price'),
   note: optionalText(1000),
 });
+
+const withBatchRules = <S extends z.ZodType<Values>>(base: S) =>
+  base.superRefine((value, ctx) => {
+    if ((value.manufacturingDate || value.expiryDate) && !value.detail)
+      ctx.addIssue({ code: 'custom', path: ['detail'], message: 'Enter the batch number' });
+    if (value.manufacturingDate && value.expiryDate && value.expiryDate < value.manufacturingDate)
+      ctx.addIssue({ code: 'custom', path: ['expiryDate'], message: 'Before manufacturing' });
+  });
 
 type Values = z.input<typeof schema>;
 
@@ -64,9 +75,11 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
   const [attachments, setAttachments] = useState(entry?.attachments ?? []);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(
-      config.detailRequired
-        ? schema.extend({ detail: schema.shape.detail.min(1, `${config.detailLabel} is required`) })
-        : schema,
+      withBatchRules(
+        config.detailRequired
+          ? schema.extend({ detail: schema.shape.detail.min(1, `${config.detailLabel} is required`) })
+          : schema,
+      ),
     ),
     values: {
       partyId: entry ? ('supplierId' in entry ? entry.supplierId : entry.dispatcherId) : null,
@@ -74,6 +87,9 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
       date: entry?.date ?? '',
       qty: entry?.qty ?? '',
       detail: entry ? (stockLineDetail(entry) ?? '') : '',
+      manufacturingDate: entry && 'manufacturingDate' in entry ? (entry.manufacturingDate ?? '') : '',
+      expiryDate: entry && 'expiryDate' in entry ? (entry.expiryDate ?? '') : '',
+      unitCost: entry && 'unitCost' in entry ? (entry.unitCost ?? '') : '',
       note: entry?.note ?? null,
     },
   });
@@ -91,6 +107,13 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
           qty: values.qty,
           note: values.note,
           [config.detailField]: values.detail || null,
+          ...(config.batched
+            ? {
+                manufacturingDate: values.manufacturingDate || null,
+                expiryDate: values.expiryDate || null,
+                unitCost: values.unitCost || null,
+              }
+            : {}),
         },
       },
       {
@@ -165,6 +188,23 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
             )}
           />
         </FieldRow>
+        {config.batched ? (
+          <FieldRow>
+            <TextField
+              control={form.control}
+              name="manufacturingDate"
+              label="Manufacturing date"
+              type="date"
+            />
+            <TextField control={form.control} name="expiryDate" label="Expiry date" type="date" />
+          </FieldRow>
+        ) : null}
+        {config.batched ? <MoneyField control={form.control} name="unitCost" label="Unit cost" /> : null}
+        {config.batched ? (
+          <p className="text-xs text-muted-foreground">
+            New dates apply to the whole batch: every entry of it, and the branches it was sent to.
+          </p>
+        ) : null}
         <TextareaField control={form.control} name="note" label="Note" rows={2} />
         <FormSection title="Attachments">
           <AttachmentList

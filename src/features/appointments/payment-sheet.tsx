@@ -44,14 +44,14 @@ export function PaymentSheet({
           senderBank: payment.senderBank,
           senderAccountTitle: payment.senderAccountTitle,
           senderAccountNo: payment.senderAccountNo,
-          proof: null,
+          proofs: [],
         }
       : emptyPayment(suggestedAmount),
   });
 
   const submit = form.handleSubmit((values) =>
     save.mutate(
-      { paymentId: payment?.id, body: toPaymentBody(values), proof: values.proof },
+      { paymentId: payment?.id, body: toPaymentBody(values), proof: values.proofs[0] ?? null },
       {
         onSuccess: () => {
           toast.success(payment ? 'Payment updated' : 'Payment recorded');
