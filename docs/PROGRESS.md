@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Label layout, label not found, return detail (2026-10-06)
+
+- **Label 38×25 mm:** the product name sits on top, then the barcode. Below it, one line has the serial and `B: <batch>`, and the next line has `MFG mm/yyyy` and `EXP mm/yyyy`. Nothing is cut off any more.
+- **Label not found:** a wrong or unknown serial shows a "Label not found" card with the number searched, a box to try another label, and an All labels button. It no longer shows the generic error.
+- **Return detail:**
+  - Stat cards at the top: items returned, inspected, back in stock, refunded.
+  - Items sit in a table: product and label, qty, the batch it was sold from, and the outcome with when and why.
+  - "Back in stock" is the main action. The other outcomes sit in an "Other" menu.
+  - The side panels are "Customer and sale" (with a link to the sale) and "Refund".
+  - The page has a Print button.
+
 ## Stock status, stock out columns, sales totals row, delivery table (2026-10-06)
 
 - **Stock:** status shows Out of stock (red) at 0 or less, Low stock at or below the threshold, otherwise In stock.

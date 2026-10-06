@@ -33,7 +33,7 @@ function Barcode({ value }: { value: string }) {
       background: 'transparent',
     });
   }, [value]);
-  return <svg ref={ref} className="h-[9mm] w-full" preserveAspectRatio="none" aria-label={value} />;
+  return <svg ref={ref} className="h-[8mm] w-full" preserveAspectRatio="none" aria-label={value} />;
 }
 
 function Label({ item }: { item: InventoryItem }) {
@@ -41,13 +41,21 @@ function Label({ item }: { item: InventoryItem }) {
     <div className="flex h-[25mm] w-[38mm] break-inside-avoid flex-col justify-between overflow-hidden bg-background px-[2mm] py-[1.5mm] text-foreground print:break-after-page [.sheet_&]:print:break-after-auto">
       <div className="truncate text-[7pt] leading-tight font-semibold">{item.productName}</div>
       <Barcode value={item.serial} />
-      <div className="flex items-baseline justify-between gap-1 text-[6.5pt] leading-tight">
-        <span className="font-mono font-semibold">{item.serial}</span>
-        <span className="truncate text-muted-foreground">
-          {[item.batchNo, item.expiryDate ? `exp ${formatDate(item.expiryDate, 'MM/yy')}` : null]
-            .filter(Boolean)
-            .join(' · ')}
-        </span>
+      <div className="space-y-[0.3mm] text-[6pt] leading-none">
+        <div className="flex items-baseline justify-between gap-1">
+          <span className="shrink-0 font-mono text-[6.5pt] font-semibold">{item.serial}</span>
+          {item.batchNo ? <span className="min-w-0 truncate font-mono">B: {item.batchNo}</span> : null}
+        </div>
+        {item.manufacturingDate || item.expiryDate ? (
+          <div className="flex items-baseline justify-between gap-1 tabular-nums">
+            <span>
+              {item.manufacturingDate ? `MFG ${formatDate(item.manufacturingDate, 'MM/yyyy')}` : ''}
+            </span>
+            <span className="font-semibold">
+              {item.expiryDate ? `EXP ${formatDate(item.expiryDate, 'MM/yyyy')}` : ''}
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   );

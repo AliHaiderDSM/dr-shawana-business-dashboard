@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, Loader2, Printer, Tags } from 'lucide-react';
+import { ArrowLeft, Loader2, Printer, SearchX, Tags } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { productsApi } from '@/features/catalog/api';
 import { useListState } from '@/hooks/use-list-state';
+import { ApiError } from '@/lib/api/client';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
@@ -333,6 +334,50 @@ export function LabelsPage() {
   );
 }
 
+function LabelNotFound({ serial }: { serial: string }) {
+  const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
+  return (
+    <>
+      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground">
+        <Link to="/inventory/labels">
+          <ArrowLeft />
+          Labels
+        </Link>
+      </Button>
+      <div className="mx-auto mt-6 max-w-lg rounded-xl border bg-card px-6 py-10 text-center shadow-xs">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-warning-soft text-warning-soft-foreground">
+          <SearchX className="size-6" />
+        </div>
+        <h1 className="text-lg font-semibold">Label not found</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          No piece carries <span className="font-mono font-medium text-foreground">{serial}</span>
+          {isSuperAdmin ? ' in any branch.' : ' in this branch.'} Check the number on the sticker, or the
+          label was never registered.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <BarcodeScanInput
+            onScan={async (code) => {
+              await navigate(`/inventory/labels/${normalizeSerial(code)}`);
+            }}
+            className="w-72"
+            placeholder="Try another label, e.g. DSM-000060"
+            autoFocus
+          />
+        </div>
+        <div className="mt-4 flex justify-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/inventory/labels">
+              <Tags />
+              All labels
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function LabelDetailPage() {
   const { serial = '' } = useParams();
   const navigate = useNavigate();
@@ -344,6 +389,8 @@ export function LabelDetailPage() {
   });
   const item = query.data;
   if (query.isLoading) return <DetailSkeleton />;
+  if (query.error instanceof ApiError && (query.error.status === 404 || query.error.status === 400))
+    return <LabelNotFound serial={serial} />;
   if (query.error || !item) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
   return (

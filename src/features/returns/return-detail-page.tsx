@@ -2,12 +2,16 @@ import {
   ArrowLeft,
   Ban,
   CalendarX,
+  ChevronDown,
+  ClipboardCheck,
   Loader2,
   PackageCheck,
   Pencil,
   ShieldAlert,
   Trash2,
   Truck,
+  Undo2,
+  Wallet,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -15,6 +19,8 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { ErrorState } from '@/components/shared/error-state';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
+import { StatCard } from '@/components/shared/stat-card';
 import { DetailList, Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
@@ -27,9 +33,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useReceivingAccounts } from '@/features/appointments/payment-fields';
@@ -83,12 +96,6 @@ const OUTCOMES: { value: Outcome; label: string; description: string; icon: type
     icon: ShieldAlert,
   },
 ];
-
-function batchLine(batch: { batchNo: string | null; expiryDate: string | null; qty: string }) {
-  const name = batch.batchNo ? `Batch ${batch.batchNo}` : 'No batch';
-  const expiry = batch.expiryDate ? ` · exp ${formatDate(batch.expiryDate)}` : '';
-  return `${name}${expiry} · ${formatQuantity(batch.qty)}`;
-}
 
 const OUTCOME_TONES: Record<ReturnDisposition, Tone> = {
   pending: 'warning',
@@ -274,9 +281,19 @@ export function ReturnDetailPage() {
   const canRefund = can('returns.update') || can('returns.create');
   const untouched = r.items.every((i) => i.disposition === 'pending');
 
+  const decided = r.items.filter(
+    (i) => i.disposition !== 'pending' && i.disposition !== 'quarantined',
+  ).length;
+  const backInStock = r.items
+    .filter((i) => i.disposition === 'restocked')
+    .reduce((sum, i) => sum + Number(i.qty), 0);
+  const soldFrom = (productId: string) => (r.soldBatches ?? []).filter((b) => b.productId === productId);
+  const restockedInto = (productId: string) =>
+    (r.restockedBatches ?? []).filter((b) => b.productId === productId);
+
   return (
     <>
-      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground">
+      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground print:hidden">
         <Link to="/returns">
           <ArrowLeft />
           Returns
@@ -289,96 +306,155 @@ export function ReturnDetailPage() {
             <ReturnStatusBadge record={r} />
           </span>
         }
-        description={`${REASON_LABELS[r.reason]} · received ${formatDate(r.date)} · sale ${r.sale?.invoiceNo ?? ''}`}
+        description={`${REASON_LABELS[r.reason]} · received ${formatDate(r.date)}`}
         actions={
-          can('returns.delete') && untouched ? (
-            <Button variant="outline" onClick={() => setRemoving(true)}>
-              <Trash2 />
-              Delete
-            </Button>
-          ) : null
+          <>
+            <PrintButton />
+            {can('returns.delete') && untouched ? (
+              <Button variant="outline" onClick={() => setRemoving(true)}>
+                <Trash2 />
+                Delete
+              </Button>
+            ) : null}
+          </>
         }
       />
-
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Items returned" value={formatQuantity(r.totalQty)} icon={Undo2} />
+        <StatCard
+          label="Inspected"
+          value={`${decided} of ${r.items.length}`}
+          icon={ClipboardCheck}
+          tone={decided === r.items.length ? undefined : 'warning'}
+        />
+        <StatCard label="Back in stock" value={formatQuantity(backInStock)} icon={PackageCheck} />
+        <StatCard
+          label="Refunded"
+          value={Number(r.refundAmount) > 0 ? formatMoney(r.refundAmount) : 'None'}
+          icon={Wallet}
+        />
+      </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Panel
-          title="Inspection"
-          description="Decide each item once (quarantine can be decided later). Only “Back in stock” changes the stock, into the batch it was sold from."
+          title="Items and inspection"
+          description="Decide each item once (quarantine can be decided later). Only “Back in stock” adds stock, into the batch it was sold from."
           bodyClassName="p-0"
         >
-          <ul className="divide-y">
-            {r.items.map((item) => (
-              <li key={item.id} className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{item.product?.name}</span>
-                    <span className="text-sm text-muted-foreground tabular-nums">
-                      × {formatQuantity(item.qty)}
-                    </span>
-                    <StatusBadge tone={OUTCOME_TONES[item.disposition]}>
-                      {DISPOSITION_LABELS[item.disposition]}
-                    </StatusBadge>
-                  </div>
-                  {item.serial ? (
-                    <Link
-                      to={`/inventory/labels/${item.serial}`}
-                      className="font-mono text-xs text-primary hover:underline"
-                    >
-                      {item.serial}
-                    </Link>
-                  ) : null}
-                  {item.product?.barcode ? (
-                    <div className="font-mono text-xs text-muted-foreground">{item.product.barcode}</div>
-                  ) : null}
-                  {(r.soldBatches ?? [])
-                    .filter((b) => b.productId === item.productId)
-                    .map((b) => (
-                      <div key={`sold-${b.batchId ?? 'none'}`} className="text-xs text-muted-foreground">
-                        Sold from {batchLine(b)}
-                      </div>
-                    ))}
-                  {(r.restockedBatches ?? [])
-                    .filter((b) => b.productId === item.productId)
-                    .map((b) => (
-                      <div key={`back-${b.batchId ?? 'none'}`} className="text-xs text-success">
-                        Restocked into {batchLine(b)}
-                      </div>
-                    ))}
-                  {item.resolvedAt ? (
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {formatDateTime(item.resolvedAt)}
-                      {item.resolutionNote ? ` · ${item.resolutionNote}` : ''}
-                    </div>
-                  ) : null}
-                </div>
-                {(item.disposition === 'pending' || item.disposition === 'quarantined') && canInspect ? (
-                  <div className="flex flex-wrap gap-2">
-                    {OUTCOMES.filter(
-                      (outcome) => item.disposition === 'pending' || outcome.value !== 'quarantined',
-                    ).map((outcome) => (
-                      <Button
-                        key={outcome.value}
-                        size="sm"
-                        variant={outcome.value === 'restocked' ? 'default' : 'outline'}
-                        onClick={() => setInspecting({ item, outcome: outcome.value })}
-                      >
-                        <outcome.icon />
-                        {outcome.label}
-                      </Button>
-                    ))}
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50 [&>th]:h-10 [&>th]:text-xs [&>th]:font-medium [&>th]:text-muted-foreground">
+                <TableHead>Product</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead>Sold from batch</TableHead>
+                <TableHead>Outcome</TableHead>
+                <TableHead className="text-right print:hidden" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {r.items.map((item) => {
+                const open = item.disposition === 'pending' || item.disposition === 'quarantined';
+                const others = OUTCOMES.filter(
+                  (o) =>
+                    o.value !== 'restocked' && (item.disposition === 'pending' || o.value !== 'quarantined'),
+                );
+                return (
+                  <TableRow key={item.id} className="align-top hover:bg-transparent">
+                    <TableCell className="py-3">
+                      <div className="font-medium">{item.product?.name}</div>
+                      {item.serial ? (
+                        <Link
+                          to={`/inventory/labels/${item.serial}`}
+                          className="font-mono text-xs text-primary hover:underline"
+                        >
+                          {item.serial}
+                        </Link>
+                      ) : item.product?.barcode ? (
+                        <div className="font-mono text-xs text-muted-foreground">{item.product.barcode}</div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="py-3 text-right tabular-nums">{formatQuantity(item.qty)}</TableCell>
+                    <TableCell className="py-3 text-sm">
+                      {soldFrom(item.productId).length ? (
+                        soldFrom(item.productId).map((b) => (
+                          <div key={b.batchId ?? 'none'} className="whitespace-nowrap">
+                            <span className="font-mono">{b.batchNo ?? 'No batch'}</span>
+                            {b.expiryDate ? (
+                              <span className="text-muted-foreground"> · exp {formatDate(b.expiryDate)}</span>
+                            ) : null}
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <StatusBadge tone={OUTCOME_TONES[item.disposition]}>
+                        {DISPOSITION_LABELS[item.disposition]}
+                      </StatusBadge>
+                      {restockedInto(item.productId).map((b) => (
+                        <div
+                          key={b.batchId ?? 'none'}
+                          className="mt-1 text-xs whitespace-nowrap text-success"
+                        >
+                          Into batch <span className="font-mono">{b.batchNo ?? '—'}</span> ·{' '}
+                          {formatQuantity(b.qty)}
+                        </div>
+                      ))}
+                      {item.resolvedAt ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {formatDateTime(item.resolvedAt)}
+                        </div>
+                      ) : null}
+                      {item.resolutionNote ? (
+                        <div className="mt-0.5 max-w-56 text-xs whitespace-pre-wrap text-muted-foreground">
+                          {item.resolutionNote}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="py-3 text-right print:hidden">
+                      {open && canInspect ? (
+                        <div className="flex justify-end gap-1.5">
+                          <Button size="sm" onClick={() => setInspecting({ item, outcome: 'restocked' })}>
+                            <PackageCheck />
+                            Back in stock
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                Other
+                                <ChevronDown />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              {others.map((o) => (
+                                <DropdownMenuItem
+                                  key={o.value}
+                                  variant={
+                                    o.value === 'damaged' || o.value === 'expired' ? 'destructive' : 'default'
+                                  }
+                                  onSelect={() => setInspecting({ item, outcome: o.value })}
+                                >
+                                  <o.icon />
+                                  {o.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </Panel>
-
         <div className="space-y-6">
-          <Panel title="Details">
+          <Panel title="Customer and sale">
             <DetailList
               items={[
                 {
-                  label: 'Patient',
+                  label: 'Customer',
                   value: r.sale?.patient ? (
                     <Link to={`/patients/${r.sale.patient.id}`} className="text-primary hover:underline">
                       {r.sale.patient.name}
@@ -386,17 +462,37 @@ export function ReturnDetailPage() {
                   ) : null,
                 },
                 { label: 'Phone', value: r.sale?.patient?.phone },
-                { label: 'Sale', value: `${r.sale?.invoiceNo ?? ''} · ${formatDate(r.sale?.date)}` },
-                { label: 'Total qty', value: formatQuantity(r.totalQty) },
+                {
+                  label: 'Sale',
+                  value: r.sale ? (
+                    <Link to={`/sales/${r.sale.id}`} className="text-primary hover:underline">
+                      {r.sale.invoiceNo}
+                    </Link>
+                  ) : null,
+                },
+                { label: 'Sale date', value: formatDate(r.sale?.date) },
+                { label: 'Reason', value: REASON_LABELS[r.reason] },
+                { label: 'Received', value: formatDate(r.date) },
               ]}
             />
-            {r.note ? <p className="mt-4 border-t pt-4 text-sm whitespace-pre-wrap">{r.note}</p> : null}
+            {r.note ? (
+              <div className="mt-4 border-t pt-4">
+                <div className="text-xs text-muted-foreground">Note</div>
+                <p className="mt-1 text-sm whitespace-pre-wrap">{r.note}</p>
+              </div>
+            ) : null}
           </Panel>
           <Panel
             title="Refund"
+            description="Paid from an account. It lowers that account's balance."
             actions={
               canRefund ? (
-                <Button size="sm" variant="outline" onClick={() => setRefundOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="print:hidden"
+                  onClick={() => setRefundOpen(true)}
+                >
                   <Pencil />
                   {Number(r.refundAmount) > 0 ? 'Change' : 'Add refund'}
                 </Button>
@@ -406,7 +502,10 @@ export function ReturnDetailPage() {
             {Number(r.refundAmount) > 0 ? (
               <DetailList
                 items={[
-                  { label: 'Amount', value: formatMoney(r.refundAmount) },
+                  {
+                    label: 'Amount',
+                    value: <span className="font-semibold">{formatMoney(r.refundAmount)}</span>,
+                  },
                   { label: 'Method', value: r.refundMethod === 'online' ? 'Online' : 'Cash' },
                   { label: 'Paid from', value: r.refundAccountSheet?.accountName },
                   { label: 'Date', value: formatDate(r.refundDate) },
