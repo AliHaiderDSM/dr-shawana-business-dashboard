@@ -29,7 +29,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { ListState } from '@/hooks/use-list-state';
 import type { PageMeta } from '@/lib/api/types';
 import { formatCount } from '@/lib/format';
@@ -66,6 +74,7 @@ interface DataTableProps<T> {
   getRowId?: (row: T) => string;
   rowClassName?: (row: T) => string | undefined;
   footer?: ReactNode;
+  totalsRow?: Partial<Record<string, ReactNode>>;
 }
 
 const PAGE_SIZES = [10, 20, 50, 100];
@@ -95,6 +104,7 @@ export function DataTable<T>({
   getRowId,
   rowClassName,
   footer,
+  totalsRow,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -327,6 +337,27 @@ export function DataTable<T>({
               ))
             )}
           </TableBody>
+          {totalsRow && rows.length > 0 && !isLoading && !error ? (
+            <TableFooter>
+              <TableRow className="hover:bg-transparent">
+                {table.getVisibleLeafColumns().map((column) => {
+                  const columnMeta = column.columnDef.meta as ColumnMeta | undefined;
+                  return (
+                    <TableCell
+                      key={column.id}
+                      className={cn(
+                        'py-3 font-semibold',
+                        columnMeta?.align === 'right' && 'text-right tabular-nums',
+                        columnMeta?.align === 'center' && 'text-center',
+                      )}
+                    >
+                      {totalsRow[column.id] ?? null}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            </TableFooter>
+          ) : null}
         </Table>
       </div>
 

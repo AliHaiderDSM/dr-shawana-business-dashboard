@@ -24,7 +24,7 @@ export function LabelSearch() {
         onChange={(event) => setValue(event.target.value)}
         placeholder="Find label, e.g. DSM-000060"
         aria-label="Find a piece by its DSM label"
-        className="h-9 w-56 pl-8"
+        className="h-9 w-54 pl-8 placeholder:text-sm lg:w-64"
       />
     </form>
   );

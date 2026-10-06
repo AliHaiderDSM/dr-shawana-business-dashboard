@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Stock status, stock out columns, sales totals row, delivery table (2026-10-06)
+
+- **Stock:** status shows Out of stock (red) at 0 or less, Low stock at or below the threshold, otherwise In stock.
+- **Stock out list:** Batch, Mfg date, Expiry and Batch qty are separate columns. When an entry took several batches, they stack line by line.
+- **`DataTable` `totalsRow`:** an optional total row that lines up under the columns.
+  - The sales list uses it for the totals, instead of the separate card strip below the table.
+  - Sales has new Sub amount, Discount and Remaining columns.
+- **Delivery report:** on screen it is now a table: order no, date, type, customer, delivery address, products, total qty and a total row. Clicking a row opens the sale. The printed slips are unchanged.
+
 ## Reports, product trail, label search, print and line discounts (2026-10-06)
 
 - **Inventory report:** the Opening, Manufactured and Adjusted columns are gone, as in posSoft. Closing is now called Total stock. Each product name opens its full trail (`/stock/:id?from&to`).

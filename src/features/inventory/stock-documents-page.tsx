@@ -2,7 +2,7 @@ import { useCanReceiveStock } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -39,6 +39,36 @@ const dateOrDash = (value: string | null | undefined) =>
   ) : (
     <span className="text-muted-foreground">—</span>
   );
+
+type OutBatch = Extract<StockDocument, { batches: unknown }>['batches'][number];
+
+const batchesOf = (doc: StockDocument): OutBatch[] => ('batches' in doc ? doc.batches : []);
+
+function batchColumn(
+  id: string,
+  header: string,
+  render: (b: OutBatch) => ReactNode,
+  text: (b: OutBatch) => string,
+  align?: 'right',
+): ColumnDef<StockDocument, unknown> {
+  return {
+    id,
+    header,
+    accessorFn: (r) => batchesOf(r).map(text).join('; '),
+    meta: align ? { align } : undefined,
+    cell: ({ row }) => {
+      const used = batchesOf(row.original);
+      if (used.length === 0) return <span className="text-muted-foreground">—</span>;
+      return (
+        <div className="space-y-1 whitespace-nowrap tabular-nums">
+          {used.map((b) => (
+            <div key={b.batchNo}>{render(b)}</div>
+          ))}
+        </div>
+      );
+    },
+  };
+}
 
 function isTransferIn(doc: StockDocument) {
   return 'transferOutId' in doc && Boolean(doc.transferOutId);
@@ -136,33 +166,31 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
           },
         ] satisfies ColumnDef<StockDocument, unknown>[])
       : ([
-          {
-            id: 'batches',
-            header: 'Batches',
-            accessorFn: (r) =>
-              'batches' in r
-                ? r.batches
-                    .map((b) => `${b.batchNo} ${b.qty}${b.expiryDate ? ` exp ${b.expiryDate}` : ''}`)
-                    .join('; ')
-                : '',
-            cell: ({ row }) => {
-              const used = 'batches' in row.original ? row.original.batches : [];
-              if (used.length === 0) return <span className="text-muted-foreground">—</span>;
-              return (
-                <div className="space-y-0.5 text-xs">
-                  {used.map((b) => (
-                    <div key={b.batchNo} className="whitespace-nowrap tabular-nums">
-                      <span className="font-mono font-medium">{b.batchNo}</span> · {formatQuantity(b.qty)}
-                      <span className="text-muted-foreground">
-                        {b.manufacturingDate ? ` · mfg ${formatDate(b.manufacturingDate)}` : ''}
-                        {b.expiryDate ? ` · exp ${formatDate(b.expiryDate)}` : ''}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              );
-            },
-          },
+          batchColumn(
+            'outBatch',
+            'Batch',
+            (b) => <span className="font-mono font-medium">{b.batchNo}</span>,
+            (b) => b.batchNo,
+          ),
+          batchColumn(
+            'outMfg',
+            'Mfg date',
+            (b) => (b.manufacturingDate ? formatDate(b.manufacturingDate) : '—'),
+            (b) => b.manufacturingDate ?? '',
+          ),
+          batchColumn(
+            'outExpiry',
+            'Expiry',
+            (b) => (b.expiryDate ? formatDate(b.expiryDate) : '—'),
+            (b) => b.expiryDate ?? '',
+          ),
+          batchColumn(
+            'outBatchQty',
+            'Batch qty',
+            (b) => formatQuantity(b.qty),
+            (b) => b.qty,
+            'right',
+          ),
         ] satisfies ColumnDef<StockDocument, unknown>[])),
     {
       id: 'party',

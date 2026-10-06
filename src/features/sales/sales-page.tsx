@@ -16,7 +16,7 @@ import { useStaffList } from '@/features/staff/api';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
+import { formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
   DELIVERY_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -144,6 +144,25 @@ export function SalesPage() {
       cell: ({ row }) => formatQuantity(row.original.totalQty),
     },
     {
+      id: 'subtotal',
+      header: 'Sub amount',
+      accessorKey: 'subtotal',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatMoney(row.original.subtotal),
+    },
+    {
+      id: 'discount',
+      header: 'Discount',
+      accessorKey: 'discountAmount',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        Number(row.original.discountAmount) ? (
+          formatMoney(row.original.discountAmount)
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       id: 'total',
       header: 'Total',
       accessorKey: 'total',
@@ -156,6 +175,18 @@ export function SalesPage() {
       accessorKey: 'received',
       meta: { align: 'right' },
       cell: ({ row }) => formatMoney(row.original.received),
+    },
+    {
+      id: 'remaining',
+      header: 'Remaining',
+      accessorKey: 'remaining',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        Number(row.original.remaining) > 0 ? (
+          <span className="text-destructive">{formatMoney(row.original.remaining)}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       id: 'payment',
@@ -249,26 +280,18 @@ export function SalesPage() {
         exportFileName="sales"
         onRowClick={(s) => open(s)}
         emptyTitle="No sales yet"
-        footer={
-          totals ? (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1 border-t bg-muted/30 px-4 py-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
-              {(
-                [
-                  ['Qty', formatQuantity(totals.qty)],
-                  ['Sub amount', formatMoney(totals.subtotal)],
-                  ['Discount', formatMoney(totals.discount)],
-                  ['Total', formatMoney(totals.total)],
-                  ['Received', formatMoney(totals.received)],
-                  ['Remaining', formatMoney(totals.remaining)],
-                ] as const
-              ).map(([label, value]) => (
-                <div key={label}>
-                  <div className="text-xs text-muted-foreground">{label}</div>
-                  <div className="font-semibold tabular-nums">{value}</div>
-                </div>
-              ))}
-            </div>
-          ) : null
+        totalsRow={
+          totals
+            ? {
+                invoiceNo: `Total · ${formatCount(query.data?.meta.total ?? 0)} sales`,
+                qty: formatQuantity(totals.qty),
+                subtotal: formatMoney(totals.subtotal),
+                discount: formatMoney(totals.discount),
+                total: formatMoney(totals.total),
+                received: formatMoney(totals.received),
+                remaining: formatMoney(totals.remaining),
+              }
+            : undefined
         }
         toolbar={
           <>

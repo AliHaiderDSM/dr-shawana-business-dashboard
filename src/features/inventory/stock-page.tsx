@@ -26,6 +26,12 @@ export function StockPage() {
   const lowOnly = list.filters.lowStockOnly === 'true';
   const inWarehouse = useInWarehouse();
 
+  function stockStatus(row: { quantity: string; isLowStock: boolean }) {
+    if (Number(row.quantity) <= 0) return { label: 'Out of stock', tone: 'danger' as const };
+    if (row.isLowStock) return { label: 'Low stock', tone: 'warning' as const };
+    return { label: 'In stock', tone: 'success' as const };
+  }
+
   const columns: ColumnDef<StockBalance, unknown>[] = [
     {
       id: 'name',
@@ -53,7 +59,14 @@ export function StockPage() {
       accessorKey: 'quantity',
       meta: { align: 'right' },
       cell: ({ row }) => (
-        <span className={cn('font-semibold', row.original.isLowStock && 'text-warning-soft-foreground')}>
+        <span
+          className={cn(
+            'font-semibold',
+            Number(row.original.quantity) <= 0
+              ? 'text-destructive'
+              : row.original.isLowStock && 'text-warning-soft-foreground',
+          )}
+        >
           {formatQuantity(row.original.quantity)}{' '}
           <span className="font-normal text-muted-foreground">{row.original.unit}</span>
           {Number(row.original.expiredQuantity) > 0 ? (
@@ -74,13 +87,11 @@ export function StockPage() {
     {
       id: 'status',
       header: 'Status',
-      accessorFn: (r) => (r.isLowStock ? 'Low stock' : 'OK'),
-      cell: ({ row }) =>
-        row.original.isLowStock ? (
-          <StatusBadge tone="warning">Low stock</StatusBadge>
-        ) : (
-          <StatusBadge tone="success">In stock</StatusBadge>
-        ),
+      accessorFn: (r) => stockStatus(r).label,
+      cell: ({ row }) => {
+        const status = stockStatus(row.original);
+        return <StatusBadge tone={status.tone}>{status.label}</StatusBadge>;
+      },
     },
     {
       id: 'actions',

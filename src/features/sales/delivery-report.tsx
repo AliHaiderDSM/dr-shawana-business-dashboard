@@ -1,20 +1,91 @@
-import { Printer, Truck } from 'lucide-react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { Printer } from 'lucide-react';
 import { Fragment, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
-import { EmptyState } from '@/components/shared/empty-state';
-import { ErrorState } from '@/components/shared/error-state';
+import { DataTable } from '@/components/shared/data-table';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { PageHeader } from '@/components/shared/page-header';
 import { PrintPage } from '@/components/shared/print-document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { useDeliverySlips, type DeliverySlip, type DeliverySlipsQuery } from './api';
 
 const ALL = '__all__';
+
+const totalQty = (slip: DeliverySlip) => slip.items.reduce((sum, item) => sum + Number(item.qty), 0);
+
+const slipColumns: ColumnDef<DeliverySlip, unknown>[] = [
+  {
+    id: 'invoiceNo',
+    header: 'Order no.',
+    accessorKey: 'invoiceNo',
+    meta: { hideable: false },
+    cell: ({ row }) => <span className="font-medium">{row.original.invoiceNo}</span>,
+  },
+  {
+    id: 'date',
+    header: 'Date',
+    accessorKey: 'date',
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDate(row.original.date)}</span>,
+  },
+  {
+    id: 'type',
+    header: 'Type',
+    accessorFn: (r) => (r.saleType === 'online' ? 'Online' : 'Office'),
+    cell: ({ row }) => (
+      <StatusBadge tone={row.original.saleType === 'online' ? 'info' : 'neutral'}>
+        {row.original.saleType === 'online' ? 'Online' : 'Office'}
+      </StatusBadge>
+    ),
+  },
+  {
+    id: 'customer',
+    header: 'Customer',
+    accessorFn: (r) => `${r.to.name} ${r.to.phone}`,
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.original.to.name}</div>
+        <div className="text-xs text-muted-foreground tabular-nums">{row.original.to.phone}</div>
+      </div>
+    ),
+  },
+  {
+    id: 'address',
+    header: 'Delivery address',
+    accessorFn: (r) => [r.to.address, r.to.city].filter(Boolean).join(', '),
+    cell: ({ row }) => (
+      <span className="line-clamp-2 max-w-64">
+        {[row.original.to.address, row.original.to.city].filter(Boolean).join(', ') || '—'}
+      </span>
+    ),
+  },
+  {
+    id: 'products',
+    header: 'Products',
+    accessorFn: (r) => r.items.map((i) => `${i.name} x ${Number(i.qty)}`).join('; '),
+    cell: ({ row }) => (
+      <ul className="space-y-0.5">
+        {row.original.items.map((item, index) => (
+          <li key={index} className="whitespace-nowrap">
+            {item.name}{' '}
+            <span className="text-muted-foreground tabular-nums">× {formatQuantity(item.qty)}</span>
+          </li>
+        ))}
+      </ul>
+    ),
+  },
+  {
+    id: 'qty',
+    header: 'Total qty',
+    accessorFn: totalQty,
+    meta: { align: 'right' },
+    cell: ({ row }) => formatQuantity(totalQty(row.original)),
+  },
+];
 
 function readQuery(params: URLSearchParams): DeliverySlipsQuery {
   const number = (key: string) => (params.get(key) ? Number(params.get(key)) : undefined);
@@ -163,24 +234,23 @@ export function DeliveryReportPage() {
           />
         </div>
       </div>
-      {slips.isLoading ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-72" />
-          <Skeleton className="h-72" />
-        </div>
-      ) : slips.error ? (
-        <ErrorState error={slips.error} onRetry={() => void slips.refetch()} />
-      ) : rows.length === 0 ? (
-        <div className="rounded-xl border bg-card">
-          <EmptyState icon={Truck} title="No orders" description="No sales match these filters." />
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {rows.map((slip) => (
-            <Slip key={slip.saleId} slip={slip} />
-          ))}
-        </div>
-      )}
+      <DataTable
+        columns={slipColumns}
+        data={slips.data ? rows : undefined}
+        isLoading={slips.isLoading}
+        isFetching={slips.isFetching}
+        error={slips.error}
+        onRetry={() => void slips.refetch()}
+        getRowId={(r) => r.saleId}
+        onRowClick={(r) => void navigate(`/sales/${r.saleId}`)}
+        exportFileName="delivery-report"
+        emptyTitle="No orders"
+        emptyDescription="No sales match these filters."
+        totalsRow={{
+          invoiceNo: `Total · ${rows.length} orders`,
+          qty: formatQuantity(rows.reduce((sum, r) => sum + totalQty(r), 0)),
+        }}
+      />
     </>
   );
 }
