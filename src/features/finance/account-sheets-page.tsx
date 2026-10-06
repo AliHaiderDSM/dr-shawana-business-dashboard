@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DataTable } from '@/components/shared/data-table';
-import { FieldRow, MoneyField, SelectField, TextField } from '@/components/shared/form-fields';
+import { FieldRow, SelectField, TextField } from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
@@ -18,8 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useListState } from '@/hooks/use-list-state';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatMoney, isoDate } from '@/lib/format';
-import { moneyString, requiredText } from '@/lib/validation';
+import { formatDate, isoDate } from '@/lib/format';
+import { requiredText } from '@/lib/validation';
 import { accountSheetsApi, banksApi, type AccountSheet } from './api';
 
 const schema = z
@@ -28,7 +28,6 @@ const schema = z
     accountCode: requiredText(100, 'Account number'),
     type: z.enum(['cash', 'bank']),
     bankId: z.string().nullable(),
-    openingBalance: moneyString('Opening balance'),
     date: z.string().min(1, 'Choose a date'),
   })
   .refine((v) => v.type === 'cash' || Boolean(v.bankId), { path: ['bankId'], message: 'Choose the bank' });
@@ -53,7 +52,6 @@ function AccountSheetSheet({
       accountCode: sheet?.accountCode ?? '',
       type: (sheet?.type as 'cash' | 'bank') ?? 'cash',
       bankId: sheet?.bankId ?? null,
-      openingBalance: sheet?.openingBalance ?? '0',
       date: sheet?.date ?? isoDate(),
     },
   });
@@ -112,10 +110,7 @@ function AccountSheetSheet({
             options={(banks.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
           />
         ) : null}
-        <FieldRow>
-          <MoneyField control={form.control} name="openingBalance" label="Opening balance" required />
-          <TextField control={form.control} name="date" label="Opening date" type="date" required />
-        </FieldRow>
+        <TextField control={form.control} name="date" label="Date" type="date" required />
       </FormSheet>
     </Form>
   );
@@ -161,13 +156,6 @@ export function AccountSheetsPage() {
       header: 'Type',
       accessorKey: 'type',
       cell: ({ row }) => <StatusBadge status={row.original.type} dot={false} />,
-    },
-    {
-      id: 'openingBalance',
-      header: 'Opening balance',
-      accessorKey: 'openingBalance',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.openingBalance),
     },
     {
       id: 'date',

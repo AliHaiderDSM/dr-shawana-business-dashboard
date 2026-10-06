@@ -22108,8 +22108,6 @@ export interface components {
             type: "cash" | "bank";
             /** Format: uuid */
             bankId?: string | null;
-            /** @example 1250.50 */
-            openingBalance?: string;
             /**
              * Format: date
              * @example 2026-09-30
@@ -22119,8 +22117,6 @@ export interface components {
         UpdateAccountSheet: {
             accountName?: string;
             accountCode?: string;
-            /** @example 1250.50 */
-            openingBalance?: string;
         };
         AccountSheet: {
             /** Format: uuid */
@@ -22138,8 +22134,6 @@ export interface components {
                 id: string;
                 name: string;
             } | null;
-            /** @example 1250.50 */
-            openingBalance: string;
             /** Format: date */
             date: string;
             /** Format: date-time */
