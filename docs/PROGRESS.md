@@ -12,6 +12,29 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment row menu matches posSoft (2026-10-06)
+
+The row menu on `/appointments` now has the posSoft options, in posSoft order:
+
+| Option | What it does | Shown when the user can |
+| --- | --- | --- |
+| Add prescription | Opens `/prescriptions/new?patientId=&doctorId=`. The builder fills in that patient and doctor. | `prescriptions.create` |
+| View | Opens the appointment. | always |
+| Copy link | Copies the patient history link (`/patient-history?patientId=`). | `consultations.view` |
+| Remarks 2.0 | Opens the consultation workspace. | `consultations.view` |
+| Remarks | Opens a dialog with status, remark and screenshots. It uses `POST /appointments/{id}/status`. | `appointments.update` |
+| BHRT | Opens a sheet with the patient's BHRT history and status form. | `consultations.view` |
+| Medical record | Opens a sheet with the patient's medical and imaging records and an upload button. | `consultations.view` |
+| Print | Opens the printed appointment. | always |
+| Edit | Edits the appointment. | `appointments.update` |
+| Delete | Deletes the appointment. | `appointments.delete` |
+
+Complete and Cancel are kept as before.
+
+In BHRT and Medical record, only users with `consultations.create` or `consultations.update` can add entries.
+
+Saving a BHRT status now also refreshes the appointment list, so the BHRT column updates.
+
 ## D0
 
 - Vite + React + TypeScript strict, Tailwind v4, shadcn/ui, ESLint, Prettier, and zod-validated env.

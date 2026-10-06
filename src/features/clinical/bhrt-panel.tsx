@@ -60,7 +60,7 @@ export function BhrtPanel({
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className={canEdit ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]' : 'grid gap-6'}>
       <Panel
         title="BHRT history"
         description="The newest entry sets the patient's BHRT status."

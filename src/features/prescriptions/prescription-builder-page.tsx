@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useConsultation } from '@/features/consultations/api';
 import { doctorsApi, useMyDoctorProfile } from '@/features/doctors/api';
-import { usePatientSearch } from '@/features/patients/api';
+import { patientsApi, usePatientSearch } from '@/features/patients/api';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isoDate } from '@/lib/format';
@@ -161,6 +161,11 @@ function Builder({
   const consultation = useConsultation(consultationId ?? prescription?.consultationId);
   const doctors = doctorsApi.useOptions();
   const myDoctor = useMyDoctorProfile(isDoctor);
+  const [params] = useSearchParams();
+  const preset = !prescription && !consultationId;
+  const presetPatientId = preset ? params.get('patientId') : null;
+  const presetDoctorId = preset ? params.get('doctorId') : null;
+  const presetPatient = patientsApi.useDetail(presetPatientId ?? undefined);
   const [patientSearch, setPatientSearch] = useState('');
   const patients = usePatientSearch(patientSearch, !prescription && !consultationId);
   const [patientLabel, setPatientLabel] = useState<string | null>(
@@ -172,8 +177,9 @@ function Builder({
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     values: {
-      patientId: prescription?.patientId ?? consultation.data?.patientId ?? '',
-      doctorId: prescription?.doctorId ?? consultation.data?.doctorId ?? myDoctor.data?.id ?? '',
+      patientId: prescription?.patientId ?? consultation.data?.patientId ?? presetPatientId ?? '',
+      doctorId:
+        prescription?.doctorId ?? consultation.data?.doctorId ?? myDoctor.data?.id ?? presetDoctorId ?? '',
       date: prescription?.date ?? isoDate(),
       diagnosis: prescription?.diagnosis ?? '',
       followupDate: prescription?.followupDate ?? '',
@@ -277,7 +283,12 @@ function Builder({
                             field.onChange(value ?? '');
                             setPatientLabel(option ? `${option.label} · ${option.hint ?? ''}` : null);
                           }}
-                          selectedLabel={patientLabel}
+                          selectedLabel={
+                            patientLabel ??
+                            (presetPatient.data && field.value === presetPatient.data.id
+                              ? `${presetPatient.data.name} · ${presetPatient.data.phone}`
+                              : null)
+                          }
                           onSearchChange={setPatientSearch}
                           placeholder="Search by phone or name"
                           options={(patients.data ?? []).map((p) => ({

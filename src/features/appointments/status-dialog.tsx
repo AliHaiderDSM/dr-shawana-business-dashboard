@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toastError } from '@/lib/api/errors';
 import { STATUS_LABELS, useChangeAppointmentStatus, type Appointment, type AppointmentStatus } from './api';
@@ -19,7 +20,10 @@ import { STATUS_LABELS, useChangeAppointmentStatus, type Appointment, type Appoi
 export interface StatusChange {
   appointment: Pick<Appointment, 'id' | 'appointmentNo' | 'remark'>;
   status: AppointmentStatus;
+  remarks?: boolean;
 }
+
+const STATUSES: AppointmentStatus[] = ['booked', 'completed', 'cancelled'];
 
 const COPY: Record<AppointmentStatus, { title: string; description: string; action: string }> = {
   completed: {
@@ -39,26 +43,40 @@ const COPY: Record<AppointmentStatus, { title: string; description: string; acti
   },
 };
 
+const REMARKS_COPY = {
+  title: 'Remarks',
+  description: 'Set the status, write the remark and attach screenshots.',
+  action: 'Save remark',
+};
+
 export function StatusDialog({ change, onClose }: { change: StatusChange | null; onClose: () => void }) {
   if (!change) return null;
   return (
-    <StatusDialogBody key={`${change.appointment.id}-${change.status}`} change={change} onClose={onClose} />
+    <StatusDialogBody
+      key={`${change.appointment.id}-${change.status}-${change.remarks ? 'remarks' : 'status'}`}
+      change={change}
+      onClose={onClose}
+    />
   );
 }
 
 function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: () => void }) {
   const mutation = useChangeAppointmentStatus(change.appointment.id);
+  const [status, setStatus] = useState<AppointmentStatus>(change.status);
   const [remark, setRemark] = useState(change.appointment.remark ?? '');
   const [files, setFiles] = useState<File[]>([]);
-  const copy = COPY[change.status];
+  const copy = change.remarks ? REMARKS_COPY : COPY[change.status];
+  const withFiles = change.remarks || status === 'completed';
 
   const submit = () =>
     mutation.mutate(
-      { status: change.status, remark: remark.trim() || null, files },
+      { status, remark: remark.trim() || null, files: withFiles ? files : [] },
       {
         onSuccess: () => {
           toast.success(
-            `Appointment #${change.appointment.appointmentNo} ${STATUS_LABELS[change.status].toLowerCase()}`,
+            change.remarks
+              ? `Remark saved for appointment #${change.appointment.appointmentNo}`
+              : `Appointment #${change.appointment.appointmentNo} ${STATUS_LABELS[status].toLowerCase()}`,
           );
           onClose();
         },
@@ -76,6 +94,23 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
           <DialogDescription>{copy.description}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {change.remarks ? (
+            <div className="space-y-2">
+              <Label htmlFor="status-value">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as AppointmentStatus)}>
+                <SelectTrigger id="status-value" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUS_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="status-remark">Remark</Label>
             <Textarea
@@ -85,7 +120,7 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
               onChange={(e) => setRemark(e.target.value)}
             />
           </div>
-          {change.status === 'completed' ? (
+          {withFiles ? (
             <div className="space-y-2">
               <Label>Remark screenshots</Label>
               <FilePicker files={files} onChange={setFiles} />
@@ -97,7 +132,7 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
             Close
           </Button>
           <Button
-            variant={change.status === 'cancelled' ? 'destructive' : 'default'}
+            variant={!change.remarks && status === 'cancelled' ? 'destructive' : 'default'}
             onClick={submit}
             disabled={mutation.isPending}
           >

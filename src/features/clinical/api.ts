@@ -125,6 +125,7 @@ export function useAddBhrt(patientId: string) {
       await invalidate();
       await queryClient.invalidateQueries({ queryKey: ['patients'] });
       await queryClient.invalidateQueries({ queryKey: ['consultations'] });
+      await queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
   });
 }

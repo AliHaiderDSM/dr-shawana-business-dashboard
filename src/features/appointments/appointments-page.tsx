@@ -4,8 +4,13 @@ import {
   CalendarPlus,
   CalendarX,
   Eye,
+  FilePlus2,
+  FileText,
+  HeartPulse,
   LayoutList,
   CalendarDays,
+  Link2,
+  MessageSquareText,
   Pencil,
   Printer,
   Stethoscope,
@@ -40,6 +45,7 @@ import {
 } from './api';
 import { AppointmentCalendar } from './appointment-calendar';
 import { AppointmentFormSheet } from './appointment-form-sheet';
+import { ClinicalSheet, type ClinicalTarget } from './clinical-sheet';
 import { StatusDialog, type StatusChange } from './status-dialog';
 
 const CALENDAR_KEYS = new Set(['view', 'span', 'day']);
@@ -65,7 +71,16 @@ export function AppointmentsPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChange | null>(null);
   const [removing, setRemoving] = useState<Appointment | null>(null);
+  const [clinical, setClinical] = useState<ClinicalTarget | null>(null);
   const canConsult = can('consultations.view');
+
+  const copyLink = (a: Appointment) => {
+    const link = `${window.location.origin}/patient-history?patientId=${a.patientId}`;
+    navigator.clipboard.writeText(link).then(
+      () => toast.success('Patient history link copied'),
+      () => toast.error('Could not copy the link'),
+    );
+  };
 
   const openBooking = () => {
     setEditing(null);
@@ -167,15 +182,41 @@ export function AppointmentsPage() {
         return (
           <RowActions
             actions={[
-              { label: 'View', icon: Eye, onSelect: () => void navigate(`/appointments/${a.id}`) },
               {
-                label: 'Start consultation',
+                label: 'Add prescription',
+                icon: FilePlus2,
+                hidden: !can('prescriptions.create'),
+                onSelect: () =>
+                  void navigate(`/prescriptions/new?patientId=${a.patientId}&doctorId=${a.doctorId}`),
+              },
+              { label: 'View', icon: Eye, onSelect: () => void navigate(`/appointments/${a.id}`) },
+              { label: 'Copy link', icon: Link2, hidden: !canConsult, onSelect: () => copyLink(a) },
+              {
+                label: 'Remarks 2.0',
                 icon: Stethoscope,
                 hidden: !canConsult || a.status === 'cancelled',
                 onSelect: () => void navigate(`/appointments/${a.id}/consultation`),
               },
               {
-                label: 'Print slip',
+                label: 'Remarks',
+                icon: MessageSquareText,
+                hidden: !can('appointments.update'),
+                onSelect: () => setStatusChange({ appointment: a, status: a.status, remarks: true }),
+              },
+              {
+                label: 'BHRT',
+                icon: HeartPulse,
+                hidden: !canConsult,
+                onSelect: () => setClinical({ appointment: a, view: 'bhrt' }),
+              },
+              {
+                label: 'Medical record',
+                icon: FileText,
+                hidden: !canConsult,
+                onSelect: () => setClinical({ appointment: a, view: 'records' }),
+              },
+              {
+                label: 'Print',
                 icon: Printer,
                 onSelect: () => void navigate(`/print/appointment/${a.id}`),
               },
@@ -335,6 +376,7 @@ export function AppointmentsPage() {
         onOpenChange={closeBooking}
       />
       <StatusDialog change={statusChange} onClose={() => setStatusChange(null)} />
+      <ClinicalSheet target={clinical} onClose={() => setClinical(null)} />
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}
