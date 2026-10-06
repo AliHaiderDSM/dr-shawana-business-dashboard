@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, AUTH_EXPIRED_EVENT, unwrap } from '@/lib/api/client';
 import type { Me } from '@/lib/api/types';
-import { ALL_BRANCHES, branchStore, sessionStore } from './session';
+import { ALL_BRANCHES, branchStore, lastUserStore, sessionStore } from './session';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
 
@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const me = hasSession ? (meQuery.data ?? null) : null;
+  if (me) lastUserStore.set(me.profile.id);
   const isSuperAdmin = me?.role === 'super_admin';
   branchStore.setSuperAdmin(isSuperAdmin);
   const branchOptions = useQuery({

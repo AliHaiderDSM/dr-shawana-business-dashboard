@@ -186,6 +186,13 @@ export function timeLabel(value: string) {
   return `${((h + 11) % 12) + 1}:${minutes} ${suffix}`;
 }
 
+export async function patientLink(appointmentId: string) {
+  const { data } = await unwrap(
+    api.GET('/branch/appointments/{id}/patient-link', { params: { path: { id: appointmentId } } }),
+  );
+  return `${window.location.origin}/p/${data.token}`;
+}
+
 export function timeRange(from: string, to: string) {
   return `${timeLabel(from)} – ${timeLabel(to)}`;
 }

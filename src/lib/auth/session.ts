@@ -1,5 +1,6 @@
 const SESSION_KEY = 'dsm.session';
 const BRANCH_KEY = 'dsm.branch';
+const LAST_USER_KEY = 'dsm.lastUser';
 
 export interface StoredSession {
   accessToken: string;
@@ -34,6 +35,11 @@ export const sessionStore = {
     write(SESSION_KEY, null);
     write(BRANCH_KEY, null);
   },
+};
+
+export const lastUserStore = {
+  get: () => read<string>(LAST_USER_KEY),
+  set: (userId: string) => write(LAST_USER_KEY, userId),
 };
 
 let superAdmin = false;

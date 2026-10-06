@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarCheck2, Eye, EyeOff, Loader2, ShieldCheck, Stethoscope } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate, useNavigate, useSearchParams } from 'react-router';
+import { Navigate, useSearchParams } from 'react-router';
 import { z } from 'zod';
 import { BrandMark } from '@/components/layout/sidebar';
 import { errorMessage } from '@/components/shared/error-state';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth/auth-context';
+import { lastUserStore } from '@/lib/auth/session';
 
 const schema = z.object({
   identifier: z.string().trim().min(3, 'Enter your username or email'),
@@ -33,9 +34,9 @@ const highlights = [
 ];
 
 export function LoginPage() {
-  const { status, login } = useAuth();
-  const navigate = useNavigate();
+  const { status, me, login } = useAuth();
   const [params] = useSearchParams();
+  const [previousUser] = useState(() => lastUserStore.get());
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<Values>({
@@ -43,13 +44,16 @@ export function LoginPage() {
     defaultValues: { identifier: '', password: '' },
   });
 
-  if (status === 'authenticated') return <Navigate to={params.get('redirect') ?? '/'} replace />;
+  if (status === 'authenticated') {
+    const redirect = params.get('redirect');
+    const sameUser = me !== null && me.profile.id === previousUser;
+    return <Navigate to={redirect && sameUser ? redirect : '/'} replace />;
+  }
 
   async function onSubmit(values: Values) {
     setFormError(null);
     try {
       await login(values.identifier, values.password);
-      navigate(params.get('redirect') ?? '/', { replace: true });
     } catch (error) {
       setFormError(errorMessage(error));
     }

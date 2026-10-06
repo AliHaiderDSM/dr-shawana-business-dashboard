@@ -19,7 +19,7 @@ import { formatDate, titleCase } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   displayValue,
-  downloadReportCsv,
+  downloadReportExcel,
   isNumeric,
   useReport,
   useSourceOptions,
@@ -186,13 +186,13 @@ function ReportBody({ report }: { report: ReportDef }) {
               disabled={downloading}
               onClick={() => {
                 setDownloading(true);
-                downloadReportCsv(report.key, query)
+                downloadReportExcel(report.key, data.data?.title ?? report.title, query)
                   .catch(toastError)
                   .finally(() => setDownloading(false));
               }}
             >
               <Download />
-              CSV
+              Excel
             </Button>
             <Button
               variant="outline"

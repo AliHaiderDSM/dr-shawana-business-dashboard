@@ -18,7 +18,7 @@ export function ReportsPage() {
         description={
           isSuperAdmin
             ? 'Every branch together, with charts and a per-branch breakdown. Each report has a Branch filter for one branch.'
-            : 'Filter, export to CSV or print any report.'
+            : 'Filter, export to Excel or print any report.'
         }
       />
       {available.length === 0 ? (

@@ -12,6 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient link, login redirect and Excel export (2026-10-06)
+
+- **Copy link** on an appointment asks the API for a signed token and copies `/p/{token}`.
+  - The link is valid for 30 days.
+  - `/p/:token` sits outside `RequireAuth`. It shows the patient's history on a page that works on a phone and can be printed. It fetches with plain `fetch`, so no session or branch is attached.
+- **Login redirect:** `?redirect=` is followed only when the same user signs back in (`dsm.lastUser`). Any other user lands on the dashboard. This fixes "You don't have access" after a super admin logs out on an admin page and a branch admin logs in.
+- **Export:**
+  - Table **Export** downloads a real `.xlsx` file. It has a bold, frozen header row and sized columns.
+  - Numbers stay numbers. Values with a leading zero, such as phone numbers, stay text.
+  - Report **Excel** fetches the report CSV and converts it to `.xlsx`, with the report title as the sheet name.
+  - The writer is `lib/xlsx.ts`. It adds no dependency.
+
 ## Appointment row menu matches posSoft (2026-10-06)
 
 The row menu on `/appointments` now has the posSoft options, in posSoft order:

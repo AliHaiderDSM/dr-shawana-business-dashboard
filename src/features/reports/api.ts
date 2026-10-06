@@ -3,7 +3,8 @@ import { categoriesApi, productsApi, suppliersApi } from '@/features/catalog/api
 import { doctorsApi } from '@/features/doctors/api';
 import { accountSheetsApi, expenseCategoriesApi } from '@/features/finance/api';
 import { useStaffList } from '@/features/staff/api';
-import { api, downloadFile, unwrap } from '@/lib/api/client';
+import { api, fetchFile, unwrap } from '@/lib/api/client';
+import { downloadXlsx, parseCsv } from '@/lib/xlsx';
 import type { paths } from '@/lib/api/schema';
 import type { Schemas } from '@/lib/api/types';
 import type { OptionSource } from './reports-config';
@@ -35,8 +36,9 @@ export function useReport(key: string, query: Record<string, string>) {
   });
 }
 
-export function downloadReportCsv(key: string, query: Record<string, string>) {
-  return downloadFile(reportPath(key), { ...query, format: 'csv' }, `${key}.csv`);
+export async function downloadReportExcel(key: string, title: string, query: Record<string, string>) {
+  const blob = await fetchFile(reportPath(key), { ...query, format: 'csv' });
+  downloadXlsx(parseCsv(await blob.text()), key, title);
 }
 
 export function useSourceOptions(source: OptionSource, branchId?: string) {

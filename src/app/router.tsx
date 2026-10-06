@@ -1,4 +1,4 @@
-import { Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Outlet, type RouteObject } from 'react-router';
 import {
   AppShell,
@@ -17,6 +17,10 @@ function guard(element: ReactNode, anyOf: string[], scope: ScreenRoute['scope'])
   const inner = scope === 'branch' ? <RequireBranch>{element}</RequireBranch> : element;
   return <RequirePermission anyOf={anyOf}>{inner}</RequirePermission>;
 }
+
+const PublicHistoryPage = lazy(() =>
+  import('@/features/public/public-history-page').then((m) => ({ default: m.PublicHistoryPage })),
+);
 
 const toRoute = (route: ScreenRoute): RouteObject => ({
   path: route.path,
@@ -39,6 +43,14 @@ const childRoutes: RouteObject[] = [
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  {
+    path: '/p/:token',
+    element: (
+      <Suspense fallback={<FullPageLoader />}>
+        <PublicHistoryPage />
+      </Suspense>
+    ),
+  },
   {
     path: '/print',
     element: (

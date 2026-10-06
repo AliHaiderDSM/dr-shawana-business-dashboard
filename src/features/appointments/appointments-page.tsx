@@ -37,6 +37,7 @@ import { formatDate, formatMoney } from '@/lib/format';
 import {
   appointmentsApi,
   MODE_LABELS,
+  patientLink,
   STATUS_LABELS,
   timeRange,
   useAppointmentList,
@@ -75,11 +76,12 @@ export function AppointmentsPage() {
   const canConsult = can('consultations.view');
 
   const copyLink = (a: Appointment) => {
-    const link = `${window.location.origin}/patient-history?patientId=${a.patientId}`;
-    navigator.clipboard.writeText(link).then(
-      () => toast.success('Patient history link copied'),
-      () => toast.error('Could not copy the link'),
-    );
+    patientLink(a.id)
+      .then((link) => navigator.clipboard.writeText(link))
+      .then(
+        () => toast.success('Patient link copied. It works without login for 30 days.'),
+        (error: unknown) => toastError(error),
+      );
   };
 
   const openBooking = () => {

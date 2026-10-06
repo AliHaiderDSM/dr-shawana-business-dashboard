@@ -34,6 +34,7 @@ import type { ListState } from '@/hooks/use-list-state';
 import type { PageMeta } from '@/lib/api/types';
 import { formatCount } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { downloadXlsx, type CellValue } from '@/lib/xlsx';
 import { EmptyState } from './empty-state';
 import { ErrorState } from './error-state';
 
@@ -69,9 +70,9 @@ interface DataTableProps<T> {
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
-function csvCell(value: unknown) {
-  const text = value === null || value === undefined ? '' : String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+function exportCell(value: unknown): CellValue {
+  if (value === null || value === undefined) return null;
+  return typeof value === 'number' ? value : String(value);
 }
 
 export function DataTable<T>({
@@ -112,25 +113,16 @@ export function DataTable<T>({
     .getAllLeafColumns()
     .filter((c) => (c.columnDef.meta as ColumnMeta | undefined)?.hideable !== false && c.id !== 'actions');
 
-  function exportCsv() {
+  function exportExcel() {
     const visible = table.getVisibleLeafColumns().filter((c) => c.id !== 'actions');
-    const header = visible.map((c) =>
-      csvCell(typeof c.columnDef.header === 'string' ? c.columnDef.header : c.id),
-    );
+    const header = visible.map((c) => (typeof c.columnDef.header === 'string' ? c.columnDef.header : c.id));
     const rows = table.getRowModel().rows.map((row) =>
       visible.map((c) => {
         const exportValue = (c.columnDef.meta as ColumnMeta | undefined)?.exportValue;
-        return csvCell(exportValue ? exportValue(row.original) : row.getValue(c.id));
+        return exportCell(exportValue ? exportValue(row.original) : row.getValue(c.id));
       }),
     );
-    const blob = new Blob([`\uFEFF${[header, ...rows].map((r) => r.join(',')).join('\r\n')}`], {
-      type: 'text/csv;charset=utf-8',
-    });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${exportFileName ?? 'export'}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadXlsx([header, ...rows], exportFileName ?? 'export');
   }
 
   function toggleSort(sortKey: string) {
@@ -182,7 +174,7 @@ export function DataTable<T>({
           <div className="flex items-center gap-2">
             {actions}
             {exportFileName ? (
-              <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
+              <Button variant="outline" size="sm" onClick={exportExcel} disabled={rows.length === 0}>
                 <Download />
                 Export
               </Button>

@@ -118,21 +118,12 @@ export async function unwrap<T>(promise: Promise<FetchResult<T>>): Promise<NonNu
   return data as NonNullable<T>;
 }
 
-export async function downloadFile(
-  path: string,
-  query: Record<string, string | undefined>,
-  filename: string,
-) {
+export async function fetchFile(path: string, query: Record<string, string | undefined>) {
   const url = new URL(`${env.VITE_API_BASE_URL}${path}`, window.location.origin);
   for (const [key, value] of Object.entries(query)) if (value) url.searchParams.set(key, value);
   const response = await authFetch(new Request(url));
   if (!response.ok) throw new ApiError(response.status, 'DOWNLOAD_FAILED', 'Download failed');
-  const blob = await response.blob();
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  return response.blob();
 }
 
 export function jsonFormData(data: unknown, files: Record<string, File[] | File | null | undefined> = {}) {
