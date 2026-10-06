@@ -1,7 +1,12 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { endOfMonth, startOfMonth } from 'date-fns';
+import { Link } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
+import { useInventoryReport, type InventoryReport } from '@/features/inventory/api';
+import { isoDate } from '@/lib/format';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { useListState } from '@/hooks/use-list-state';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -81,6 +86,7 @@ export function MaterialReportPage() {
       <PageHeader
         title="Material report"
         description="Material in, out and closing quantity per location, with minimum alerts."
+        actions={<PrintButton />}
       />
       <DataTable
         columns={materialColumns}
@@ -180,16 +186,84 @@ const finishedColumns: ColumnDef<FinishedGoodRow, unknown>[] = [
   },
 ];
 
+type SummaryRow = InventoryReport['rows'][number];
+
+const summaryColumns = (range: { from: string; to: string }): ColumnDef<SummaryRow, unknown>[] => [
+  {
+    id: 'name',
+    header: 'Product',
+    accessorKey: 'name',
+    meta: { hideable: false },
+    cell: ({ row }) => (
+      <Link
+        to={`/stock/${row.original.productId}?from=${range.from}&to=${range.to}`}
+        className="font-medium text-primary hover:underline"
+      >
+        {row.original.name}
+      </Link>
+    ),
+  },
+  ...(
+    [
+      ['opening', 'Opening'],
+      ['manufactured', 'Manufactured'],
+      ['adjusted', 'Adjusted'],
+      ['closing', 'Closing'],
+    ] as const
+  ).map<ColumnDef<SummaryRow, unknown>>(([key, label]) => ({
+    id: key,
+    header: label,
+    accessorKey: key,
+    meta: { align: 'right' },
+    cell: ({ row }) => (
+      <span className={key === 'closing' ? 'font-semibold' : undefined}>
+        {formatQuantity(row.original[key])}
+      </span>
+    ),
+  })),
+];
+
 export function FinishedGoodsPage() {
   const list = useListState();
   const report = useFinishedGoods({ from: list.filters.from, to: list.filters.to });
+  const today = new Date();
+  const range = {
+    from: list.filters.from ?? isoDate(startOfMonth(today)),
+    to: list.filters.to ?? isoDate(endOfMonth(today)),
+  };
+  const stock = useInventoryReport(range);
+  const summary = (stock.data?.rows ?? []).filter(
+    (r) => Number(r.manufactured) !== 0 || Number(r.adjusted) !== 0,
+  );
 
   return (
     <>
       <PageHeader
         title="Finished goods"
         description="Production batches with the material used, finished quantity and loss."
+        actions={<PrintButton />}
       />
+      <div className="mb-6 space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold">Stock summary</h2>
+          <p className="text-xs text-muted-foreground">
+            Opening, manufactured, adjusted (expired write-offs and sale edits) and closing stock,{' '}
+            {formatDate(range.from)} to {formatDate(range.to)}.
+          </p>
+        </div>
+        <DataTable
+          columns={summaryColumns(range)}
+          data={stock.data ? summary : undefined}
+          isLoading={stock.isLoading}
+          isFetching={stock.isFetching}
+          error={stock.error}
+          onRetry={() => void stock.refetch()}
+          getRowId={(r) => r.productId}
+          exportFileName={`production-stock-${range.from}-to-${range.to}`}
+          emptyTitle="Nothing manufactured or adjusted in this period"
+        />
+      </div>
+      <h2 className="mb-3 text-sm font-semibold">Production batches</h2>
       <DataTable
         columns={finishedColumns}
         data={report.data}

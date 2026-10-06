@@ -76,6 +76,21 @@ const itemColumns: ColumnDef<Item, unknown>[] = [
     cell: ({ row }) => formatMoney(row.original.unitPrice),
   },
   {
+    id: 'discount',
+    header: 'Discount',
+    accessorKey: 'discountAmount',
+    meta: { align: 'right' },
+    cell: ({ row }) =>
+      Number(row.original.discountPercent) ? (
+        <span className="tabular-nums">
+          {formatMoney(row.original.discountAmount)}
+          <span className="text-xs text-muted-foreground"> ({Number(row.original.discountPercent)}%)</span>
+        </span>
+      ) : (
+        '—'
+      ),
+  },
+  {
     id: 'lineTotal',
     header: 'Total',
     accessorKey: 'lineTotal',

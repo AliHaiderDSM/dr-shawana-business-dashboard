@@ -74,7 +74,7 @@ export function BillPrint() {
               ) : null,
             )}
             <PrintTable
-              head={['Sr', 'Product', 'Qty', 'Price', 'Total']}
+              head={['Sr', 'Product', 'Qty', 'Price', 'Disc', 'Total']}
               rows={b.items.map((i) => [
                 i.sr,
                 <span key="p" className="block text-left">
@@ -83,9 +83,10 @@ export function BillPrint() {
                 </span>,
                 formatQuantity(i.qty),
                 formatMoney(i.unitPrice),
+                Number(i.discountPercent) ? `${Number(i.discountPercent)}%` : '—',
                 formatMoney(i.lineTotal),
               ])}
-              foot={['', 'Total', formatQuantity(b.sale.totalQty), '', formatMoney(b.sale.subtotal)]}
+              foot={['', 'Total', formatQuantity(b.sale.totalQty), '', '', formatMoney(b.sale.subtotal)]}
             />
             <dl className="ml-auto w-72 space-y-1">
               {summary.map(([label, value]) => (

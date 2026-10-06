@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -118,8 +119,11 @@ export function StockPage() {
                   </Link>
                 </Button>
               ) : null}
+              <PrintButton />
             </>
-          ) : null
+          ) : (
+            <PrintButton />
+          )
         }
       />
       <ExpiryAlertsPanel className="mb-6" />

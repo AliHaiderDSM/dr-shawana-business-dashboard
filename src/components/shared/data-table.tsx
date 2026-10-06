@@ -139,9 +139,9 @@ export function DataTable<T>({
   const hasFilters = list && (Object.keys(list.filters).length > 0 || list.search);
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+    <div className="overflow-hidden rounded-xl border bg-card shadow-xs print:overflow-visible print:shadow-none">
       {list || toolbar || actions || exportFileName ? (
-        <div className="flex flex-col gap-3 border-b p-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 border-b p-3 lg:flex-row lg:items-center lg:justify-between print:hidden">
           <div className="flex flex-1 flex-wrap items-center gap-2">
             {list ? (
               <div className="relative w-full sm:w-72">
@@ -333,7 +333,7 @@ export function DataTable<T>({
       {footer}
 
       {meta && list ? (
-        <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between print:hidden">
           <p className="text-muted-foreground tabular-nums">
             {meta.total === 0
               ? 'No results'

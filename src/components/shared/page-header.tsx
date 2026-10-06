@@ -17,7 +17,9 @@ export function PageHeader({ title, description, actions, eyebrow, className }: 
         <h1 className="truncate text-2xl font-semibold">{title}</h1>
         {description ? <p className="max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 print:hidden">{actions}</div>
+      ) : null}
     </div>
   );
 }

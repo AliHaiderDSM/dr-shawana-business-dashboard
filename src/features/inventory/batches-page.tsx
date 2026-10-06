@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/shared/error-state';
 import { FilterSelect } from '@/components/shared/list-filters';
 import { MoneyInput } from '@/components/shared/money-input';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
 import { DetailList, Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
@@ -147,6 +148,7 @@ export function BatchesPage() {
       <PageHeader
         title="Batches"
         description="Every batch received, with its expiry and what is left. Sales take the batch that expires first."
+        actions={<PrintButton />}
       />
       <DataTable
         columns={batchColumns(true)}
@@ -362,12 +364,15 @@ export function BatchDetailPage() {
         }
         description={b.productName}
         actions={
-          can('stock.update') && Number(b.quantity) > 0 ? (
-            <Button variant="outline" onClick={() => setWritingOff(true)}>
-              <PackageMinus />
-              Write off
-            </Button>
-          ) : null
+          <>
+            <PrintButton />
+            {can('stock.update') && Number(b.quantity) > 0 ? (
+              <Button variant="outline" onClick={() => setWritingOff(true)}>
+                <PackageMinus />
+                Write off
+              </Button>
+            ) : null}
+          </>
         }
       />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">

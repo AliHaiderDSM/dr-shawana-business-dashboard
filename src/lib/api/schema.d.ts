@@ -5818,6 +5818,8 @@ export interface paths {
             parameters: {
                 query?: {
                     branchId?: string;
+                    /** @description super_admin only: look in every branch */
+                    scope?: "all";
                 };
                 header?: never;
                 path: {
@@ -22620,6 +22622,12 @@ export interface components {
                 referenceId: string;
                 isReversal: boolean;
                 batchNo: string | null;
+                /** Format: date */
+                manufacturingDate: string | null;
+                /** Format: date */
+                expiryDate: string | null;
+                /** @description Where it came from or went: supplier, branch, invoice and customer, return */
+                detail: string | null;
                 note: string | null;
             }[];
         };
@@ -24723,6 +24731,11 @@ export interface components {
                 bundleId?: string;
                 /** @example 10.000 */
                 qty: string;
+                /**
+                 * @description Discount on this line only, before the sale discount
+                 * @example 10
+                 */
+                discountPercent?: string;
             }[];
             /** @description Scanned piece labels. Required for products tracked by label. */
             serials?: string[];
@@ -24752,6 +24765,11 @@ export interface components {
                 bundleId?: string;
                 /** @example 10.000 */
                 qty: string;
+                /**
+                 * @description Discount on this line only, before the sale discount
+                 * @example 10
+                 */
+                discountPercent?: string;
             }[];
             /** @description Every label on the sale after the edit. Leave out to keep the labels already sold. */
             serials?: string[];
@@ -24875,6 +24893,9 @@ export interface components {
                 qty: string;
                 /** @example 1250.50 */
                 unitPrice: string;
+                discountPercent: string;
+                /** @example 1250.50 */
+                discountAmount: string;
                 /** @example 1250.50 */
                 lineTotal: string;
             }[];

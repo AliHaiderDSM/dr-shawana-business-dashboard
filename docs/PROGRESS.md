@@ -12,6 +12,20 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Reports, product trail, label search, print and line discounts (2026-10-06)
+
+- **Inventory report:** the Opening, Manufactured and Adjusted columns are gone, as in posSoft. Closing is now called Total stock. Each product name opens its full trail (`/stock/:id?from&to`).
+- **Finished goods:** has a new Stock summary table with Opening, Manufactured, Adjusted and Closing for the period.
+- **Product trail (`/stock/:id`):** has a From / to column. Invoices and returns link to their pages. It also has batch Mfg and Expiry columns, and takes the date range from the URL.
+- **Topbar label search:** "Find label" accepts `DSM-000060`, `dsm-60` or `60` and opens the label page. The super admin searches every branch.
+- **Print:**
+  - `PrintButton` (`window.print()`) is on the inventory report, material report, finished goods, stock, batches, batch detail, product trail and label pages.
+  - When printing, the sidebar, topbar, page actions, table toolbars, pagination and row menus are hidden.
+- **POS line discounts:**
+  - Every cart line has a % discount field. The line shows the gross amount struck through and the net amount.
+  - Totals show "Item discounts" when there are any.
+  - The sale detail page and the bill show each line's discount.
+
 ## Stock batch details and payment screenshots (2026-10-06)
 
 - **Stock out form:** each product row shows a batch table (batch, mfg, expiry, qty) with full dates. "Oct 26" read like a day of the month, so short dates are no longer used.

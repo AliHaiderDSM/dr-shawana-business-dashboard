@@ -1,10 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Printer, Tags } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
 import { Panel } from '@/components/shared/panel';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
@@ -29,6 +30,11 @@ const MOVEMENT_TONES: Record<Movement['type'], Tone> = {
   adjustment: 'neutral',
 };
 
+const REFERENCE_PATHS: Record<string, (id: string) => string> = {
+  sale: (id) => `/sales/${id}`,
+  sale_return: (id) => `/returns/${id}`,
+};
+
 const columns: ColumnDef<Movement, unknown>[] = [
   {
     id: 'date',
@@ -48,11 +54,48 @@ const columns: ColumnDef<Movement, unknown>[] = [
     ),
   },
   {
+    id: 'detail',
+    header: 'From / to',
+    accessorFn: (m) => m.detail ?? '',
+    cell: ({ row }) => {
+      const { detail, referenceType, referenceId } = row.original;
+      if (!detail) return <span className="text-muted-foreground">—</span>;
+      const path = REFERENCE_PATHS[referenceType]?.(referenceId);
+      return path ? (
+        <Link to={path} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+          {detail}
+        </Link>
+      ) : (
+        detail
+      );
+    },
+  },
+  {
     id: 'batch',
     header: 'Batch',
     accessorFn: (m) => m.batchNo ?? '',
     cell: ({ row }) =>
       row.original.batchNo ? <span className="font-mono text-xs">{row.original.batchNo}</span> : '—',
+  },
+  {
+    id: 'manufacturingDate',
+    header: 'Mfg',
+    accessorFn: (m) => m.manufacturingDate ?? '',
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {row.original.manufacturingDate ? formatDate(row.original.manufacturingDate) : '—'}
+      </span>
+    ),
+  },
+  {
+    id: 'expiryDate',
+    header: 'Expiry',
+    accessorFn: (m) => m.expiryDate ?? '',
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {row.original.expiryDate ? formatDate(row.original.expiryDate) : '—'}
+      </span>
+    ),
   },
   {
     id: 'note',
@@ -101,7 +144,11 @@ export function StockLedgerPage() {
   const [registering, setRegistering] = useState(false);
   const unlabelled = (serials.data?.unlabelled ?? []).reduce((sum, u) => sum + Number(u.qty), 0);
   const tracked = serials.data?.trackSerials ?? false;
-  const [range, setRange] = useState<{ from?: string; to?: string }>({});
+  const [params] = useSearchParams();
+  const [range, setRange] = useState<{ from?: string; to?: string }>(() => ({
+    from: params.get('from') ?? undefined,
+    to: params.get('to') ?? undefined,
+  }));
   const product = productsApi.useDetail(productId);
   const ledger = useProductLedger(productId, range);
   const unit = product.data?.unit ?? '';
@@ -117,8 +164,13 @@ export function StockLedgerPage() {
       </Button>
       <PageHeader
         title={product.data?.name ?? 'Stock history'}
-        description="Every movement of this product, oldest first, with the running balance."
-        actions={<DateRangePicker from={range.from} to={range.to} onChange={setRange} />}
+        description="Every movement of this product, oldest first: where it came from, where it went, the batch and the running balance."
+        actions={
+          <>
+            <DateRangePicker from={range.from} to={range.to} onChange={setRange} />
+            <PrintButton />
+          </>
+        }
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Opening" value={data ? `${formatQuantity(data.opening)} ${unit}` : '…'} />

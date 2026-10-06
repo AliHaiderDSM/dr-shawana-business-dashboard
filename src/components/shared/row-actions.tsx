@@ -26,7 +26,7 @@ export function RowActions({ actions, label = 'Row actions' }: { actions: RowAct
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 text-muted-foreground"
+          className="size-8 text-muted-foreground print:hidden"
           aria-label={label}
           onClick={(e) => e.stopPropagation()}
         >

@@ -61,6 +61,12 @@ const lineSchema = z.object({
   available: z.string().optional(),
   tracked: z.boolean().optional(),
   parts: z.array(z.object({ productId: z.string(), qty: z.string() })).optional(),
+  discount: z
+    .string()
+    .trim()
+    .regex(/^(\d{1,3}(\.\d{1,2})?)?$/, '%')
+    .refine((v) => !v || Number(v) <= 100, 'At most 100')
+    .optional(),
   qty: z
     .string()
     .trim()
@@ -112,6 +118,14 @@ interface Shortage {
   expired?: string;
 }
 
+const discountText = (percent: string) => (Number(percent) ? String(Number(percent)) : '');
+
+export function lineAmounts(line: { qty?: string; price?: string; discount?: string }) {
+  const gross = (Number(line.qty) || 0) * (Number(line.price) || 0);
+  const off = Math.round(gross * (Number(line.discount) || 0)) / 100;
+  return { gross, off, net: gross - off };
+}
+
 function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
   const lines: Values['items'] = [];
   for (const item of sale?.items ?? []) {
@@ -126,6 +140,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
         price: bundle?.totalPrice ?? '0',
         qty: String(part ? Number(item.qty) / Number(part.qty) : 1),
         parts: bundle?.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+        discount: discountText(item.discountPercent),
       });
       continue;
     }
@@ -136,6 +151,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
       price: item.unitPrice,
       qty: String(Number(item.qty)),
       tracked: (sale?.serials ?? []).some((p) => p.productId === item.productId),
+      discount: discountText(item.discountPercent),
     });
   }
   const names = new Map((sale?.items ?? []).map((i) => [i.productId, i.product?.name ?? 'Product']));
@@ -163,7 +179,8 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
 }
 
 function Totals({ values, saving }: { values: Values; saving: boolean }) {
-  const subtotal = values.items.reduce((sum, l) => sum + (Number(l.qty) || 0) * (Number(l.price) || 0), 0);
+  const subtotal = values.items.reduce((sum, l) => sum + lineAmounts(l).net, 0);
+  const lineOff = values.items.reduce((sum, l) => sum + lineAmounts(l).off, 0);
   const received = values.payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const discount = values.autoDiscount
     ? Math.max(0, subtotal - received)
@@ -172,6 +189,7 @@ function Totals({ values, saving }: { values: Values; saving: boolean }) {
   const qty = values.items.reduce((sum, l) => sum + (Number(l.qty) || 0), 0);
   const rows: [string, string][] = [
     ['Total qty', formatQuantity(qty)],
+    ...(lineOff > 0 ? ([['Item discounts', formatMoney(lineOff)]] as [string, string][]) : []),
     ['Sub amount', formatMoney(subtotal)],
     ['Discount', formatMoney(discount)],
     ['Received', formatMoney(received)],
@@ -325,9 +343,11 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
 
   const submit = form.handleSubmit((v) => {
     setShortages([]);
-    const items = v.items.map((l) =>
-      l.kind === 'product' ? { productId: l.refId, qty: l.qty } : { bundleId: l.refId, qty: l.qty },
-    );
+    const items = v.items.map((l) => ({
+      ...(l.kind === 'product' ? { productId: l.refId } : { bundleId: l.refId }),
+      qty: l.qty,
+      ...(l.discount ? { discountPercent: l.discount } : {}),
+    }));
     const serials = v.pieces.map((p) => p.serial);
     if (sale) {
       update.mutate(
@@ -623,8 +643,36 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                           <Plus />
                         </Button>
                       </div>
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.discount`}
+                        render={({ field: off, fieldState }) => (
+                          <div className="relative" title="Discount on this product only">
+                            <MoneyInput
+                              prefix=""
+                              decimals={2}
+                              placeholder="0"
+                              aria-label={`${field.name} discount percent`}
+                              className={cn(
+                                'h-7 w-16 pr-5 pl-1.5 text-right',
+                                fieldState.error && 'border-destructive',
+                              )}
+                              {...off}
+                              value={off.value ?? ''}
+                            />
+                            <span className="pointer-events-none absolute top-1/2 right-1.5 -translate-y-1/2 text-xs text-muted-foreground">
+                              %
+                            </span>
+                          </div>
+                        )}
+                      />
                       <span className="w-24 text-right text-sm font-medium tabular-nums">
-                        {formatMoney((Number(line?.qty) || 0) * (Number(line?.price) || 0))}
+                        {line && lineAmounts(line).off > 0 ? (
+                          <span className="block text-xs font-normal text-muted-foreground line-through">
+                            {formatMoney(lineAmounts(line).gross)}
+                          </span>
+                        ) : null}
+                        {formatMoney(line ? lineAmounts(line).net : 0)}
                       </span>
                       <Button
                         type="button"
@@ -727,10 +775,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                     size="sm"
                     disabled={payments.fields.length >= 10}
                     onClick={() => {
-                      const subtotal = values.items.reduce(
-                        (s, l) => s + (Number(l.qty) || 0) * (Number(l.price) || 0),
-                        0,
-                      );
+                      const subtotal = values.items.reduce((s, l) => s + lineAmounts(l).net, 0);
                       const paid = values.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
                       payments.append(emptyPayment(subtotal > paid ? (subtotal - paid).toFixed(2) : ''));
                     }}

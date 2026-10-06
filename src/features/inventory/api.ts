@@ -295,10 +295,18 @@ export function useItem(id: string | undefined) {
   });
 }
 
-export async function findItemBySerial(serial: string) {
+export function normalizeSerial(code: string) {
+  const match = /^(?:DSM-?)?(\d+)$/i.exec(code.trim());
+  return match ? `DSM-${match[1]!.padStart(6, '0')}` : code.trim().toUpperCase();
+}
+
+export async function findItemBySerial(serial: string, options: { everywhere?: boolean } = {}) {
   const result = await unwrap(
     api.GET('/branch/inventory/items/serial/{serial}', {
-      params: { path: { serial: serial.trim().toUpperCase() } },
+      params: {
+        path: { serial: serial.trim().toUpperCase() },
+        ...(options.everywhere ? { query: { scope: 'all' as const } } : {}),
+      },
     }),
   );
   return result.data;

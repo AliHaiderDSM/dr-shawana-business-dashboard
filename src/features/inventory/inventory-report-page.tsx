@@ -3,26 +3,25 @@ import { endOfMonth, startOfMonth } from 'date-fns';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
 import { Input } from '@/components/ui/input';
 import { categoriesApi, productsApi, suppliersApi } from '@/features/catalog/api';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import { useListState } from '@/hooks/use-list-state';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router';
 import { useInventoryReport, type InventoryReport } from './api';
 
 type ReportRow = InventoryReport['rows'][number] & { isTotal?: boolean };
 
 const QUANTITY_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] = [
-  { key: 'opening', label: 'Opening' },
   { key: 'purchased', label: 'Purchased' },
   { key: 'stockIn', label: 'Stock in' },
-  { key: 'manufactured', label: 'Manufactured' },
   { key: 'stockOut', label: 'Stock out' },
   { key: 'sold', label: 'Sold' },
   { key: 'returned', label: 'Returned' },
-  { key: 'adjusted', label: 'Adjusted' },
-  { key: 'closing', label: 'Closing' },
+  { key: 'closing', label: 'Total stock' },
 ];
 
 const BRANCH_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] = [
@@ -31,13 +30,27 @@ const BRANCH_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] 
   { key: 'inBranch', label: 'In branch (offices qty)' },
 ];
 
-const columnsFor = (quantities: typeof QUANTITY_COLUMNS): ColumnDef<ReportRow, unknown>[] => [
+const columnsFor = (
+  quantities: typeof QUANTITY_COLUMNS,
+  range: { from: string; to: string },
+): ColumnDef<ReportRow, unknown>[] => [
   {
     id: 'name',
     header: 'Product',
     accessorKey: 'name',
     meta: { hideable: false },
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    cell: ({ row }) =>
+      row.original.isTotal ? (
+        <span className="font-medium">{row.original.name}</span>
+      ) : (
+        <Link
+          to={`/stock/${row.original.productId}?from=${range.from}&to=${range.to}`}
+          className="font-medium text-primary hover:underline"
+          title="Full history of this product"
+        >
+          {row.original.name}
+        </Link>
+      ),
   },
   {
     id: 'category',
@@ -79,7 +92,7 @@ export function InventoryReportPage() {
   const inWarehouse = useInWarehouse();
   const branches = useBranchOptions(inWarehouse);
   const targetBranch = (branches.data ?? []).find((b) => b.id === list.filters.toBranchId);
-  const columns = columnsFor(targetBranch ? BRANCH_COLUMNS : QUANTITY_COLUMNS);
+  const columns = columnsFor(targetBranch ? BRANCH_COLUMNS : QUANTITY_COLUMNS, { from, to });
   const month = list.filters.from?.slice(0, 7) ?? isoDate(today).slice(0, 7);
 
   const rows: ReportRow[] = report.data?.rows.length
@@ -102,8 +115,9 @@ export function InventoryReportPage() {
         description={
           targetBranch
             ? `Stock sent to ${targetBranch.name}, sold there and left there, ${formatDate(from)} to ${formatDate(to)}.`
-            : `Opening, movements and closing stock from ${formatDate(from)} to ${formatDate(to)}.`
+            : `Stock in, stock out, sales and total stock from ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
         }
+        actions={<PrintButton />}
       />
       <DataTable
         columns={columns}

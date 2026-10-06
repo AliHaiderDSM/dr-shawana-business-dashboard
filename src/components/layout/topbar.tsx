@@ -42,6 +42,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useAuth } from '@/lib/auth/auth-context';
 import { initials, titleCase } from '@/lib/format';
 import { findMenuItem } from '@/lib/permissions/menu';
+import { LabelSearch } from './label-search';
 
 function BranchSwitcher() {
   const { branchId, setBranchId } = useAuth();
@@ -184,13 +185,13 @@ function UserMenu() {
 }
 
 export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
-  const { me, isSuperAdmin } = useAuth();
+  const { me, isSuperAdmin, canAny } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const location = useLocation();
   const section = findMenuItem(location.pathname);
 
   return (
-    <header className="sticky top-0 z-20 flex h-topbar items-center gap-3 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-6">
+    <header className="sticky top-0 z-20 flex h-topbar items-center gap-3 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-6 print:hidden">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMenu} aria-label="Open menu">
         <Menu />
       </Button>
@@ -198,6 +199,9 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         {section?.label}
       </div>
       <div className="ml-auto flex items-center gap-2">
+        {canAny(['stock.view', 'inventoryReport.view', 'sales.create', 'returns.create']) ? (
+          <LabelSearch />
+        ) : null}
         {isSuperAdmin ? (
           <BranchSwitcher />
         ) : me?.branch ? (

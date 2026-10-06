@@ -9,6 +9,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { ErrorState } from '@/components/shared/error-state';
 import { FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
+import { PrintButton } from '@/components/shared/print-button';
 import { DetailList, Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
 import {
   findItemBySerial,
+  normalizeSerial,
   isSerial,
   useBatches,
   useRegisterLabels,
@@ -334,9 +336,10 @@ export function LabelsPage() {
 export function LabelDetailPage() {
   const { serial = '' } = useParams();
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const query = useQuery({
-    queryKey: ['stock', 'item-serial', serial],
-    queryFn: () => findItemBySerial(serial),
+    queryKey: ['stock', 'item-serial', serial, isSuperAdmin],
+    queryFn: () => findItemBySerial(serial, { everywhere: isSuperAdmin }),
     enabled: Boolean(serial),
   });
   const item = query.data;
@@ -363,7 +366,7 @@ export function LabelDetailPage() {
           <>
             <BarcodeScanInput
               onScan={async (code) => {
-                await navigate(`/inventory/labels/${code.trim().toUpperCase()}`);
+                await navigate(`/inventory/labels/${normalizeSerial(code)}`);
               }}
               className="w-64"
               placeholder="Scan another label"
@@ -375,6 +378,7 @@ export function LabelDetailPage() {
               <Printer />
               Reprint
             </Button>
+            <PrintButton label="Print details" />
           </>
         }
       />

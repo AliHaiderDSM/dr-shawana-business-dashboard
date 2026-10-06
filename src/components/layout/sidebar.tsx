@@ -92,7 +92,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-standard lg:flex',
+        'fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-standard lg:flex print:hidden',
         collapsed ? 'w-sidebar-collapsed' : 'w-sidebar',
       )}
     >

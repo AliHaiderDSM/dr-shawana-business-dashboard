@@ -42,7 +42,7 @@ const schema = z.object({
   detail: z.string().trim().max(150, 'Use at most 150 characters'),
   manufacturingDate: z.string(),
   expiryDate: z.string(),
-  unitCost: z.string().regex(/^(d{1,10}(.d{1,2})?)?$/, 'Use a price'),
+  unitCost: z.string().regex(/^(\d{1,10}(\.\d{1,2})?)?$/, 'Use a price'),
   note: optionalText(1000),
 });
 

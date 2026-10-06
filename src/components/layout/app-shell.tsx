@@ -87,7 +87,7 @@ function PasswordNotice() {
   const location = useLocation();
   if (!me?.profile.mustChangePassword || location.pathname === '/profile') return null;
   return (
-    <div className="border-b bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6">
+    <div className="border-b bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6 print:hidden">
       <div className="mx-auto flex max-w-content items-center gap-3">
         <KeyRound className="size-4 shrink-0" />
         <span className="flex-1">You are using a temporary password. Please set your own password.</span>
@@ -142,11 +142,12 @@ export function AppShell() {
         className={cn(
           'flex min-h-screen flex-col transition-[padding] duration-200 ease-standard',
           collapsed ? 'lg:pl-sidebar-collapsed' : 'lg:pl-sidebar',
+          'print:!pl-0',
         )}
       >
         <Topbar onOpenMenu={() => setMobileOpen(true)} />
         <PasswordNotice />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:p-0">
           <div className="mx-auto w-full max-w-content">
             <ErrorBoundary key={location.pathname}>
               <Suspense fallback={<PageSkeleton />}>

@@ -167,6 +167,8 @@ export interface BillData {
     bundle: string | null;
     qty: string;
     unitPrice: string;
+    discountPercent: string;
+    discountAmount: string;
     lineTotal: string;
   }[];
   payments: { cash: SalePayment[]; online: SalePayment[] };
