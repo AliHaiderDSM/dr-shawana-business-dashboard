@@ -17245,6 +17245,12 @@ export interface paths {
                                 }[];
                                 /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
                                 batches?: components["schemas"]["AllocatedBatch"][];
+                                /** @description Products on the sale; a bundle shows once by its name without a qty */
+                                products: {
+                                    name: string;
+                                    /** @example 10.000 */
+                                    qty: string | null;
+                                }[];
                             }[];
                             meta: components["schemas"]["PageMeta"] & {
                                 totals: {

@@ -38,6 +38,15 @@ export function ReturnsPage() {
     }
   };
 
+  const mergeItems = (items: SaleReturn['items']) => {
+    const merged = new Map<string, number>();
+    for (const item of items) {
+      const name = item.product?.name ?? 'Product';
+      merged.set(name, (merged.get(name) ?? 0) + Number(item.qty));
+    }
+    return [...merged].map(([name, qty]) => ({ name, qty }));
+  };
+
   const columns: ColumnDef<SaleReturn, unknown>[] = [
     {
       id: 'returnNo',
@@ -77,11 +86,18 @@ export function ReturnsPage() {
     {
       id: 'items',
       header: 'Products',
-      accessorFn: (r) => r.items.map((i) => `${i.product?.name ?? ''} ${i.qty}`).join('; '),
+      accessorFn: (r) =>
+        mergeItems(r.items)
+          .map((i) => `${i.name} x ${i.qty}`)
+          .join('; '),
       cell: ({ row }) => (
-        <span className="line-clamp-1 max-w-72 text-muted-foreground">
-          {row.original.items.map((i) => `${i.product?.name ?? ''} × ${formatQuantity(i.qty)}`).join(', ')}
-        </span>
+        <ul className="space-y-0.5 text-sm">
+          {mergeItems(row.original.items).map((i) => (
+            <li key={i.name} className="whitespace-nowrap">
+              {i.name} <span className="text-muted-foreground tabular-nums">× {formatQuantity(i.qty)}</span>
+            </li>
+          ))}
+        </ul>
       ),
     },
     {

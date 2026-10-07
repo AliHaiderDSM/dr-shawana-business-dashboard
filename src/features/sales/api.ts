@@ -4,7 +4,9 @@ import { createCrud } from '@/lib/api/crud';
 import type { PageMeta, Schemas } from '@/lib/api/types';
 
 export type Sale = Schemas['Sale'];
-export type SaleListItem = Omit<Sale, 'items' | 'payments'>;
+export type SaleListItem = Omit<Sale, 'items' | 'payments'> & {
+  products: { name: string; qty: string | null }[];
+};
 export type SaleInput = Schemas['CreateSale'];
 export type SaleUpdate = Schemas['UpdateSale'];
 export type SalePayment = Sale['payments'][number];

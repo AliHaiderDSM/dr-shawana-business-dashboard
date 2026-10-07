@@ -12,6 +12,25 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Product columns, report row click (2026-10-07)
+
+- **Sales list:** new Products column. It lists each product × qty, and a bundle by its name. The API list returns `products`.
+- **Returns list:** Products are listed one per line. The pieces of the same product are merged with their qty added up.
+- **Inventory report:**
+  - Clicking anywhere on a row opens that product's history.
+  - Branch names in the per-branch lines drop a trailing "branch", so "Islamabad branch" shows as "Islamabad".
+
+## No received/remaining in sales, clearer totals, branch returns (2026-10-07)
+
+- **Sales list:** the Received and Remaining columns are gone, and so are their totals. The branch cards show only sales count, qty and total. The "Payment pending" chip no longer shows the amount due.
+- **POS totals:**
+  - Shown in order: Total qty, then (only when a product has a discount) Products before discount and Product discounts, then Sub amount, Overall discount (x%) and Total.
+  - Received and Remaining are not shown.
+- **Inventory report (Super Admin):**
+  - New column: Returned in branches.
+  - "Left in branches" is now called "Now in branches".
+  - The description explains Sent − Sold + Returned.
+
 ## Payment approval, branch sales cards, POS payment and city (2026-10-07)
 
 - **Sales list:**

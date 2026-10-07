@@ -10,7 +10,7 @@ import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import { useListState } from '@/hooks/use-list-state';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useInventoryReport, type InventoryReport } from './api';
 
 type ReportRow = InventoryReport['rows'][number] & { isTotal?: boolean };
@@ -93,7 +93,7 @@ const columnsFor = (
             <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
               {shares.map((b) => (
                 <div key={b.branchId} className="flex justify-end gap-2 whitespace-nowrap">
-                  <span>{b.branchName}</span>
+                  <span>{b.branchName.replace(/\s+branch$/i, '')}</span>
                   <span className="min-w-8 text-foreground tabular-nums">{formatQuantity(b[part!])}</span>
                 </div>
               ))}
@@ -106,6 +106,7 @@ const columnsFor = (
 ];
 
 export function InventoryReportPage() {
+  const navigate = useNavigate();
   const list = useListState();
   const today = new Date();
   const from = list.filters.from ?? isoDate(startOfMonth(today));
@@ -169,6 +170,9 @@ export function InventoryReportPage() {
         error={report.error}
         onRetry={() => void report.refetch()}
         getRowId={(r) => r.productId}
+        onRowClick={(r) => {
+          if (!r.isTotal) void navigate(`/stock/${r.productId}?from=${from}&to=${to}`);
+        }}
         rowClassName={(r) => (r.isTotal ? 'bg-muted/50 font-semibold hover:bg-muted/50' : undefined)}
         exportFileName={`inventory-report-${from}-to-${to}`}
         emptyTitle="No stock in this period"
