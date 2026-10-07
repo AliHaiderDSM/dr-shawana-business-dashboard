@@ -421,7 +421,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
               ? `Order ${created.invoiceNo} booked · awaiting dispatch`
               : `Sale ${created.invoiceNo} saved`,
           );
-          void navigate(`/print/bill/${created.id}`);
+          void navigate('/sales');
         },
         onError: handleError,
       },

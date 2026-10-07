@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Deliveries default tab, sale saves to list, ledger cards (2026-10-07)
+
+- **Deliveries:** "All awaiting dispatch" is now the first tab and opens by default.
+- **POS:** after a new sale is saved, the app goes to View Sales instead of the bill print page.
+- **Stock history:** the Opening card is removed. Total in, Total out and Closing remain.
+- **Branch inventory report:** the Purchased column is removed.
+- **Sales list:** the Products column no longer crashes against an older API that does not send `products`.
+
 ## Product columns, report row click (2026-10-07)
 
 - **Sales list:** new Products column. It lists each product × qty, and a bundle by its name. The API list returns `products`.

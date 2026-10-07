@@ -172,8 +172,7 @@ export function StockLedgerPage() {
           </>
         }
       />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Opening" value={data ? `${formatQuantity(data.opening)} ${unit}` : '…'} />
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Total in" value={data ? `${formatQuantity(data.totalIn)} ${unit}` : '…'} />
         <StatCard label="Total out" value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'} />
         <StatCard label="Closing" value={data ? `${formatQuantity(data.closing)} ${unit}` : '…'} />

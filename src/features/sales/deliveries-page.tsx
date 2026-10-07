@@ -119,7 +119,7 @@ export function DeliveriesPage() {
   const todayIso = isoDate();
   const month = params.get('month') ?? todayIso.slice(0, 7);
   const selected = params.get('date') ?? (month === todayIso.slice(0, 7) ? todayIso : `${month}-01`);
-  const view = (params.get('view') as View | null) ?? 'order';
+  const view = (params.get('view') as View | null) ?? 'awaiting';
   const calendar = useDeliveryCalendar(month);
   const orders = useDeliveries(
     view === 'awaiting'
@@ -316,7 +316,7 @@ export function DeliveriesPage() {
         }
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <button type="button" className="text-left" onClick={() => set({ view: 'awaiting' })}>
+        <button type="button" className="text-left" onClick={() => set({ view: undefined })}>
           <StatCard
             label="Awaiting dispatch"
             value={awaiting ? formatCount(awaiting.orders) : '…'}
@@ -412,13 +412,13 @@ export function DeliveriesPage() {
       </section>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={view} onValueChange={(v) => set({ view: v === 'order' ? undefined : v })}>
+        <Tabs value={view} onValueChange={(v) => set({ view: v === 'awaiting' ? undefined : v })}>
           <TabsList>
-            <TabsTrigger value="order">Booked {selectedLabel}</TabsTrigger>
-            <TabsTrigger value="dispatch">Sent {selectedLabel}</TabsTrigger>
             <TabsTrigger value="awaiting">
               All awaiting dispatch{awaiting?.orders ? ` (${awaiting.orders})` : ''}
             </TabsTrigger>
+            <TabsTrigger value="order">Booked {selectedLabel}</TabsTrigger>
+            <TabsTrigger value="dispatch">Sent {selectedLabel}</TabsTrigger>
           </TabsList>
         </Tabs>
         <p className="text-xs text-muted-foreground">

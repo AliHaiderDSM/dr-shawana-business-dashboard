@@ -118,10 +118,10 @@ export function SalesPage() {
     {
       id: 'products',
       header: 'Products',
-      accessorFn: (s) => s.products.map((p) => (p.qty ? `${p.name} x ${Number(p.qty)}` : p.name)).join('; '),
+      accessorFn: (s) => (s.products ?? []).map((p) => (p.qty ? `${p.name} x ${Number(p.qty)}` : p.name)).join('; '),
       cell: ({ row }) => (
         <ul className="space-y-0.5 text-sm">
-          {row.original.products.map((p, index) => (
+          {(row.original.products ?? []).map((p, index) => (
             <li key={`${p.name}-${index}`} className="max-w-56 truncate" title={p.name}>
               {p.name}
               {p.qty ? (

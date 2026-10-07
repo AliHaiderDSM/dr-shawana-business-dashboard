@@ -16,7 +16,6 @@ import { useInventoryReport, type InventoryReport } from './api';
 type ReportRow = InventoryReport['rows'][number] & { isTotal?: boolean };
 
 const QUANTITY_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] = [
-  { key: 'purchased', label: 'Purchased' },
   { key: 'stockIn', label: 'Stock in' },
   { key: 'stockOut', label: 'Stock out' },
   { key: 'sold', label: 'Sold' },
