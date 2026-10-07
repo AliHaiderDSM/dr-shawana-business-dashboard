@@ -78,6 +78,38 @@ export function StockPage() {
       ),
     },
     {
+      id: 'reserved',
+      header: 'Booked',
+      accessorKey: 'reservedQuantity',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        Number(row.original.reservedQuantity) > 0 ? (
+          <span className="text-info" title="Booked by online orders waiting for dispatch">
+            {formatQuantity(row.original.reservedQuantity)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: 'available',
+      header: 'Available',
+      accessorFn: (r) => Number(r.quantity) - Number(r.expiredQuantity) - Number(r.reservedQuantity),
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {formatQuantity(
+            Math.max(
+              0,
+              Number(row.original.quantity) -
+                Number(row.original.expiredQuantity) -
+                Number(row.original.reservedQuantity),
+            ),
+          )}
+        </span>
+      ),
+    },
+    {
       id: 'threshold',
       header: 'Low stock at',
       accessorKey: 'lowStockThreshold',

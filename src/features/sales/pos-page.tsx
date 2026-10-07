@@ -349,6 +349,12 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       ...(l.discount ? { discountPercent: l.discount } : {}),
     }));
     const serials = v.pieces.map((p) => p.serial);
+    if (v.saleType === 'online' && serials.length) {
+      toast.error(
+        'Online orders are scanned when they are dispatched. Remove the scanned labels or choose Office sale.',
+      );
+      return;
+    }
     if (sale) {
       update.mutate(
         {
@@ -396,7 +402,11 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       { body, proofs },
       {
         onSuccess: (created) => {
-          toast.success(`Sale ${created.invoiceNo} saved`);
+          toast.success(
+            created.saleType === 'online'
+              ? `Order ${created.invoiceNo} booked · awaiting dispatch`
+              : `Sale ${created.invoiceNo} saved`,
+          );
           void navigate(`/print/bill/${created.id}`);
         },
         onError: handleError,
@@ -411,6 +421,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       <form onSubmit={submit} noValidate className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_28rem]">
         <section className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
           <PosCatalog
+            online={values.saleType === 'online'}
             onPick={pick}
             onPiece={addPiece}
             inCart={(kind, refId) => {
@@ -500,15 +511,29 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                 />
               </div>
             )}
-            <ChoiceField
-              control={form.control}
-              name="saleType"
-              label="Sale type"
-              options={[
-                { value: 'office', label: 'Office sale' },
-                { value: 'online', label: 'Online sale' },
-              ]}
-            />
+            {sale ? (
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Sale type</div>
+                <div className="text-sm text-muted-foreground">
+                  {sale.saleType === 'online' ? 'Online sale' : 'Office sale'} · cannot change after saving
+                </div>
+              </div>
+            ) : (
+              <ChoiceField
+                control={form.control}
+                name="saleType"
+                label="Sale type"
+                description={
+                  values.saleType === 'online'
+                    ? 'The stock is booked now and leaves the inventory when the order is dispatched and scanned.'
+                    : undefined
+                }
+                options={[
+                  { value: 'office', label: 'Office sale' },
+                  { value: 'online', label: 'Online sale' },
+                ]}
+              />
+            )}
             <FieldRow>
               <FormField
                 control={form.control}
@@ -612,7 +637,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                           size="icon"
                           className="size-7"
                           aria-label="Less"
-                          disabled={line?.tracked}
+                          disabled={line?.tracked && values.saleType !== 'online'}
                           onClick={() => step(index, -1)}
                         >
                           <Minus />
@@ -627,7 +652,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                               aria-label={`${field.name} quantity`}
                               className={cn('mx-1 h-7 w-14 px-1 text-center', short && 'border-destructive')}
                               {...qty}
-                              readOnly={line?.tracked}
+                              readOnly={line?.tracked && values.saleType !== 'online'}
                             />
                           )}
                         />
@@ -637,7 +662,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                           size="icon"
                           className="size-7"
                           aria-label="More"
-                          disabled={line?.tracked}
+                          disabled={line?.tracked && values.saleType !== 'online'}
                           onClick={() => step(index, 1)}
                         >
                           <Plus />

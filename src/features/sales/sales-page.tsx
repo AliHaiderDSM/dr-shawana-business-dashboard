@@ -1,7 +1,7 @@
 import { productsApi } from '@/features/catalog/api';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
-import { CheckCheck, Eye, Pencil, Plus, Printer, Trash2, Undo2 } from 'lucide-react';
+import { Ban, CheckCheck, Eye, Pencil, Plus, Printer, Trash2, Truck, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -23,10 +23,9 @@ import {
   SALE_TYPE_LABELS,
   salesApi,
   useSales,
-  useSetDelivery,
-  type DeliveryStatus,
   type SaleListItem,
 } from './api';
+import { DeliveryBadge, useOrderActions } from './delivery-actions';
 
 const OWN_ONLY = new Set(['front_desk', 'team_manager']);
 
@@ -34,40 +33,6 @@ export function useCanChangeSale() {
   const { me, can } = useAuth();
   return (sale: Pick<SaleListItem, 'createdBy'>, action: 'update' | 'delete') =>
     can(`sales.${action}`) && (!OWN_ONLY.has(me?.role ?? '') || sale.createdBy === me?.profile.id);
-}
-
-export function useDeliveryAction() {
-  const setDelivery = useSetDelivery();
-  const [pending, setPending] = useState<{ sale: SaleListItem; status: DeliveryStatus } | null>(null);
-  const dialog = (
-    <ConfirmDialog
-      open={pending !== null}
-      onOpenChange={(open) => !open && setPending(null)}
-      title={
-        pending?.status === 'returned'
-          ? `Mark ${pending.sale.invoiceNo} as returned?`
-          : `Mark ${pending?.sale.invoiceNo ?? ''} as delivered?`
-      }
-      description={
-        pending?.status === 'returned'
-          ? 'Everything still on the sale goes to the returns section for inspection. Stock changes only after inspection.'
-          : 'The order reached the customer.'
-      }
-      confirmLabel={pending?.status === 'returned' ? 'Mark returned' : 'Mark delivered'}
-      destructive={pending?.status === 'returned'}
-      onConfirm={() =>
-        pending
-          ? setDelivery
-              .mutateAsync({ id: pending.sale.id, status: pending.status })
-              .then(() =>
-                toast.success(`${pending.sale.invoiceNo}: ${DELIVERY_LABELS[pending.status].toLowerCase()}`),
-              )
-              .catch(toastError)
-          : undefined
-      }
-    />
-  );
-  return { ask: (sale: SaleListItem, status: DeliveryStatus) => setPending({ sale, status }), dialog };
 }
 
 export function SalesPage() {
@@ -85,7 +50,7 @@ export function SalesPage() {
   const query = useSales(list.query);
   const staff = useStaffList({ pageSize: 100 }, can('staff.view'));
   const remove = salesApi.useRemove();
-  const delivery = useDeliveryAction();
+  const orders = useOrderActions();
   const [removing, setRemoving] = useState<SaleListItem | null>(null);
   const totals = query.data?.meta.totals;
 
@@ -197,10 +162,17 @@ export function SalesPage() {
     {
       id: 'delivery',
       header: 'Delivery',
-      accessorFn: (s) => s.deliveryStatus ?? '',
+      accessorFn: (s) => (s.deliveryStatus ? DELIVERY_LABELS[s.deliveryStatus] : ''),
       cell: ({ row }) =>
         row.original.deliveryStatus ? (
-          <StatusBadge status={row.original.deliveryStatus} />
+          <div>
+            <DeliveryBadge status={row.original.deliveryStatus} />
+            {row.original.dispatchedOn ? (
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                sent {formatDate(row.original.dispatchedOn)}
+              </div>
+            ) : null}
+          </div>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
@@ -220,21 +192,40 @@ export function SalesPage() {
               {
                 label: 'Edit',
                 icon: Pencil,
-                hidden: !canChange(s, 'update') || s.deliveryStatus === 'returned',
+                hidden:
+                  !canChange(s, 'update') ||
+                  s.deliveryStatus === 'returned' ||
+                  s.deliveryStatus === 'cancelled',
                 onSelect: () => void navigate(`/sales/${s.id}/edit`),
+              },
+              {
+                label: 'Dispatch',
+                icon: Truck,
+                separatorBefore: true,
+                hidden: !online || s.deliveryStatus !== 'pending' || !can('sales.update'),
+                onSelect: () => orders.dispatch(s),
               },
               {
                 label: 'Mark delivered',
                 icon: CheckCheck,
-                separatorBefore: true,
-                hidden: !online || s.deliveryStatus !== 'pending' || !canChange(s, 'update'),
-                onSelect: () => delivery.ask(s, 'delivered'),
+                separatorBefore: !online || s.deliveryStatus !== 'pending',
+                hidden: !online || s.deliveryStatus !== 'dispatched' || !can('sales.update'),
+                onSelect: () => orders.delivered(s),
               },
               {
                 label: 'Mark returned',
                 icon: Undo2,
-                hidden: !online || s.deliveryStatus === 'returned' || !canChange(s, 'update'),
-                onSelect: () => delivery.ask(s, 'returned'),
+                hidden:
+                  !online ||
+                  (s.deliveryStatus !== 'dispatched' && s.deliveryStatus !== 'delivered') ||
+                  !can('sales.update'),
+                onSelect: () => orders.returned(s),
+              },
+              {
+                label: 'Cancel order',
+                icon: Ban,
+                hidden: !online || s.deliveryStatus !== 'pending' || !canChange(s, 'update'),
+                onSelect: () => orders.cancel(s),
               },
               {
                 label: 'Delete',
@@ -333,7 +324,10 @@ export function SalesPage() {
               name="deliveryStatus"
               allLabel="Any delivery"
               className="w-36"
-              options={enumOptions(['pending', 'delivered', 'returned'] as const, DELIVERY_LABELS)}
+              options={enumOptions(
+                ['pending', 'dispatched', 'delivered', 'returned', 'cancelled'] as const,
+                DELIVERY_LABELS,
+              )}
             />
             {staff.data?.data.length ? (
               <FilterSelect
@@ -347,7 +341,7 @@ export function SalesPage() {
           </>
         }
       />
-      {delivery.dialog}
+      {orders.dialogs}
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}

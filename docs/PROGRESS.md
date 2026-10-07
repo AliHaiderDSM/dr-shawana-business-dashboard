@@ -12,6 +12,27 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Deliveries dashboard and online dispatch (2026-10-07)
+
+- **Deliveries page (`/deliveries`, menu: Sales → Deliveries):**
+  - Stat cards: awaiting dispatch (with the oldest order date), booked this month, dispatched this month, delivered this month.
+  - A month calendar, Monday to Sunday. Each day shows the orders booked that day with dots per status, and how many orders were sent that day.
+  - Three tabs: "Booked <day>", "Sent <day>" and "All awaiting dispatch".
+  - The orders table shows customer, address, items (labelled items are marked), amount, payment and status. Its row actions are Dispatch, Delivered, Print slip, Mark returned and Cancel order.
+- **`delivery-actions.tsx`:**
+  - `DeliveryBadge`.
+  - Dispatch dialog: dispatch date, label scanning per product (counts must match; unlabelled items go FEFO).
+  - Cancel dialog with an optional refund.
+  - `useOrderActions`, used by the sales list, sale detail and Deliveries.
+- **Sales:**
+  - The Delivery column shows the new statuses and the date sent.
+  - The sale detail page has a Delivery timeline (Ordered, Dispatched, Delivered / Returned / Cancelled) and Dispatch / Cancel buttons.
+- **POS:**
+  - An online sale is booked without scanning. Labelled products can be picked from the catalog. Scanning a DSM label shows a message to scan at dispatch.
+  - Available stock excludes booked stock.
+  - The sale type is fixed once the sale is saved.
+- **Stock page:** has Booked and Available columns.
+
 ## Label layout, label not found, return detail (2026-10-06)
 
 - **Label 38×25 mm:** the product name sits on top, then the barcode. Below it, one line has the serial and `B: <batch>`, and the next line has `MFG mm/yyyy` and `EXP mm/yyyy`. Nothing is cut off any more.

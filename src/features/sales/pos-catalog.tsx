@@ -82,10 +82,12 @@ export function PosCatalog({
   onPick,
   onPiece,
   inCart,
+  online = false,
 }: {
   onPick: (pick: CatalogPick) => void;
   onPiece: (serial: string) => Promise<void>;
   inCart: (kind: CatalogPick['kind'], refId: string) => string | undefined;
+  online?: boolean;
 }) {
   const [tab, setTab] = useState<'products' | 'bundles'>('products');
   const [search, setSearch] = useState('');
@@ -107,17 +109,23 @@ export function PosCatalog({
   const balances = new Map((stock.data?.data ?? []).map((row) => [row.productId, row]));
   const sellable = (productId: string) => {
     const row = balances.get(productId);
-    return row ? String(Number(row.quantity) - Number(row.expiredQuantity)) : undefined;
+    return row
+      ? String(Number(row.quantity) - Number(row.expiredQuantity) - Number(row.reservedQuantity))
+      : undefined;
   };
 
   const scan = async (code: string) => {
     try {
       if (isSerial(code)) {
+        if (online) {
+          toast.error('Online orders are scanned when they are dispatched. Pick the product instead.');
+          return;
+        }
         await onPiece(code);
         return;
       }
       const product = await findProductByBarcode(code);
-      if (product.trackSerials) {
+      if (product.trackSerials && !online) {
         toast.error(`${product.name} is labelled. Scan the DSM label on the pack.`);
         return;
       }
@@ -197,7 +205,7 @@ export function PosCatalog({
                     low={balance ? Number(sellable(p.id)) <= 0 || balance.isLowStock : false}
                     inCart={inCart('product', p.id)}
                     onPick={() =>
-                      p.trackSerials
+                      p.trackSerials && !online
                         ? toast.error(`${p.name} is labelled. Scan the DSM label on the pack.`)
                         : onPick({
                             kind: 'product',

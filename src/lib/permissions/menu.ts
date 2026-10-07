@@ -173,6 +173,14 @@ export const MENU: MenuGroup[] = [
         showInWarehouse: true,
       },
       {
+        key: 'deliveries',
+        label: 'Deliveries',
+        path: '/deliveries',
+        icon: CalendarClock,
+        anyOf: ['sales.view'],
+        scope: 'branch',
+      },
+      {
         key: 'delivery',
         label: 'Delivery Report',
         path: '/delivery-report',

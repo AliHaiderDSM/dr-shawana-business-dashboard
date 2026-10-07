@@ -1,6 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, CheckCheck, FileImage, Pencil, Plus, Printer, Trash2, Undo2, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Ban,
+  CheckCheck,
+  FileImage,
+  Pencil,
+  Plus,
+  Printer,
+  Trash2,
+  Truck,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -43,7 +55,8 @@ import {
   type Sale,
   type SalePayment,
 } from './api';
-import { useCanChangeSale, useDeliveryAction } from './sales-page';
+import { DeliveryBadge, useOrderActions } from './delivery-actions';
+import { useCanChangeSale } from './sales-page';
 
 type Item = Sale['items'][number];
 
@@ -165,6 +178,62 @@ function SalePaymentSheet({
   );
 }
 
+function DeliveryTimeline({ sale }: { sale: Sale }) {
+  const cancelled = sale.deliveryStatus === 'cancelled';
+  const returned = sale.deliveryStatus === 'returned';
+  const steps = [
+    { label: 'Ordered', date: sale.date, done: true, hint: 'Stock booked for this order' },
+    cancelled
+      ? { label: 'Cancelled', date: null, done: true, hint: 'Booked stock was freed' }
+      : {
+          label: 'Dispatched',
+          date: sale.dispatchedOn,
+          done: Boolean(sale.dispatchedOn),
+          hint: sale.dispatchedOn ? 'Stock left the inventory' : 'Waiting for dispatch',
+        },
+    ...(cancelled
+      ? []
+      : [
+          returned
+            ? { label: 'Returned', date: null, done: true, hint: 'Sent to the returns section' }
+            : {
+                label: 'Delivered',
+                date: sale.deliveredOn,
+                done: Boolean(sale.deliveredOn),
+                hint: sale.deliveredOn ? 'Reached the customer' : 'Not delivered yet',
+              },
+        ]),
+  ];
+  return (
+    <Panel title="Delivery">
+      <ol className="space-y-0">
+        {steps.map((step, index) => (
+          <li key={step.label} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <span
+                className={cn(
+                  'mt-1 size-2.5 rounded-full border-2',
+                  step.done ? 'border-primary bg-primary' : 'border-muted-foreground/40 bg-background',
+                )}
+              />
+              {index < steps.length - 1 ? <span className="w-px flex-1 bg-border" /> : null}
+            </div>
+            <div className="pb-4 text-sm">
+              <div className={cn('font-medium', !step.done && 'text-muted-foreground')}>
+                {step.label}
+                {step.date ? (
+                  <span className="font-normal text-muted-foreground"> · {formatDate(step.date)}</span>
+                ) : null}
+              </div>
+              <div className="text-xs text-muted-foreground">{step.hint}</div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </Panel>
+  );
+}
+
 export function SaleDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -174,7 +243,7 @@ export function SaleDetailPage() {
   const returns = useReturns({ saleId: id, pageSize: 50 });
   const removePayment = useRemoveSalePayment(id);
   const removeProof = useRemoveSalePaymentProof(id);
-  const delivery = useDeliveryAction();
+  const orders = useOrderActions();
   const [payment, setPayment] = useState<SalePayment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentKey, setPaymentKey] = useState(0);
@@ -313,7 +382,7 @@ export function SaleDetailPage() {
           <span className="flex flex-wrap items-center gap-3">
             {s.invoiceNo}
             <StatusBadge status={s.paymentStatus} />
-            {s.deliveryStatus ? <StatusBadge status={s.deliveryStatus} /> : null}
+            {s.deliveryStatus ? <DeliveryBadge status={s.deliveryStatus} /> : null}
           </span>
         }
         description={`${SALE_TYPE_LABELS[s.saleType]} · ${s.city} · ${formatDate(s.date)}`}
@@ -324,18 +393,35 @@ export function SaleDetailPage() {
               Print bill
             </Button>
             {online && s.deliveryStatus === 'pending' && editable ? (
-              <Button variant="outline" onClick={() => delivery.ask(s, 'delivered')}>
+              <Button variant="outline" onClick={() => orders.cancel(s)}>
+                <Ban />
+                Cancel order
+              </Button>
+            ) : null}
+            {online && s.deliveryStatus === 'pending' && can('sales.update') ? (
+              <Button onClick={() => orders.dispatch(s)}>
+                <Truck />
+                Dispatch
+              </Button>
+            ) : null}
+            {online && s.deliveryStatus === 'dispatched' && can('sales.update') ? (
+              <Button variant="outline" onClick={() => orders.delivered(s)}>
                 <CheckCheck />
                 Delivered
               </Button>
             ) : null}
-            {online && s.deliveryStatus !== 'returned' && editable ? (
-              <Button variant="outline" onClick={() => delivery.ask(s, 'returned')}>
+            {online &&
+            (s.deliveryStatus === 'dispatched' || s.deliveryStatus === 'delivered') &&
+            can('sales.update') ? (
+              <Button variant="outline" onClick={() => orders.returned(s)}>
                 <Undo2 />
                 Returned
               </Button>
             ) : null}
-            {editable && s.deliveryStatus !== 'returned' && !returns.data?.data.length ? (
+            {editable &&
+            s.deliveryStatus !== 'returned' &&
+            s.deliveryStatus !== 'cancelled' &&
+            !returns.data?.data.length ? (
               <Button onClick={() => void navigate(`/sales/${s.id}/edit`)}>
                 <Pencil />
                 Edit sale
@@ -440,6 +526,7 @@ export function SaleDetailPage() {
           ) : null}
         </div>
         <div className="space-y-6">
+          {online ? <DeliveryTimeline sale={s} /> : null}
           <Panel title="Customer">
             <DetailList
               items={[
@@ -502,7 +589,7 @@ export function SaleDetailPage() {
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
       />
-      {delivery.dialog}
+      {orders.dialogs}
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}

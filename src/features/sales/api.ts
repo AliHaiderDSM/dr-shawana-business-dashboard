@@ -29,10 +29,16 @@ export const PAYMENT_STATUS_LABELS: Record<Sale['paymentStatus'], string> = {
   paid: 'Paid',
 };
 export const DELIVERY_LABELS: Record<DeliveryStatus, string> = {
-  pending: 'Pending',
+  pending: 'Awaiting dispatch',
+  dispatched: 'Dispatched',
   delivered: 'Delivered',
   returned: 'Returned',
+  cancelled: 'Cancelled',
 };
+
+export type DeliveryOrder = Schemas['DeliveryOrder'];
+export type DeliveryCalendar = Schemas['DeliveryCalendar'];
+export type DeliveryDay = DeliveryCalendar['days'][number];
 export const SALE_CITIES = ['Lahore', 'Islamabad', 'Karachi', 'Multan'];
 
 const DEPENDENTS = ['sales', 'stock', 'products', 'dashboard', 'returns', 'patients'];
@@ -70,11 +76,55 @@ export function useCreateSale() {
 export function useSetDelivery() {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: DeliveryStatus }) =>
+    mutationFn: ({ id, status }: { id: string; status: 'delivered' | 'returned' }) =>
       unwrap(api.POST('/branch/sales/{id}/delivery', { params: { path: { id } }, body: { status } })).then(
         (r) => r.data,
       ),
     onSuccess: invalidate,
+  });
+}
+
+export function useDispatchOrder() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, date, serials }: { id: string; date: string; serials: string[] }) =>
+      unwrap(
+        api.POST('/branch/sales/{id}/dispatch', {
+          params: { path: { id } },
+          body: { date, ...(serials.length ? { serials } : {}) },
+        }),
+      ).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCancelOrder() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, refund }: { id: string; refund: Schemas['ReturnRefundInput'] | null }) =>
+      unwrap(api.POST('/branch/sales/{id}/cancel', { params: { path: { id } }, body: { refund } })).then(
+        (r) => r.data,
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeliveryCalendar(month: string) {
+  return useQuery({
+    queryKey: ['sales', 'delivery-calendar', month],
+    queryFn: () =>
+      unwrap(api.GET('/branch/sales/delivery-calendar', { params: { query: { month } } })).then(
+        (r) => r.data,
+      ),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useDeliveries(query: { date?: string; by?: 'order' | 'dispatch'; status?: DeliveryStatus }) {
+  return useQuery({
+    queryKey: ['sales', 'deliveries', query],
+    queryFn: () => unwrap(api.GET('/branch/sales/deliveries', { params: { query } })).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 

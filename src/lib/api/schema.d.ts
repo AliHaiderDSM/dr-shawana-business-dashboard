@@ -17154,7 +17154,7 @@ export interface paths {
                     createdBy?: string;
                     saleType?: "office" | "online";
                     city?: string;
-                    deliveryStatus?: "pending" | "delivered" | "returned";
+                    deliveryStatus?: "pending" | "dispatched" | "delivered" | "returned" | "cancelled";
                     paymentStatus?: "unpaid" | "partial" | "paid";
                     method?: "cash" | "online";
                     accountSheetId?: string;
@@ -17213,7 +17213,11 @@ export interface paths {
                                 /** @enum {string} */
                                 paymentStatus: "unpaid" | "partial" | "paid";
                                 /** @enum {string|null} */
-                                deliveryStatus: "pending" | "delivered" | "returned" | null;
+                                deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
+                                /** Format: date */
+                                dispatchedOn: string | null;
+                                /** Format: date */
+                                deliveredOn: string | null;
                                 paymentMethods: ("cash" | "online")[];
                                 note: string | null;
                                 /** Format: uuid */
@@ -17638,7 +17642,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Online sales: mark pending, delivered or returned. Returning puts the stock back (sale_return). */
+        /** Online orders after dispatch: mark delivered (sets deliveredOn) or returned (creates a return in the returns section). */
         post: {
             parameters: {
                 query?: {
@@ -17751,6 +17755,362 @@ export interface paths {
                             data: {
                                 [key: string]: unknown;
                             };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/{id}/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dispatch a booked online order: scan the labels, stock leaves on the dispatch date and the order becomes dispatched */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DispatchOrder"];
+                };
+            };
+            responses: {
+                /** @description Dispatched */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Sale"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel an online order that was not dispatched yet; its booked stock is released. An optional refund is recorded as a return with no items. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CancelOrder"];
+                };
+            };
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Sale"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/delivery-calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Online orders per day of a month: booked, awaiting dispatch, dispatched, delivered, plus dispatches per day */
+        get: {
+            parameters: {
+                query: {
+                    month: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Calendar */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["DeliveryCalendar"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Online orders of one day (by order date or dispatch date) or by status, with their items */
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                    by?: "order" | "dispatch";
+                    status?: "pending" | "dispatched" | "delivered" | "returned" | "cancelled";
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Orders */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["DeliveryOrder"][];
                         };
                     };
                 };
@@ -22509,6 +22869,11 @@ export interface components {
              * @example 10.000
              */
             expiredQuantity: string;
+            /**
+             * @description Booked by online orders that are still waiting for dispatch; still on the shelf
+             * @example 10.000
+             */
+            reservedQuantity: string;
             /** @example 10.000 */
             lowStockThreshold: string;
             isLowStock: boolean;
@@ -24671,253 +25036,6 @@ export interface components {
             /** @example 10.000 */
             qty: string;
         };
-        SalePaymentInput: {
-            /** @enum {string} */
-            method: "cash" | "online";
-            /** @example 1250.50 */
-            amount: string;
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            /** Format: uuid */
-            accountSheetId: string;
-            senderBank?: string | null;
-            senderAccountTitle?: string | null;
-            senderAccountNo?: string | null;
-            proofIndex?: number;
-            /** @description Positions in "paymentProofs" of the screenshots for this payment */
-            proofIndexes?: number[];
-        };
-        CreateSale: {
-            /** Format: uuid */
-            patientId?: string;
-            patient?: {
-                name: string;
-                /** @example 923001234567 */
-                phone: string;
-                city: string;
-                /** @example 42 */
-                age?: number;
-                /**
-                 * Format: date
-                 * @example 2026-09-30
-                 */
-                dateOfBirth?: string | null;
-                country?: string | null;
-                address?: string | null;
-            };
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            /** @enum {string} */
-            saleType: "office" | "online";
-            /** @description Defaults to the branch city */
-            city?: string;
-            note?: string | null;
-            items: {
-                /** Format: uuid */
-                productId?: string;
-                /** Format: uuid */
-                bundleId?: string;
-                /** @example 10.000 */
-                qty: string;
-                /**
-                 * @description Discount on this line only, before the sale discount
-                 * @example 10
-                 */
-                discountPercent?: string;
-            }[];
-            /** @description Scanned piece labels. Required for products tracked by label. */
-            serials?: string[];
-            /** @default [] */
-            payments: components["schemas"]["SalePaymentInput"][];
-            /** @description posSoft "Auto": any unpaid part becomes the discount (the percent is then fixed) */
-            autoDiscount?: boolean;
-            /** @example 10 */
-            discountPercent?: string;
-        };
-        UpdateSale: {
-            /** Format: uuid */
-            patientId?: string;
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            /** @enum {string} */
-            saleType?: "office" | "online";
-            city?: string;
-            note?: string | null;
-            items?: {
-                /** Format: uuid */
-                productId?: string;
-                /** Format: uuid */
-                bundleId?: string;
-                /** @example 10.000 */
-                qty: string;
-                /**
-                 * @description Discount on this line only, before the sale discount
-                 * @example 10
-                 */
-                discountPercent?: string;
-            }[];
-            /** @description Every label on the sale after the edit. Leave out to keep the labels already sold. */
-            serials?: string[];
-            /** @example 10 */
-            discountPercent?: string;
-        };
-        SaleDeliveryStatus: {
-            /** @enum {string} */
-            status: "pending" | "delivered" | "returned";
-        };
-        UpdateSalePayment: {
-            /** @enum {string} */
-            method?: "cash" | "online";
-            /** @example 1250.50 */
-            amount?: string;
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            /** Format: uuid */
-            accountSheetId?: string;
-            senderBank?: string | null;
-            senderAccountTitle?: string | null;
-            senderAccountNo?: string | null;
-        };
-        SalePayment: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            saleId: string;
-            /** @enum {string} */
-            method: "cash" | "online";
-            /** @example 1250.50 */
-            amount: string;
-            /** Format: date */
-            date: string;
-            /** Format: uuid */
-            accountSheetId: string;
-            accountSheet: {
-                /** Format: uuid */
-                id: string;
-                accountName: string;
-                accountCode: string;
-            } | null;
-            senderBank: string | null;
-            senderAccountTitle: string | null;
-            senderAccountNo: string | null;
-            hasProof: boolean;
-            proofOriginalName: string | null;
-            proofs: {
-                /** Format: uuid */
-                id: string;
-                originalName: string;
-                contentType: string;
-            }[];
-            /** Format: uuid */
-            createdBy: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        Sale: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            branchId: string;
-            /** @example LHR-000123 */
-            invoiceNo: string;
-            invoiceSeq: number;
-            /** Format: uuid */
-            patientId: string;
-            patient: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                phone: string;
-            } | null;
-            patientCity: string | null;
-            /** @enum {string} */
-            saleType: "office" | "online";
-            city: string;
-            /** Format: date */
-            date: string;
-            /** @example 10.000 */
-            totalQty: string;
-            /** @example 1250.50 */
-            subtotal: string;
-            discountPercent: string;
-            /** @example 1250.50 */
-            discountAmount: string;
-            /** @example 1250.50 */
-            total: string;
-            /** @example 1250.50 */
-            received: string;
-            /** @example 1250.50 */
-            remaining: string;
-            /** @enum {string} */
-            paymentStatus: "unpaid" | "partial" | "paid";
-            /** @enum {string|null} */
-            deliveryStatus: "pending" | "delivered" | "returned" | null;
-            paymentMethods: ("cash" | "online")[];
-            note: string | null;
-            items: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                productId: string;
-                product: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                } | null;
-                /** Format: uuid */
-                bundleId: string | null;
-                bundle: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                } | null;
-                /** @example 10.000 */
-                qty: string;
-                /** @example 1250.50 */
-                unitPrice: string;
-                discountPercent: string;
-                /** @example 1250.50 */
-                discountAmount: string;
-                /** @example 1250.50 */
-                lineTotal: string;
-            }[];
-            payments: components["schemas"]["SalePayment"][];
-            /** Format: uuid */
-            createdBy: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            /** @description The selling branch (list only) */
-            branch?: {
-                /** Format: uuid */
-                id: string;
-                code: string;
-                name: string;
-            } | null;
-            /** @description Labelled pieces sold on this sale (detail only) */
-            serials?: {
-                serial: string;
-                /** Format: uuid */
-                productId: string;
-                /** @enum {string} */
-                status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
-            }[];
-            /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
-            batches?: components["schemas"]["AllocatedBatch"][];
-        };
         ReturnRefundInput: {
             /** @example 1250.50 */
             amount: string;
@@ -25063,6 +25181,335 @@ export interface components {
                 trackSerials: boolean;
                 /** @description Labels sold on the sale and not returned yet */
                 serials: string[];
+            }[];
+        };
+        SalePaymentInput: {
+            /** @enum {string} */
+            method: "cash" | "online";
+            /** @example 1250.50 */
+            amount: string;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            /** Format: uuid */
+            accountSheetId: string;
+            senderBank?: string | null;
+            senderAccountTitle?: string | null;
+            senderAccountNo?: string | null;
+            proofIndex?: number;
+            /** @description Positions in "paymentProofs" of the screenshots for this payment */
+            proofIndexes?: number[];
+        };
+        CreateSale: {
+            /** Format: uuid */
+            patientId?: string;
+            patient?: {
+                name: string;
+                /** @example 923001234567 */
+                phone: string;
+                city: string;
+                /** @example 42 */
+                age?: number;
+                /**
+                 * Format: date
+                 * @example 2026-09-30
+                 */
+                dateOfBirth?: string | null;
+                country?: string | null;
+                address?: string | null;
+            };
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            /** @enum {string} */
+            saleType: "office" | "online";
+            /** @description Defaults to the branch city */
+            city?: string;
+            note?: string | null;
+            items: {
+                /** Format: uuid */
+                productId?: string;
+                /** Format: uuid */
+                bundleId?: string;
+                /** @example 10.000 */
+                qty: string;
+                /**
+                 * @description Discount on this line only, before the sale discount
+                 * @example 10
+                 */
+                discountPercent?: string;
+            }[];
+            /** @description Scanned piece labels. Required for products tracked by label. */
+            serials?: string[];
+            /** @default [] */
+            payments: components["schemas"]["SalePaymentInput"][];
+            /** @description posSoft "Auto": any unpaid part becomes the discount (the percent is then fixed) */
+            autoDiscount?: boolean;
+            /** @example 10 */
+            discountPercent?: string;
+        };
+        UpdateSale: {
+            /** Format: uuid */
+            patientId?: string;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            /** @enum {string} */
+            saleType?: "office" | "online";
+            city?: string;
+            note?: string | null;
+            items?: {
+                /** Format: uuid */
+                productId?: string;
+                /** Format: uuid */
+                bundleId?: string;
+                /** @example 10.000 */
+                qty: string;
+                /**
+                 * @description Discount on this line only, before the sale discount
+                 * @example 10
+                 */
+                discountPercent?: string;
+            }[];
+            /** @description Every label on the sale after the edit. Leave out to keep the labels already sold. */
+            serials?: string[];
+            /** @example 10 */
+            discountPercent?: string;
+        };
+        SaleDeliveryStatus: {
+            /** @enum {string} */
+            status: "delivered" | "returned";
+        };
+        DispatchOrder: {
+            /**
+             * Format: date
+             * @description Dispatch date; stock leaves on this date. Defaults to today.
+             * @example 2026-09-30
+             */
+            date?: string;
+            /** @description DSM labels of every labelled piece in the parcel */
+            serials?: string[];
+        };
+        CancelOrder: {
+            refund?: components["schemas"]["ReturnRefundInput"] | null;
+        };
+        UpdateSalePayment: {
+            /** @enum {string} */
+            method?: "cash" | "online";
+            /** @example 1250.50 */
+            amount?: string;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            /** Format: uuid */
+            accountSheetId?: string;
+            senderBank?: string | null;
+            senderAccountTitle?: string | null;
+            senderAccountNo?: string | null;
+        };
+        SalePayment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            saleId: string;
+            /** @enum {string} */
+            method: "cash" | "online";
+            /** @example 1250.50 */
+            amount: string;
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            accountSheetId: string;
+            accountSheet: {
+                /** Format: uuid */
+                id: string;
+                accountName: string;
+                accountCode: string;
+            } | null;
+            senderBank: string | null;
+            senderAccountTitle: string | null;
+            senderAccountNo: string | null;
+            hasProof: boolean;
+            proofOriginalName: string | null;
+            proofs: {
+                /** Format: uuid */
+                id: string;
+                originalName: string;
+                contentType: string;
+            }[];
+            /** Format: uuid */
+            createdBy: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        Sale: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            branchId: string;
+            /** @example LHR-000123 */
+            invoiceNo: string;
+            invoiceSeq: number;
+            /** Format: uuid */
+            patientId: string;
+            patient: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                phone: string;
+            } | null;
+            patientCity: string | null;
+            /** @enum {string} */
+            saleType: "office" | "online";
+            city: string;
+            /** Format: date */
+            date: string;
+            /** @example 10.000 */
+            totalQty: string;
+            /** @example 1250.50 */
+            subtotal: string;
+            discountPercent: string;
+            /** @example 1250.50 */
+            discountAmount: string;
+            /** @example 1250.50 */
+            total: string;
+            /** @example 1250.50 */
+            received: string;
+            /** @example 1250.50 */
+            remaining: string;
+            /** @enum {string} */
+            paymentStatus: "unpaid" | "partial" | "paid";
+            /** @enum {string|null} */
+            deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
+            /** Format: date */
+            dispatchedOn: string | null;
+            /** Format: date */
+            deliveredOn: string | null;
+            paymentMethods: ("cash" | "online")[];
+            note: string | null;
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                productId: string;
+                product: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                } | null;
+                /** Format: uuid */
+                bundleId: string | null;
+                bundle: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                } | null;
+                /** @example 10.000 */
+                qty: string;
+                /** @example 1250.50 */
+                unitPrice: string;
+                discountPercent: string;
+                /** @example 1250.50 */
+                discountAmount: string;
+                /** @example 1250.50 */
+                lineTotal: string;
+            }[];
+            payments: components["schemas"]["SalePayment"][];
+            /** Format: uuid */
+            createdBy: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description The selling branch (list only) */
+            branch?: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+            } | null;
+            /** @description Labelled pieces sold on this sale (detail only) */
+            serials?: {
+                serial: string;
+                /** Format: uuid */
+                productId: string;
+                /** @enum {string} */
+                status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+            }[];
+            /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
+            batches?: components["schemas"]["AllocatedBatch"][];
+        };
+        DeliveryCalendar: {
+            month: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            days: {
+                /** Format: date */
+                date: string;
+                orders: number;
+                awaiting: number;
+                dispatched: number;
+                delivered: number;
+                returned: number;
+                cancelled: number;
+                /** @example 1250.50 */
+                amount: string;
+                /** @description Orders dispatched on this date, whatever their order date */
+                dispatchedOn: number;
+            }[];
+            awaiting: {
+                orders: number;
+                /** Format: date */
+                oldest: string | null;
+            };
+        };
+        DeliveryOrder: {
+            /** Format: uuid */
+            id: string;
+            invoiceNo: string;
+            /** Format: date */
+            date: string;
+            /** @enum {string|null} */
+            deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
+            /** Format: date */
+            dispatchedOn: string | null;
+            /** Format: date */
+            deliveredOn: string | null;
+            /** @example 1250.50 */
+            total: string;
+            /** @example 1250.50 */
+            received: string;
+            /** @example 1250.50 */
+            remaining: string;
+            /** @enum {string} */
+            paymentStatus: "unpaid" | "partial" | "paid";
+            city: string;
+            note: string | null;
+            customer: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                phone: string;
+                address: string | null;
+            } | null;
+            items: {
+                /** Format: uuid */
+                productId: string;
+                name: string;
+                bundle: string | null;
+                /** @example 10.000 */
+                qty: string;
+                tracked: boolean;
             }[];
         };
         CreateJournalEntry: {

@@ -32,6 +32,7 @@ const STATUS_TONES: Record<string, Tone> = {
   cancelled: 'neutral',
   pending: 'warning',
   delivered: 'success',
+  dispatched: 'info',
   returned: 'danger',
   open: 'info',
   supplier: 'primary',

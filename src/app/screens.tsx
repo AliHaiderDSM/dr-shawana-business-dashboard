@@ -295,6 +295,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'deliveries',
+    element: page(() => import('@/features/sales/deliveries-page'), 'DeliveriesPage'),
+    anyOf: ['sales.view'],
+    scope: 'branch',
+  },
+  {
     path: 'delivery-report',
     element: page(() => import('@/features/sales/delivery-report'), 'DeliveryReportPage'),
     anyOf: ['deliveryReport.view'],
