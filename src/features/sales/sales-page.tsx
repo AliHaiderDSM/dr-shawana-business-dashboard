@@ -1,7 +1,19 @@
 import { productsApi } from '@/features/catalog/api';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Ban, CheckCheck, Eye, Pencil, Plus, Printer, Trash2, Truck, Undo2 } from 'lucide-react';
+import {
+  Ban,
+  CheckCheck,
+  CheckCircle2,
+  Eye,
+  HandCoins,
+  Pencil,
+  Plus,
+  Printer,
+  Trash2,
+  Truck,
+  Undo2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -12,20 +24,24 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useStaffList } from '@/features/staff/api';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
+import { cn } from '@/lib/utils';
 import { formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
   DELIVERY_LABELS,
   PAYMENT_STATUS_LABELS,
   SALE_TYPE_LABELS,
   salesApi,
+  useApprovePayments,
   useSales,
   type SaleListItem,
 } from './api';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
+import { SalePaymentSheet } from './sale-detail-page';
 
 const OWN_ONLY = new Set(['front_desk', 'team_manager']);
 
@@ -52,6 +68,15 @@ export function SalesPage() {
   const remove = salesApi.useRemove();
   const orders = useOrderActions();
   const [removing, setRemoving] = useState<SaleListItem | null>(null);
+  const [paying, setPaying] = useState<SaleListItem | null>(null);
+  const [payKey, setPayKey] = useState(0);
+  const due = list.filters.due === 'true';
+  const awaiting = list.filters.deliveryStatus === 'pending';
+  const approval = list.filters.paymentStatus === 'awaiting_approval';
+  const approve = useApprovePayments();
+  const byBranch = query.data?.meta.byBranch;
+  const quickFilter = (name: 'due' | 'deliveryStatus', on: boolean) =>
+    list.setFilter(name, on ? (name === 'due' ? 'true' : 'pending') : undefined);
   const totals = query.data?.meta.totals;
 
   const columns: ColumnDef<SaleListItem, unknown>[] = [
@@ -190,6 +215,25 @@ export function SalesPage() {
               { label: 'Open', icon: Eye, onSelect: () => open(s) },
               { label: 'Print bill', icon: Printer, onSelect: () => open(s, `/print/bill/${s.id}`) },
               {
+                label: 'Approve payment',
+                icon: CheckCircle2,
+                hidden: s.paymentStatus !== 'awaiting_approval' || !can('salePayments.update'),
+                onSelect: () =>
+                  approve
+                    .mutateAsync({ id: s.id })
+                    .then(() => toast.success(`${s.invoiceNo}: payment approved`))
+                    .catch(toastError),
+              },
+              {
+                label: 'Mark as paid',
+                icon: HandCoins,
+                hidden: Number(s.remaining) <= 0 || !canChange(s, 'update'),
+                onSelect: () => {
+                  setPaying(s);
+                  setPayKey((k) => k + 1);
+                },
+              },
+              {
                 label: 'Edit',
                 icon: Pencil,
                 hidden:
@@ -258,6 +302,38 @@ export function SalesPage() {
           ) : null
         }
       />
+      {byBranch?.length ? (
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {byBranch.map((b) => {
+            const selected = list.filters.branchId === b.branchId;
+            return (
+              <button
+                key={b.branchId}
+                type="button"
+                onClick={() => list.setFilter('branchId', selected ? undefined : b.branchId)}
+                className={cn(
+                  'rounded-xl border bg-card p-4 text-left shadow-xs transition-colors hover:border-border-strong',
+                  selected && 'border-primary ring-1 ring-primary',
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">{b.branchName}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {formatCount(b.count)} sales · {formatQuantity(b.qty)} qty
+                  </span>
+                </div>
+                <div className="mt-2 text-xl font-semibold tabular-nums">{formatMoney(b.total)}</div>
+                <div className="mt-1 flex gap-3 text-xs tabular-nums">
+                  <span className="text-muted-foreground">Received {formatMoney(b.received)}</span>
+                  {Number(b.remaining) > 0 ? (
+                    <span className="text-destructive">Due {formatMoney(b.remaining)}</span>
+                  ) : null}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
       <DataTable
         columns={columns}
         data={query.data?.data}
@@ -286,6 +362,46 @@ export function SalesPage() {
         }
         toolbar={
           <>
+            {(
+              [
+                ['all', 'All sales', !due && !awaiting && !approval],
+                ['due', 'Payment pending', due],
+                ['approval', 'Awaiting approval', approval],
+                ['awaiting', 'Awaiting dispatch', awaiting],
+              ] as const
+            ).map(([key, label, checked]) => (
+              <label
+                key={key}
+                className={cn(
+                  'flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm whitespace-nowrap transition-colors',
+                  checked ? 'border-primary bg-primary-soft text-primary-soft-foreground' : 'hover:bg-accent',
+                )}
+              >
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(value) => {
+                    if (key === 'all') {
+                      list.setFilters({
+                        due: undefined,
+                        deliveryStatus: undefined,
+                        paymentStatus: undefined,
+                      });
+                      return;
+                    }
+                    if (key === 'approval') {
+                      list.setFilter('paymentStatus', value === true ? 'awaiting_approval' : undefined);
+                      return;
+                    }
+                    quickFilter(key === 'due' ? 'due' : 'deliveryStatus', value === true);
+                  }}
+                />
+                {label}
+                {key === 'due' && checked && totals ? (
+                  <span className="text-xs tabular-nums">{formatMoney(totals.remaining)} due</span>
+                ) : null}
+              </label>
+            ))}
+            <div className="basis-full" aria-hidden />
             <DateRangeFilter list={list} />
             {inWarehouse ? (
               <FilterSelect
@@ -317,7 +433,10 @@ export function SalesPage() {
               name="paymentStatus"
               allLabel="Any payment"
               className="w-36"
-              options={enumOptions(['paid', 'partial', 'unpaid'] as const, PAYMENT_STATUS_LABELS)}
+              options={enumOptions(
+                ['paid', 'partial', 'unpaid', 'awaiting_approval'] as const,
+                PAYMENT_STATUS_LABELS,
+              )}
             />
             <FilterSelect
               list={list}
@@ -342,6 +461,16 @@ export function SalesPage() {
         }
       />
       {orders.dialogs}
+      {paying ? (
+        <SalePaymentSheet
+          key={payKey}
+          saleId={paying.id}
+          payment={null}
+          suggested={paying.remaining}
+          open
+          onOpenChange={(open) => !open && setPaying(null)}
+        />
+      ) : null}
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}

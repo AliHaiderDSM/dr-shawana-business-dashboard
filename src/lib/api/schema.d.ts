@@ -17155,7 +17155,9 @@ export interface paths {
                     saleType?: "office" | "online";
                     city?: string;
                     deliveryStatus?: "pending" | "dispatched" | "delivered" | "returned" | "cancelled";
-                    paymentStatus?: "unpaid" | "partial" | "paid";
+                    paymentStatus?: "unpaid" | "partial" | "paid" | "awaiting_approval";
+                    /** @description Only sales with money still to receive (unpaid or partly paid) */
+                    due?: "true";
                     method?: "cash" | "online";
                     accountSheetId?: string;
                     from?: string;
@@ -17211,7 +17213,7 @@ export interface paths {
                                 /** @example 1250.50 */
                                 remaining: string;
                                 /** @enum {string} */
-                                paymentStatus: "unpaid" | "partial" | "paid";
+                                paymentStatus: "unpaid" | "partial" | "paid" | "awaiting_approval";
                                 /** @enum {string|null} */
                                 deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
                                 /** Format: date */
@@ -17259,6 +17261,21 @@ export interface paths {
                                     /** @example 1250.50 */
                                     remaining: string;
                                 };
+                                /** @description Super Admin across branches: the same totals split by branch */
+                                byBranch?: {
+                                    /** Format: uuid */
+                                    branchId: string;
+                                    branchName: string;
+                                    count: number;
+                                    /** @example 10.000 */
+                                    qty: string;
+                                    /** @example 1250.50 */
+                                    total: string;
+                                    /** @example 1250.50 */
+                                    received: string;
+                                    /** @example 1250.50 */
+                                    remaining: string;
+                                }[];
                             };
                         };
                     };
@@ -17807,6 +17824,97 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/{id}/payments/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve the payments of a sale (all that wait, or the given ones). Only approved payments count in the account balance and make the sale paid. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ApproveSalePayments"];
+                };
+            };
+            responses: {
+                /** @description Approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Sale"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -22883,6 +22991,8 @@ export interface components {
             from: string;
             /** Format: date */
             to: string;
+            /** @description Rows carry a per-branch breakdown (Super Admin stock) */
+            perBranch: boolean;
             rows: {
                 /** Format: uuid */
                 productId: string;
@@ -22907,15 +23017,26 @@ export interface components {
                 /** @example 10.000 */
                 closing: string;
                 /**
-                 * @description Sold at the toBranchId branch (0 without it)
+                 * @description Sold at the toBranchId branch, or at every branch for the Super Admin stock
                  * @example 10.000
                  */
                 branchSold: string;
                 /**
-                 * @description Left at the toBranchId branch on the last day (0 without it)
+                 * @description Left at the toBranchId branch (or every branch) on the last day
                  * @example 10.000
                  */
                 inBranch: string;
+                branches: {
+                    /** Format: uuid */
+                    branchId: string;
+                    branchName: string;
+                    /** @example 10.000 */
+                    sent: string;
+                    /** @example 10.000 */
+                    sold: string;
+                    /** @example 10.000 */
+                    inBranch: string;
+                }[];
             }[];
             totals: {
                 /** @example 10.000 */
@@ -22937,12 +23058,12 @@ export interface components {
                 /** @example 10.000 */
                 closing: string;
                 /**
-                 * @description Sold at the toBranchId branch (0 without it)
+                 * @description Sold at the toBranchId branch, or at every branch for the Super Admin stock
                  * @example 10.000
                  */
                 branchSold: string;
                 /**
-                 * @description Left at the toBranchId branch on the last day (0 without it)
+                 * @description Left at the toBranchId branch (or every branch) on the last day
                  * @example 10.000
                  */
                 inBranch: string;
@@ -25245,7 +25366,6 @@ export interface components {
             }[];
             /** @description Scanned piece labels. Required for products tracked by label. */
             serials?: string[];
-            /** @default [] */
             payments: components["schemas"]["SalePaymentInput"][];
             /** @description posSoft "Auto": any unpaid part becomes the discount (the percent is then fixed) */
             autoDiscount?: boolean;
@@ -25315,6 +25435,10 @@ export interface components {
             senderAccountTitle?: string | null;
             senderAccountNo?: string | null;
         };
+        ApproveSalePayments: {
+            /** @description Leave out to approve every payment of the sale that is waiting */
+            paymentIds?: string[];
+        };
         SalePayment: {
             /** Format: uuid */
             id: string;
@@ -25337,6 +25461,13 @@ export interface components {
             senderBank: string | null;
             senderAccountTitle: string | null;
             senderAccountNo: string | null;
+            /**
+             * Format: date-time
+             * @description Null while the payment waits for approval
+             */
+            approvedAt: string | null;
+            /** Format: uuid */
+            approvedBy: string | null;
             hasProof: boolean;
             proofOriginalName: string | null;
             proofs: {
@@ -25386,7 +25517,7 @@ export interface components {
             /** @example 1250.50 */
             remaining: string;
             /** @enum {string} */
-            paymentStatus: "unpaid" | "partial" | "paid";
+            paymentStatus: "unpaid" | "partial" | "paid" | "awaiting_approval";
             /** @enum {string|null} */
             deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
             /** Format: date */
@@ -25492,7 +25623,7 @@ export interface components {
             /** @example 1250.50 */
             remaining: string;
             /** @enum {string} */
-            paymentStatus: "unpaid" | "partial" | "paid";
+            paymentStatus: "unpaid" | "partial" | "paid" | "awaiting_approval";
             city: string;
             note: string | null;
             customer: {

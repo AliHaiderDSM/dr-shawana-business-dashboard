@@ -24,6 +24,20 @@ const QUANTITY_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[
   { key: 'closing', label: 'Total stock' },
 ];
 
+const SUPER_ADMIN_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] = [
+  { key: 'stockIn', label: 'Stock in' },
+  { key: 'stockOut', label: 'Sent to branches' },
+  { key: 'branchSold', label: 'Sold in branches' },
+  { key: 'inBranch', label: 'Left in branches' },
+  { key: 'closing', label: 'Super Admin stock' },
+];
+
+const SPLIT: Partial<Record<keyof InventoryReport['totals'], 'sent' | 'sold' | 'inBranch'>> = {
+  stockOut: 'sent',
+  branchSold: 'sold',
+  inBranch: 'inBranch',
+};
+
 const BRANCH_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] = [
   { key: 'stockOut', label: 'Stock out' },
   { key: 'branchSold', label: 'Sale qty' },
@@ -33,6 +47,7 @@ const BRANCH_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] 
 const columnsFor = (
   quantities: typeof QUANTITY_COLUMNS,
   range: { from: string; to: string },
+  split = false,
 ): ColumnDef<ReportRow, unknown>[] => [
   {
     id: 'name',
@@ -63,11 +78,27 @@ const columnsFor = (
     header: label,
     accessorKey: key,
     meta: { align: 'right' },
-    cell: ({ row }) => (
-      <span className={cn((key === 'closing' || key === 'inBranch') && 'font-semibold')}>
-        {formatQuantity(row.original[key])}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const part = split ? SPLIT[key] : undefined;
+      const shares = part ? row.original.branches.filter((b) => Number(b[part]) !== 0) : [];
+      return (
+        <div>
+          <span className={cn((key === 'closing' || key === 'inBranch') && 'font-semibold')}>
+            {formatQuantity(row.original[key])}
+          </span>
+          {part && shares.length ? (
+            <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+              {shares.map((b) => (
+                <div key={b.branchId} className="flex justify-end gap-2 whitespace-nowrap">
+                  <span>{b.branchName}</span>
+                  <span className="min-w-8 text-foreground tabular-nums">{formatQuantity(b[part!])}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      );
+    },
   })),
 ];
 
@@ -92,7 +123,12 @@ export function InventoryReportPage() {
   const inWarehouse = useInWarehouse();
   const branches = useBranchOptions(inWarehouse);
   const targetBranch = (branches.data ?? []).find((b) => b.id === list.filters.toBranchId);
-  const columns = columnsFor(targetBranch ? BRANCH_COLUMNS : QUANTITY_COLUMNS, { from, to });
+  const perBranch = Boolean(report.data?.perBranch);
+  const columns = columnsFor(
+    targetBranch ? BRANCH_COLUMNS : perBranch ? SUPER_ADMIN_COLUMNS : QUANTITY_COLUMNS,
+    { from, to },
+    perBranch,
+  );
   const month = list.filters.from?.slice(0, 7) ?? isoDate(today).slice(0, 7);
 
   const rows: ReportRow[] = report.data?.rows.length
@@ -103,6 +139,7 @@ export function InventoryReportPage() {
           name: 'Total',
           categoryName: null,
           ...report.data.totals,
+          branches: [],
           isTotal: true,
         },
       ]
@@ -115,7 +152,9 @@ export function InventoryReportPage() {
         description={
           targetBranch
             ? `Stock sent to ${targetBranch.name}, sold there and left there, ${formatDate(from)} to ${formatDate(to)}.`
-            : `Stock in, stock out, sales and total stock from ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
+            : perBranch
+              ? `What came in, which branch it was sent to, what each branch sold and what is left there, ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
+              : `Stock in, stock out, sales and total stock from ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
         }
         actions={<PrintButton />}
       />

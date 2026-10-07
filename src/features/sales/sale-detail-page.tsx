@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Ban,
   CheckCheck,
+  CheckCircle2,
   FileImage,
   Pencil,
   Plus,
@@ -49,6 +50,7 @@ import {
   SALE_TYPE_LABELS,
   salePaymentProofUrl,
   salesApi,
+  useApprovePayments,
   useRemoveSalePayment,
   useRemoveSalePaymentProof,
   useSaveSalePayment,
@@ -112,7 +114,7 @@ const itemColumns: ColumnDef<Item, unknown>[] = [
   },
 ];
 
-function SalePaymentSheet({
+export function SalePaymentSheet({
   saleId,
   payment,
   suggested,
@@ -244,6 +246,7 @@ export function SaleDetailPage() {
   const removePayment = useRemoveSalePayment(id);
   const removeProof = useRemoveSalePaymentProof(id);
   const orders = useOrderActions();
+  const approve = useApprovePayments();
   const [payment, setPayment] = useState<SalePayment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentKey, setPaymentKey] = useState(0);
@@ -254,6 +257,8 @@ export function SaleDetailPage() {
   const s = sale.data;
   const editable = canChange(s, 'update');
   const online = s.saleType === 'online';
+  const canApprove = can('salePayments.update');
+  const waiting = (s.payments ?? []).filter((p) => !p.approvedAt);
 
   const openPayment = (entry: SalePayment | null) => {
     setPayment(entry);
@@ -347,6 +352,37 @@ export function SaleDetailPage() {
       accessorKey: 'amount',
       meta: { align: 'right' },
       cell: ({ row }) => <span className="font-medium">{formatMoney(row.original.amount)}</span>,
+    },
+    {
+      id: 'approval',
+      header: 'Approval',
+      accessorFn: (p) => (p.approvedAt ? 'Approved' : 'Awaiting approval'),
+      cell: ({ row }) =>
+        row.original.approvedAt ? (
+          <div>
+            <StatusBadge tone="success">Approved</StatusBadge>
+            <div className="mt-0.5 text-xs text-muted-foreground">
+              {formatDateTime(row.original.approvedAt)}
+            </div>
+          </div>
+        ) : canApprove ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={approve.isPending}
+            onClick={() =>
+              approve
+                .mutateAsync({ id: s.id, paymentIds: [row.original.id] })
+                .then(() => toast.success('Payment approved'))
+                .catch(toastError)
+            }
+          >
+            <CheckCircle2 />
+            Approve
+          </Button>
+        ) : (
+          <StatusBadge tone="warning">Awaiting approval</StatusBadge>
+        ),
     },
     {
       id: 'actions',
@@ -493,12 +529,29 @@ export function SaleDetailPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Payments</h2>
-              {editable ? (
-                <Button size="sm" variant="outline" onClick={() => openPayment(null)}>
-                  <Plus />
-                  Add payment
-                </Button>
-              ) : null}
+              <div className="flex gap-2">
+                {canApprove && waiting.length > 1 ? (
+                  <Button
+                    size="sm"
+                    disabled={approve.isPending}
+                    onClick={() =>
+                      approve
+                        .mutateAsync({ id: s.id })
+                        .then(() => toast.success(`${waiting.length} payments approved`))
+                        .catch(toastError)
+                    }
+                  >
+                    <CheckCircle2 />
+                    Approve all ({waiting.length})
+                  </Button>
+                ) : null}
+                {editable ? (
+                  <Button size="sm" variant="outline" onClick={() => openPayment(null)}>
+                    <Plus />
+                    Add payment
+                  </Button>
+                ) : null}
+              </div>
             </div>
             <DataTable columns={paymentColumns} data={s.payments} emptyTitle="No payments yet" />
           </div>

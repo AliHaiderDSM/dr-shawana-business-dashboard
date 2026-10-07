@@ -10,7 +10,7 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -25,7 +25,6 @@ import { DetailSkeleton } from '@/components/shared/skeletons';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import {
   emptyPayment,
   PaymentFields,
@@ -172,7 +171,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
     note: sale?.note ?? null,
     items: lines,
     pieces,
-    autoDiscount: !sale,
+    autoDiscount: false,
     discountPercent: sale ? String(Number(sale.discountPercent)) : '0',
     payments: [],
   };
@@ -341,7 +340,18 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     applyServerErrors(form, error);
   };
 
+  const cityEdited = useRef(Boolean(sale));
+  const newPatientCity = values.patientMode === 'new' ? values.patient?.city : undefined;
+  useEffect(() => {
+    if (newPatientCity && !cityEdited.current) form.setValue('city', newPatientCity);
+  }, [newPatientCity, form]);
+
   const submit = form.handleSubmit((v) => {
+    if (!sale && v.payments.length === 0) {
+      form.setError('payments', { message: 'Add the payment. A sale is saved only with its payment.' });
+      toast.error('Add the payment first. A sale is saved only with its payment.');
+      return;
+    }
     setShortages([]);
     const items = v.items.map((l) => ({
       ...(l.kind === 'product' ? { productId: l.refId } : { bundleId: l.refId }),
@@ -449,7 +459,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                           field.onChange(value ?? '');
                           setPatientLabel(option ? `${option.label} · ${option.hint ?? ''}` : null);
                           const city = option?.hint?.split(' · ')[1];
-                          if (city && !form.getValues('city')) form.setValue('city', city);
+                          if (city && !cityEdited.current) form.setValue('city', city);
                         }}
                         selectedLabel={patientLabel}
                         onSearchChange={setPatientSearch}
@@ -542,7 +552,15 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                   <FormItem>
                     <FormLabel>Sale city</FormLabel>
                     <FormControl>
-                      <Input list={cityListId} placeholder="Branch city" {...field} />
+                      <Input
+                        list={cityListId}
+                        placeholder="Customer city"
+                        {...field}
+                        onChange={(event) => {
+                          cityEdited.current = true;
+                          field.onChange(event);
+                        }}
+                      />
                     </FormControl>
                     <datalist id={cityListId}>
                       {SALE_CITIES.map((c) => (
@@ -728,44 +746,26 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-medium">Discount</div>
-                <div className="text-xs text-muted-foreground">
-                  {values.autoDiscount
-                    ? 'Auto: whatever is not received is discount.'
-                    : 'Percentage of the sub amount.'}
-                </div>
+                <div className="text-xs text-muted-foreground">Overall discount on the sub amount.</div>
               </div>
-              <div className="flex items-center gap-3">
-                {!editing ? (
-                  <label className="flex items-center gap-2 text-sm">
-                    <Switch
-                      checked={values.autoDiscount}
-                      onCheckedChange={(checked) => form.setValue('autoDiscount', checked)}
-                      aria-label="Auto discount"
-                    />
-                    Auto
-                  </label>
-                ) : null}
-                {!values.autoDiscount ? (
-                  <FormField
-                    control={form.control}
-                    name="discountPercent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <MoneyInput
-                            prefix="%"
-                            decimals={2}
-                            className="w-24"
-                            aria-label="Discount percent"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : null}
-              </div>
+              <FormField
+                control={form.control}
+                name="discountPercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <MoneyInput
+                        prefix="%"
+                        decimals={2}
+                        className="w-24"
+                        aria-label="Discount percent"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             {!editing ? (
@@ -808,6 +808,17 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                     <Plus />
                     Add payment
                   </Button>
+                ) : null}
+                {payments.fields.length === 0 ? (
+                  <p
+                    className={cn(
+                      'text-xs',
+                      form.formState.errors.payments ? 'text-destructive' : 'text-muted-foreground',
+                    )}
+                  >
+                    A sale is saved only with its payment. New payments wait for approval before the sale
+                    shows as paid.
+                  </p>
                 ) : null}
               </div>
             ) : (

@@ -19,6 +19,16 @@ export interface SaleTotals {
   remaining: string;
 }
 
+export interface BranchSalesTotals {
+  branchId: string;
+  branchName: string;
+  count: number;
+  qty: string;
+  total: string;
+  received: string;
+  remaining: string;
+}
+
 export const SALE_TYPE_LABELS: Record<Sale['saleType'], string> = {
   office: 'Office sale',
   online: 'Online sale',
@@ -27,6 +37,7 @@ export const PAYMENT_STATUS_LABELS: Record<Sale['paymentStatus'], string> = {
   unpaid: 'Unpaid',
   partial: 'Partial',
   paid: 'Paid',
+  awaiting_approval: 'Awaiting approval',
 };
 export const DELIVERY_LABELS: Record<DeliveryStatus, string> = {
   pending: 'Awaiting dispatch',
@@ -58,7 +69,7 @@ export function useSales(query: Record<string, unknown>) {
     queryFn: () =>
       unwrap(api.GET('/branch/sales', { params: { query } })) as Promise<{
         data: SaleListItem[];
-        meta: PageMeta & { totals: SaleTotals };
+        meta: PageMeta & { totals: SaleTotals; byBranch?: BranchSalesTotals[] };
       }>,
     placeholderData: keepPreviousData,
   });
@@ -80,6 +91,20 @@ export function useSetDelivery() {
       unwrap(api.POST('/branch/sales/{id}/delivery', { params: { path: { id } }, body: { status } })).then(
         (r) => r.data,
       ),
+    onSuccess: invalidate,
+  });
+}
+
+export function useApprovePayments() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, paymentIds }: { id: string; paymentIds?: string[] }) =>
+      unwrap(
+        api.POST('/branch/sales/{id}/payments/approve', {
+          params: { path: { id } },
+          body: paymentIds ? { paymentIds } : {},
+        }),
+      ).then((r) => r.data),
     onSuccess: invalidate,
   });
 }

@@ -24,7 +24,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const ME_QUERY_KEY = ['auth', 'me'] as const;
 
-const SUPER_ADMIN_MANAGES = new Set(['branches', 'company', 'staff', 'doctors', 'reports', 'dashboard']);
+const SUPER_ADMIN_MANAGES = new Set([
+  'branches',
+  'company',
+  'staff',
+  'doctors',
+  'reports',
+  'dashboard',
+  'salePayments',
+]);
 const SUPER_ADMIN_STOCK_MODULES = new Set([
   'stock',
   'inventoryReport',

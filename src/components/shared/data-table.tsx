@@ -240,7 +240,9 @@ export function DataTable<T>({
                       : null;
                   const content = header.isPlaceholder
                     ? null
-                    : flexRender(header.column.columnDef.header, header.getContext());
+                    : header.column.id === 'actions' && header.column.columnDef.header === ''
+                      ? 'Actions'
+                      : flexRender(header.column.columnDef.header, header.getContext());
                   return (
                     <TableHead
                       key={header.id}

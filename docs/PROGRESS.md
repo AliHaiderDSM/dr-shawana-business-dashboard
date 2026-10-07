@@ -12,6 +12,32 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Payment approval, branch sales cards, POS payment and city (2026-10-07)
+
+- **Sales list:**
+  - The quick-filter checkboxes sit next to search: All sales, Payment pending, Awaiting approval and Awaiting dispatch.
+  - The row menu has "Approve payment" for users with `salePayments.update`.
+  - The Super Admin sees a card per branch with sales count, qty, total, received and due. Clicking a card filters to that branch.
+- **Sale detail:**
+  - The payments table has an Approval column: Approved with its time, or an Approve button.
+  - "Approve all" appears when more than one payment is waiting.
+- **Super Admin:** `salePayments` is in the modules the Super Admin can act on in any branch.
+- **POS:**
+  - A new sale cannot be saved without a payment.
+  - The Auto discount toggle is gone; there is only the overall discount %.
+  - Sale city follows the customer's city until the user types their own.
+
+## Sales quick filters, mark as paid, Super Admin inventory report (2026-10-07)
+
+- **Sales list:**
+  - Quick filter checkboxes: All sales, Payment pending (`due=true`, shows the amount still due) and Awaiting dispatch (`deliveryStatus=pending`). The last two can be combined.
+  - The row menu has "Mark as paid" when money is still due. It opens the payment sheet with the remaining amount filled in.
+- **`DataTable`:** the menu column is titled "Actions".
+- **Inventory report:**
+  - For the Super Admin stock with no "Stock to" filter, the columns are Stock in, Sent to branches, Sold in branches, Left in branches and Super Admin stock.
+  - Each of the branch columns lists the branches below its total.
+  - The Super Admin view no longer has the Purchased column.
+
 ## Deliveries dashboard and online dispatch (2026-10-07)
 
 - **Deliveries page (`/deliveries`, menu: Sales → Deliveries):**

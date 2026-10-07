@@ -27,6 +27,7 @@ const STATUS_TONES: Record<string, Tone> = {
   paid: 'success',
   partial: 'warning',
   unpaid: 'danger',
+  awaiting_approval: 'warning',
   booked: 'info',
   completed: 'success',
   cancelled: 'neutral',
