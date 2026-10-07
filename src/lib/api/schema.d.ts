@@ -23026,6 +23026,11 @@ export interface components {
                  * @example 10.000
                  */
                 inBranch: string;
+                /**
+                 * @description Returned by customers back into stock at the toBranchId branch (or every branch)
+                 * @example 10.000
+                 */
+                branchReturned: string;
                 branches: {
                     /** Format: uuid */
                     branchId: string;
@@ -23034,6 +23039,8 @@ export interface components {
                     sent: string;
                     /** @example 10.000 */
                     sold: string;
+                    /** @example 10.000 */
+                    returned: string;
                     /** @example 10.000 */
                     inBranch: string;
                 }[];
@@ -23067,6 +23074,11 @@ export interface components {
                  * @example 10.000
                  */
                 inBranch: string;
+                /**
+                 * @description Returned by customers back into stock at the toBranchId branch (or every branch)
+                 * @example 10.000
+                 */
+                branchReturned: string;
             };
         };
         ProductLedger: {

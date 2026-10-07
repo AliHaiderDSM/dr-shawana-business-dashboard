@@ -28,19 +28,22 @@ const SUPER_ADMIN_COLUMNS: { key: keyof InventoryReport['totals']; label: string
   { key: 'stockIn', label: 'Stock in' },
   { key: 'stockOut', label: 'Sent to branches' },
   { key: 'branchSold', label: 'Sold in branches' },
-  { key: 'inBranch', label: 'Left in branches' },
+  { key: 'branchReturned', label: 'Returned in branches' },
+  { key: 'inBranch', label: 'Now in branches' },
   { key: 'closing', label: 'Super Admin stock' },
 ];
 
-const SPLIT: Partial<Record<keyof InventoryReport['totals'], 'sent' | 'sold' | 'inBranch'>> = {
+const SPLIT: Partial<Record<keyof InventoryReport['totals'], 'sent' | 'sold' | 'returned' | 'inBranch'>> = {
   stockOut: 'sent',
   branchSold: 'sold',
+  branchReturned: 'returned',
   inBranch: 'inBranch',
 };
 
 const BRANCH_COLUMNS: { key: keyof InventoryReport['totals']; label: string }[] = [
   { key: 'stockOut', label: 'Stock out' },
   { key: 'branchSold', label: 'Sale qty' },
+  { key: 'branchReturned', label: 'Returned' },
   { key: 'inBranch', label: 'In branch (offices qty)' },
 ];
 
@@ -153,7 +156,7 @@ export function InventoryReportPage() {
           targetBranch
             ? `Stock sent to ${targetBranch.name}, sold there and left there, ${formatDate(from)} to ${formatDate(to)}.`
             : perBranch
-              ? `What came in, which branch it was sent to, what each branch sold and what is left there, ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
+              ? `What came in, which branch it was sent to, what each branch sold and got back, and what each branch holds now (sent − sold + returned, plus any stock the branch had before), ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
               : `Stock in, stock out, sales and total stock from ${formatDate(from)} to ${formatDate(to)}. Click a product for its full history.`
         }
         actions={<PrintButton />}

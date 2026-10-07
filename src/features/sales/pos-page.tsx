@@ -186,13 +186,17 @@ function Totals({ values, saving }: { values: Values; saving: boolean }) {
     : (subtotal * (Number(values.discountPercent) || 0)) / 100;
   const total = subtotal - discount;
   const qty = values.items.reduce((sum, l) => sum + (Number(l.qty) || 0), 0);
+  const percent = Number(values.discountPercent) || 0;
   const rows: [string, string][] = [
     ['Total qty', formatQuantity(qty)],
-    ...(lineOff > 0 ? ([['Item discounts', formatMoney(lineOff)]] as [string, string][]) : []),
+    ...(lineOff > 0
+      ? ([
+          ['Products before discount', formatMoney(subtotal + lineOff)],
+          ['Product discounts', `− ${formatMoney(lineOff)}`],
+        ] as [string, string][])
+      : []),
     ['Sub amount', formatMoney(subtotal)],
-    ['Discount', formatMoney(discount)],
-    ['Received', formatMoney(received)],
-    ['Remaining', formatMoney(Math.max(0, total - received))],
+    [`Overall discount (${percent}%)`, discount > 0 ? `− ${formatMoney(discount)}` : formatMoney(0)],
   ];
   return (
     <div className="space-y-1.5 rounded-lg bg-muted/50 p-3 text-sm">

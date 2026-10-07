@@ -160,25 +160,6 @@ export function SalesPage() {
       cell: ({ row }) => <span className="font-medium">{formatMoney(row.original.total)}</span>,
     },
     {
-      id: 'received',
-      header: 'Received',
-      accessorKey: 'received',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.received),
-    },
-    {
-      id: 'remaining',
-      header: 'Remaining',
-      accessorKey: 'remaining',
-      meta: { align: 'right' },
-      cell: ({ row }) =>
-        Number(row.original.remaining) > 0 ? (
-          <span className="text-destructive">{formatMoney(row.original.remaining)}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ),
-    },
-    {
       id: 'payment',
       header: 'Payment',
       accessorKey: 'paymentStatus',
@@ -323,12 +304,6 @@ export function SalesPage() {
                   </span>
                 </div>
                 <div className="mt-2 text-xl font-semibold tabular-nums">{formatMoney(b.total)}</div>
-                <div className="mt-1 flex gap-3 text-xs tabular-nums">
-                  <span className="text-muted-foreground">Received {formatMoney(b.received)}</span>
-                  {Number(b.remaining) > 0 ? (
-                    <span className="text-destructive">Due {formatMoney(b.remaining)}</span>
-                  ) : null}
-                </div>
               </button>
             );
           })}
@@ -355,8 +330,6 @@ export function SalesPage() {
                 subtotal: formatMoney(totals.subtotal),
                 discount: formatMoney(totals.discount),
                 total: formatMoney(totals.total),
-                received: formatMoney(totals.received),
-                remaining: formatMoney(totals.remaining),
               }
             : undefined
         }
@@ -396,9 +369,6 @@ export function SalesPage() {
                   }}
                 />
                 {label}
-                {key === 'due' && checked && totals ? (
-                  <span className="text-xs tabular-nums">{formatMoney(totals.remaining)} due</span>
-                ) : null}
               </label>
             ))}
             <div className="basis-full" aria-hidden />
