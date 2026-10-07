@@ -63,7 +63,7 @@ function withBranch(href: string): string {
   const branchId = branchStore.queryValue();
   if (!branchId) return href;
   const url = new URL(href, window.location.origin);
-  const path = url.pathname.replace(env.VITE_API_BASE_URL, '');
+  const path = url.pathname.replace(new URL(env.VITE_API_BASE_URL, window.location.origin).pathname, '');
   if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return href;
   if (branchStore.inWarehouse() && OVERVIEW_PATHS.includes(path)) return href;
   url.searchParams.set('branchId', branchId);
