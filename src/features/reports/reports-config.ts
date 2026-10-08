@@ -10,6 +10,7 @@ import {
   Receipt,
   Scale,
   Stethoscope,
+  Truck,
   Wallet,
 } from 'lucide-react';
 import type { Role } from '@/lib/api/types';
@@ -31,6 +32,7 @@ export interface ReportDef {
   group: 'Sales' | 'Clinic' | 'Inventory' | 'Finance';
   allowed: (can: (permission: string) => boolean, role: Role | undefined) => boolean;
   filters: ReportFilter[];
+  path?: string;
 }
 
 const roles =
@@ -104,6 +106,17 @@ const source = (key: string, label: string, from: OptionSource): ReportFilter =>
 });
 
 export const REPORTS: ReportDef[] = [
+  {
+    key: 'delivery-report',
+    title: 'Print delivery report',
+    description:
+      'Monthly delivery report',
+    icon: Truck,
+    group: 'Sales',
+    allowed: permission('deliveryReport.view'),
+    filters: [],
+    path: '/delivery-report',
+  },
   {
     key: 'sale-products',
     title: 'Sale products',

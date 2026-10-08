@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Printer, Tags } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { PageHeader } from '@/components/shared/page-header';
@@ -12,10 +12,9 @@ import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { productsApi } from '@/features/catalog/api';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
-import { useBatches, useProductLedger, useSerialSummary, type ItemStatus, type ProductLedger } from './api';
+import { useProductLedger, useSerialSummary, type ItemStatus, type ProductLedger } from './api';
 import { ITEM_STATUS } from './item-status';
 import { RegisterLabelsDialog } from './labels-page';
-import { batchColumns } from './batches-page';
 
 type Movement = ProductLedger['movements'][number];
 
@@ -138,8 +137,6 @@ const columns: ColumnDef<Movement, unknown>[] = [
 
 export function StockLedgerPage() {
   const { productId = '' } = useParams();
-  const navigate = useNavigate();
-  const batches = useBatches({ productId, pageSize: 100 });
   const serials = useSerialSummary(productId);
   const [registering, setRegistering] = useState(false);
   const unlabelled = (serials.data?.unlabelled ?? []).reduce((sum, u) => sum + Number(u.qty), 0);
@@ -233,20 +230,7 @@ export function StockLedgerPage() {
       {registering ? (
         <RegisterLabelsDialog productId={productId} onClose={() => setRegistering(false)} />
       ) : null}
-      {batches.data?.data.length ? (
-        <div className="mb-6 space-y-3">
-          <h2 className="text-sm font-semibold">Batches</h2>
-          <DataTable
-            columns={batchColumns(false)}
-            data={batches.data.data}
-            isLoading={batches.isLoading}
-            onRowClick={(b) => void navigate(`/inventory/batches/${b.id}`)}
-            exportFileName={`batches-${product.data?.name ?? productId}`}
-            emptyTitle="No batches"
-          />
-        </div>
-      ) : null}
-      <h2 className="mb-3 text-sm font-semibold">Movements</h2>
+      <h2 className="mb-3 text-sm font-semibold">Movements and batches</h2>
       <DataTable
         columns={columns}
         data={data?.movements}

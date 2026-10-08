@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Stock history single table, Super Admin accounts, product dates, delivery report card (2026-10-08)
+
+- **Stock history:** the separate Batches table is removed. The Movements table already shows the batch, Mfg and Expiry.
+- **Super Admin:** can add, edit and delete Bank & Cash accounts for the selected branch.
+- **Products:** new Created column, sortable.
+- **Reports:**
+  - The stock report shows each movement's batch. Manufactured is removed.
+  - A "Print delivery report" card in Sales opens the delivery report, which prints two slips per A4 page.
+
 ## Product size units, no barcode field, Super Admin label counts, report alignment (2026-10-08)
 
 - **Product form:**

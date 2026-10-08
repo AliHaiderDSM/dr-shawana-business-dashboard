@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatMoney, formatQuantity } from '@/lib/format';
+import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { categoriesApi, productsApi, type Product } from './api';
 import { ProductFormSheet } from './product-form-sheet';
 
@@ -67,6 +67,15 @@ export function ProductsPage() {
       cell: ({ row }) => row.original.batchNo ?? '—',
     },
     { id: 'unit', header: 'Unit', accessorKey: 'unit' },
+    {
+      id: 'createdAt',
+      header: 'Created',
+      accessorKey: 'createdAt',
+      meta: { sortKey: 'createdAt' },
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap text-muted-foreground">{formatDate(row.original.createdAt)}</span>
+      ),
+    },
     {
       id: 'salePrice',
       header: 'Sale price',

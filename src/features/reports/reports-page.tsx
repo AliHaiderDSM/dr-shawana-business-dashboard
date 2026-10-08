@@ -37,7 +37,7 @@ export function ReportsPage() {
                   {items.map((report) => (
                     <Link
                       key={report.key}
-                      to={`/reports/${report.key}`}
+                      to={report.path ?? `/reports/${report.key}`}
                       className="group flex gap-4 rounded-xl border bg-card p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
                     >
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
