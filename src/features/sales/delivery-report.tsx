@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Printer } from 'lucide-react';
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { DataTable } from '@/components/shared/data-table';
@@ -97,7 +97,7 @@ function readQuery(params: URLSearchParams): DeliverySlipsQuery {
     saleType: saleType === 'office' || saleType === 'online' ? saleType : undefined,
     invoiceFrom: number('invoiceFrom'),
     invoiceTo: number('invoiceTo'),
-    awaitingDispatch: params.get('awaitingDispatch') === 'true' ? 'true' : undefined,
+    dispatchedOn: params.get('dispatchedOn') ?? undefined,
   };
 }
 
@@ -106,13 +106,33 @@ export const slipQuery = (order: { invoiceNo: string; date: string }): DeliveryS
   return { saleType: 'online', from: order.date, to: order.date, invoiceFrom: seq, invoiceTo: seq };
 };
 
-export const slipPrintPath = (order: { invoiceNo: string; date: string }) => {
+export const slipPrintPath = (
+  order: { invoiceNo: string; date: string },
+  picked?: { productId: string; qty: number }[],
+) => {
   const query = slipQuery(order);
-  return `/print/delivery-slips?saleType=online&from=${query.from}&to=${query.to}&invoiceFrom=${query.invoiceFrom}&invoiceTo=${query.invoiceTo}`;
+  const items = picked ? `&items=${picked.map((p) => `${p.productId}:${p.qty}`).join(',')}` : '';
+  return `/print/delivery-slips?saleType=online&from=${query.from}&to=${query.to}&invoiceFrom=${query.invoiceFrom}&invoiceTo=${query.invoiceTo}${items}`;
+};
+
+const pickItems = (slip: DeliverySlip, picked: string | null): DeliverySlip => {
+  if (!picked) return slip;
+  const qty = new Map(
+    picked.split(',').map((part) => {
+      const [productId = '', count = '0'] = part.split(':');
+      return [productId, Number(count)] as const;
+    }),
+  );
+  const items = [...new Map(slip.items.map((i) => [i.productId, i])).values()]
+    .filter((i) => (qty.get(i.productId) ?? 0) > 0)
+    .map((i) => ({ ...i, qty: String(qty.get(i.productId)) }));
+  return { ...slip, items };
 };
 
 function SlipRule() {
-  return <div className="h-px bg-linear-to-r from-transparent via-foreground to-transparent" />;
+  return (
+    <div className="h-px bg-linear-to-r from-transparent via-foreground to-transparent [-webkit-print-color-adjust:exact] [print-color-adjust:exact]" />
+  );
 }
 
 function SlipField({ label, value }: { label: string; value: string | null | undefined }) {
@@ -140,7 +160,7 @@ function SlipParty({ title, party }: { title: string; party: DeliverySlip['to'] 
 
 function Slip({ slip }: { slip: DeliverySlip }) {
   return (
-    <article className="flex h-[136mm] break-inside-avoid flex-col gap-3 overflow-hidden text-[13px]">
+    <article className="flex h-[128mm] break-inside-avoid flex-col gap-3 overflow-hidden text-[13px]">
       <img src={logo} alt="Dr Shawana DSM" className="mx-auto h-20 w-auto" />
       <SlipRule />
       <SlipField label="Order No" value={`ORD#${slip.invoiceNo}`} />
@@ -275,21 +295,31 @@ export function DeliverySlipsPrint() {
   const query = readQuery(params);
   const slips = useDeliverySlips({
     ...query,
-    from:
-      query.from ?? (query.invoiceFrom || query.invoiceTo || query.awaitingDispatch ? undefined : isoDate()),
+    from: query.from ?? (query.invoiceFrom || query.invoiceTo || query.dispatchedOn ? undefined : isoDate()),
   });
   return (
     <PrintPage isLoading={slips.isLoading} error={slips.error} onRetry={() => void slips.refetch()}>
-      {() => (
-        <div className="space-y-6">
-          {(slips.data?.slips ?? []).map((slip, index) => (
-            <Fragment key={slip.saleId}>
-              <Slip slip={slip} />
-              {index % 2 === 1 ? <div className="break-after-page" /> : null}
-            </Fragment>
-          ))}
-        </div>
-      )}
+      {() => {
+        const list = (slips.data?.slips ?? []).map((slip) => pickItems(slip, params.get('items')));
+        const pages = Array.from({ length: Math.ceil(list.length / 2) }, (_, i) =>
+          list.slice(i * 2, i * 2 + 2),
+        );
+        return (
+          <>
+            <style>{'@page { size: A4; margin: 10mm; }'}</style>
+            {pages.map((pair, index) => (
+              <section
+                key={pair[0]?.saleId ?? index}
+                className="flex flex-col gap-[8mm] border-b border-dashed pb-8 not-last:mb-8 last:border-b-0 last:pb-0 print:mb-0 print:border-b-0 print:pb-0 print:not-last:break-after-page"
+              >
+                {pair.map((slip) => (
+                  <Slip key={slip.saleId} slip={slip} />
+                ))}
+              </section>
+            ))}
+          </>
+        );
+      }}
     </PrintPage>
   );
 }

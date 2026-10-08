@@ -268,7 +268,7 @@ export interface DeliverySlip {
   date: string;
   saleType: Sale['saleType'];
   to: { name: string; phone: string; city: string | null; address: string | null };
-  items: { name: string; qty: string }[];
+  items: { productId: string; name: string; qty: string }[];
   from: { name: string; phone: string | null; city: string; address: string | null };
 }
 
@@ -279,7 +279,7 @@ export interface DeliverySlipsQuery {
   patientId?: string;
   invoiceFrom?: number;
   invoiceTo?: number;
-  awaitingDispatch?: 'true';
+  dispatchedOn?: string;
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

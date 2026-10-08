@@ -196,7 +196,9 @@ function Totals({ values, saving }: { values: Values; saving: boolean }) {
         ] as [string, string][])
       : []),
     ['Sub amount', formatMoney(subtotal)],
-    [`Overall discount (${percent}%)`, discount > 0 ? `− ${formatMoney(discount)}` : formatMoney(0)],
+    ...(discount > 0
+      ? ([[`Overall discount (${percent}%)`, `− ${formatMoney(discount)}`]] as [string, string][])
+      : []),
   ];
   return (
     <div className="space-y-1.5 rounded-lg bg-muted/50 p-3 text-sm">

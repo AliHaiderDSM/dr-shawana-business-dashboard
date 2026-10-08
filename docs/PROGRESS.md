@@ -12,6 +12,22 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Slip shows scanned products, dispatched-only printing, two slips per page (2026-10-08)
+
+- **Dispatch dialog print:**
+  - The slip lists only the products scanned so far, with the scanned qty. Unlabelled products appear with their full qty.
+  - The print icon stays disabled until something is scanned.
+- **Deliveries page printing:**
+  - "Print N slips" is on the "Sent [day]" tab. It prints the orders dispatched that day, through `delivery-slips?dispatchedOn=`.
+  - The Booked and Awaiting tabs no longer print.
+  - The row "Print slip" action is hidden while an order is still awaiting dispatch.
+- **Print layout:**
+  - Slips are paired two per A4 page, with `@page` margin 10mm and 128mm per slip.
+  - The divider lines print through print-color-adjust: exact.
+- **POS:** the Overall discount row shows only when there is an overall discount.
+- **Returns:** new Products filter.
+- **Deliveries:** the "Deliver to" column is one line ending in "...", and the full address shows on hover.
+
 ## Discount limit, one-row dispatch table, print all awaiting slips (2026-10-08)
 
 - **POS discounts:** the product discount and the overall discount accept at most 99%. Typing a bigger number is blocked, so the totals cannot overflow.

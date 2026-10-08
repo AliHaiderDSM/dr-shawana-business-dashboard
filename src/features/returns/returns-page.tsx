@@ -9,6 +9,7 @@ import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useListState } from '@/hooks/use-list-state';
+import { productsApi } from '@/features/catalog/api';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { DISPOSITION_LABELS, REASON_LABELS, useReturns, type SaleReturn } from './api';
@@ -25,6 +26,7 @@ export function ReturnsPage() {
   const { can } = useAuth();
   const list = useListState({ defaultSort: '-date' });
   const query = useReturns(list.query);
+  const products = productsApi.useOptions();
   const [params, setParams] = useSearchParams();
   const [creating, setCreating] = useState(params.get('new') === '1');
   const presetSale = params.get('saleId');
@@ -177,6 +179,13 @@ export function ReturnsPage() {
         }
         toolbar={
           <>
+            <FilterSelect
+              list={list}
+              name="productId"
+              allLabel="All products"
+              className="w-48"
+              options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
+            />
             <FilterSelect
               list={list}
               name="status"

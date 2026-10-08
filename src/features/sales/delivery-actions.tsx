@@ -69,7 +69,6 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
   const dispatch = useDispatchOrder();
   const slips = useDeliverySlips(slipQuery(order));
   const slip = slips.data?.slips.find((s) => s.saleId === order.id);
-  const printHref = useHref(slipPrintPath(order));
   const [date, setDate] = useState(isoDate());
   const [pieces, setPieces] = useState<{ serial: string; productId: string }[]>([]);
   const tracked = new Set((products.data ?? []).filter((p) => p.trackSerials).map((p) => p.id));
@@ -87,6 +86,11 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
   const scannedFor = (productId: string) => pieces.filter((p) => p.productId === productId);
   const needsScan = rows.some((r) => tracked.has(r.productId));
   const complete = rows.every((r) => !tracked.has(r.productId) || scannedFor(r.productId).length === r.qty);
+  const printable = rows.flatMap((r) => {
+    const qty = tracked.has(r.productId) ? scannedFor(r.productId).length : r.qty;
+    return qty > 0 ? [{ productId: r.productId, qty }] : [];
+  });
+  const printHref = useHref(slipPrintPath(order, printable));
 
   const scan = async (code: string) => {
     try {
@@ -166,6 +170,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
                 variant="outline"
                 aria-label="Print dispatch slip"
                 title="Print dispatch slip"
+                disabled={printable.length === 0}
                 onClick={() => window.open(printHref, '_blank')}
               >
                 <Printer />

@@ -186,7 +186,10 @@ export function DeliveriesPage() {
       header: 'Deliver to',
       accessorFn: (o) => [o.customer?.address, o.city].filter(Boolean).join(', '),
       cell: ({ row }) => (
-        <span className="line-clamp-2 max-w-56 text-sm">
+        <span
+          className="block max-w-56 truncate text-sm"
+          title={[row.original.customer?.address, row.original.city].filter(Boolean).join(', ') || undefined}
+        >
           {[row.original.customer?.address, row.original.city].filter(Boolean).join(', ') || '—'}
         </span>
       ),
@@ -265,6 +268,7 @@ export function DeliveriesPage() {
                 {
                   label: 'Print slip',
                   icon: Printer,
+                  hidden: o.deliveryStatus === 'pending',
                   onSelect: () => void navigate(slipPrintPath(o)),
                 },
                 {
@@ -300,20 +304,10 @@ export function DeliveriesPage() {
         title="Deliveries"
         description="Online orders by the day they were booked. Dispatch an order by scanning it; its stock leaves the inventory on the dispatch day."
         actions={
-          view === 'awaiting' && rows.length ? (
+          view === 'dispatch' && rows.length ? (
             <Button
               variant="outline"
-              onClick={() => void navigate('/print/delivery-slips?saleType=online&awaitingDispatch=true')}
-            >
-              <Printer />
-              Print {rows.length} slips
-            </Button>
-          ) : view === 'order' && rows.length ? (
-            <Button
-              variant="outline"
-              onClick={() =>
-                void navigate(`/print/delivery-slips?saleType=online&from=${selected}&to=${selected}`)
-              }
+              onClick={() => void navigate(`/print/delivery-slips?saleType=online&dispatchedOn=${selected}`)}
             >
               <Printer />
               Print {rows.length} slips
