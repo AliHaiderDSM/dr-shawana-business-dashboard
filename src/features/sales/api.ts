@@ -279,6 +279,7 @@ export interface DeliverySlipsQuery {
   patientId?: string;
   invoiceFrom?: number;
   invoiceTo?: number;
+  awaitingDispatch?: 'true';
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

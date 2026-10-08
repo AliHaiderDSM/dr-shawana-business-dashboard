@@ -37,6 +37,7 @@ import { formatCount, formatDate, formatMoney, formatQuantity, isoDate } from '@
 import { cn } from '@/lib/utils';
 import { useDeliveries, useDeliveryCalendar, type DeliveryDay, type DeliveryOrder } from './api';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
+import { slipPrintPath } from './delivery-report';
 
 type View = 'order' | 'dispatch' | 'awaiting';
 
@@ -264,10 +265,7 @@ export function DeliveriesPage() {
                 {
                   label: 'Print slip',
                   icon: Printer,
-                  onSelect: () =>
-                    void navigate(
-                      `/print/delivery-slips?saleType=online&from=${o.date}&to=${o.date}&invoiceFrom=${o.invoiceNo.replace(/\D/g, '')}&invoiceTo=${o.invoiceNo.replace(/\D/g, '')}`,
-                    ),
+                  onSelect: () => void navigate(slipPrintPath(o)),
                 },
                 {
                   label: 'Mark returned',
@@ -302,7 +300,15 @@ export function DeliveriesPage() {
         title="Deliveries"
         description="Online orders by the day they were booked. Dispatch an order by scanning it; its stock leaves the inventory on the dispatch day."
         actions={
-          view === 'order' && rows.length ? (
+          view === 'awaiting' && rows.length ? (
+            <Button
+              variant="outline"
+              onClick={() => void navigate('/print/delivery-slips?saleType=online&awaitingDispatch=true')}
+            >
+              <Printer />
+              Print {rows.length} slips
+            </Button>
+          ) : view === 'order' && rows.length ? (
             <Button
               variant="outline"
               onClick={() =>

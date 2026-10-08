@@ -63,8 +63,8 @@ const lineSchema = z.object({
   discount: z
     .string()
     .trim()
-    .regex(/^(\d{1,3}(\.\d{1,2})?)?$/, '%')
-    .refine((v) => !v || Number(v) <= 100, 'At most 100')
+    .regex(/^(\d{1,2}(\.\d{1,2})?)?$/, '%')
+    .refine((v) => !v || Number(v) <= 99, 'At most 99')
     .optional(),
   qty: z
     .string()
@@ -88,8 +88,8 @@ const schema = z
     discountPercent: z
       .string()
       .trim()
-      .regex(/^(\d{1,3}(\.\d{1,2})?)?$/, 'Use a percentage')
-      .refine((v) => !v || Number(v) <= 100, 'At most 100'),
+      .regex(/^(\d{1,2}(\.\d{1,2})?)?$/, 'Use a percentage')
+      .refine((v) => !v || Number(v) <= 99, 'At most 99'),
     payments: z.array(paymentSchema).max(10),
   })
   .superRefine((v, ctx) => {
@@ -698,6 +698,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                             <MoneyInput
                               prefix=""
                               decimals={2}
+                              maxValue={99}
                               placeholder="0"
                               aria-label={`${field.name} discount percent`}
                               className={cn(
@@ -761,6 +762,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                       <MoneyInput
                         prefix="%"
                         decimals={2}
+                        maxValue={99}
                         className="w-24"
                         aria-label="Discount percent"
                         {...field}
@@ -806,7 +808,9 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                     onClick={() => {
                       const subtotal = values.items.reduce((s, l) => s + lineAmounts(l).net, 0);
                       const paid = values.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-                      payments.append(emptyPayment(subtotal > paid ? (subtotal - paid).toFixed(2) : ''));
+                      payments.append(
+                        emptyPayment(subtotal > paid ? String(Number((subtotal - paid).toFixed(2))) : ''),
+                      );
                     }}
                   >
                     <Plus />

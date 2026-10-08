@@ -134,7 +134,7 @@ export function SalePaymentSheet({
     values: payment
       ? {
           method: payment.method,
-          amount: payment.amount,
+          amount: String(Number(payment.amount)),
           date: payment.date,
           accountSheetId: payment.accountSheetId,
           senderBank: payment.senderBank,

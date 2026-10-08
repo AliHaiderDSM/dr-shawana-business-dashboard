@@ -18301,6 +18301,8 @@ export interface paths {
                     to?: string;
                     invoiceFrom?: number;
                     invoiceTo?: number;
+                    /** @description Only online orders still waiting for dispatch, from any day unless from/to is given */
+                    awaitingDispatch?: "true";
                     branchId?: string;
                 };
                 header?: never;

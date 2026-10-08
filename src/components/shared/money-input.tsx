@@ -2,7 +2,11 @@ import { forwardRef, type ComponentProps } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-type MoneyInputProps = Omit<ComponentProps<typeof Input>, 'type'> & { prefix?: string; decimals?: number };
+type MoneyInputProps = Omit<ComponentProps<typeof Input>, 'type'> & {
+  prefix?: string;
+  decimals?: number;
+  maxValue?: number;
+};
 
 const patterns = new Map<number, RegExp>();
 
@@ -15,10 +19,12 @@ function patternFor(decimals: number) {
 }
 
 export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function MoneyInput(
-  { prefix = 'Rs', decimals = 2, className, onChange, ...props },
+  { prefix = 'Rs', decimals = 2, maxValue, className, onChange, ...props },
   ref,
 ) {
   const pattern = patternFor(decimals);
+  const allowed = (value: string) =>
+    pattern.test(value) && (maxValue === undefined || Number(value || 0) <= maxValue);
   return (
     <div className="relative">
       {prefix ? (
@@ -32,7 +38,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
         autoComplete="off"
         className={cn('tabular-nums', prefix && 'pl-9', className)}
         onChange={(event) => {
-          if (pattern.test(event.target.value)) onChange?.(event);
+          if (allowed(event.target.value)) onChange?.(event);
         }}
         {...props}
       />

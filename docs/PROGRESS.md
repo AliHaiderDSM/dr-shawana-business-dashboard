@@ -12,6 +12,25 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Discount limit, one-row dispatch table, print all awaiting slips (2026-10-08)
+
+- **POS discounts:** the product discount and the overall discount accept at most 99%. Typing a bigger number is blocked, so the totals cannot overflow.
+- **Dispatch dialog:**
+  - Wider than before.
+  - The customer card (name, phone, city, address) is on top. The address is cut at 10 words with "...", and the full address shows on hover. The print icon is in the same card.
+  - Each product is one table row with columns Qty, Scanned (x / n), DSM labels (removable chips) and a done tick.
+- **Deliveries, All awaiting dispatch tab:** a "Print N slips" button prints a slip for every order still waiting, two per A4 page.
+- **API:** `GET /branch/sales/delivery-slips?awaitingDispatch=true` returns only pending online orders from any day.
+
+## Dispatch slip, logo delivery slips, whole-number money (2026-10-08)
+
+- **Dispatch dialog:** after the first scan (or right away for unlabelled products), a Dispatch slip shows the customer name, phone, city and address, plus every product with its qty and scanned DSM labels. A print icon opens the slip in a new tab, so the scans stay in the dialog.
+- **Delivery slips print:**
+  - Redesigned like posSoft: the DSM logo, Order No, a "To," block (Name, Phone, City, Address), the numbered product list and a "From," block.
+  - Two slips fit on one A4 page.
+- **Bug fix:** the "Print slip" row action now finds the order by its invoice sequence. Before, it joined the branch code into the number and found nothing.
+- **Money format:** amounts show without ".00", for example Rs 1,500. Real paisa still shows, for example Rs 1,500.5. Payment amount inputs are prefilled without ".00".
+
 ## Deliveries default tab, sale saves to list, ledger cards (2026-10-07)
 
 - **Deliveries:** "All awaiting dispatch" is now the first tab and opens by default.

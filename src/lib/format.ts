@@ -4,7 +4,7 @@ const moneyFormatter = new Intl.NumberFormat('en-PK', {
   style: 'currency',
   currency: 'PKR',
   currencyDisplay: 'narrowSymbol',
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
 

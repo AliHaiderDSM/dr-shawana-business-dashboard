@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
+import logo from '@/assets/logo-hd.png';
 import { useDeliverySlips, type DeliverySlip, type DeliverySlipsQuery } from './api';
 
 const ALL = '__all__';
@@ -96,49 +97,63 @@ function readQuery(params: URLSearchParams): DeliverySlipsQuery {
     saleType: saleType === 'office' || saleType === 'online' ? saleType : undefined,
     invoiceFrom: number('invoiceFrom'),
     invoiceTo: number('invoiceTo'),
+    awaitingDispatch: params.get('awaitingDispatch') === 'true' ? 'true' : undefined,
   };
+}
+
+export const slipQuery = (order: { invoiceNo: string; date: string }): DeliverySlipsQuery => {
+  const seq = Number(order.invoiceNo.split('-').pop());
+  return { saleType: 'online', from: order.date, to: order.date, invoiceFrom: seq, invoiceTo: seq };
+};
+
+export const slipPrintPath = (order: { invoiceNo: string; date: string }) => {
+  const query = slipQuery(order);
+  return `/print/delivery-slips?saleType=online&from=${query.from}&to=${query.to}&invoiceFrom=${query.invoiceFrom}&invoiceTo=${query.invoiceTo}`;
+};
+
+function SlipRule() {
+  return <div className="h-px bg-linear-to-r from-transparent via-foreground to-transparent" />;
+}
+
+function SlipField({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="min-w-0">
+      <span className="text-muted-foreground">{label}: </span>
+      <span className="font-semibold">{value || '—'}</span>
+    </div>
+  );
+}
+
+function SlipParty({ title, party }: { title: string; party: DeliverySlip['to'] | DeliverySlip['from'] }) {
+  return (
+    <div className="space-y-2">
+      <div className="font-semibold">{title},</div>
+      <div className="grid grid-cols-3 gap-4">
+        <SlipField label="Name" value={party.name} />
+        <SlipField label="Phone" value={party.phone} />
+        <SlipField label="City" value={party.city} />
+      </div>
+      <SlipField label="Address" value={party.address} />
+    </div>
+  );
 }
 
 function Slip({ slip }: { slip: DeliverySlip }) {
   return (
-    <article className="flex h-[138mm] flex-col gap-3 overflow-hidden rounded-lg border-2 border-dashed p-5 text-sm print:rounded-none">
-      <div className="flex items-start justify-between border-b pb-2">
-        <div className="text-lg font-semibold">ORD#{slip.invoiceNo}</div>
-        <div className="text-right text-xs text-muted-foreground">
-          {formatDate(slip.date, 'dd-MM-yyyy')}
-          <div>{slip.saleType === 'online' ? 'Online sale' : 'Office sale'}</div>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">To</div>
-          <div className="text-base font-semibold">{slip.to.name}</div>
-          <div className="tabular-nums">{slip.to.phone}</div>
-          <div>{[slip.to.address, slip.to.city].filter(Boolean).join(', ')}</div>
-        </div>
-        <div>
-          <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">From</div>
-          <div className="font-semibold">{slip.from.name}</div>
-          <div className="tabular-nums">{slip.from.phone}</div>
-          <div>{[slip.from.address, slip.from.city].filter(Boolean).join(', ')}</div>
-        </div>
-      </div>
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-muted">
-            <th className="border px-2 py-1 text-left">Product</th>
-            <th className="w-20 border px-2 py-1 text-right">Qty</th>
-          </tr>
-        </thead>
-        <tbody>
-          {slip.items.map((item, index) => (
-            <tr key={index}>
-              <td className="border px-2 py-1">{item.name}</td>
-              <td className="border px-2 py-1 text-right tabular-nums">{formatQuantity(item.qty)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <article className="flex h-[136mm] break-inside-avoid flex-col gap-3 overflow-hidden text-[13px]">
+      <img src={logo} alt="Dr Shawana DSM" className="mx-auto h-20 w-auto" />
+      <SlipRule />
+      <SlipField label="Order No" value={`ORD#${slip.invoiceNo}`} />
+      <SlipParty title="To" party={slip.to} />
+      <ol className="space-y-0.5 text-xs font-semibold">
+        {slip.items.map((item, index) => (
+          <li key={index}>
+            {index + 1}: {item.name} x {formatQuantity(item.qty)}
+          </li>
+        ))}
+      </ol>
+      <SlipRule />
+      <SlipParty title="From" party={slip.from} />
     </article>
   );
 }
@@ -260,12 +275,13 @@ export function DeliverySlipsPrint() {
   const query = readQuery(params);
   const slips = useDeliverySlips({
     ...query,
-    from: query.from ?? (query.invoiceFrom || query.invoiceTo ? undefined : isoDate()),
+    from:
+      query.from ?? (query.invoiceFrom || query.invoiceTo || query.awaitingDispatch ? undefined : isoDate()),
   });
   return (
     <PrintPage isLoading={slips.isLoading} error={slips.error} onRetry={() => void slips.refetch()}>
       {() => (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {(slips.data?.slips ?? []).map((slip, index) => (
             <Fragment key={slip.saleId}>
               <Slip slip={slip} />

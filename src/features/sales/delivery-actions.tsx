@@ -1,5 +1,6 @@
-import { CheckCircle2, Loader2, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Printer, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useHref } from 'react-router';
 import { toast } from 'sonner';
 import { BarcodeScanInput } from '@/components/shared/barcode-scan-input';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -30,9 +31,11 @@ import {
   salesApi,
   useCancelOrder,
   useDispatchOrder,
+  useDeliverySlips,
   useSetDelivery,
   type DeliveryStatus,
 } from './api';
+import { slipPrintPath, slipQuery } from './delivery-report';
 
 const DELIVERY_TONES: Record<DeliveryStatus, Tone> = {
   pending: 'warning',
@@ -54,10 +57,19 @@ export interface OrderRef {
   received?: string;
 }
 
+const shortAddress = (address: string | null) => {
+  if (!address) return '—';
+  const words = address.trim().split(/\s+/);
+  return words.length > 10 ? `${words.slice(0, 10).join(' ')}...` : address;
+};
+
 function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => void }) {
   const sale = salesApi.useDetail(order.id);
   const products = productsApi.useOptions();
   const dispatch = useDispatchOrder();
+  const slips = useDeliverySlips(slipQuery(order));
+  const slip = slips.data?.slips.find((s) => s.saleId === order.id);
+  const printHref = useHref(slipPrintPath(order));
   const [date, setDate] = useState(isoDate());
   const [pieces, setPieces] = useState<{ serial: string; productId: string }[]>([]);
   const tracked = new Set((products.data ?? []).filter((p) => p.trackSerials).map((p) => p.id));
@@ -104,7 +116,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
 
   return (
     <Dialog open onOpenChange={(open) => !open && !dispatch.isPending && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Dispatch {order.invoiceNo}</DialogTitle>
           <DialogDescription>
@@ -127,58 +139,108 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
               <BarcodeScanInput onScan={scan} autoFocus placeholder="Scan each DSM label" />
             ) : null}
           </div>
+          {slip ? (
+            <section className="flex items-start justify-between gap-4 rounded-lg border bg-muted/30 px-4 py-3">
+              <dl className="grid min-w-0 flex-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,2fr)]">
+                {(
+                  [
+                    ['Customer', slip.to.name],
+                    ['Phone', slip.to.phone],
+                    ['City', slip.to.city],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label} className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className="truncate font-medium">{value || '—'}</dd>
+                  </div>
+                ))}
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">Address</dt>
+                  <dd className="font-medium" title={slip.to.address ?? undefined}>
+                    {shortAddress(slip.to.address)}
+                  </dd>
+                </div>
+              </dl>
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="Print dispatch slip"
+                title="Print dispatch slip"
+                onClick={() => window.open(printHref, '_blank')}
+              >
+                <Printer />
+              </Button>
+            </section>
+          ) : null}
           {sale.isLoading || products.isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : (
-            <ul className="divide-y rounded-lg border">
-              {rows.map((row) => {
-                const isTracked = tracked.has(row.productId);
-                const scanned = scannedFor(row.productId);
-                const done = !isTracked || scanned.length === row.qty;
-                return (
-                  <li key={row.productId} className="space-y-2 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{row.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {isTracked
-                            ? `${scanned.length} of ${row.qty} labels scanned`
-                            : 'Taken from stock, the batch that expires first'}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-sm tabular-nums">× {formatQuantity(row.qty)}</span>
-                        <CheckCircle2
-                          className={cn('size-5', done ? 'text-success' : 'text-muted-foreground/40')}
-                        />
-                      </div>
-                    </div>
-                    {scanned.length ? (
-                      <div className="flex flex-wrap gap-1">
-                        {scanned.map((p) => (
-                          <span
-                            key={p.serial}
-                            className="inline-flex items-center gap-0.5 rounded-md border bg-muted/50 py-0.5 pr-0.5 pl-1.5 font-mono text-[11px]"
-                          >
-                            {p.serial}
-                            <button
-                              type="button"
-                              className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              aria-label={`Remove ${p.serial}`}
-                              onClick={() =>
-                                setPieces((current) => current.filter((x) => x.serial !== p.serial))
-                              }
-                            >
-                              <X className="size-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Product</th>
+                    <th className="w-16 px-3 py-2 text-right font-medium">Qty</th>
+                    <th className="w-24 px-3 py-2 text-right font-medium">Scanned</th>
+                    <th className="px-3 py-2 text-left font-medium">DSM labels</th>
+                    <th className="w-10 px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {rows.map((row) => {
+                    const isTracked = tracked.has(row.productId);
+                    const scanned = scannedFor(row.productId);
+                    const done = !isTracked || scanned.length === row.qty;
+                    return (
+                      <tr key={row.productId} className="align-middle">
+                        <td className="max-w-56 truncate px-4 py-2 font-medium" title={row.name}>
+                          {row.name}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(row.qty)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
+                          {isTracked ? `${scanned.length} / ${row.qty}` : '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          {!isTracked ? (
+                            <span className="text-xs text-muted-foreground">
+                              Not labelled · batch that expires first
+                            </span>
+                          ) : scanned.length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {scanned.map((p) => (
+                                <span
+                                  key={p.serial}
+                                  className="inline-flex items-center gap-0.5 rounded-md border bg-muted/50 py-0.5 pr-0.5 pl-1.5 font-mono text-[11px]"
+                                >
+                                  {p.serial}
+                                  <button
+                                    type="button"
+                                    className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    aria-label={`Remove ${p.serial}`}
+                                    onClick={() =>
+                                      setPieces((current) => current.filter((x) => x.serial !== p.serial))
+                                    }
+                                  >
+                                    <X className="size-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Scan its labels</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <CheckCircle2
+                            className={cn('size-5', done ? 'text-success' : 'text-muted-foreground/40')}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
         <DialogFooter>
