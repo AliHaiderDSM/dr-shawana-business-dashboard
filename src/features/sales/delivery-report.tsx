@@ -32,9 +32,25 @@ const slipColumns: ColumnDef<DeliverySlip, unknown>[] = [
   },
   {
     id: 'date',
-    header: 'Date',
+    header: 'Booked on',
     accessorKey: 'date',
     cell: ({ row }) => <span className="whitespace-nowrap">{formatDate(row.original.date)}</span>,
+  },
+  {
+    id: 'dispatchedOn',
+    header: 'Dispatched on',
+    accessorFn: (r) => r.dispatchedOn ?? '',
+    cell: ({ row }) =>
+      row.original.dispatchedOn ? (
+        <div className="whitespace-nowrap">
+          {formatDate(row.original.dispatchedOn)}
+          {row.original.saleType === 'office' ? (
+            <div className="text-xs text-muted-foreground">Handed over at the counter</div>
+          ) : null}
+        </div>
+      ) : (
+        <span className="text-muted-foreground">Not sent yet</span>
+      ),
   },
   {
     id: 'type',
@@ -207,7 +223,7 @@ export function DeliveryReportPage() {
     <>
       <PageHeader
         title="Delivery report"
-        description="This month's orders by default. Booking date lists orders by the day they were booked (office and online). Dispatch date lists online orders by the day they were sent. Print the slips two per A4 page."
+        description="This month by default. Booking date: orders by the day they were booked. Dispatch / hand-over date: online orders by the day they were sent, and office sales by their sale day (handed over at the counter). Prints two slips per A4 page."
         actions={
           <Button
             disabled={rows.length === 0}
@@ -246,16 +262,14 @@ export function DeliveryReportPage() {
           <Label>Date by</Label>
           <Select
             value={params.get('dateBy') ?? 'booked'}
-            onValueChange={(v) =>
-              set(v === 'dispatched' ? { dateBy: v, saleType: 'online' } : { dateBy: undefined })
-            }
+            onValueChange={(v) => set({ dateBy: v === 'dispatched' ? v : undefined })}
           >
             <SelectTrigger className="h-9 w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="booked">Booking date</SelectItem>
-              <SelectItem value="dispatched">Dispatch date</SelectItem>
+              <SelectItem value="dispatched">Dispatch / hand-over date</SelectItem>
             </SelectContent>
           </Select>
         </div>

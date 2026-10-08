@@ -130,7 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return selectedKind === 'warehouse' && SUPER_ADMIN_STOCK_MODULES.has(module);
     };
     const status: AuthStatus =
-      !hasSession || meQuery.isError ? 'anonymous' : me ? 'authenticated' : 'loading';
+      !hasSession || meQuery.isError
+        ? 'anonymous'
+        : me && (!isSuperAdmin || branchOptions.isSuccess || branchOptions.isError)
+          ? 'authenticated'
+          : 'loading';
     const activeBranchId = isSuperAdmin
       ? effectiveBranchId === ALL_BRANCHES
         ? null
@@ -159,6 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     meQuery,
     branchOptions.data,
+    branchOptions.isSuccess,
+    branchOptions.isError,
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

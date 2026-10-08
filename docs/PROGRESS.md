@@ -12,6 +12,16 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Super Admin pages keep their data after a hard refresh (2026-10-08)
+
+- **Cause:** after a hard refresh, Super Admin requests went out before the branch list had loaded. The Main Warehouse was not known yet, so the overview pages (dashboard, view sales, delivery report) asked for the Main Warehouse alone, got nothing back, and cached that empty answer.
+- **Fix:** for a Super Admin, the app shell shows its loader until the branch list has loaded. The first requests then use the right scope.
+
+## Delivery report: office sales by hand-over date, clear date columns (2026-10-08)
+
+- **Dispatch / hand-over date** now includes office sales on their sale day, since they are handed over at the counter. Choosing it no longer forces the sale type to online.
+- **Table:** "Date" is now "Booked on". A new "Dispatched on" column shows "Handed over at the counter" for office sales, or "Not sent yet".
+
 ## Delivery report monthly and for every branch (2026-10-08)
 
 - **Default dates:** the delivery report and its print default to the current month instead of today.
