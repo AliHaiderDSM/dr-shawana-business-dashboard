@@ -106,27 +106,9 @@ export const slipQuery = (order: { invoiceNo: string; date: string }): DeliveryS
   return { saleType: 'online', from: order.date, to: order.date, invoiceFrom: seq, invoiceTo: seq };
 };
 
-export const slipPrintPath = (
-  order: { invoiceNo: string; date: string },
-  picked?: { productId: string; qty: number }[],
-) => {
+export const slipPrintPath = (order: { invoiceNo: string; date: string }) => {
   const query = slipQuery(order);
-  const items = picked ? `&items=${picked.map((p) => `${p.productId}:${p.qty}`).join(',')}` : '';
-  return `/print/delivery-slips?saleType=online&from=${query.from}&to=${query.to}&invoiceFrom=${query.invoiceFrom}&invoiceTo=${query.invoiceTo}${items}`;
-};
-
-const pickItems = (slip: DeliverySlip, picked: string | null): DeliverySlip => {
-  if (!picked) return slip;
-  const qty = new Map(
-    picked.split(',').map((part) => {
-      const [productId = '', count = '0'] = part.split(':');
-      return [productId, Number(count)] as const;
-    }),
-  );
-  const items = [...new Map(slip.items.map((i) => [i.productId, i])).values()]
-    .filter((i) => (qty.get(i.productId) ?? 0) > 0)
-    .map((i) => ({ ...i, qty: String(qty.get(i.productId)) }));
-  return { ...slip, items };
+  return `/print/delivery-slips?saleType=online&from=${query.from}&to=${query.to}&invoiceFrom=${query.invoiceFrom}&invoiceTo=${query.invoiceTo}`;
 };
 
 function SlipRule() {
@@ -300,7 +282,7 @@ export function DeliverySlipsPrint() {
   return (
     <PrintPage isLoading={slips.isLoading} error={slips.error} onRetry={() => void slips.refetch()}>
       {() => {
-        const list = (slips.data?.slips ?? []).map((slip) => pickItems(slip, params.get('items')));
+        const list = slips.data?.slips ?? [];
         const pages = Array.from({ length: Math.ceil(list.length / 2) }, (_, i) =>
           list.slice(i * 2, i * 2 + 2),
         );

@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Duplicate phone shows branch, print after full scan, Completed sales filter (2026-10-08)
+
+- **Patient phone:**
+  - The duplicate notice now names the branch where the patient was first added.
+  - A number is matched on its last 9 digits, so "0300…" and "+92 300…" are the same patient.
+- **Dispatch dialog:** the print icon shows only once every labelled piece of the order is scanned. It prints the whole order.
+- **View Sales:** new "Completed" quick filter. It shows sales that are fully paid with approved payments and handed over: office sales, plus online orders that are dispatched or delivered.
+
 ## Slip shows scanned products, dispatched-only printing, two slips per page (2026-10-08)
 
 - **Dispatch dialog print:**

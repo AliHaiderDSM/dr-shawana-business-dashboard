@@ -70,8 +70,15 @@ export function DuplicatePhoneNotice({
     <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-warning-soft-foreground">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
       <div className="min-w-0 flex-1">
-        This phone already belongs to <span className="font-semibold">{existing.name}</span> ({existing.city}
-        ). Patients are shared across branches, so use the existing record.
+        This number is already registered to <span className="font-semibold">{existing.name}</span> (
+        {existing.city})
+        {check.data?.branch ? (
+          <>
+            {' '}
+            in <span className="font-semibold">{check.data.branch}</span>
+          </>
+        ) : null}
+        . A number can be saved only once, so use the existing patient.
       </div>
       {onUseExisting ? (
         <button

@@ -10895,6 +10895,8 @@ export interface paths {
                                     phone: string;
                                     city: string;
                                 } | null;
+                                /** @description Branch where the patient was first added */
+                                branch: string | null;
                             };
                         };
                     };
@@ -17156,6 +17158,8 @@ export interface paths {
                     city?: string;
                     deliveryStatus?: "pending" | "dispatched" | "delivered" | "returned" | "cancelled";
                     paymentStatus?: "unpaid" | "partial" | "paid" | "awaiting_approval";
+                    /** @description Only fully paid and approved sales that are handed over: office sales, or online orders dispatched or delivered */
+                    completed?: "true";
                     /** @description Only sales with money still to receive (unpaid or partly paid) */
                     due?: "true";
                     method?: "cash" | "online";

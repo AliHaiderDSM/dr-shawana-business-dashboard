@@ -73,6 +73,7 @@ export function SalesPage() {
   const due = list.filters.due === 'true';
   const awaiting = list.filters.deliveryStatus === 'pending';
   const approval = list.filters.paymentStatus === 'awaiting_approval';
+  const completed = list.filters.completed === 'true';
   const approve = useApprovePayments();
   const byBranch = query.data?.meta.byBranch;
   const quickFilter = (name: 'due' | 'deliveryStatus', on: boolean) =>
@@ -355,10 +356,11 @@ export function SalesPage() {
           <>
             {(
               [
-                ['all', 'All sales', !due && !awaiting && !approval],
+                ['all', 'All sales', !due && !awaiting && !approval && !completed],
                 ['due', 'Payment pending', due],
                 ['approval', 'Awaiting approval', approval],
                 ['awaiting', 'Awaiting dispatch', awaiting],
+                ['completed', 'Completed', completed],
               ] as const
             ).map(([key, label, checked]) => (
               <label
@@ -376,7 +378,12 @@ export function SalesPage() {
                         due: undefined,
                         deliveryStatus: undefined,
                         paymentStatus: undefined,
+                        completed: undefined,
                       });
+                      return;
+                    }
+                    if (key === 'completed') {
+                      list.setFilter('completed', value === true ? 'true' : undefined);
                       return;
                     }
                     if (key === 'approval') {
