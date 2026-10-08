@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { doctorsApi } from '@/features/doctors/api';
 import { BHRT_LABELS, patientsApi } from '@/features/patients/api';
-import { BhrtBadge } from '@/features/patients/bhrt-badge';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -53,7 +52,7 @@ const CALENDAR_KEYS = new Set(['view', 'span', 'day']);
 
 export function AppointmentsPage() {
   const navigate = useNavigate();
-  const { me, can } = useAuth();
+  const { me, can, isSuperAdmin } = useAuth();
   const isDoctor = me?.role === 'doctor';
   const [params, setParams] = useSearchParams();
   const list = useListState({ defaultSort: '-date' });
@@ -102,25 +101,31 @@ export function AppointmentsPage() {
   const columns: ColumnDef<Appointment, unknown>[] = [
     {
       id: 'appointmentNo',
-      header: 'No',
-      accessorKey: 'appointmentNo',
+      header: 'Appointment #',
+      accessorFn: (a) => `APP#${a.appointmentNo}`,
       meta: { sortKey: 'appointmentNo' },
       cell: ({ row }) => (
-        <span className="font-medium text-muted-foreground">#{row.original.appointmentNo}</span>
+        <span className="font-medium whitespace-nowrap">APP#{row.original.appointmentNo}</span>
       ),
     },
     {
       id: 'date',
-      header: 'Date & time',
-      accessorFn: (a) => `${a.date} ${a.timeFrom}`,
+      header: 'Date',
+      accessorKey: 'date',
       meta: { sortKey: 'date', hideable: false },
       cell: ({ row }) => (
         <div className="whitespace-nowrap">
           <div className="font-medium">{formatDate(row.original.date)}</div>
-          <div className="text-xs text-muted-foreground">
-            {timeRange(row.original.timeFrom, row.original.timeTo)}
-          </div>
+          <div className="text-xs text-muted-foreground">{formatDate(row.original.date, 'EEEE')}</div>
         </div>
+      ),
+    },
+    {
+      id: 'time',
+      header: 'Time',
+      accessorFn: (a) => timeRange(a.timeFrom, a.timeTo),
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{timeRange(row.original.timeFrom, row.original.timeTo)}</span>
       ),
     },
     {
@@ -156,12 +161,6 @@ export function AppointmentsPage() {
       ),
     },
     {
-      id: 'bhrt',
-      header: 'BHRT',
-      accessorFn: (a) => a.patient?.bhrtStatus ?? '',
-      cell: ({ row }) => <BhrtBadge status={row.original.patient?.bhrtStatus ?? 'none'} />,
-    },
-    {
       id: 'receivedAmount',
       header: 'Received',
       accessorKey: 'receivedAmount',
@@ -173,6 +172,17 @@ export function AppointmentsPage() {
       header: 'Status',
       accessorKey: 'status',
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+    {
+      id: 'createdBy',
+      header: 'Entered by',
+      accessorFn: (a) => a.createdByName ?? '',
+      cell: ({ row }) => (
+        <div className="whitespace-nowrap">
+          <div>{row.original.createdByName ?? '—'}</div>
+          <div className="text-xs text-muted-foreground">{formatDate(row.original.createdAt)}</div>
+        </div>
+      ),
     },
     {
       id: 'actions',
@@ -192,11 +202,16 @@ export function AppointmentsPage() {
                   void navigate(`/prescriptions/new?patientId=${a.patientId}&doctorId=${a.doctorId}`),
               },
               { label: 'View', icon: Eye, onSelect: () => void navigate(`/appointments/${a.id}`) },
-              { label: 'Copy link', icon: Link2, hidden: !canConsult, onSelect: () => copyLink(a) },
+              {
+                label: 'Copy link',
+                icon: Link2,
+                hidden: !canConsult || isSuperAdmin,
+                onSelect: () => copyLink(a),
+              },
               {
                 label: 'Remarks 2.0',
                 icon: Stethoscope,
-                hidden: !canConsult || a.status === 'cancelled',
+                hidden: !canConsult || isSuperAdmin || a.status === 'cancelled',
                 onSelect: () => void navigate(`/appointments/${a.id}/consultation`),
               },
               {
@@ -208,18 +223,19 @@ export function AppointmentsPage() {
               {
                 label: 'BHRT',
                 icon: HeartPulse,
-                hidden: !canConsult,
+                hidden: !canConsult || isSuperAdmin,
                 onSelect: () => setClinical({ appointment: a, view: 'bhrt' }),
               },
               {
                 label: 'Medical record',
                 icon: FileText,
-                hidden: !canConsult,
+                hidden: !canConsult || isSuperAdmin,
                 onSelect: () => setClinical({ appointment: a, view: 'records' }),
               },
               {
                 label: 'Print',
                 icon: Printer,
+                hidden: isSuperAdmin,
                 onSelect: () => void navigate(`/print/appointment/${a.id}`),
               },
               {

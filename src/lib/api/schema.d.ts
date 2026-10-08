@@ -23358,6 +23358,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Staff member who entered the appointment (list only) */
+            createdByName?: string | null;
         };
         AppointmentDetail: {
             /** Format: uuid */

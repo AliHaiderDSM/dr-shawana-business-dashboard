@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { CalendarDays, Pencil, Signature, Stethoscope, Trash2, UserPlus } from 'lucide-react';
+import { CalendarDays, Pencil, Stethoscope, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatMoney, initials } from '@/lib/format';
+import { formatDate, initials } from '@/lib/format';
 import { doctorsApi, type Doctor } from './api';
 import { DoctorFormSheet } from './doctor-form-sheet';
 
@@ -39,6 +39,17 @@ export function DoctorsPage() {
 
   const columns: ColumnDef<Doctor, unknown>[] = [
     {
+      id: 'sr',
+      header: 'Sr#',
+      accessorFn: (_d, index) => (list.page - 1) * list.pageSize + index + 1,
+      meta: { hideable: false },
+      cell: ({ row }) => (
+        <span className="text-muted-foreground tabular-nums">
+          {(list.page - 1) * list.pageSize + row.index + 1}
+        </span>
+      ),
+    },
+    {
       id: 'displayName',
       header: 'Doctor',
       accessorKey: 'displayName',
@@ -52,7 +63,6 @@ export function DoctorsPage() {
           </Avatar>
           <div className="min-w-0">
             <div className="font-medium">{row.original.displayName}</div>
-            <div className="text-xs text-muted-foreground">@{row.original.staff?.username}</div>
           </div>
         </div>
       ),
@@ -64,32 +74,28 @@ export function DoctorsPage() {
       cell: ({ row }) => row.original.phone ?? '—',
     },
     {
-      id: 'consultationFee',
-      header: 'Fee',
-      accessorKey: 'consultationFee',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.consultationFee),
+      id: 'email',
+      header: 'Email',
+      accessorFn: (d) => d.staff?.email ?? d.email ?? '',
+      cell: ({ row }) => row.original.staff?.email ?? row.original.email ?? '—',
     },
     {
-      id: 'commissionPercent',
-      header: 'Commission',
-      accessorKey: 'commissionPercent',
-      meta: { align: 'right' },
-      cell: ({ row }) => `${Number(row.original.commissionPercent)}%`,
-    },
-    {
-      id: 'signature',
-      header: 'Signature',
-      accessorFn: (d) => (d.hasSignature ? 'Yes' : 'No'),
+      id: 'username',
+      header: 'Username',
+      accessorFn: (d) => d.staff?.username ?? '',
       cell: ({ row }) =>
-        row.original.hasSignature ? (
-          <span className="inline-flex items-center gap-1 text-success">
-            <Signature className="size-4" />
-            On file
-          </span>
+        row.original.staff?.username ? (
+          <span className="font-mono text-sm">{row.original.staff.username}</span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          '—'
         ),
+    },
+    {
+      id: 'createdAt',
+      header: 'Added on',
+      accessorKey: 'createdAt',
+      meta: { sortKey: 'createdAt' },
+      cell: ({ row }) => <span className="whitespace-nowrap">{formatDate(row.original.createdAt)}</span>,
     },
     {
       id: 'status',

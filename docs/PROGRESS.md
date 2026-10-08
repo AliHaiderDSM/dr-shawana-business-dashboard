@@ -12,6 +12,19 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Doctors table and form, appointments table, Super Admin appointment actions (2026-10-08)
+
+- **Doctors table:** Sr#, Doctor, Phone, Email, Username, Added on and Status. Fee, Commission and Signature are removed.
+- **New doctor form:**
+  - No Display name, profile Email or Commission inputs. The display name comes from the first and last name, and the email from the login email. The commission defaults on the server.
+  - New Gender selector. Editing a doctor still shows the display name, email and commission.
+- **Appointment form:** the "Additional notes" field under Medical record is removed.
+- **Appointments table:**
+  - Appointment # (APP#n), Date (with the day name below) and a separate Time column.
+  - The BHRT column is removed.
+  - A new "Entered by" column shows who entered the appointment and when. The API list returns `createdByName`.
+- **Super Admin on appointments:** only View and Add prescription. Prescriptions are added to the Super Admin's managed modules. Branch admins keep every action.
+
 ## Sale detail: one items table (2026-10-08)
 
 - **One Items table:** the Items, Labelled pieces, Batches and Returns sections are merged into it.

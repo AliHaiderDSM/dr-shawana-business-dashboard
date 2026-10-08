@@ -375,7 +375,6 @@ export function AppointmentFormSheet({
         {editing ? null : (
           <FormSection title="Medical record" description="Optional reports the patient brought.">
             <FilePicker files={recordFiles} onChange={setRecordFiles} />
-            <TextareaField control={form.control} name="recordNote" label="Additional notes" rows={2} />
           </FormSection>
         )}
 

@@ -67,18 +67,17 @@ export function DuplicatePhoneNotice({
   const existing = check.data?.exists ? check.data.patient : null;
   if (!existing) return null;
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-warning-soft-foreground">
-      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0 flex-1">
-        This number is already registered to <span className="font-semibold">{existing.name}</span> (
-        {existing.city})
+    <div className="flex items-start gap-1.5 rounded-lg border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-warning-soft-foreground">
+      <AlertTriangle className="size-4 shrink-0" />
+      <div className="min-w-0 flex-1 text-xs">
+        This number is already registered to <span className="font-semibold">{existing.name}</span>
         {check.data?.branch ? (
           <>
             {' '}
             in <span className="font-semibold">{check.data.branch}</span>
           </>
         ) : null}
-        . A number can be saved only once, so use the existing patient.
+        .
       </div>
       {onUseExisting ? (
         <button
@@ -89,7 +88,10 @@ export function DuplicatePhoneNotice({
           Use this patient
         </button>
       ) : (
-        <Link to={`/patients/${existing.id}`} className="shrink-0 font-medium underline underline-offset-2">
+        <Link
+          to={`/patients/${existing.id}`}
+          className="shrink-0 text-xs font-medium underline underline-offset-2"
+        >
           Open profile
         </Link>
       )}

@@ -141,17 +141,6 @@ export function PatientHistoryPage() {
           }
         />
       )}
-      {patientId && patient.data ? (
-        <p className="mt-6 text-xs text-muted-foreground">
-          <button
-            type="button"
-            className="underline underline-offset-2"
-            onClick={() => void navigate(`/patients/${patientId}`)}
-          >
-            Open {patient.data.name}'s profile
-          </button>
-        </p>
-      ) : null}
     </>
   );
 }

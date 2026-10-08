@@ -33,6 +33,7 @@ const SUPER_ADMIN_MANAGES = new Set([
   'dashboard',
   'salePayments',
   'accounts',
+  'prescriptions',
 ]);
 const SUPER_ADMIN_STOCK_MODULES = new Set([
   'stock',

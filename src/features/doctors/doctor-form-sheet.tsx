@@ -17,7 +17,7 @@ import { generatePassword, SecretReveal } from '@/components/shared/secret-revea
 import { Form, FormLabel } from '@/components/ui/form';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { applyServerErrors } from '@/lib/api/errors';
-import { moneyString, optionalEmail, optionalText, requiredText, usernameString } from '@/lib/validation';
+import { moneyString, optionalEmail, optionalText, usernameString } from '@/lib/validation';
 import {
   doctorsApi,
   doctorSignatureUrl,
@@ -31,6 +31,7 @@ type AccountMode = 'new' | 'existing';
 
 const schema = z
   .object({
+    editing: z.boolean(),
     mode: z.enum(['new', 'existing']),
     staffId: z.string(),
     firstName: z.string().trim().max(100),
@@ -38,7 +39,8 @@ const schema = z
     accountEmail: z.string().trim().max(150),
     username: z.string().trim(),
     password: z.string(),
-    displayName: requiredText(150, 'Display name'),
+    gender: z.enum(['male', 'female']).nullable(),
+    displayName: z.string().trim().max(150),
     phone: optionalText(30),
     email: optionalEmail,
     details: optionalText(5000),
@@ -51,6 +53,9 @@ const schema = z
     status: z.enum(['active', 'inactive']),
   })
   .superRefine((v, ctx) => {
+    if (v.editing && !v.displayName)
+      ctx.addIssue({ code: 'custom', path: ['displayName'], message: 'Display name is required' });
+    if (v.editing) return;
     if (v.mode === 'existing') {
       if (!v.staffId) ctx.addIssue({ code: 'custom', path: ['staffId'], message: 'Choose a doctor login' });
       return;
@@ -90,7 +95,9 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     values: {
+      editing: Boolean(doctor),
       mode: 'new',
+      gender: null,
       staffId: '',
       firstName: '',
       lastName: '',
@@ -112,15 +119,22 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
   const freeStaff = (staff.data ?? []).filter((s) => !linkedStaff.has(s.id) && s.status === 'active');
 
   const submit = form.handleSubmit((values) => {
-    const profile = {
-      displayName: values.displayName,
-      phone: values.phone,
-      email: values.email,
-      details: values.details,
-      consultationFee: values.consultationFee,
-      commissionPercent: values.commissionPercent,
-      status: values.status,
-    };
+    const profile = doctor
+      ? {
+          displayName: values.displayName,
+          phone: values.phone,
+          email: values.email,
+          details: values.details,
+          consultationFee: values.consultationFee,
+          commissionPercent: values.commissionPercent,
+          status: values.status,
+        }
+      : {
+          phone: values.phone,
+          details: values.details,
+          consultationFee: values.consultationFee,
+          status: values.status,
+        };
     const body: DoctorInput = doctor
       ? profile
       : values.mode === 'existing'
@@ -133,6 +147,7 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
               email: values.accountEmail,
               username: values.username,
               phone: values.phone,
+              gender: values.gender,
               password: values.password,
             },
           };
@@ -146,7 +161,11 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
             onCreated?.(
               data,
               values.mode === 'new'
-                ? { name: values.displayName, username: values.username, password: values.password }
+                ? {
+                    name: `${values.firstName} ${values.lastName}`,
+                    username: values.username,
+                    password: values.password,
+                  }
                 : null,
             );
         },
@@ -200,6 +219,16 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
                   <TextField control={form.control} name="firstName" label="First name" required />
                   <TextField control={form.control} name="lastName" label="Last name" required />
                 </FieldRow>
+                <SelectField
+                  control={form.control}
+                  name="gender"
+                  label="Gender"
+                  placeholder="Choose gender"
+                  options={[
+                    { value: 'female', label: 'Female' },
+                    { value: 'male', label: 'Male' },
+                  ]}
+                />
                 <FieldRow>
                   <TextField
                     control={form.control}
@@ -223,13 +252,17 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
         )}
         <FormSection title="Profile">
           <FieldRow>
-            <TextField
-              control={form.control}
-              name="displayName"
-              label="Display name"
-              placeholder="Dr. Shawana Mufti"
-              required
-            />
+            {doctor ? (
+              <TextField
+                control={form.control}
+                name="displayName"
+                label="Display name"
+                placeholder="Dr. Shawana Mufti"
+                required
+              />
+            ) : (
+              <TextField control={form.control} name="phone" label="Phone" />
+            )}
             <SelectField
               control={form.control}
               name="status"
@@ -240,20 +273,24 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
               ]}
             />
           </FieldRow>
-          <FieldRow>
-            <TextField control={form.control} name="phone" label="Phone" />
-            <TextField control={form.control} name="email" label="Email" type="email" />
-          </FieldRow>
+          {doctor ? (
+            <FieldRow>
+              <TextField control={form.control} name="phone" label="Phone" />
+              <TextField control={form.control} name="email" label="Email" type="email" />
+            </FieldRow>
+          ) : null}
           <FieldRow>
             <MoneyField control={form.control} name="consultationFee" label="Consultation fee" required />
-            <MoneyField
-              control={form.control}
-              name="commissionPercent"
-              label="Commission %"
-              prefix="%"
-              description="Used by the doctor sale report."
-              required
-            />
+            {doctor ? (
+              <MoneyField
+                control={form.control}
+                name="commissionPercent"
+                label="Commission %"
+                prefix="%"
+                description="Used by the doctor sale report."
+                required
+              />
+            ) : null}
           </FieldRow>
           <TextareaField
             control={form.control}

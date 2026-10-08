@@ -109,8 +109,7 @@ export const REPORTS: ReportDef[] = [
   {
     key: 'delivery-report',
     title: 'Print delivery report',
-    description:
-      'Monthly delivery report',
+    description: 'Monthly delivery report',
     icon: Truck,
     group: 'Sales',
     allowed: permission('deliveryReport.view'),
