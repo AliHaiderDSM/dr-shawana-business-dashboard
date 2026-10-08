@@ -5157,6 +5157,8 @@ export interface paths {
                     from?: string;
                     /** @description Last label of a range */
                     to?: string;
+                    /** @description Also list pieces this branch sent to other branches; productId and batchId then match this branch product and batch */
+                    includeSent?: "true" | "false";
                     branchId?: string;
                 };
                 header?: never;
@@ -21904,10 +21906,15 @@ export interface components {
             /** @description posSoft "Gram" / batch label */
             batchNo?: string | null;
             /**
-             * @description Pack size in grams, used for production loss
+             * @description Pack size, in sizeUnit. In grams it also gives the production loss
              * @example 10.000
              */
             sizeGrams?: string;
+            /**
+             * @description Unit of the pack size, g by default
+             * @enum {string}
+             */
+            sizeUnit?: "g" | "kg" | "mg" | "ml" | "l" | "pcs" | "tablets" | "capsules" | "sachets";
             unit?: string;
             /** @example 10.000 */
             lowStockThreshold?: string;
@@ -21940,10 +21947,15 @@ export interface components {
             /** @description posSoft "Gram" / batch label */
             batchNo?: string | null;
             /**
-             * @description Pack size in grams, used for production loss
+             * @description Pack size, in sizeUnit. In grams it also gives the production loss
              * @example 10.000
              */
             sizeGrams?: string;
+            /**
+             * @description Unit of the pack size, g by default
+             * @enum {string}
+             */
+            sizeUnit?: "g" | "kg" | "mg" | "ml" | "l" | "pcs" | "tablets" | "capsules" | "sachets";
             unit?: string;
             /** @example 10.000 */
             lowStockThreshold?: string;
@@ -21992,6 +22004,8 @@ export interface components {
             batchNo: string | null;
             /** @example 10.000 */
             sizeGrams: string | null;
+            /** @enum {string} */
+            sizeUnit: "g" | "kg" | "mg" | "ml" | "l" | "pcs" | "tablets" | "capsules" | "sachets";
             unit: string;
             /** @example 10.000 */
             lowStockThreshold: string;
@@ -22145,6 +22159,9 @@ export interface components {
             expiryDate: string | null;
             total: number;
             inStock: number;
+            /** @description Sent to other branches and still in stock there */
+            inBranches: number;
+            /** @description Sold here or at the branches they were sent to */
             sold: number;
             other: number;
             firstSerial: string;
@@ -22188,6 +22205,8 @@ export interface components {
             invoiceNo: string | null;
             /** Format: date */
             soldOn: string | null;
+            /** @description Branch the piece was sent to, when it is not here */
+            atBranch: string | null;
         };
         InventoryItemDetail: {
             /** Format: uuid */
@@ -22212,6 +22231,8 @@ export interface components {
             invoiceNo: string | null;
             /** Format: date */
             soldOn: string | null;
+            /** @description Branch the piece was sent to, when it is not here */
+            atBranch: string | null;
             /** Format: uuid */
             branchId: string;
             branchName: string;

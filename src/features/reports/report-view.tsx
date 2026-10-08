@@ -136,26 +136,31 @@ function Summary({ data }: { data: ReportData }) {
 
 function ByBranch({ data }: { data: ReportData }) {
   if (!data.byBranch?.length) return null;
-  const keys = Object.keys(data.byBranch[0] ?? {});
+  const rows = data.byBranch;
+  const keys = Object.keys(rows[0] ?? {});
+  const numeric = (key: string) => key !== 'branch' && rows.some((row) => isNumeric(row[key] ?? null));
   return (
     <Panel title="By branch" className="mt-6" bodyClassName="overflow-x-auto p-0">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
             {keys.map((key) => (
-              <th key={key} className="px-4 py-2 text-left font-medium">
+              <th
+                key={key}
+                className={cn('px-4 py-2 font-medium', numeric(key) ? 'text-right' : 'text-left')}
+              >
                 {titleCase(key.replace(/([A-Z])/g, ' $1'))}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {data.byBranch.map((row, index) => (
+          {rows.map((row, index) => (
             <tr key={index} className="border-b last:border-b-0">
               {keys.map((key) => (
                 <td
                   key={key}
-                  className={cn('px-4 py-2', isNumeric(row[key] ?? null) && 'text-right tabular-nums')}
+                  className={cn('px-4 py-2', numeric(key) ? 'text-right tabular-nums' : 'text-left')}
                 >
                   {displayValue(row[key] ?? null)}
                 </td>

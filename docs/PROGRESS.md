@@ -12,6 +12,19 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Product size units, no barcode field, Super Admin label counts, report alignment (2026-10-08)
+
+- **Product form:**
+  - The barcode scan field is removed. DSM labels are made at stock in.
+  - Size has a unit picker: g, kg, mg, ml, l, pieces, tablets, capsules, sachets.
+- **Labels (Super Admin):**
+  - Batches count the pieces sent to branches: an "In branches" chip, and Sold includes branch sales.
+  - Expanding a batch lists the sent pieces with "at <branch>".
+- **Reports:**
+  - Branch codes such as "001" stay as text and are not shown as numbers.
+  - The By branch table aligns its headers with the values: numbers on the right, branch on the left.
+  - Accounts balance has no Opening column.
+
 ## One accounts screen, sale report filters, delivery report by dispatch date (2026-10-08)
 
 - **Finance:**

@@ -25,6 +25,7 @@ function BatchPieces({ group, status }: { group: LabelBatch; status?: string }) 
   const [page, setPage] = useState(1);
   const query = useItems({
     ...piecesQuery(group),
+    includeSent: 'true',
     ...(status ? { status } : {}),
     page,
     pageSize: PIECES_PER_PAGE,
@@ -49,8 +50,11 @@ function BatchPieces({ group, status }: { group: LabelBatch; status?: string }) 
               className="grid w-full grid-cols-[9rem_10rem_minmax(0,1fr)_7rem] items-center gap-3 px-12 py-2 text-left text-sm hover:bg-muted/60"
             >
               <span className="font-mono font-medium">{item.serial}</span>
-              <span>
+              <span className="flex flex-wrap items-center gap-1">
                 <ItemStatusBadge status={item.status} />
+                {item.atBranch ? (
+                  <span className="text-xs text-muted-foreground">at {item.atBranch}</span>
+                ) : null}
               </span>
               <span className="truncate text-muted-foreground">
                 {item.invoiceNo ? `${item.invoiceNo} · ${formatDate(item.soldOn)}` : '—'}
@@ -211,6 +215,9 @@ export function LabelBatchesView() {
                     <div className="hidden flex-wrap justify-end gap-1.5 sm:flex">
                       <StatusBadge tone="neutral">{group.total} labels</StatusBadge>
                       <StatusBadge tone="success">In stock {group.inStock}</StatusBadge>
+                      {group.inBranches ? (
+                        <StatusBadge tone="neutral">In branches {group.inBranches}</StatusBadge>
+                      ) : null}
                       <StatusBadge tone="info">Sold {group.sold}</StatusBadge>
                       {group.other ? <StatusBadge tone="warning">Other {group.other}</StatusBadge> : null}
                     </div>

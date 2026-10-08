@@ -107,8 +107,7 @@ export const REPORTS: ReportDef[] = [
   {
     key: 'sale-products',
     title: 'Sale products',
-    description:
-      'Monthly sale report of completed sales only: paid with approved payments and handed over (office sales, or online orders dispatched or delivered). One row per sale with its products, discount, received and remaining.',
+    description: 'Monthly sale report of completed sales only.',
     icon: Receipt,
     group: 'Sales',
     allowed: permission('sales.view'),

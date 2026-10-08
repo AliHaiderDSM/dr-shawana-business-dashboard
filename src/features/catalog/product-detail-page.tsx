@@ -263,8 +263,8 @@ export function ProductDetailPage() {
         <StatCard label="Low stock at" value={`${formatQuantity(p.lowStockThreshold)} ${p.unit}`} />
         <StatCard
           label="Size"
-          value={p.sizeGrams ? `${formatQuantity(p.sizeGrams)} g` : '—'}
-          hint="Used for production loss"
+          value={p.sizeGrams ? `${formatQuantity(p.sizeGrams)} ${p.sizeUnit}` : '—'}
+          hint="Pack size"
         />
       </div>
 

@@ -73,7 +73,7 @@ const NUMBER = /^-?\d+(\.\d+)?$/;
 const PHONE_LIKE = /^\+?\d{10,}$/;
 
 export function isNumeric(value: ReportValue) {
-  if (typeof value === 'string' && PHONE_LIKE.test(value)) return false;
+  if (typeof value === 'string' && (PHONE_LIKE.test(value) || /^0\d/.test(value))) return false;
   return typeof value === 'number' || (typeof value === 'string' && NUMBER.test(value));
 }
 

@@ -1,6 +1,5 @@
 import { useCanReceiveStock } from '@/lib/auth/branches';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScanLine } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -15,21 +14,26 @@ import {
   TextareaField,
 } from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Form, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { toastError, applyServerErrors } from '@/lib/api/errors';
 import { isoDate } from '@/lib/format';
 import { moneyString, optionalText, positiveQuantity, quantityString, requiredText } from '@/lib/validation';
 import { categoriesApi, productsApi, suppliersApi, type Product } from './api';
+
+const SIZE_UNITS = ['g', 'kg', 'mg', 'ml', 'l', 'pcs', 'tablets', 'capsules', 'sachets'] as const;
+
+export const SIZE_UNIT_LABELS: Record<(typeof SIZE_UNITS)[number], string> = {
+  g: 'Gram (g)',
+  kg: 'Kilogram (kg)',
+  mg: 'Milligram (mg)',
+  ml: 'Millilitre (ml)',
+  l: 'Litre (l)',
+  pcs: 'Pieces',
+  tablets: 'Tablets',
+  capsules: 'Capsules',
+  sachets: 'Sachets',
+};
 
 const optionalQuantity = z
   .string()
@@ -40,12 +44,9 @@ const baseSchema = z.object({
   name: requiredText(200, 'Name'),
   categoryId: z.string().min(1, 'Choose a category'),
   sku: optionalText(60),
-  barcode: optionalText(64).refine(
-    (v) => !v || /^[!-~]{3,64}$/.test(v),
-    'Use the printed barcode characters only',
-  ),
   batchNo: optionalText(100),
   sizeGrams: optionalQuantity,
+  sizeUnit: z.enum(SIZE_UNITS),
   unit: requiredText(30, 'Unit'),
   lowStockThreshold: quantityString('Low stock threshold'),
   salePrice: z
@@ -101,9 +102,9 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
       name: product?.name ?? '',
       categoryId: product?.categoryId ?? '',
       sku: product?.sku ?? null,
-      barcode: product?.barcode ?? null,
       batchNo: product?.batchNo ?? null,
       sizeGrams: product?.sizeGrams ?? '',
+      sizeUnit: product?.sizeUnit ?? 'g',
       unit: product?.unit ?? 'pcs',
       lowStockThreshold: product?.lowStockThreshold ?? '10',
       salePrice: product?.salePrice ?? '',
@@ -182,39 +183,22 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
             />
             <TextField control={form.control} name="unit" label="Unit" placeholder="pcs" required />
           </FieldRow>
-          <FormField
-            control={form.control}
-            name="barcode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Barcode</FormLabel>
-                <div className="relative">
-                  <ScanLine className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value ?? ''}
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder="Scan the code printed on the pack"
-                      className="pl-9 font-mono"
-                      onKeyDown={(event) => event.key === 'Enter' && event.preventDefault()}
-                    />
-                  </FormControl>
-                </div>
-                <FormDescription>Used by the scanner on stock in and stock out.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <MoneyField
-            control={form.control}
-            name="sizeGrams"
-            label="Size (grams)"
-            prefix=""
-            decimals={3}
-            placeholder="0"
-          />
+          <FieldRow>
+            <MoneyField
+              control={form.control}
+              name="sizeGrams"
+              label="Size"
+              prefix=""
+              decimals={3}
+              placeholder="0"
+            />
+            <SelectField
+              control={form.control}
+              name="sizeUnit"
+              label="Size unit"
+              options={SIZE_UNITS.map((value) => ({ value, label: SIZE_UNIT_LABELS[value] }))}
+            />
+          </FieldRow>
           <FieldRow>
             <MoneyField control={form.control} name="salePrice" label="Sale price" />
             <MoneyField
