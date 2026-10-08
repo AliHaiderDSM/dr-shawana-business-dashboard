@@ -267,6 +267,8 @@ export interface DeliverySlip {
   invoiceNo: string;
   date: string;
   saleType: Sale['saleType'];
+  dispatchedOn: string | null;
+  branch: { code: string; name: string } | null;
   to: { name: string; phone: string; city: string | null; address: string | null };
   items: { productId: string; name: string; qty: string }[];
   from: { name: string; phone: string | null; city: string; address: string | null };
@@ -280,6 +282,7 @@ export interface DeliverySlipsQuery {
   invoiceFrom?: number;
   invoiceTo?: number;
   dateBy?: 'booked' | 'dispatched';
+  branchId?: string;
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

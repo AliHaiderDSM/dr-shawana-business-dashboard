@@ -29,7 +29,12 @@ export class ApiError extends Error {
 export const AUTH_EXPIRED_EVENT = 'dsm:auth-expired';
 
 const BRANCHLESS_PREFIXES = ['/auth/', '/admin/', '/health', '/branch/reports/'];
-const OVERVIEW_PATHS = ['/branch/dashboard', '/branch/inventory/expiry-alerts', '/branch/sales'];
+const OVERVIEW_PATHS = [
+  '/branch/dashboard',
+  '/branch/inventory/expiry-alerts',
+  '/branch/sales',
+  '/branch/sales/delivery-slips',
+];
 
 let refreshing: Promise<StoredSession | null> | null = null;
 

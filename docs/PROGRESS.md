@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Delivery report monthly and for every branch (2026-10-08)
+
+- **Default dates:** the delivery report and its print default to the current month instead of today.
+- **Super Admin:**
+  - A Branch filter with "All branches", and a Branch column.
+  - From the Main Warehouse with no branch filter, slips from every branch are shown.
+  - Each slip's "From" is its own branch.
+- **API:** `GET /branch/sales/delivery-slips` allows a Super Admin with no branchId (all branches). Slips carry `branch` and `dispatchedOn`.
+
 ## Stock history single table, Super Admin accounts, product dates, delivery report card (2026-10-08)
 
 - **Stock history:** the separate Batches table is removed. The Movements table already shows the batch, Mfg and Expiry.

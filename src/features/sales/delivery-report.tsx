@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { endOfMonth, startOfMonth } from 'date-fns';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useBranchOptions } from '@/lib/auth/branches';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import logo from '@/assets/logo-hd.png';
 import { useDeliverySlips, type DeliverySlip, type DeliverySlipsQuery } from './api';
@@ -98,8 +101,22 @@ function readQuery(params: URLSearchParams): DeliverySlipsQuery {
     invoiceFrom: number('invoiceFrom'),
     invoiceTo: number('invoiceTo'),
     dateBy: params.get('dateBy') === 'dispatched' ? 'dispatched' : undefined,
+    branchId: params.get('branchId') ?? undefined,
   };
 }
+
+function withMonth(query: DeliverySlipsQuery): DeliverySlipsQuery {
+  if (query.from || query.invoiceFrom || query.invoiceTo) return query;
+  const now = new Date();
+  return { ...query, from: isoDate(startOfMonth(now)), to: isoDate(endOfMonth(now)) };
+}
+
+const branchColumn: ColumnDef<DeliverySlip, unknown> = {
+  id: 'branch',
+  header: 'Branch',
+  accessorFn: (r) => r.branch?.name ?? '',
+  cell: ({ row }) => <span className="whitespace-nowrap">{row.original.branch?.name ?? '—'}</span>,
+};
 
 export const slipQuery = (order: { invoiceNo: string; date: string }): DeliverySlipsQuery => {
   const seq = Number(order.invoiceNo.split('-').pop());
@@ -162,12 +179,11 @@ function Slip({ slip }: { slip: DeliverySlip }) {
 
 export function DeliveryReportPage() {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
+  const branches = useBranchOptions(isSuperAdmin);
   const [params, setParams] = useSearchParams();
   const query = readQuery(params);
-  const effective = {
-    ...query,
-    from: query.from ?? (query.invoiceFrom || query.invoiceTo ? undefined : isoDate()),
-  };
+  const effective = withMonth(query);
   const slips = useDeliverySlips(effective);
   const [invoiceFrom, setInvoiceFrom] = useState(params.get('invoiceFrom') ?? '');
   const [invoiceTo, setInvoiceTo] = useState(params.get('invoiceTo') ?? '');
@@ -191,7 +207,7 @@ export function DeliveryReportPage() {
     <>
       <PageHeader
         title="Delivery report"
-        description="Choose the orders, then print the delivery slips, two per A4 page."
+        description="This month's orders by default. Booking date lists orders by the day they were booked (office and online). Dispatch date lists online orders by the day they were sent. Print the slips two per A4 page."
         actions={
           <Button
             disabled={rows.length === 0}
@@ -203,6 +219,29 @@ export function DeliveryReportPage() {
         }
       />
       <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4 shadow-xs">
+        {isSuperAdmin ? (
+          <div className="space-y-1.5">
+            <Label>Branch</Label>
+            <Select
+              value={params.get('branchId') ?? ALL}
+              onValueChange={(v) => set({ branchId: v === ALL ? undefined : v })}
+            >
+              <SelectTrigger className="h-9 w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All branches</SelectItem>
+                {(branches.data ?? [])
+                  .filter((b) => b.kind === 'branch')
+                  .map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         <div className="space-y-1.5">
           <Label>Date by</Label>
           <Select
@@ -225,7 +264,7 @@ export function DeliveryReportPage() {
           <DateRangePicker
             from={params.get('from') ?? undefined}
             to={params.get('to') ?? undefined}
-            placeholder="Today"
+            placeholder="This month"
             onChange={({ from, to }) => set({ from, to: to ?? from })}
           />
         </div>
@@ -269,7 +308,7 @@ export function DeliveryReportPage() {
         </div>
       </div>
       <DataTable
-        columns={slipColumns}
+        columns={isSuperAdmin ? [branchColumn, ...slipColumns] : slipColumns}
         data={slips.data ? rows : undefined}
         isLoading={slips.isLoading}
         isFetching={slips.isFetching}
@@ -292,10 +331,7 @@ export function DeliveryReportPage() {
 export function DeliverySlipsPrint() {
   const [params] = useSearchParams();
   const query = readQuery(params);
-  const slips = useDeliverySlips({
-    ...query,
-    from: query.from ?? (query.invoiceFrom || query.invoiceTo ? undefined : isoDate()),
-  });
+  const slips = useDeliverySlips(withMonth(query));
   return (
     <PrintPage isLoading={slips.isLoading} error={slips.error} onRetry={() => void slips.refetch()}>
       {() => {
