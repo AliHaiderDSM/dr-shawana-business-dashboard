@@ -1,11 +1,9 @@
 import { createCrud } from '@/lib/api/crud';
 import type { Schemas } from '@/lib/api/types';
 
-export type Bank = Schemas['Bank'];
 export type AccountSheet = Schemas['AccountSheet'];
 export type AccountSheetInput = Schemas['CreateAccountSheet'];
 
-export const banksApi = createCrud<Bank, Schemas['CreateBank']>('banks', '/branch/banks');
 export interface AccountSheetOption {
   id: string;
   accountName: string;

@@ -307,7 +307,11 @@ export function DeliveriesPage() {
           view === 'dispatch' && rows.length ? (
             <Button
               variant="outline"
-              onClick={() => void navigate(`/print/delivery-slips?saleType=online&dispatchedOn=${selected}`)}
+              onClick={() =>
+                void navigate(
+                  `/print/delivery-slips?saleType=online&dateBy=dispatched&from=${selected}&to=${selected}`,
+                )
+              }
             >
               <Printer />
               Print {rows.length} slips

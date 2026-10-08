@@ -354,16 +354,8 @@ export const MENU: MenuGroup[] = [
     label: 'Finance',
     items: [
       {
-        key: 'banks',
-        label: 'Banks',
-        path: '/banks',
-        icon: Landmark,
-        anyOf: ['banks.view'],
-        scope: 'branch',
-      },
-      {
         key: 'account-sheets',
-        label: 'Account Sheets',
+        label: 'Bank & Cash Accounts',
         path: '/account-sheets',
         icon: Wallet,
         anyOf: ['accounts.view'],

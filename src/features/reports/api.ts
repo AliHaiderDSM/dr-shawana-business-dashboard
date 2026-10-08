@@ -80,11 +80,7 @@ export function isNumeric(value: ReportValue) {
 export function displayValue(value: ReportValue) {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (isNumeric(value)) {
-    const n = Number(value);
-    const decimals = String(value).includes('.') ? Math.min(String(value).split('.')[1]?.length ?? 0, 2) : 0;
-    return n.toLocaleString('en-PK', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-  }
+  if (isNumeric(value)) return Number(value).toLocaleString('en-PK', { maximumFractionDigits: 2 });
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
     const [y, m, d] = String(value).split('-');
     return `${d}-${m}-${y}`;

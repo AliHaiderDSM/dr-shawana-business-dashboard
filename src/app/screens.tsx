@@ -76,12 +76,6 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
-    path: 'banks',
-    element: page(() => import('@/features/finance/banks-page'), 'BanksPage'),
-    anyOf: ['banks.view'],
-    scope: 'branch',
-  },
-  {
     path: 'account-sheets',
     element: page(() => import('@/features/finance/account-sheets-page'), 'AccountSheetsPage'),
     anyOf: ['accounts.view'],

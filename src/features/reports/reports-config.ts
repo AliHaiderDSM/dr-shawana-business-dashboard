@@ -20,7 +20,8 @@ export type OptionSource =
 export type ReportFilter =
   | { kind: 'enum'; key: string; label: string; options: readonly { value: string; label: string }[] }
   | { kind: 'source'; key: string; label: string; source: OptionSource }
-  | { kind: 'text'; key: string; label: string };
+  | { kind: 'text'; key: string; label: string }
+  | { kind: 'date'; key: string; label: string };
 
 export interface ReportDef {
   key: string;
@@ -106,17 +107,22 @@ export const REPORTS: ReportDef[] = [
   {
     key: 'sale-products',
     title: 'Sale products',
-    description: 'Every product sold, with quantity, price and customer.',
+    description:
+      'Monthly sale report of completed sales only: paid with approved payments and handed over (office sales, or online orders dispatched or delivered). One row per sale with its products, discount, received and remaining.',
     icon: Receipt,
     group: 'Sales',
     allowed: permission('sales.view'),
     filters: [
-      SALE_TYPE,
-      METHOD,
+      { kind: 'text', key: 'customer', label: 'Customer or phone' },
+      { kind: 'text', key: 'patientCity', label: 'Customer city' },
       source('productId', 'Product', 'products'),
+      SALE_TYPE,
+      { kind: 'text', key: 'city', label: 'Sale city' },
+      METHOD,
       source('accountSheetId', 'Account', 'accounts'),
       source('createdBy', 'Staff', 'staff'),
-      { kind: 'text', key: 'city', label: 'City' },
+      { kind: 'date', key: 'createdFrom', label: 'Entry date from' },
+      { kind: 'date', key: 'createdTo', label: 'Entry date to' },
     ],
   },
   {

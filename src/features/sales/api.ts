@@ -279,7 +279,7 @@ export interface DeliverySlipsQuery {
   patientId?: string;
   invoiceFrom?: number;
   invoiceTo?: number;
-  dispatchedOn?: string;
+  dateBy?: 'booked' | 'dispatched';
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

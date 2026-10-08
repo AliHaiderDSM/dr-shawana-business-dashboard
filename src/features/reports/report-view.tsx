@@ -72,6 +72,21 @@ function TextFilter({ list, filter }: { list: ListState; filter: Extract<ReportF
   );
 }
 
+function DateFilter({ list, filter }: { list: ListState; filter: Extract<ReportFilter, { kind: 'date' }> }) {
+  return (
+    <label className="flex h-9 items-center gap-2 rounded-md border bg-background pl-3 text-sm text-muted-foreground">
+      {filter.label}
+      <Input
+        type="date"
+        aria-label={filter.label}
+        value={list.filters[filter.key] ?? ''}
+        className="h-8 w-36 border-0 shadow-none focus-visible:ring-0"
+        onChange={(e) => list.setFilter(filter.key, e.target.value || undefined)}
+      />
+    </label>
+  );
+}
+
 function columnsFor(data: ReportData): ColumnDef<Row, unknown>[] {
   return data.columns.map((column, index) => {
     const numeric =
@@ -236,6 +251,8 @@ function ReportBody({ report }: { report: ReportDef }) {
                     <SourceFilter key={filter.key} list={list} filter={filter} branchId={sourceBranch} />
                   ) : filter.kind === 'text' ? (
                     <TextFilter key={filter.key} list={list} filter={filter} />
+                  ) : filter.kind === 'date' ? (
+                    <DateFilter key={filter.key} list={list} filter={filter} />
                   ) : (
                     <FilterSelect
                       key={filter.key}

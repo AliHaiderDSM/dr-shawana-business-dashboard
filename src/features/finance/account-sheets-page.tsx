@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Pencil, Plus, Trash2, Wallet } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -20,17 +20,20 @@ import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, isoDate } from '@/lib/format';
 import { requiredText } from '@/lib/validation';
-import { accountSheetsApi, banksApi, type AccountSheet } from './api';
+import { accountSheetsApi, type AccountSheet } from './api';
 
 const schema = z
   .object({
     accountName: requiredText(150, 'Account name'),
     accountCode: requiredText(100, 'Account number'),
     type: z.enum(['cash', 'bank']),
-    bankId: z.string().nullable(),
+    bankName: z.string().trim().max(150, 'At most 150 characters'),
     date: z.string().min(1, 'Choose a date'),
   })
-  .refine((v) => v.type === 'cash' || Boolean(v.bankId), { path: ['bankId'], message: 'Choose the bank' });
+  .refine((v) => v.type === 'cash' || v.bankName.length > 0, {
+    path: ['bankName'],
+    message: 'Type the bank name',
+  });
 
 type Values = z.input<typeof schema>;
 
@@ -44,14 +47,16 @@ function AccountSheetSheet({
   sheet: AccountSheet | null;
 }) {
   const save = accountSheetsApi.useSave();
-  const banks = banksApi.useOptions({}, open);
+  const accounts = accountSheetsApi.useOptions({}, open);
+  const bankListId = useId();
+  const bankNames = [...new Set((accounts.data ?? []).flatMap((a) => (a.bankName ? [a.bankName] : [])))];
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     values: {
       accountName: sheet?.accountName ?? '',
       accountCode: sheet?.accountCode ?? '',
       type: (sheet?.type as 'cash' | 'bank') ?? 'cash',
-      bankId: sheet?.bankId ?? null,
+      bankName: sheet?.bank?.name ?? '',
       date: sheet?.date ?? isoDate(),
     },
   });
@@ -59,7 +64,7 @@ function AccountSheetSheet({
 
   const submit = form.handleSubmit((values) =>
     save.mutate(
-      { id: sheet?.id, body: { ...values, bankId: values.type === 'bank' ? values.bankId : null } },
+      { id: sheet?.id, body: { ...values, bankName: values.type === 'bank' ? values.bankName : null } },
       {
         onSuccess: () => {
           toast.success(sheet ? 'Account updated' : 'Account added');
@@ -75,8 +80,8 @@ function AccountSheetSheet({
       <FormSheet
         open={open}
         onOpenChange={onOpenChange}
-        title={sheet ? 'Edit account sheet' : 'New account sheet'}
-        description="Accounts receive cash and online payments and appear in the balance report."
+        title={sheet ? 'Edit account' : 'New account'}
+        description="A cash or bank account that receives payments. For a bank account, type the bank name: a new bank is added on its own."
         onSubmit={submit}
         submitting={save.isPending}
         submitLabel={sheet ? 'Save changes' : 'Add account'}
@@ -101,14 +106,22 @@ function AccountSheetSheet({
           />
         </FieldRow>
         {type === 'bank' ? (
-          <SelectField
-            control={form.control}
-            name="bankId"
-            label="Bank"
-            required
-            placeholder={banks.data?.length === 0 ? 'Add a bank first' : 'Choose a bank'}
-            options={(banks.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
-          />
+          <>
+            <TextField
+              control={form.control}
+              name="bankName"
+              label="Bank"
+              placeholder="Meezan Bank"
+              autoComplete="off"
+              list={bankListId}
+              required
+            />
+            <datalist id={bankListId}>
+              {bankNames.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </>
         ) : null}
         <TextField control={form.control} name="date" label="Date" type="date" required />
       </FormSheet>
@@ -139,11 +152,15 @@ export function AccountSheetsPage() {
       cell: ({ row }) => (
         <div className="min-w-0">
           <div className="truncate font-medium">{row.original.accountName}</div>
-          <div className="truncate text-xs text-muted-foreground">
-            {row.original.bank?.name ?? 'Cash in hand'}
-          </div>
         </div>
       ),
+    },
+    {
+      id: 'bank',
+      header: 'Bank',
+      accessorFn: (a) => a.bank?.name ?? '',
+      cell: ({ row }) =>
+        row.original.bank?.name ?? <span className="text-muted-foreground">Cash in hand</span>,
     },
     {
       id: 'accountCode',
@@ -193,8 +210,8 @@ export function AccountSheetsPage() {
   return (
     <>
       <PageHeader
-        title="Account sheets"
-        description="Cash and bank accounts that receive payments."
+        title="Bank & cash accounts"
+        description="Every account that receives money, with its bank. Add a bank account by typing the bank name; there is no separate bank list."
         actions={
           can('accounts.create') ? (
             <Button onClick={() => openSheet(null)}>

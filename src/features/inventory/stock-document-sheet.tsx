@@ -480,7 +480,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                   control={form.control}
                   name={`items.${index}.detail`}
                   label={config.detailLabel}
-                  placeholder="Optional"
+                  placeholder="Batch"
                 />
               ),
               ...(config.batched

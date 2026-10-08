@@ -46,11 +46,13 @@ export function TextField<T extends FieldValues>({
   placeholder,
   autoComplete,
   inputMode,
+  list,
 }: BaseFieldProps<T> & {
   type?: string;
   placeholder?: string;
   autoComplete?: string;
   inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
+  list?: string;
 }) {
   return (
     <FormField
@@ -65,6 +67,7 @@ export function TextField<T extends FieldValues>({
               placeholder={placeholder}
               autoComplete={autoComplete}
               inputMode={inputMode}
+              list={list}
               disabled={disabled}
               {...field}
               value={field.value ?? ''}

@@ -12,6 +12,20 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## One accounts screen, sale report filters, delivery report by dispatch date (2026-10-08)
+
+- **Finance:**
+  - The Banks screen is removed. "Bank & Cash Accounts" (/account-sheets) adds a bank account by typing the bank name, with suggestions from the existing banks.
+  - The table has a Bank column.
+  - Editing can change the type, the bank and the date.
+- **Sale products report:**
+  - Shows only completed sales, one row per sale.
+  - Columns, as in posSoft: products, total qty, total amount, discount, after discount, received, remaining, payment and account.
+  - Filters: customer or phone, customer city, product, sale type, sale city, method, account, staff, and entry date from/to (plus the date range and the branch).
+  - Report numbers show without ".00".
+- **Delivery report:** a "Date by" choice (Booking date / Dispatch date). Dispatch date shows online orders by the day they were sent.
+- **Deliveries:** the Sent-tab print uses `dateBy=dispatched`.
+
 ## Duplicate phone shows branch, print after full scan, Completed sales filter (2026-10-08)
 
 - **Patient phone:**

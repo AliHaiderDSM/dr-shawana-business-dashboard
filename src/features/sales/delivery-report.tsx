@@ -97,7 +97,7 @@ function readQuery(params: URLSearchParams): DeliverySlipsQuery {
     saleType: saleType === 'office' || saleType === 'online' ? saleType : undefined,
     invoiceFrom: number('invoiceFrom'),
     invoiceTo: number('invoiceTo'),
-    dispatchedOn: params.get('dispatchedOn') ?? undefined,
+    dateBy: params.get('dateBy') === 'dispatched' ? 'dispatched' : undefined,
   };
 }
 
@@ -204,7 +204,24 @@ export function DeliveryReportPage() {
       />
       <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4 shadow-xs">
         <div className="space-y-1.5">
-          <Label>Date</Label>
+          <Label>Date by</Label>
+          <Select
+            value={params.get('dateBy') ?? 'booked'}
+            onValueChange={(v) =>
+              set(v === 'dispatched' ? { dateBy: v, saleType: 'online' } : { dateBy: undefined })
+            }
+          >
+            <SelectTrigger className="h-9 w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="booked">Booking date</SelectItem>
+              <SelectItem value="dispatched">Dispatch date</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>{params.get('dateBy') === 'dispatched' ? 'Dispatched on' : 'Booked on'}</Label>
           <DateRangePicker
             from={params.get('from') ?? undefined}
             to={params.get('to') ?? undefined}
@@ -277,7 +294,7 @@ export function DeliverySlipsPrint() {
   const query = readQuery(params);
   const slips = useDeliverySlips({
     ...query,
-    from: query.from ?? (query.invoiceFrom || query.invoiceTo || query.dispatchedOn ? undefined : isoDate()),
+    from: query.from ?? (query.invoiceFrom || query.invoiceTo ? undefined : isoDate()),
   });
   return (
     <PrintPage isLoading={slips.isLoading} error={slips.error} onRetry={() => void slips.refetch()}>
