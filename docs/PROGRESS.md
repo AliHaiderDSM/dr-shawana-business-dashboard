@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Sale detail: one items table (2026-10-08)
+
+- **One Items table:** the Items, Labelled pieces, Batches and Returns sections are merged into it.
+- **Columns:** Product, Qty, Batch (with expiry, and qty when split), DSM labels (returned labels struck through), Returned (return no. × qty, linked), Price, Discount and Total.
+- **Unchanged:** Payments stays its own table, because it lists money and not products.
+
 ## Super Admin pages keep their data after a hard refresh (2026-10-08)
 
 - **Cause:** after a hard refresh, Super Admin requests went out before the branch list had loaded. The Main Warehouse was not known yet, so the overview pages (dashboard, view sales, delivery report) asked for the Main Warehouse alone, got nothing back, and cached that empty answer.

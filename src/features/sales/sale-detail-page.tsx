@@ -40,8 +40,7 @@ import {
   useReceivingAccounts,
   type PaymentValues,
 } from '@/features/appointments/payment-fields';
-import { REASON_LABELS, useReturns } from '@/features/returns/api';
-import { ReturnStatusBadge } from '@/features/returns/returns-page';
+import { useReturns, type SaleReturn } from '@/features/returns/api';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
@@ -62,57 +61,156 @@ import { useCanChangeSale } from './sales-page';
 
 type Item = Sale['items'][number];
 
-const itemColumns: ColumnDef<Item, unknown>[] = [
-  {
-    id: 'product',
-    header: 'Product',
-    accessorFn: (i) => i.product?.name ?? '',
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.original.product?.name}</div>
-        {row.original.bundle ? (
-          <div className="text-xs text-muted-foreground">in {row.original.bundle.name}</div>
-        ) : null}
-      </div>
-    ),
-  },
-  {
-    id: 'qty',
-    header: 'Qty',
-    accessorKey: 'qty',
-    meta: { align: 'right' },
-    cell: ({ row }) => formatQuantity(row.original.qty),
-  },
-  {
-    id: 'unitPrice',
-    header: 'Price',
-    accessorKey: 'unitPrice',
-    meta: { align: 'right' },
-    cell: ({ row }) => formatMoney(row.original.unitPrice),
-  },
-  {
-    id: 'discount',
-    header: 'Discount',
-    accessorKey: 'discountAmount',
-    meta: { align: 'right' },
-    cell: ({ row }) =>
-      Number(row.original.discountPercent) ? (
-        <span className="tabular-nums">
-          {formatMoney(row.original.discountAmount)}
-          <span className="text-xs text-muted-foreground"> ({Number(row.original.discountPercent)}%)</span>
-        </span>
-      ) : (
-        '—'
+function itemColumns(sale: Sale, returns: SaleReturn[]): ColumnDef<Item, unknown>[] {
+  const batchesOf = (productId: string) => (sale.batches ?? []).filter((b) => b.productId === productId);
+  const labelsOf = (productId: string) => (sale.serials ?? []).filter((p) => p.productId === productId);
+  const returnsOf = (productId: string) =>
+    returns.flatMap((r) =>
+      r.items
+        .filter((i) => i.productId === productId)
+        .map((i) => ({ id: `${r.id}-${i.id}`, returnId: r.id, returnNo: r.returnNo, qty: i.qty })),
+    );
+  return [
+    {
+      id: 'product',
+      header: 'Product',
+      accessorFn: (i) => i.product?.name ?? '',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.product?.name}</div>
+          {row.original.bundle ? (
+            <div className="text-xs text-muted-foreground">in {row.original.bundle.name}</div>
+          ) : null}
+        </div>
       ),
-  },
-  {
-    id: 'lineTotal',
-    header: 'Total',
-    accessorKey: 'lineTotal',
-    meta: { align: 'right' },
-    cell: ({ row }) => <span className="font-medium">{formatMoney(row.original.lineTotal)}</span>,
-  },
-];
+    },
+    {
+      id: 'qty',
+      header: 'Qty',
+      accessorKey: 'qty',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatQuantity(row.original.qty),
+    },
+    {
+      id: 'batch',
+      header: 'Batch',
+      accessorFn: (i) =>
+        batchesOf(i.productId)
+          .map((b) => b.batchNo ?? '')
+          .join(', '),
+      cell: ({ row }) => {
+        const list = batchesOf(row.original.productId);
+        if (!list.length) return <span className="text-muted-foreground">—</span>;
+        return (
+          <ul className="space-y-0.5 text-sm">
+            {list.map((b) => (
+              <li key={b.batchId ?? 'none'} className="whitespace-nowrap">
+                {b.batchId ? (
+                  <Link
+                    to={`/inventory/batches/${b.batchId}`}
+                    className="font-mono text-primary hover:underline"
+                  >
+                    {b.batchNo}
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">No batch</span>
+                )}
+                {b.expiryDate ? (
+                  <span className="text-xs text-muted-foreground"> · exp {formatDate(b.expiryDate)}</span>
+                ) : null}
+                {list.length > 1 ? (
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {' '}
+                    × {formatQuantity(b.qty)}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        );
+      },
+    },
+    {
+      id: 'labels',
+      header: 'DSM labels',
+      accessorFn: (i) =>
+        labelsOf(i.productId)
+          .map((p) => p.serial)
+          .join(', '),
+      cell: ({ row }) => {
+        const list = labelsOf(row.original.productId);
+        if (!list.length) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="flex max-w-56 flex-wrap gap-1">
+            {list.map((p) => (
+              <Link
+                key={p.serial}
+                to={`/inventory/labels/${p.serial}`}
+                title={p.status}
+                className={cn(
+                  'rounded-md border px-1.5 py-0.5 font-mono text-[11px] hover:border-primary hover:text-primary',
+                  p.status !== 'sold' && 'text-muted-foreground line-through',
+                )}
+              >
+                {p.serial}
+              </Link>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'returned',
+      header: 'Returned',
+      accessorFn: (i) => returnsOf(i.productId).reduce((sum, r) => sum + Number(r.qty), 0),
+      cell: ({ row }) => {
+        const list = returnsOf(row.original.productId);
+        if (!list.length) return <span className="text-muted-foreground">—</span>;
+        return (
+          <ul className="space-y-0.5 text-sm">
+            {list.map((r) => (
+              <li key={r.id} className="whitespace-nowrap">
+                <Link to={`/returns/${r.returnId}`} className="text-primary hover:underline">
+                  {r.returnNo}
+                </Link>
+                <span className="text-muted-foreground tabular-nums"> × {formatQuantity(r.qty)}</span>
+              </li>
+            ))}
+          </ul>
+        );
+      },
+    },
+    {
+      id: 'unitPrice',
+      header: 'Price',
+      accessorKey: 'unitPrice',
+      meta: { align: 'right' },
+      cell: ({ row }) => formatMoney(row.original.unitPrice),
+    },
+    {
+      id: 'discount',
+      header: 'Discount',
+      accessorKey: 'discountAmount',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        Number(row.original.discountPercent) ? (
+          <span className="tabular-nums">
+            {formatMoney(row.original.discountAmount)}
+            <span className="text-xs text-muted-foreground"> ({Number(row.original.discountPercent)}%)</span>
+          </span>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      id: 'lineTotal',
+      header: 'Total',
+      accessorKey: 'lineTotal',
+      meta: { align: 'right' },
+      cell: ({ row }) => <span className="font-medium">{formatMoney(row.original.lineTotal)}</span>,
+    },
+  ];
+}
 
 export function SalePaymentSheet({
   saleId,
@@ -471,61 +569,12 @@ export function SaleDetailPage() {
         <div className="space-y-6">
           <div className="space-y-3">
             <h2 className="text-sm font-semibold">Items</h2>
-            <DataTable columns={itemColumns} data={s.items} emptyTitle="No items" />
+            <DataTable
+              columns={itemColumns(s, returns.data?.data ?? [])}
+              data={s.items}
+              emptyTitle="No items"
+            />
           </div>
-          {s.serials?.length ? (
-            <Panel title="Labelled pieces" description="The exact packs on this sale." bodyClassName="p-4">
-              <div className="flex flex-wrap gap-1.5">
-                {s.serials.map((p) => (
-                  <Link
-                    key={p.serial}
-                    to={`/inventory/labels/${p.serial}`}
-                    title={`${s.items.find((i) => i.productId === p.productId)?.product?.name ?? ''} · ${p.status}`}
-                    className={cn(
-                      'rounded-md border px-2 py-0.5 font-mono text-xs hover:border-primary hover:text-primary',
-                      p.status !== 'sold' && 'text-muted-foreground line-through',
-                    )}
-                  >
-                    {p.serial}
-                  </Link>
-                ))}
-              </div>
-            </Panel>
-          ) : null}
-          {s.batches?.length ? (
-            <Panel
-              title="Batches"
-              description="Stock is taken from the batch that expires first."
-              bodyClassName="p-0"
-            >
-              <ul className="divide-y">
-                {s.batches.map((b) => (
-                  <li
-                    key={`${b.productId}-${b.batchId ?? 'none'}`}
-                    className="flex items-center gap-3 px-5 py-3 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate font-medium">
-                      {s.items.find((i) => i.productId === b.productId)?.product?.name ?? 'Product'}
-                    </span>
-                    {b.batchId ? (
-                      <Link
-                        to={`/inventory/batches/${b.batchId}`}
-                        className="font-mono text-primary hover:underline"
-                      >
-                        {b.batchNo}
-                      </Link>
-                    ) : (
-                      <span className="text-muted-foreground">No batch</span>
-                    )}
-                    <span className="w-28 text-muted-foreground">
-                      {b.expiryDate ? `exp ${formatDate(b.expiryDate)}` : ''}
-                    </span>
-                    <span className="w-16 text-right tabular-nums">{formatQuantity(b.qty)}</span>
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-          ) : null}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Payments</h2>
@@ -555,28 +604,6 @@ export function SaleDetailPage() {
             </div>
             <DataTable columns={paymentColumns} data={s.payments} emptyTitle="No payments yet" />
           </div>
-          {returns.data?.data.length ? (
-            <Panel title="Returns" bodyClassName="p-0">
-              <ul className="divide-y">
-                {returns.data.data.map((r) => (
-                  <li key={r.id}>
-                    <Link
-                      to={`/returns/${r.id}`}
-                      className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-muted/50"
-                    >
-                      <span className="font-medium">{r.returnNo}</span>
-                      <span className="text-muted-foreground">
-                        {REASON_LABELS[r.reason]} · {formatQuantity(r.totalQty)} items · {formatDate(r.date)}
-                      </span>
-                      <span className="ml-auto">
-                        <ReturnStatusBadge record={r} />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-          ) : null}
         </div>
         <div className="space-y-6">
           {online ? <DeliveryTimeline sale={s} /> : null}
