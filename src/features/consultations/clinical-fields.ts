@@ -786,6 +786,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
     fields: [
       { kind: 'text', key: 'referredTo', label: 'Referred to', required: true },
       { kind: 'text', key: 'specialty', label: 'Specialty', required: true },
+      { kind: 'text', key: 'name', label: 'Patient name', required: true },
       { kind: 'date', key: 'dateOfBirth', label: 'Date of birth', required: true },
       { kind: 'date', key: 'date', label: 'Date', required: true },
       { kind: 'text', key: 'referringDoctorName', label: 'Referring doctor name', required: true },

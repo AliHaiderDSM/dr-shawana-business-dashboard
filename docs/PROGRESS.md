@@ -12,6 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Blood work editing and overall chart, Save & next, referral patient name, link prefill (2026-10-09)
+
+- **Blood work:**
+  - The chart is on top and shows every test with results by default (one line each, with a legend; tests 6–9 are dashed). A selector narrows it to one test.
+  - Each date header has Edit (opens the sheet prefilled; clear a value to remove it, change the date to move the column) and Delete (removes the whole date).
+  - The add/edit sheet is wider (lg).
+- **Remarks 2.0:**
+  - Each section's button is "Save & next" and opens the next tab after saving, as in posSoft.
+  - Saving Clinical remarks with "Referred to specialist" goes straight to the new referral tab.
+- **Referral:** new Patient name field, prefilled and updating the patient, as in posSoft.
+- **Patient link:** Basic information is prefilled with the patient's name, age, city and country (`form.defaults`).
+
 ## Patient link: intake form, prescription slips, educational resources (2026-10-09)
 
 - **Header:** the public link (/p/:token) has a posSoft-style header: logo, clinic name, a Name + APP# bar and a WhatsApp bar.

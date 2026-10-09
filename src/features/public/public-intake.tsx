@@ -72,18 +72,20 @@ function IntakeSection({
   section,
   title,
   data,
+  defaults,
   onSaved,
 }: {
   token: string;
   section: SectionDef;
   title: string;
   data: Record<string, unknown> | null;
+  defaults?: FormValues;
   onSaved: () => void;
 }) {
   const [saving, setSaving] = useState(false);
   const form = useForm<FormValues>({
     resolver: sectionResolver(section),
-    defaultValues: toFormValues(section, data ?? undefined),
+    defaultValues: toFormValues(section, data ?? undefined, defaults),
   });
   const submit = form.handleSubmit(async (values) => {
     setSaving(true);
@@ -238,6 +240,7 @@ export function IntakeForms({
           section={SECTIONS[key]}
           title={title}
           data={form.sections[key] ?? null}
+          defaults={key === 'basic_info' ? (form.defaults as FormValues) : undefined}
           onSaved={onChanged}
         />
       ))}

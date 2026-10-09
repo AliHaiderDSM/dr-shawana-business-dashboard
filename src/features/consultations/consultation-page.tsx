@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Stethoscope,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -42,6 +43,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
+  consultationKeys,
   useAppointmentConsultation,
   useConsultationStatus,
   useStartConsultation,
@@ -156,11 +158,13 @@ function ClinicalRemarks({
   appointment,
   readOnly,
   onDirtyChange,
+  onSaved,
 }: {
   consultation: Consultation;
   appointment: AppointmentDetail | undefined;
   readOnly: boolean;
   onDirtyChange: (dirty: boolean) => void;
+  onSaved: () => void;
 }) {
   const { can } = useAuth();
   const [change, setChange] = useState<StatusChange | null>(null);
@@ -208,6 +212,7 @@ function ClinicalRemarks({
         state={consultation.sections.clinical_assessment}
         readOnly={readOnly}
         onDirtyChange={onDirtyChange}
+        onSaved={onSaved}
       />
       <StatusDialog change={change} onClose={() => setChange(null)} />
     </div>
@@ -234,6 +239,7 @@ function Workspace({
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState<PanelKey | null>(null);
   const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
+  const queryClient = useQueryClient();
 
   const go = (key: PanelKey) => {
     setDirty(false);
@@ -245,6 +251,16 @@ function Workspace({
       },
       { replace: true },
     );
+  };
+
+  const advance = (from: PanelKey) => {
+    const fresh =
+      queryClient.getQueryData<Consultation | null>(
+        consultationKeys.byAppointment(consultation.appointmentId),
+      ) ?? consultation;
+    const list = navItems(fresh, canPrescribe);
+    const next = list[list.findIndex((i) => i.key === from) + 1];
+    if (next) go(next.key);
   };
 
   const select = (key: PanelKey) => {
@@ -264,6 +280,7 @@ function Workspace({
       : {},
     mrs_scale: { date: isoDate() },
     referral: {
+      name: patient.data?.name,
       date: isoDate(),
       referringDoctorName: consultation.doctor?.name,
       dateOfBirth: patient.data?.dateOfBirth,
@@ -279,6 +296,7 @@ function Workspace({
       defaults={defaults[key]}
       readOnly={readOnly}
       onDirtyChange={onDirtyChange}
+      onSaved={() => advance(key === 'imaging_results' ? 'records' : key)}
       aside={
         key === 'mrs_scale' ? (
           <Panel title="MRS history" description="Scores are calculated by the server on every save.">
@@ -330,6 +348,7 @@ function Workspace({
             appointment={appointment}
             readOnly={readOnly}
             onDirtyChange={onDirtyChange}
+            onSaved={() => advance('clinical')}
           />
         );
       case 'prescriptions':

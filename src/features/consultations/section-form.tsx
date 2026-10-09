@@ -551,6 +551,7 @@ interface SectionFormProps {
   onDirtyChange?: (dirty: boolean) => void;
   aside?: ReactNode;
   footer?: (saved: boolean) => ReactNode;
+  onSaved?: () => void;
 }
 
 export function SectionForm({
@@ -562,6 +563,7 @@ export function SectionForm({
   onDirtyChange,
   aside,
   footer,
+  onSaved,
 }: SectionFormProps) {
   const save = useSaveSection(consultation);
   const form = useForm<FormValues>({
@@ -581,6 +583,7 @@ export function SectionForm({
         onSuccess: () => {
           form.reset(values);
           toast.success(`${section.title} saved`);
+          onSaved?.();
         },
         onError: (error) => applyServerErrors(form, error),
       },
@@ -620,7 +623,7 @@ export function SectionForm({
             {readOnly ? null : (
               <Button type="submit" disabled={save.isPending}>
                 {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-                Save section
+                {onSaved ? 'Save & next' : 'Save section'}
               </Button>
             )}
           </div>

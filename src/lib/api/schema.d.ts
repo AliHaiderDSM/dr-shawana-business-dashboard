@@ -23704,6 +23704,10 @@ export interface components {
                 appointmentNo: number;
                 /** Format: date */
                 date: string;
+                /** @description Patient name, age, city and country to prefill the basic information */
+                defaults: {
+                    [key: string]: unknown;
+                };
                 sections: {
                     [key: string]: {
                         [key: string]: unknown;
@@ -24384,6 +24388,7 @@ export interface components {
         Section_referral: {
             referredTo: string;
             specialty: string;
+            name?: string;
             /**
              * Format: date
              * @example 2026-09-30
