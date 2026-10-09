@@ -21,6 +21,9 @@ function guard(element: ReactNode, anyOf: string[], scope: ScreenRoute['scope'])
 const PublicHistoryPage = lazy(() =>
   import('@/features/public/public-history-page').then((m) => ({ default: m.PublicHistoryPage })),
 );
+const PublicPrescriptionPage = lazy(() =>
+  import('@/features/public/public-prescription').then((m) => ({ default: m.PublicPrescriptionPage })),
+);
 
 const toRoute = (route: ScreenRoute): RouteObject => ({
   path: route.path,
@@ -43,6 +46,14 @@ const childRoutes: RouteObject[] = [
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  {
+    path: '/p/:token/rx/:id',
+    element: (
+      <Suspense fallback={<FullPageLoader />}>
+        <PublicPrescriptionPage />
+      </Suspense>
+    ),
+  },
   {
     path: '/p/:token',
     element: (

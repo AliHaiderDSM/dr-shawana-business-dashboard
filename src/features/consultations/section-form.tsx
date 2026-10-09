@@ -518,7 +518,7 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
   }
 }
 
-function VisibleFields({ section, disabled }: { section: SectionDef; disabled?: boolean }) {
+export function VisibleFields({ section, disabled }: { section: SectionDef; disabled?: boolean }) {
   const { control } = useFormContext<FormValues>();
   const values = useWatch({ control }) as FormValues;
   const mrsLayout = section.key === 'mrs_scale';

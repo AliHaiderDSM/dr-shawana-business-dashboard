@@ -12,6 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient link: intake form, prescription slips, educational resources (2026-10-09)
+
+- **Header:** the public link (/p/:token) has a posSoft-style header: logo, clinic name, a Name + APP# bar and a WhatsApp bar.
+- **Downloads:**
+  - "Prescription slip (date)" buttons open /p/:token/rx/:id, a printable slip (logo, patient, diagnosis, medicines by category, plan, follow up) that prints or saves as PDF.
+  - Educational resources ticked Yes in Remarks 2.0 download from /resources (GLP diet plan PDF, general diet plan PDF, liver detox, skin care and hair care images), copied from posSoft "Diet Plan".
+- **Intake form (links made from an appointment):**
+  - Basic information (with BMI), "Have you ever been diagnosed with?" (medical history) and "Other symptoms you are experiencing", each with its own Save. They reuse the Remarks 2.0 field definitions.
+  - "Upload medical records": medical records and imaging with notes.
+  - Everything saves into that appointment's Remarks 2.0 and the patient's medical records, so staff with access see it there.
+- **History:** the patient's history stays below the form.
+
 ## No return on undispatched orders, paid-extra label (2026-10-09)
 
 - **Sale detail:** "Receive a return for this sale" is hidden for online orders that are awaiting dispatch or cancelled. Nothing left the stock, so there is nothing to return.

@@ -14,6 +14,8 @@ import { ApiError } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
 import { env } from '@/lib/env';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
+import logo from '@/assets/logo-hd.png';
+import { Downloads, IntakeForms } from './public-intake';
 
 type History = Schemas['PublicPatientHistory'];
 
@@ -230,7 +232,7 @@ export function PublicHistoryPage() {
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
         {history.isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-16 w-full" />
@@ -250,23 +252,41 @@ export function PublicHistoryPage() {
           </div>
         ) : (
           <>
-            <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                {data.clinic ? (
-                  <div className="text-sm font-medium text-muted-foreground">{data.clinic.name}</div>
-                ) : null}
-                <h1 className="text-2xl font-semibold tracking-tight">{data.patient.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  {[data.patient.city, `Link valid until ${formatDate(data.expiresAt)}`]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
+            <header className="mb-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <img src={logo} alt="Dr Shawana DSM" className="h-12 w-auto" />
+                  <div className="text-lg font-semibold">{data.clinic?.name ?? 'Dr Shawana Mufti DSM'}</div>
+                </div>
+                <Button variant="outline" onClick={() => window.print()} className="print:hidden">
+                  <Printer />
+                  Print
+                </Button>
               </div>
-              <Button variant="outline" onClick={() => window.print()} className="print:hidden">
-                <Printer />
-                Print
-              </Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground">
+                  <span>
+                    Name: <span className="font-semibold">{data.patient.name}</span>
+                  </span>
+                  {data.form ? <span className="font-semibold">APP#{data.form.appointmentNo}</span> : null}
+                </div>
+                <div className="rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground">
+                  WhatsApp: <span className="font-semibold tabular-nums">{data.phone ?? '—'}</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {[data.patient.city, `Link valid until ${formatDate(data.expiresAt)}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <Downloads token={token} data={data} />
             </header>
+            <div className="mb-8">
+              <IntakeForms token={token} data={data} onChanged={() => void history.refetch()} />
+            </div>
+            {data.form ? (
+              <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Your history</h2>
+            ) : null}
             <HistoryView token={token} data={data} />
             {data.clinic && (data.clinic.phone || data.clinic.address) ? (
               <footer className="mt-8 text-center text-xs text-muted-foreground">
