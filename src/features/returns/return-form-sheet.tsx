@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { errorMessage } from '@/components/shared/error-state';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -258,7 +259,11 @@ export function ReturnFormSheet({
             {items.some((i) => i.trackSerials) ? (
               <BarcodeScanInput onScan={scanPiece} placeholder="Scan the DSM label of a returned piece" />
             ) : null}
-            {returnable.isLoading ? (
+            {returnable.error ? (
+              <p className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
+                {errorMessage(returnable.error)}
+              </p>
+            ) : returnable.isLoading ? (
               <Skeleton className="h-28 w-full" />
             ) : (
               <LineItems

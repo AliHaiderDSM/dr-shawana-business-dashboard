@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## No return on undispatched orders, paid-extra label (2026-10-09)
+
+- **Sale detail:** "Receive a return for this sale" is hidden for online orders that are awaiting dispatch or cancelled. Nothing left the stock, so there is nothing to return.
+- **Return form:** when the server refuses a sale, its reason shows in place of the empty product table.
+- **Sale totals:** a negative remaining (paid more than the total) shows as "Paid extra".
+
 ## Cancelled orders lock payments, BMI gauge (2026-10-09)
 
 - **Cancelled orders:** Approve actions are hidden on them, because their payments can no longer be approved. The cancel dialog warns that a payment awaiting approval will never count, and says to approve and refund first if the money arrived.

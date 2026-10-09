@@ -622,7 +622,9 @@ export function SaleDetailPage() {
                   [`Discount (${Number(s.discountPercent)}%)`, formatMoney(s.discountAmount)],
                   ['Total', formatMoney(s.total)],
                   ['Received', formatMoney(s.received)],
-                  ['Remaining', formatMoney(s.remaining)],
+                  Number(s.remaining) < 0
+                    ? (['Paid extra', formatMoney(Math.abs(Number(s.remaining)))] as const)
+                    : (['Remaining', formatMoney(s.remaining)] as const),
                 ] as const
               ).map(([label, value]) => (
                 <div key={label} className="flex justify-between">
@@ -632,7 +634,8 @@ export function SaleDetailPage() {
               ))}
             </dl>
           </Panel>
-          {can('returns.create') ? (
+          {can('returns.create') &&
+          !(online && (s.deliveryStatus === 'pending' || s.deliveryStatus === 'cancelled')) ? (
             <Button
               variant="outline"
               className="w-full"
