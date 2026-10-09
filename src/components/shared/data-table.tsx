@@ -124,7 +124,7 @@ export function DataTable<T>({
     .filter((c) => (c.columnDef.meta as ColumnMeta | undefined)?.hideable !== false && c.id !== 'actions');
 
   function exportExcel() {
-    const visible = table.getVisibleLeafColumns().filter((c) => c.id !== 'actions');
+    const visible = table.getVisibleLeafColumns().filter((c) => c.id !== 'actions' && c.id !== 'pick');
     const header = visible.map((c) => (typeof c.columnDef.header === 'string' ? c.columnDef.header : c.id));
     const rows = table.getRowModel().rows.map((row) =>
       visible.map((c) => {

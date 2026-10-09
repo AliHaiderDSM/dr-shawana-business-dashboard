@@ -39,7 +39,7 @@ import { slipPrintPath, slipQuery } from './delivery-report';
 
 const DELIVERY_TONES: Record<DeliveryStatus, Tone> = {
   pending: 'warning',
-  dispatched: 'info',
+  dispatched: 'success',
   delivered: 'success',
   returned: 'danger',
   cancelled: 'neutral',

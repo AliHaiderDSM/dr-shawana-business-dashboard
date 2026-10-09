@@ -17826,6 +17826,8 @@ export interface paths {
                     to?: string;
                     invoiceFrom?: number;
                     invoiceTo?: number;
+                    /** @description Comma-separated sale ids: print just these orders, any date */
+                    saleIds?: string;
                     /** @description booked (default): from/to is the sale date. dispatched: from/to is the dispatch date of online orders */
                     dateBy?: "booked" | "dispatched";
                     branchId?: string;

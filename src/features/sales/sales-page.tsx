@@ -3,7 +3,6 @@ import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   Ban,
-  CheckCheck,
   CheckCircle2,
   Eye,
   HandCoins,
@@ -182,7 +181,26 @@ export function SalesPage() {
       id: 'payment',
       header: 'Payment',
       accessorKey: 'paymentStatus',
-      cell: ({ row }) => <StatusBadge status={row.original.paymentStatus} />,
+      cell: ({ row }) =>
+        row.original.paymentStatus === 'partial' ? (
+          <StatusBadge tone="warning">Remaining</StatusBadge>
+        ) : (
+          <StatusBadge status={row.original.paymentStatus} />
+        ),
+    },
+    {
+      id: 'remaining',
+      header: 'Remaining',
+      accessorKey: 'remaining',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        Number(row.original.remaining) > 0 ? (
+          <span className="font-medium text-destructive tabular-nums">
+            {formatMoney(row.original.remaining)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       id: 'delivery',
@@ -248,13 +266,6 @@ export function SalesPage() {
                 separatorBefore: true,
                 hidden: !online || s.deliveryStatus !== 'pending' || !can('sales.update'),
                 onSelect: () => orders.dispatch(s),
-              },
-              {
-                label: 'Mark delivered',
-                icon: CheckCheck,
-                separatorBefore: !online || s.deliveryStatus !== 'pending',
-                hidden: !online || s.deliveryStatus !== 'dispatched' || !can('sales.update'),
-                onSelect: () => orders.delivered(s),
               },
               {
                 label: 'Mark returned',
@@ -349,6 +360,7 @@ export function SalesPage() {
                 subtotal: formatMoney(totals.subtotal),
                 discount: formatMoney(totals.discount),
                 total: formatMoney(totals.total),
+                remaining: formatMoney(totals.remaining),
               }
             : undefined
         }
@@ -439,7 +451,7 @@ export function SalesPage() {
               allLabel="Any delivery"
               className="w-36"
               options={enumOptions(
-                ['pending', 'dispatched', 'delivered', 'returned', 'cancelled'] as const,
+                ['pending', 'dispatched', 'returned', 'cancelled'] as const,
                 DELIVERY_LABELS,
               )}
             />

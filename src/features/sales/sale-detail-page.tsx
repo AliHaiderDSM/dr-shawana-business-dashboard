@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table';
 import {
   ArrowLeft,
   Ban,
-  CheckCheck,
   CheckCircle2,
   FileImage,
   Pencil,
@@ -294,14 +293,9 @@ function DeliveryTimeline({ sale }: { sale: Sale }) {
     ...(cancelled
       ? []
       : [
-          returned
-            ? { label: 'Returned', date: null, done: true, hint: 'Sent to the returns section' }
-            : {
-                label: 'Delivered',
-                date: sale.deliveredOn,
-                done: Boolean(sale.deliveredOn),
-                hint: sale.deliveredOn ? 'Reached the customer' : 'Not delivered yet',
-              },
+          ...(returned
+            ? [{ label: 'Returned', date: null, done: true, hint: 'Sent to the returns section' }]
+            : []),
         ]),
   ];
   return (
@@ -536,12 +530,6 @@ export function SaleDetailPage() {
               <Button onClick={() => orders.dispatch(s)}>
                 <Truck />
                 Dispatch
-              </Button>
-            ) : null}
-            {online && s.deliveryStatus === 'dispatched' && can('sales.update') ? (
-              <Button variant="outline" onClick={() => orders.delivered(s)}>
-                <CheckCheck />
-                Delivered
               </Button>
             ) : null}
             {online &&

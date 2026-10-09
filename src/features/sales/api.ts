@@ -37,14 +37,14 @@ export const SALE_TYPE_LABELS: Record<Sale['saleType'], string> = {
 };
 export const PAYMENT_STATUS_LABELS: Record<Sale['paymentStatus'], string> = {
   unpaid: 'Unpaid',
-  partial: 'Partial',
+  partial: 'Remaining',
   paid: 'Paid',
   awaiting_approval: 'Awaiting approval',
 };
 export const DELIVERY_LABELS: Record<DeliveryStatus, string> = {
   pending: 'Awaiting dispatch',
   dispatched: 'Dispatched',
-  delivered: 'Delivered',
+  delivered: 'Dispatched',
   returned: 'Returned',
   cancelled: 'Cancelled',
 };
@@ -283,6 +283,7 @@ export interface DeliverySlipsQuery {
   invoiceTo?: number;
   dateBy?: 'booked' | 'dispatched';
   branchId?: string;
+  saleIds?: string;
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

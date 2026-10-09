@@ -12,6 +12,21 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Remaining column, dispatch = delivered, calendar alert, print dispatched, delivery report selection (2026-10-09)
+
+- **View Sales:**
+  - New Remaining column, with a total.
+  - A partly paid sale shows a "Remaining" badge instead of "Partial".
+- **Deliveries:**
+  - Dispatching an order also delivers it. There is no separate Delivered step: no "Delivered" or "Mark delivered" actions, and the timeline goes Ordered → Dispatched (→ Returned).
+  - The "Delivered this month" card is removed.
+- **Calendar:**
+  - Each day with orders still waiting shows a red "N left" badge in the top-right corner.
+  - Dispatched orders show as one green count, and returned orders in grey.
+- **Deliveries table toolbar:** a Print button next to Export prints the slips of only the dispatched (scanned) orders in the list, through `saleIds`.
+- **Delivery report:** a checkbox column with select-all in the header. Print prints the selected orders, or all of them when none is selected.
+- **Data table:** the Excel export skips the `pick` column.
+
 ## Doctors table and form, appointments table, Super Admin appointment actions (2026-10-08)
 
 - **Doctors table:** Sr#, Doctor, Phone, Email, Username, Added on and Status. Fee, Commission and Signature are removed.

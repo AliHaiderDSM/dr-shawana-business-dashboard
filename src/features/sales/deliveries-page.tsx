@@ -13,7 +13,6 @@ import {
 import {
   Ban,
   CalendarClock,
-  CheckCheck,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -60,10 +59,8 @@ function DayCell({
 }) {
   const chips = day
     ? ([
-        ['awaiting', day.awaiting, 'bg-warning'],
-        ['dispatched', day.dispatched, 'bg-info'],
-        ['delivered', day.delivered, 'bg-success'],
-        ['returned', day.returned, 'bg-destructive'],
+        ['dispatched', day.dispatched + day.delivered, 'bg-success'],
+        ['returned', day.returned, 'bg-muted-foreground'],
       ] as const)
     : [];
   return (
@@ -72,7 +69,7 @@ function DayCell({
       disabled={!inMonth}
       onClick={onSelect}
       className={cn(
-        'flex min-h-24 flex-col gap-1 border-t border-l p-2 text-left transition-colors focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+        'relative flex min-h-24 flex-col gap-1 border-t border-l p-2 text-left transition-colors focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
         inMonth ? 'bg-card hover:bg-accent/60' : 'cursor-default bg-muted/30 text-muted-foreground/50',
         selected &&
           'relative z-10 bg-primary-soft/50 ring-2 ring-primary ring-inset hover:bg-primary-soft/50',
@@ -86,6 +83,15 @@ function DayCell({
       >
         {format(date, 'd')}
       </span>
+      {inMonth && day && day.awaiting > 0 ? (
+        <span
+          className="absolute top-1.5 right-1.5 inline-flex items-center gap-1 rounded-md bg-destructive px-1.5 py-0.5 text-[11px] font-semibold text-destructive-foreground shadow-xs"
+          title={`${day.awaiting} still waiting for dispatch`}
+        >
+          <CalendarClock className="size-3" />
+          {day.awaiting} left
+        </span>
+      ) : null}
       {inMonth && day && day.orders > 0 ? (
         <span className="text-xs font-semibold">
           {day.orders} {day.orders === 1 ? 'order' : 'orders'}
@@ -234,11 +240,6 @@ export function DeliveriesPage() {
               sent {formatDate(row.original.dispatchedOn)}
             </div>
           ) : null}
-          {row.original.deliveredOn ? (
-            <div className="text-xs text-muted-foreground">
-              delivered {formatDate(row.original.deliveredOn)}
-            </div>
-          ) : null}
         </div>
       ),
     },
@@ -254,12 +255,6 @@ export function DeliveriesPage() {
               <Button size="sm" onClick={() => actions.dispatch(o)}>
                 <Truck />
                 Dispatch
-              </Button>
-            ) : null}
-            {o.deliveryStatus === 'dispatched' && canUpdate ? (
-              <Button size="sm" variant="outline" onClick={() => actions.delivered(o)}>
-                <CheckCheck />
-                Delivered
               </Button>
             ) : null}
             <RowActions
@@ -296,6 +291,9 @@ export function DeliveriesPage() {
   ];
 
   const selectedLabel = format(parseISO(selected), 'EEE d MMM');
+  const dispatchedRows = rows.filter(
+    (o) => o.deliveryStatus === 'dispatched' || o.deliveryStatus === 'delivered',
+  );
   const awaiting = calendar.data?.awaiting;
 
   return (
@@ -303,23 +301,8 @@ export function DeliveriesPage() {
       <PageHeader
         title="Deliveries"
         description="Online orders by the day they were booked. Dispatch an order by scanning it; its stock leaves the inventory on the dispatch day."
-        actions={
-          view === 'dispatch' && rows.length ? (
-            <Button
-              variant="outline"
-              onClick={() =>
-                void navigate(
-                  `/print/delivery-slips?saleType=online&dateBy=dispatched&from=${selected}&to=${selected}`,
-                )
-              }
-            >
-              <Printer />
-              Print {rows.length} slips
-            </Button>
-          ) : null
-        }
       />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <button type="button" className="text-left" onClick={() => set({ view: undefined })}>
           <StatCard
             label="Awaiting dispatch"
@@ -332,7 +315,6 @@ export function DeliveriesPage() {
         </button>
         <StatCard label="Booked this month" value={formatCount(sum('orders'))} icon={PackageCheck} />
         <StatCard label="Dispatched this month" value={formatCount(sum('dispatchedOn'))} icon={Truck} />
-        <StatCard label="Delivered this month" value={formatCount(sum('delivered'))} icon={CheckCheck} />
       </div>
 
       <section className="mb-6 overflow-hidden rounded-xl border bg-card shadow-xs">
@@ -368,10 +350,9 @@ export function DeliveriesPage() {
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             {(
               [
-                ['Awaiting dispatch', 'bg-warning'],
-                ['Dispatched', 'bg-info'],
-                ['Delivered', 'bg-success'],
-                ['Returned', 'bg-destructive'],
+                ['Left to dispatch', 'bg-destructive'],
+                ['Dispatched', 'bg-success'],
+                ['Returned', 'bg-muted-foreground'],
               ] as const
             ).map(([label, dot]) => (
               <span key={label} className="inline-flex items-center gap-1.5">
@@ -448,6 +429,25 @@ export function DeliveriesPage() {
           invoiceNo: `Total · ${rows.length} orders`,
           amount: formatMoney(rows.reduce((total, o) => total + Number(o.total), 0)),
         }}
+        toolbar={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            disabled={dispatchedRows.length === 0}
+            title={
+              dispatchedRows.length
+                ? 'Print the slips of the dispatched (scanned) orders in this list'
+                : 'Only dispatched orders print. Dispatch and scan an order first.'
+            }
+            onClick={() =>
+              void navigate(`/print/delivery-slips?saleIds=${dispatchedRows.map((o) => o.id).join(',')}`)
+            }
+          >
+            <Printer />
+            Print {dispatchedRows.length ? `${dispatchedRows.length} dispatched` : 'slips'}
+          </Button>
+        }
       />
       {actions.dialogs}
     </>

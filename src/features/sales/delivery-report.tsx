@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { PageHeader } from '@/components/shared/page-header';
 import { PrintPage } from '@/components/shared/print-document';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -118,11 +119,12 @@ function readQuery(params: URLSearchParams): DeliverySlipsQuery {
     invoiceTo: number('invoiceTo'),
     dateBy: params.get('dateBy') === 'dispatched' ? 'dispatched' : undefined,
     branchId: params.get('branchId') ?? undefined,
+    saleIds: params.get('saleIds') ?? undefined,
   };
 }
 
 function withMonth(query: DeliverySlipsQuery): DeliverySlipsQuery {
-  if (query.from || query.invoiceFrom || query.invoiceTo) return query;
+  if (query.from || query.invoiceFrom || query.invoiceTo || query.saleIds) return query;
   const now = new Date();
   return { ...query, from: isoDate(startOfMonth(now)), to: isoDate(endOfMonth(now)) };
 }
@@ -218,6 +220,38 @@ export function DeliveryReportPage() {
     );
 
   const rows = slips.data?.slips ?? [];
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const chosen = rows.filter((r) => picked.has(r.saleId));
+  const allPicked = rows.length > 0 && chosen.length === rows.length;
+  const toggle = (id: string) =>
+    setPicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const pickColumn: ColumnDef<DeliverySlip, unknown> = {
+    id: 'pick',
+    header: () => (
+      <Checkbox
+        aria-label="Select all orders"
+        checked={allPicked ? true : chosen.length ? 'indeterminate' : false}
+        onCheckedChange={(value) =>
+          setPicked(value === true ? new Set(rows.map((r) => r.saleId)) : new Set())
+        }
+      />
+    ),
+    meta: { hideable: false },
+    cell: ({ row }) => (
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          aria-label={`Select ${row.original.invoiceNo}`}
+          checked={picked.has(row.original.saleId)}
+          onCheckedChange={() => toggle(row.original.saleId)}
+        />
+      </div>
+    ),
+  };
 
   return (
     <>
@@ -227,10 +261,18 @@ export function DeliveryReportPage() {
         actions={
           <Button
             disabled={rows.length === 0}
-            onClick={() => void navigate(`/print/delivery-slips?${params.toString()}`)}
+            onClick={() =>
+              void navigate(
+                chosen.length
+                  ? `/print/delivery-slips?saleIds=${chosen.map((r) => r.saleId).join(',')}`
+                  : `/print/delivery-slips?${params.toString()}`,
+              )
+            }
           >
             <Printer />
-            Print {rows.length ? `${rows.length} slips` : 'slips'}
+            {chosen.length
+              ? `Print ${chosen.length} selected`
+              : `Print ${rows.length ? `all ${rows.length}` : ''} slips`}
           </Button>
         }
       />
@@ -322,7 +364,7 @@ export function DeliveryReportPage() {
         </div>
       </div>
       <DataTable
-        columns={isSuperAdmin ? [branchColumn, ...slipColumns] : slipColumns}
+        columns={isSuperAdmin ? [pickColumn, branchColumn, ...slipColumns] : [pickColumn, ...slipColumns]}
         data={slips.data ? rows : undefined}
         isLoading={slips.isLoading}
         isFetching={slips.isFetching}
