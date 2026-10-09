@@ -16681,6 +16681,8 @@ export interface paths {
                     paymentStatus?: "unpaid" | "partial" | "paid" | "awaiting_approval";
                     /** @description Only fully paid and approved sales that are handed over: office sales, or online orders dispatched or delivered */
                     completed?: "true";
+                    /** @description Sales not completed yet: a payment is missing or awaiting approval, or an online order is not dispatched. Cancelled orders are left out. */
+                    pending?: "true";
                     /** @description Only sales with money still to receive (unpaid or partly paid) */
                     due?: "true";
                     method?: "cash" | "online";

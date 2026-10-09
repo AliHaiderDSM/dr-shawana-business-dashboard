@@ -1,18 +1,7 @@
 import { productsApi } from '@/features/catalog/api';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
-import {
-  Ban,
-  CheckCircle2,
-  Eye,
-  HandCoins,
-  Pencil,
-  Plus,
-  Printer,
-  Trash2,
-  Truck,
-  Undo2,
-} from 'lucide-react';
+import { Ban, CheckCircle2, Eye, HandCoins, Pencil, Plus, Printer, Trash2, Truck, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -73,6 +62,7 @@ export function SalesPage() {
   const awaiting = list.filters.deliveryStatus === 'pending';
   const approval = list.filters.paymentStatus === 'awaiting_approval';
   const completed = list.filters.completed === 'true';
+  const pending = list.filters.pending === 'true';
   const approve = useApprovePayments();
   const byBranch = query.data?.meta.byBranch;
   const quickFilter = (name: 'due' | 'deliveryStatus', on: boolean) =>
@@ -368,11 +358,12 @@ export function SalesPage() {
           <>
             {(
               [
-                ['all', 'All sales', !due && !awaiting && !approval && !completed],
+                ['all', 'All sales', !due && !awaiting && !approval && !completed && !pending],
+                ['completed', 'Completed', completed],
+                ['pending', 'Pending (payment or dispatch)', pending],
                 ['due', 'Payment pending', due],
                 ['approval', 'Awaiting approval', approval],
                 ['awaiting', 'Awaiting dispatch', awaiting],
-                ['completed', 'Completed', completed],
               ] as const
             ).map(([key, label, checked]) => (
               <label
@@ -391,11 +382,15 @@ export function SalesPage() {
                         deliveryStatus: undefined,
                         paymentStatus: undefined,
                         completed: undefined,
+                        pending: undefined,
                       });
                       return;
                     }
-                    if (key === 'completed') {
-                      list.setFilter('completed', value === true ? 'true' : undefined);
+                    if (key === 'completed' || key === 'pending') {
+                      list.setFilters({
+                        completed: key === 'completed' && value === true ? 'true' : undefined,
+                        pending: key === 'pending' && value === true ? 'true' : undefined,
+                      });
                       return;
                     }
                     if (key === 'approval') {

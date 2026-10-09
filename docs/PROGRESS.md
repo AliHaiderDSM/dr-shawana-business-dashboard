@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## View Sales: Pending filter (2026-10-09)
+
+- New "Pending (payment or dispatch)" quick filter. It shows every sale that is not completed: a payment is missing or awaiting approval, or an online order is not dispatched yet. Cancelled and returned orders are left out.
+- Completed and Pending cannot both be on.
+- All = Completed + Pending (+ cancelled/returned).
+
 ## Remaining column, dispatch = delivered, calendar alert, print dispatched, delivery report selection (2026-10-09)
 
 - **View Sales:**
