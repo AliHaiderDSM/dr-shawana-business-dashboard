@@ -19,7 +19,11 @@ export type FieldDef =
   | (Base & { kind: 'yesNo' })
   | (Base & { kind: 'choice'; options: readonly Choice[] })
   | (Base & { kind: 'bool' })
-  | (Base & { kind: 'checks'; groups: { title?: string; options: readonly Choice[] }[] })
+  | (Base & {
+      kind: 'checks';
+      groups: { title?: string; options: readonly Choice[] }[];
+      severityKey?: string;
+    })
   | (Base & { kind: 'mrs' })
   | (Base & { kind: 'scan'; extraKey?: string; extraLabel?: string })
   | (Base & { kind: 'surgeries'; options: readonly Choice[] })
@@ -553,6 +557,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
         kind: 'checks',
         key: 'symptoms',
         label: 'Symptoms',
+        severityKey: 'severity',
         wide: true,
         groups: [
           {

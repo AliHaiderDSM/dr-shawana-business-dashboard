@@ -24,6 +24,7 @@ import {
   type SectionDef,
 } from './clinical-fields';
 import { isVisible, sectionResolver, toApiData, toFormValues } from './clinical-form';
+import { SymptomsField } from './symptoms-field';
 
 type FieldControl = Control<FormValues>;
 
@@ -508,7 +509,11 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
     case 'bool':
       return <BoolField control={control} field={field} disabled={disabled} />;
     case 'checks':
-      return <CheckGroupField control={control} field={field} disabled={disabled} />;
+      return field.severityKey ? (
+        <SymptomsField field={{ ...field, severityKey: field.severityKey }} disabled={disabled} />
+      ) : (
+        <CheckGroupField control={control} field={field} disabled={disabled} />
+      );
     case 'mrs':
       return <MrsField control={control} field={field} disabled={disabled} />;
     case 'scan':

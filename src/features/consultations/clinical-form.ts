@@ -41,6 +41,11 @@ export function toFormValues(
     switch (field.kind) {
       case 'checks':
         values[field.key] = Array.isArray(raw) ? raw : [];
+        if (field.severityKey) {
+          const severity = source[field.severityKey];
+          values[field.severityKey] =
+            severity && typeof severity === 'object' ? { ...(severity as Record<string, number>) } : {};
+        }
         break;
       case 'bool':
         values[field.key] = raw === true;
@@ -85,6 +90,13 @@ export function toApiData(section: SectionDef, values: FormValues) {
     switch (field.kind) {
       case 'checks':
         data[field.key] = visible ? raw : [];
+        if (field.severityKey) {
+          const picked = new Set(visible ? (raw as string[]) : []);
+          const severity = (values[field.severityKey] ?? {}) as Record<string, number>;
+          data[field.severityKey] = Object.fromEntries(
+            Object.entries(severity).filter(([key]) => picked.has(key)),
+          );
+        }
         break;
       case 'bool':
         data[field.key] = visible ? raw === true : false;

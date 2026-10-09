@@ -145,3 +145,15 @@ export function useReferralLetter(consultationId: string) {
     enabled: Boolean(consultationId),
   });
 }
+
+export type ConsultationHistory = Schemas['ConsultationHistory'];
+
+export function useConsultationHistory(consultationId: string) {
+  return useQuery({
+    queryKey: ['consultations', 'history', consultationId],
+    queryFn: () =>
+      unwrap(
+        api.GET('/branch/consultations/{id}/history', { params: { path: { id: consultationId } } }),
+      ).then((r) => r.data),
+  });
+}

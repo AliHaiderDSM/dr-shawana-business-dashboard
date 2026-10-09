@@ -14738,6 +14738,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/consultations/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The patient’s other appointments with their issues and remarks, every prescription (previous or new), and the additional symptoms of the last earlier visit */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description History */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ConsultationHistory"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/patients/{id}/blood-work": {
         parameters: {
             query?: never;
@@ -24274,6 +24361,55 @@ export interface components {
         Section_additional_symptoms: {
             /** @default [] */
             symptoms: ("hair_loss" | "increased_facial_hair" | "skin_issues" | "dry_skin" | "skin_itching" | "crawling_sensation" | "nail_changes" | "body_odor_change" | "weight_gain" | "weight_loss" | "belly_fat" | "food_sugar_cravings" | "decreased_strength" | "decreased_stamina" | "low_backache" | "frozen_shoulder" | "heel_pain" | "clicking_jaw_tmj" | "brain_fog" | "headaches" | "migraines" | "dizziness_vertigo" | "tinnitus" | "burning_soles" | "taste_changes" | "increased_smell" | "hearing_changes" | "dry_eyes" | "vision_changes" | "bloating" | "gas" | "constipation" | "diarrhea" | "heartburn" | "recurrent_utis" | "stress_incontinence" | "vaginal_itching" | "social_withdrawal" | "accomplishing_less" | "marital_conflicts" | "avoiding_intimacy" | "personal_life_dissatisfaction" | "voice_changes")[];
+            /**
+             * @description Severity 0–3 of each ticked symptom
+             * @default {}
+             */
+            severity: {
+                hair_loss?: number | null;
+                increased_facial_hair?: number | null;
+                skin_issues?: number | null;
+                dry_skin?: number | null;
+                skin_itching?: number | null;
+                crawling_sensation?: number | null;
+                nail_changes?: number | null;
+                body_odor_change?: number | null;
+                weight_gain?: number | null;
+                weight_loss?: number | null;
+                belly_fat?: number | null;
+                food_sugar_cravings?: number | null;
+                decreased_strength?: number | null;
+                decreased_stamina?: number | null;
+                low_backache?: number | null;
+                frozen_shoulder?: number | null;
+                heel_pain?: number | null;
+                clicking_jaw_tmj?: number | null;
+                brain_fog?: number | null;
+                headaches?: number | null;
+                migraines?: number | null;
+                dizziness_vertigo?: number | null;
+                tinnitus?: number | null;
+                burning_soles?: number | null;
+                taste_changes?: number | null;
+                increased_smell?: number | null;
+                hearing_changes?: number | null;
+                dry_eyes?: number | null;
+                vision_changes?: number | null;
+                bloating?: number | null;
+                gas?: number | null;
+                constipation?: number | null;
+                diarrhea?: number | null;
+                heartburn?: number | null;
+                recurrent_utis?: number | null;
+                stress_incontinence?: number | null;
+                vaginal_itching?: number | null;
+                social_withdrawal?: number | null;
+                accomplishing_less?: number | null;
+                marital_conflicts?: number | null;
+                avoiding_intimacy?: number | null;
+                personal_life_dissatisfaction?: number | null;
+                voice_changes?: number | null;
+            };
             /** @default null */
             other: string | null;
         };
@@ -24430,6 +24566,39 @@ export interface components {
              * @enum {string|null}
              */
             hairCareRoutine: "yes" | "no" | null;
+        };
+        ConsultationHistory: {
+            visits: {
+                /** Format: uuid */
+                id: string;
+                appointmentNo: number;
+                /** Format: date */
+                date: string;
+                visitType: string;
+                status: string;
+                issues: string | null;
+                remark: string | null;
+                doctor: string | null;
+            }[];
+            prescriptions: {
+                /** Format: uuid */
+                id: string;
+                prescriptionNo: number;
+                /** Format: date */
+                date: string;
+                doctor: string | null;
+                thisVisit: boolean;
+                previous: boolean;
+            }[];
+            previousSymptoms: {
+                appointmentNo: number;
+                /** Format: date */
+                date: string;
+                symptoms: string[];
+                severity: {
+                    [key: string]: number;
+                };
+            } | null;
         };
         AddBloodWork: {
             /** Format: uuid */

@@ -38,6 +38,8 @@ import { patientsApi, usePatientSummary } from '@/features/patients/api';
 import { BhrtBadge } from '@/features/patients/bhrt-badge';
 import { PatientTimelineView } from '@/features/patients/patient-timeline';
 import { ConsultationPrescriptions } from '@/features/prescriptions/consultation-prescriptions';
+import { PreviousSymptomsContext } from './symptoms-field';
+import { VisitHistory } from './visit-history';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, isoDate } from '@/lib/format';
@@ -45,6 +47,7 @@ import { cn } from '@/lib/utils';
 import {
   consultationKeys,
   useAppointmentConsultation,
+  useConsultationHistory,
   useConsultationStatus,
   useStartConsultation,
   type Consultation,
@@ -230,6 +233,7 @@ function Workspace({
   const { can } = useAuth();
   const [params, setParams] = useSearchParams();
   const summary = usePatientSummary(consultation.patientId);
+  const history = useConsultationHistory(consultation.id);
   const patient = patientsApi.useDetail(consultation.patientId);
   const canPrescribe = can('prescriptions.view');
   const items = navItems(consultation, canPrescribe);
@@ -363,6 +367,17 @@ function Workspace({
         );
       case 'history':
         return <PatientTimelineView patientId={consultation.patientId} />;
+      case 'basic_info':
+        return (
+          <div className="space-y-6">
+            <div className="rounded-xl border bg-card p-6 shadow-xs">{sectionPanel('basic_info')}</div>
+            <VisitHistory
+              history={history.data}
+              loading={history.isLoading}
+              patientName={patient.data?.name ?? consultation.patient?.name ?? 'Patient'}
+            />
+          </div>
+        );
       default:
         return <div className="rounded-xl border bg-card p-6 shadow-xs">{sectionPanel(active)}</div>;
     }
@@ -411,7 +426,11 @@ function Workspace({
             ))}
           </ul>
         </nav>
-        <div className="min-w-0">{content}</div>
+        <div className="min-w-0">
+          <PreviousSymptomsContext.Provider value={history.data?.previousSymptoms ?? null}>
+            {content}
+          </PreviousSymptomsContext.Provider>
+        </div>
       </div>
       <ConfirmDialog
         open={pending !== null}

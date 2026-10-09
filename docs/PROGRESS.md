@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Additional symptoms with severity, visit history, follow-up tab (2026-10-10)
+
+- **Additional symptoms:**
+  - The same 43 symptoms in 10 groups as posSoft, now as group cards.
+  - Ticking a symptom opens a 0 None / 1 Mild / 2 Moderate / 3 Severe selector, stored in `severity`.
+  - On a later visit each symptom shows "Last: n · level" from the patient's previous visit, and ticking it again starts from that level.
+- **Basic information:** a "Patient history" panel below the form, as in posSoft:
+  - Every earlier appointment as "APP#n : Date", with its issues and remark/plan.
+  - "Previous prescription" and "New prescription" slip links, which open the print.
+- **Follow up form:** unchanged. It only appears for follow-up appointments, as in posSoft.
+
 ## Blood work: same date replaces, single-date view (2026-10-09)
 
 - Adding a result for a test and date that already exist replaces the value instead of adding a hidden duplicate. The list keeps the latest value per test and date.
