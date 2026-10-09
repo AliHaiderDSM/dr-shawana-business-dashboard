@@ -271,8 +271,38 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
 }
 
 function CancelOrderDialog({ order, onClose }: { order: OrderRef; onClose: () => void }) {
+  const detail = salesApi.useDetail(order.id);
+  if (!detail.data) {
+    return (
+      <Dialog open onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel {order.invoiceNo}?</DialogTitle>
+            <DialogDescription>Loading the payments of this order…</DialogDescription>
+          </DialogHeader>
+          <Skeleton className="h-24 w-full" />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  const payments = detail.data.payments;
+  const approved = payments.filter((p) => p.approvedAt).reduce((sum, p) => sum + Number(p.amount), 0);
+  const waiting = payments.filter((p) => !p.approvedAt).reduce((sum, p) => sum + Number(p.amount), 0);
+  return <CancelOrderForm order={order} received={approved} waiting={waiting} onClose={onClose} />;
+}
+
+function CancelOrderForm({
+  order,
+  received,
+  waiting,
+  onClose,
+}: {
+  order: OrderRef;
+  received: number;
+  waiting: number;
+  onClose: () => void;
+}) {
   const cancel = useCancelOrder();
-  const received = Number(order.received ?? 0);
   const accounts = useReceivingAccounts(received > 0);
   const [refund, setRefund] = useState(received > 0);
   const [amount, setAmount] = useState(received > 0 ? String(received) : '');
@@ -291,11 +321,17 @@ function CancelOrderDialog({ order, onClose }: { order: OrderRef; onClose: () =>
             sales.
           </DialogDescription>
         </DialogHeader>
+        {waiting > 0 ? (
+          <p className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
+            {formatMoney(waiting)} is still awaiting approval. Approve it in the order first; only approved
+            payments can be refunded.
+          </p>
+        ) : null}
         {received > 0 ? (
           <div className="space-y-4">
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={refund} onCheckedChange={(v) => setRefund(v === true)} />
-              Refund the customer ({formatMoney(received)} was received)
+              Refund the customer ({formatMoney(received)} approved)
             </label>
             {refund ? (
               <div className="grid gap-4 sm:grid-cols-2">

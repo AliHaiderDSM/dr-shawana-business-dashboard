@@ -1,7 +1,7 @@
 import type { FieldErrors, Resolver } from 'react-hook-form';
 import type { FieldDef, FormValues, SectionDef } from './clinical-fields';
 
-type InputField = Exclude<FieldDef, { kind: 'heading' }>;
+type InputField = Exclude<FieldDef, { kind: 'heading' | 'bmi' }>;
 
 interface ScanValue {
   status: string | null;
@@ -14,7 +14,7 @@ interface SurgeryValue {
   date: string;
 }
 
-const isInput = (field: FieldDef): field is InputField => field.kind !== 'heading';
+const isInput = (field: FieldDef): field is InputField => field.kind !== 'heading' && field.kind !== 'bmi';
 
 const text = (value: unknown) => (value === null || value === undefined ? '' : String(value));
 const nullable = (value: unknown) => {

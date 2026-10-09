@@ -23,7 +23,8 @@ export type FieldDef =
   | (Base & { kind: 'mrs' })
   | (Base & { kind: 'scan'; extraKey?: string; extraLabel?: string })
   | (Base & { kind: 'surgeries'; options: readonly Choice[] })
-  | { kind: 'heading'; key: string; label: string; description?: string; when?: Condition };
+  | { kind: 'heading'; key: string; label: string; description?: string; when?: Condition }
+  | { kind: 'bmi'; key: string; label: string; when?: Condition };
 
 export interface SectionDef {
   key: SectionKey;
@@ -71,8 +72,9 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
         key: 'heightFeet',
         label: 'Height in feet',
         required: true,
-        description: 'Decimal feet, e.g. 5.4',
+        description: 'Type 54 for 5.4 ft; the point is added for you',
       },
+      { kind: 'bmi', key: 'bmi', label: 'BMI' },
       { kind: 'text', key: 'waistCircumference', label: 'Waist circumference' },
       {
         kind: 'choice',

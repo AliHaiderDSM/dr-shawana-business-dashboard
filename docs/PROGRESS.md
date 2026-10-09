@@ -12,6 +12,20 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Refund needs approval, Scan & print on deliveries, Remarks 2.0 numbers and BMI (2026-10-09)
+
+- **Cancel order dialog:**
+  - Refunds only the approved amount and warns about any payment still awaiting approval.
+  - The server returns 422 "Approve the payments first" when the refund is more than the approved payments.
+- **Deliveries toolbar:**
+  - When the list has waiting orders, the button reads "Scan & print N". It opens a dialog to scan every DSM label: each label goes to the oldest waiting order that needs that product.
+  - Complete orders (and unlabelled ones) are ready and can be unticked. "Dispatch & print" dispatches them on the chosen date and prints their slips two per A4 page.
+  - With no waiting orders, the button prints the dispatched ones.
+- **Remarks 2.0, Basic information:**
+  - Age takes digits only. Weight takes a number with up to 2 decimals.
+  - Height takes digits and adds the point after the first digit (54 → 5.4).
+  - A live BMI readout with the posSoft bands (weight / (height ft × 0.3048)²). It is display only.
+
 ## View Sales: Pending filter (2026-10-09)
 
 - New "Pending (payment or dispatch)" quick filter. It shows every sale that is not completed: a payment is missing or awaiting approval, or an online order is not dispatched yet. Cancelled and returned orders are left out.

@@ -22,6 +22,7 @@ import {
   Truck,
   Undo2,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
@@ -36,6 +37,7 @@ import { formatCount, formatDate, formatMoney, formatQuantity, isoDate } from '@
 import { cn } from '@/lib/utils';
 import { useDeliveries, useDeliveryCalendar, type DeliveryDay, type DeliveryOrder } from './api';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
+import { BulkDispatchDialog } from './bulk-dispatch';
 import { slipPrintPath } from './delivery-report';
 
 type View = 'order' | 'dispatch' | 'awaiting';
@@ -121,6 +123,7 @@ function DayCell({
 
 export function DeliveriesPage() {
   const navigate = useNavigate();
+  const [bulk, setBulk] = useState(false);
   const { can } = useAuth();
   const [params, setParams] = useSearchParams();
   const todayIso = isoDate();
@@ -294,6 +297,7 @@ export function DeliveriesPage() {
   const dispatchedRows = rows.filter(
     (o) => o.deliveryStatus === 'dispatched' || o.deliveryStatus === 'delivered',
   );
+  const pendingRows = rows.filter((o) => o.deliveryStatus === 'pending');
   const awaiting = calendar.data?.awaiting;
 
   return (
@@ -434,22 +438,27 @@ export function DeliveriesPage() {
             variant="outline"
             size="sm"
             className="h-9"
-            disabled={dispatchedRows.length === 0}
+            disabled={rows.length === 0}
             title={
-              dispatchedRows.length
-                ? 'Print the slips of the dispatched (scanned) orders in this list'
-                : 'Only dispatched orders print. Dispatch and scan an order first.'
+              pendingRows.length
+                ? 'Scan the labels of the waiting orders, dispatch them together and print their slips'
+                : 'Print the slips of the dispatched orders in this list'
             }
             onClick={() =>
-              void navigate(`/print/delivery-slips?saleIds=${dispatchedRows.map((o) => o.id).join(',')}`)
+              pendingRows.length
+                ? setBulk(true)
+                : void navigate(`/print/delivery-slips?saleIds=${dispatchedRows.map((o) => o.id).join(',')}`)
             }
           >
             <Printer />
-            Print {dispatchedRows.length ? `${dispatchedRows.length} dispatched` : 'slips'}
+            {pendingRows.length
+              ? `Scan & print ${pendingRows.length}`
+              : `Print ${dispatchedRows.length || ''} slips`}
           </Button>
         }
       />
       {actions.dialogs}
+      {bulk ? <BulkDispatchDialog orders={pendingRows} onClose={() => setBulk(false)} /> : null}
     </>
   );
 }

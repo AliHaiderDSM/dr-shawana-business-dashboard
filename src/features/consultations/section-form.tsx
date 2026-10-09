@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { applyServerErrors } from '@/lib/api/errors';
 import { formatRelative } from '@/lib/format';
@@ -289,6 +290,52 @@ function BoolField({
   );
 }
 
+function numberInput(key: string, integer: boolean | undefined, raw: string) {
+  if (integer) return raw.replace(/\D/g, '').slice(0, 3);
+  if (key === 'heightFeet') {
+    const digits = raw.replace(/\D/g, '').slice(0, 3);
+    return digits.length > 1 ? `${digits[0]}.${digits.slice(1)}` : digits;
+  }
+  const cleaned = raw.replace(/[^\d.]/g, '');
+  const [whole = '', ...rest] = cleaned.split('.');
+  return rest.length ? `${whole.slice(0, 3)}.${rest.join('').slice(0, 2)}` : whole.slice(0, 3);
+}
+
+const BMI_BANDS: [number, string, string][] = [
+  [18.5, 'Underweight', 'text-info'],
+  [25, 'Normal weight', 'text-success'],
+  [30, 'Overweight', 'text-warning'],
+  [35, 'Obesity', 'text-warning'],
+  [Infinity, 'Severe obesity', 'text-destructive'],
+];
+
+function BmiReadout() {
+  const { control } = useFormContext<FormValues>();
+  const weight = Number(useWatch({ control, name: 'weightKg' }));
+  const heightFeet = Number(useWatch({ control, name: 'heightFeet' }));
+  const meters = heightFeet * 0.3048;
+  const bmi = weight > 0 && meters > 0 ? weight / (meters * meters) : null;
+  const band = bmi === null ? null : BMI_BANDS.find(([limit]) => bmi < limit);
+  return (
+    <div className="space-y-2">
+      <Label>BMI</Label>
+      <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
+        {bmi === null || !band ? (
+          <span className="text-muted-foreground">Enter weight and height</span>
+        ) : (
+          <span>
+            <span className="font-semibold tabular-nums">{bmi.toFixed(2)}</span>{' '}
+            <span className={cn('font-medium', band[2])}>· {band[1]}</span>
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Under 18.5 underweight · 18.5–24.9 normal · 25–29.9 overweight · 30–34.9 obesity · 35+ severe obesity
+      </p>
+    </div>
+  );
+}
+
 function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolean }) {
   const { control } = useFormContext<FormValues>();
   const required = 'required' in field ? field.required : undefined;
@@ -315,16 +362,35 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
       );
     case 'number':
       return (
-        <TextField
+        <FormField
           control={control}
           name={field.key}
-          label={field.label}
-          required={required}
-          description={description}
-          disabled={disabled}
-          inputMode={field.integer ? 'numeric' : 'decimal'}
+          render={({ field: f }) => (
+            <FormItem>
+              <FormLabel>
+                {field.label}
+                {required ? <span className="text-destructive">*</span> : null}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  value={typeof f.value === 'string' || typeof f.value === 'number' ? String(f.value) : ''}
+                  onChange={(e) => f.onChange(numberInput(field.key, field.integer, e.target.value))}
+                  onBlur={f.onBlur}
+                  name={f.name}
+                  ref={f.ref}
+                  disabled={disabled}
+                  inputMode={field.integer || field.key === 'heightFeet' ? 'numeric' : 'decimal'}
+                  autoComplete="off"
+                />
+              </FormControl>
+              {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+              <FormMessage />
+            </FormItem>
+          )}
         />
       );
+    case 'bmi':
+      return <BmiReadout />;
     case 'date':
     case 'text':
       return (
