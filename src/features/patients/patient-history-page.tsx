@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { Combobox } from '@/components/shared/combobox';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
@@ -52,7 +52,6 @@ const columns: ColumnDef<ConsultationSummary, unknown>[] = [
 ];
 
 export function PatientHistoryPage() {
-  const navigate = useNavigate();
   const { me } = useAuth();
   const [params, setParams] = useSearchParams();
   const patientId = params.get('patientId') ?? '';
