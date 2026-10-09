@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment fee, advance and remaining; Patient History page is the posSoft report (2026-10-10)
+
+- **Appointments:**
+  - A new Fee field, defaulting to the doctor fee, with a live Fee / Received now / Remaining box in the booking form.
+  - The table has Fee, Received, Remaining and a Payment badge (Paid / Advance / Unpaid).
+- **Patient History (menu):** now shows the posSoft patient history report: one row per visit with the full columns, Patient and date filters, and Excel export. It replaces the old consultations list, and staff with consultation access can open it.
+
 ## posSoft patient history layout, Remarks 2.0 tabs, appointment time and visit badge (2026-10-10)
 
 - **Patient history report:**

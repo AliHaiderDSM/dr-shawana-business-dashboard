@@ -23500,6 +23500,11 @@ export interface components {
             /** @enum {string} */
             visitType: "new" | "followup";
             issues?: string | null;
+            /**
+             * @description Appointment fee. Defaults to the doctor's consultation fee
+             * @example 1250.50
+             */
+            fee?: string;
             /** @description Optional medical record; its files go in "medicalRecordFiles" */
             medicalRecord?: {
                 note?: string | null;
@@ -23531,6 +23536,8 @@ export interface components {
             /** @enum {string} */
             visitType?: "new" | "followup";
             issues?: string | null;
+            /** @example 1250.50 */
+            fee?: string;
         };
         AppointmentStatusChange: {
             /** @enum {string} */
@@ -23626,7 +23633,19 @@ export interface components {
             /** @enum {string} */
             source: "dashboard" | "app";
             /** @example 1250.50 */
+            fee: string;
+            /** @example 1250.50 */
             receivedAmount: string;
+            /**
+             * @description Fee minus received, never below zero
+             * @example 1250.50
+             */
+            remainingAmount: string;
+            /**
+             * @description paid: fee fully received; partial: an advance was received; unpaid: nothing yet
+             * @enum {string}
+             */
+            paymentStatus: "paid" | "partial" | "unpaid";
             paymentMethods: ("cash" | "online")[];
             /** Format: uuid */
             createdBy: string | null;
@@ -23679,7 +23698,19 @@ export interface components {
             /** @enum {string} */
             source: "dashboard" | "app";
             /** @example 1250.50 */
+            fee: string;
+            /** @example 1250.50 */
             receivedAmount: string;
+            /**
+             * @description Fee minus received, never below zero
+             * @example 1250.50
+             */
+            remainingAmount: string;
+            /**
+             * @description paid: fee fully received; partial: an advance was received; unpaid: nothing yet
+             * @enum {string}
+             */
+            paymentStatus: "paid" | "partial" | "unpaid";
             paymentMethods: ("cash" | "online")[];
             /** Format: uuid */
             createdBy: string | null;

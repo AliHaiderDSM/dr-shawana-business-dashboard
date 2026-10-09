@@ -211,7 +211,7 @@ function ByBranch({ data }: { data: ReportData }) {
   );
 }
 
-function ReportBody({ report }: { report: ReportDef }) {
+function ReportBody({ report, standalone }: { report: ReportDef; standalone?: boolean }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const list = useListState();
@@ -228,12 +228,14 @@ function ReportBody({ report }: { report: ReportDef }) {
 
   return (
     <>
-      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground">
-        <Link to="/reports">
-          <ArrowLeft />
-          Reports
-        </Link>
-      </Button>
+      {standalone ? null : (
+        <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground">
+          <Link to="/reports">
+            <ArrowLeft />
+            Reports
+          </Link>
+        </Button>
+      )}
       <PageHeader
         title={data.data?.title ?? report.title}
         description={report.description}
@@ -326,6 +328,12 @@ export function ReportPage() {
   if (!report || !report.allowed(can, me?.role))
     return <ErrorState error={new Error('This report does not exist or is not available for your role.')} />;
   return <ReportBody key={report.key} report={report} />;
+}
+
+export function PatientHistoryReportPage() {
+  const report = findReport('patient-history');
+  if (!report) return null;
+  return <ReportBody report={report} standalone />;
 }
 
 export function ReportPrint() {

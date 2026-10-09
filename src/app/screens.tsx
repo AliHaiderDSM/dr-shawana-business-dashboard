@@ -200,7 +200,7 @@ export const screenRoutes: ScreenRoute[] = [
   },
   {
     path: 'patient-history',
-    element: page(() => import('@/features/patients/patient-history-page'), 'PatientHistoryPage'),
+    element: page(() => import('@/features/reports/report-view'), 'PatientHistoryReportPage'),
     anyOf: ['consultations.view'],
     scope: 'branch',
   },

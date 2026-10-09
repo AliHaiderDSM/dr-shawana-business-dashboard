@@ -11,6 +11,7 @@ import { FilePicker } from '@/components/shared/file-upload';
 import {
   FieldRow,
   FormSection,
+  MoneyField,
   SelectField,
   TextField,
   TextareaField,
@@ -30,7 +31,8 @@ import {
 } from '@/features/patients/patient-fields';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { isoDate } from '@/lib/format';
+import { formatMoney, isoDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { optionalText, timeString } from '@/lib/validation';
 import {
   appointmentsApi,
@@ -62,6 +64,10 @@ const schema = z
     mode: z.enum(['online', 'physical']),
     visitType: z.enum(['new', 'followup']),
     issues: optionalText(20000),
+    fee: z
+      .string()
+      .trim()
+      .regex(/^(\d{1,10}(\.\d{1,2})?)?$/, 'Use an amount'),
     recordNote: optionalText(20000),
     payments: z.array(paymentSchema).max(10),
   })
@@ -142,6 +148,7 @@ export function AppointmentFormSheet({
       mode: appointment?.mode ?? 'physical',
       visitType: appointment?.visitType ?? 'new',
       issues: appointment?.issues ?? null,
+      fee: appointment ? String(Number(appointment.fee)) : '',
       recordNote: null,
       payments: [],
     },
@@ -153,6 +160,9 @@ export function AppointmentFormSheet({
     name: ['patientMode', 'doctorId', 'date', 'timeFrom'],
   });
   const doctorFee = doctors.data?.find((d) => d.id === doctorId)?.consultationFee ?? '';
+  const [feeValue, paymentValues] = useWatch({ control: form.control, name: ['fee', 'payments'] });
+  const totalFee = Number(feeValue || doctorFee || 0);
+  const paidNow = (paymentValues ?? []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
   const submit = form.handleSubmit((values) => {
     const visit = {
@@ -163,6 +173,7 @@ export function AppointmentFormSheet({
       mode: values.mode,
       visitType: values.visitType,
       issues: values.issues,
+      ...(values.fee ? { fee: values.fee } : {}),
     };
     if (appointment) {
       update.mutate(
@@ -370,6 +381,17 @@ export function AppointmentFormSheet({
             />
           </FieldRow>
           <TextareaField control={form.control} name="issues" label="Issues" rows={3} />
+          <MoneyField
+            control={form.control}
+            name="fee"
+            label="Appointment fee"
+            placeholder={doctorFee ? String(Number(doctorFee)) : '0'}
+            description={
+              doctorFee
+                ? `Leave empty for the doctor's fee (${formatMoney(doctorFee)}).`
+                : 'The total to be paid for this visit.'
+            }
+          />
         </FormSection>
 
         {editing ? null : (
@@ -399,13 +421,36 @@ export function AppointmentFormSheet({
                 <PaymentFields prefix={`payments.${index}.`} accounts={accounts.data ?? []} />
               </div>
             ))}
+            <div className="grid grid-cols-3 gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+              <div>
+                <div className="text-xs text-muted-foreground">Fee</div>
+                <div className="font-semibold tabular-nums">{formatMoney(totalFee)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Received now</div>
+                <div className="font-semibold tabular-nums">{formatMoney(paidNow)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Remaining</div>
+                <div
+                  className={cn(
+                    'font-semibold tabular-nums',
+                    totalFee - paidNow > 0 ? 'text-destructive' : 'text-success',
+                  )}
+                >
+                  {formatMoney(Math.max(totalFee - paidNow, 0))}
+                </div>
+              </div>
+            </div>
             {accounts.data ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 disabled={payments.fields.length >= 10}
-                onClick={() => payments.append(emptyPayment(payments.fields.length === 0 ? doctorFee : ''))}
+                onClick={() =>
+                  payments.append(emptyPayment(payments.fields.length === 0 ? feeValue || doctorFee : ''))
+                }
               >
                 <Plus />
                 Add payment

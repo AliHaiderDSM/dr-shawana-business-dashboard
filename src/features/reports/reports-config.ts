@@ -178,7 +178,7 @@ export const REPORTS: ReportDef[] = [
       'posSoft patient history: every visit with BMI, menopause status, each MRS answer and score, labs and treatments.',
     icon: History,
     group: 'Clinic',
-    allowed: roles('branch_admin', 'accountant'),
+    allowed: permission('consultations.view'),
     filters: [{ kind: 'patient', key: 'patientId', label: 'Patient' }],
     columnsMenu: false,
   },
