@@ -301,13 +301,38 @@ function numberInput(key: string, integer: boolean | undefined, raw: string) {
   return rest.length ? `${whole.slice(0, 3)}.${rest.join('').slice(0, 2)}` : whole.slice(0, 3);
 }
 
-const BMI_BANDS: [number, string, string][] = [
-  [18.5, 'Underweight', 'text-info'],
-  [25, 'Normal weight', 'text-success'],
-  [30, 'Overweight', 'text-warning'],
-  [35, 'Obesity', 'text-warning'],
-  [Infinity, 'Severe obesity', 'text-destructive'],
+const BMI_MIN = 15;
+const BMI_MAX = 40;
+
+const BMI_BANDS = [
+  { upTo: 18.5, label: 'Underweight', bar: 'bg-info', chip: 'bg-info-soft text-info-soft-foreground' },
+  {
+    upTo: 25,
+    label: 'Normal weight',
+    bar: 'bg-success',
+    chip: 'bg-success-soft text-success-soft-foreground',
+  },
+  { upTo: 30, label: 'Overweight', bar: 'bg-warning', chip: 'bg-warning-soft text-warning-soft-foreground' },
+  {
+    upTo: 35,
+    label: 'Obesity',
+    bar: 'bg-destructive/60',
+    chip: 'bg-destructive-soft text-destructive-soft-foreground',
+  },
+  {
+    upTo: BMI_MAX,
+    label: 'Severe obesity',
+    bar: 'bg-destructive',
+    chip: 'bg-destructive-soft text-destructive-soft-foreground',
+  },
 ];
+
+const BAND_WIDTHS = BMI_BANDS.map(
+  (b, index) => ((b.upTo - (BMI_BANDS[index - 1]?.upTo ?? BMI_MIN)) / (BMI_MAX - BMI_MIN)) * 100,
+);
+
+const bmiPercent = (value: number) =>
+  ((Math.min(Math.max(value, BMI_MIN), BMI_MAX) - BMI_MIN) / (BMI_MAX - BMI_MIN)) * 100;
 
 function BmiReadout() {
   const { control } = useFormContext<FormValues>();
@@ -315,23 +340,77 @@ function BmiReadout() {
   const heightFeet = Number(useWatch({ control, name: 'heightFeet' }));
   const meters = heightFeet * 0.3048;
   const bmi = weight > 0 && meters > 0 ? weight / (meters * meters) : null;
-  const band = bmi === null ? null : BMI_BANDS.find(([limit]) => bmi < limit);
+  const band = bmi === null ? null : (BMI_BANDS.find((b) => bmi < b.upTo) ?? BMI_BANDS[BMI_BANDS.length - 1]);
   return (
     <div className="space-y-2">
-      <Label>BMI</Label>
-      <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
-        {bmi === null || !band ? (
-          <span className="text-muted-foreground">Enter weight and height</span>
-        ) : (
-          <span>
-            <span className="font-semibold tabular-nums">{bmi.toFixed(2)}</span>{' '}
-            <span className={cn('font-medium', band[2])}>· {band[1]}</span>
-          </span>
-        )}
+      <Label>Body mass index</Label>
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-5 shadow-sm backdrop-blur-xl">
+        <div className="pointer-events-none absolute -top-16 -right-12 size-44 rounded-full bg-primary/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-10 size-44 rounded-full bg-success/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">BMI</div>
+            {bmi === null ? (
+              <div className="mt-1 text-sm text-muted-foreground">Enter weight and height to see the BMI</div>
+            ) : (
+              <div className="mt-0.5 flex items-baseline gap-1.5">
+                <span className="text-4xl font-semibold tracking-tight tabular-nums">{bmi.toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">kg/m²</span>
+              </div>
+            )}
+          </div>
+          {band ? (
+            <span
+              className={cn(
+                'rounded-full border border-border/40 px-3 py-1 text-sm font-medium shadow-xs backdrop-blur',
+                band.chip,
+              )}
+            >
+              {band.label}
+            </span>
+          ) : null}
+        </div>
+        <div className="relative mt-6">
+          <div className={cn('flex h-3 gap-0.5 overflow-hidden rounded-full', bmi === null && 'opacity-40')}>
+            {BMI_BANDS.map((b, index) => (
+              <span
+                key={b.label}
+                className={cn('h-full', b.bar)}
+                style={{ width: `${BAND_WIDTHS[index]}%` }}
+              />
+            ))}
+          </div>
+          {bmi !== null ? (
+            <span
+              className="absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-background bg-foreground shadow-md ring-1 ring-border transition-[left] duration-500"
+              style={{ left: `${bmiPercent(bmi)}%` }}
+              aria-hidden
+            />
+          ) : null}
+          <div className="relative mt-2 h-4 text-[11px] text-muted-foreground tabular-nums">
+            {[18.5, 25, 30, 35].map((mark) => (
+              <span key={mark} className="absolute -translate-x-1/2" style={{ left: `${bmiPercent(mark)}%` }}>
+                {mark}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          {BMI_BANDS.map((b, index) => (
+            <span key={b.label} className="inline-flex items-center gap-1.5">
+              <span className={cn('size-2 rounded-full', b.bar)} />
+              {b.label}
+              <span className="tabular-nums opacity-70">
+                {index === 0
+                  ? '< 18.5'
+                  : index === BMI_BANDS.length - 1
+                    ? '35+'
+                    : `${BMI_BANDS[index - 1]?.upTo ?? ''}–${(b.upTo - 0.1).toFixed(1)}`}
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Under 18.5 underweight · 18.5–24.9 normal · 25–29.9 overweight · 30–34.9 obesity · 35+ severe obesity
-      </p>
     </div>
   );
 }
@@ -451,7 +530,8 @@ function VisibleFields({ section, disabled }: { section: SectionDef; disabled?: 
           <div
             key={field.key}
             className={cn(
-              (field.kind === 'heading' || ('wide' in field && field.wide)) && 'md:col-span-2',
+              (field.kind === 'heading' || field.kind === 'bmi' || ('wide' in field && field.wide)) &&
+                'md:col-span-2',
               mrsLayout && field.kind === 'mrs' && '-my-2.5',
             )}
           >

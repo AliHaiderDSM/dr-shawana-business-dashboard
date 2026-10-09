@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Cancelled orders lock payments, BMI gauge (2026-10-09)
+
+- **Cancelled orders:** Approve actions are hidden on them, because their payments can no longer be approved. The cancel dialog warns that a payment awaiting approval will never count, and says to approve and refund first if the money arrived.
+- **Remarks 2.0, BMI:**
+  - A full-width glass card with the BMI value (kg/m²) and a coloured category chip.
+  - A 15–40 gauge with band colours (info, success, warning, destructive) and a marker, tick marks at 18.5 / 25 / 30 / 35, and a legend.
+
 ## Refund needs approval, Scan & print on deliveries, Remarks 2.0 numbers and BMI (2026-10-09)
 
 - **Cancel order dialog:**

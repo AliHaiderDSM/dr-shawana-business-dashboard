@@ -349,7 +349,7 @@ export function SaleDetailPage() {
   const s = sale.data;
   const editable = canChange(s, 'update');
   const online = s.saleType === 'online';
-  const canApprove = can('salePayments.update');
+  const canApprove = can('salePayments.update') && s.deliveryStatus !== 'cancelled';
   const waiting = (s.payments ?? []).filter((p) => !p.approvedAt);
 
   const openPayment = (entry: SalePayment | null) => {

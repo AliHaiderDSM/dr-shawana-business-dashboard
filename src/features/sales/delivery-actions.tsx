@@ -323,8 +323,9 @@ function CancelOrderForm({
         </DialogHeader>
         {waiting > 0 ? (
           <p className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
-            {formatMoney(waiting)} is still awaiting approval. Approve it in the order first; only approved
-            payments can be refunded.
+            {formatMoney(waiting)} is still awaiting approval. After cancelling it can never be approved or
+            refunded. If this money reached the bank, keep the order, approve the payment, then cancel with a
+            refund.
           </p>
         ) : null}
         {received > 0 ? (

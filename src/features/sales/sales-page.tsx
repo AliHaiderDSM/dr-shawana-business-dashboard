@@ -225,7 +225,10 @@ export function SalesPage() {
               {
                 label: 'Approve payment',
                 icon: CheckCircle2,
-                hidden: s.paymentStatus !== 'awaiting_approval' || !can('salePayments.update'),
+                hidden:
+                  s.paymentStatus !== 'awaiting_approval' ||
+                  s.deliveryStatus === 'cancelled' ||
+                  !can('salePayments.update'),
                 onSelect: () =>
                   approve
                     .mutateAsync({ id: s.id })
