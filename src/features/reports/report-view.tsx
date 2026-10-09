@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Download, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Combobox } from '@/components/shared/combobox';
 import { DataTable } from '@/components/shared/data-table';
 import { ErrorState } from '@/components/shared/error-state';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useListState, type ListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
+import { usePatientSearch } from '@/features/patients/api';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, titleCase } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -72,6 +74,36 @@ function TextFilter({ list, filter }: { list: ListState; filter: Extract<ReportF
   );
 }
 
+function PatientFilter({
+  list,
+  filter,
+}: {
+  list: ListState;
+  filter: Extract<ReportFilter, { kind: 'patient' }>;
+}) {
+  const [search, setSearch] = useState('');
+  const patients = usePatientSearch(search);
+  const [label, setLabel] = useState<string | null>(null);
+  return (
+    <Combobox
+      value={list.filters[filter.key] ?? null}
+      onChange={(value, option) => {
+        setLabel(option?.label ?? null);
+        list.setFilter(filter.key, value ?? undefined);
+      }}
+      options={(patients.data ?? []).map((p) => ({ value: p.id, label: `${p.name} · ${p.phone}` }))}
+      selectedLabel={label}
+      onSearchChange={setSearch}
+      loading={patients.isFetching}
+      placeholder="All patients"
+      searchPlaceholder="Name or phone"
+      clearable
+      className="h-9 w-64"
+      aria-label={filter.label}
+    />
+  );
+}
+
 function DateFilter({ list, filter }: { list: ListState; filter: Extract<ReportFilter, { kind: 'date' }> }) {
   return (
     <label className="flex h-9 items-center gap-2 rounded-md border bg-background pl-3 text-sm text-muted-foreground">
@@ -105,7 +137,13 @@ function columnsFor(data: ReportData): ColumnDef<Row, unknown>[] {
         exportValue: (row: unknown) => (row as Row)[column.key] as string,
       },
       cell: ({ row }) => (
-        <span className={cn(row.original.__total && 'font-semibold', index === 0 && 'font-medium')}>
+        <span
+          className={cn(
+            'whitespace-pre-line',
+            row.original.__total && 'font-semibold',
+            index === 0 && 'font-medium',
+          )}
+        >
           {row.original.__total && index === 0 ? 'Total' : displayValue(row.original[column.key] ?? null)}
         </span>
       ),
@@ -237,6 +275,7 @@ function ReportBody({ report }: { report: ReportDef }) {
             isFetching={data.isFetching}
             rowClassName={(row) => (row.__total ? 'bg-muted/50 hover:bg-muted/50' : undefined)}
             exportFileName={report.key}
+            columnsMenu={report.columnsMenu}
             emptyTitle="Nothing in this period"
             emptyDescription="Change the dates or filters."
             toolbar={
@@ -258,6 +297,8 @@ function ReportBody({ report }: { report: ReportDef }) {
                     <TextFilter key={filter.key} list={list} filter={filter} />
                   ) : filter.kind === 'date' ? (
                     <DateFilter key={filter.key} list={list} filter={filter} />
+                  ) : filter.kind === 'patient' ? (
+                    <PatientFilter key={filter.key} list={list} filter={filter} />
                   ) : (
                     <FilterSelect
                       key={filter.key}

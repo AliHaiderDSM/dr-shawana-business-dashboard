@@ -70,6 +70,7 @@ interface DataTableProps<T> {
   emptyDescription?: ReactNode;
   emptyAction?: ReactNode;
   exportFileName?: string;
+  columnsMenu?: boolean;
   onRowClick?: (row: T) => void;
   getRowId?: (row: T) => string;
   rowClassName?: (row: T) => string | undefined;
@@ -100,6 +101,7 @@ export function DataTable<T>({
   emptyDescription,
   emptyAction,
   exportFileName,
+  columnsMenu,
   onRowClick,
   getRowId,
   rowClassName,
@@ -189,7 +191,7 @@ export function DataTable<T>({
                 Export
               </Button>
             ) : null}
-            {hideable.length > 1 ? (
+            {columnsMenu !== false && hideable.length > 1 ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" aria-label="Choose columns">

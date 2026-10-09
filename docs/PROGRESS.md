@@ -12,6 +12,16 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## posSoft patient history layout, Remarks 2.0 tabs, appointment time and visit badge (2026-10-10)
+
+- **Patient history report:**
+  - posSoft column order: Sr No., ID (PatID-n), Name / Phone (two lines), Age, City, Country, Date, BMI, menopause, each MRS answer and score, FSH / Estradiol / Total Testosterone, treatments, Still on treatment.
+  - Empty numeric cells show 0.
+  - Filters are Patient (searchable), dates and branch. The Columns button is hidden (`columnsMenu: false`).
+- **Remarks 2.0:** the BHRT and Patient history tabs are removed, as posSoft has none.
+- **Appointments table:** time shows From on top and "to" below. New / Follow up is a small coloured badge under the mode.
+- **Data table:** new `columnsMenu` prop.
+
 ## Additional symptoms with severity, visit history, follow-up tab (2026-10-10)
 
 - **Additional symptoms:**

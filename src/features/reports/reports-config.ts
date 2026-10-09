@@ -22,7 +22,8 @@ export type ReportFilter =
   | { kind: 'enum'; key: string; label: string; options: readonly { value: string; label: string }[] }
   | { kind: 'source'; key: string; label: string; source: OptionSource }
   | { kind: 'text'; key: string; label: string }
-  | { kind: 'date'; key: string; label: string };
+  | { kind: 'date'; key: string; label: string }
+  | { kind: 'patient'; key: string; label: string };
 
 export interface ReportDef {
   key: string;
@@ -33,6 +34,7 @@ export interface ReportDef {
   allowed: (can: (permission: string) => boolean, role: Role | undefined) => boolean;
   filters: ReportFilter[];
   path?: string;
+  columnsMenu?: boolean;
 }
 
 const roles =
@@ -172,11 +174,13 @@ export const REPORTS: ReportDef[] = [
   {
     key: 'patient-history',
     title: 'Patient history',
-    description: 'Visits with BMI, menopause stage, MRS and key labs.',
+    description:
+      'posSoft patient history: every visit with BMI, menopause status, each MRS answer and score, labs and treatments.',
     icon: History,
     group: 'Clinic',
     allowed: roles('branch_admin', 'accountant'),
-    filters: [source('doctorId', 'Doctor', 'doctors')],
+    filters: [{ kind: 'patient', key: 'patientId', label: 'Patient' }],
+    columnsMenu: false,
   },
   {
     key: 'purchases',

@@ -19,6 +19,7 @@ import {
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/list-filters';
@@ -38,6 +39,7 @@ import {
   MODE_LABELS,
   patientLink,
   STATUS_LABELS,
+  timeLabel,
   timeRange,
   useAppointmentList,
   VISIT_LABELS,
@@ -125,7 +127,10 @@ export function AppointmentsPage() {
       header: 'Time',
       accessorFn: (a) => timeRange(a.timeFrom, a.timeTo),
       cell: ({ row }) => (
-        <span className="whitespace-nowrap">{timeRange(row.original.timeFrom, row.original.timeTo)}</span>
+        <div className="leading-tight whitespace-nowrap tabular-nums">
+          <div className="font-medium">{timeLabel(row.original.timeFrom)}</div>
+          <div className="text-xs text-muted-foreground">to {timeLabel(row.original.timeTo)}</div>
+        </div>
       ),
     },
     {
@@ -154,9 +159,18 @@ export function AppointmentsPage() {
       header: 'Visit',
       accessorFn: (a) => `${MODE_LABELS[a.mode]} / ${VISIT_LABELS[a.visitType]}`,
       cell: ({ row }) => (
-        <div className="text-sm">
-          <div>{MODE_LABELS[row.original.mode]}</div>
-          <div className="text-xs text-muted-foreground">{VISIT_LABELS[row.original.visitType]}</div>
+        <div className="flex flex-col items-start gap-1 text-sm">
+          <span>{MODE_LABELS[row.original.mode]}</span>
+          <span
+            className={cn(
+              'rounded-full border px-2 py-0.5 text-[11px] leading-none font-medium',
+              row.original.visitType === 'followup'
+                ? 'border-info/30 bg-info-soft text-info-soft-foreground'
+                : 'border-success/30 bg-success-soft text-success-soft-foreground',
+            )}
+          >
+            {VISIT_LABELS[row.original.visitType]}
+          </span>
         </div>
       ),
     },

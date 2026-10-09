@@ -30,13 +30,11 @@ import {
   type AppointmentDetail,
 } from '@/features/appointments/api';
 import { StatusDialog, type StatusChange } from '@/features/appointments/status-dialog';
-import { BhrtPanel } from '@/features/clinical/bhrt-panel';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
 import { patientsApi, usePatientSummary } from '@/features/patients/api';
 import { BhrtBadge } from '@/features/patients/bhrt-badge';
-import { PatientTimelineView } from '@/features/patients/patient-timeline';
 import { ConsultationPrescriptions } from '@/features/prescriptions/consultation-prescriptions';
 import { PreviousSymptomsContext } from './symptoms-field';
 import { VisitHistory } from './visit-history';
@@ -56,7 +54,7 @@ import {
 import { SECTIONS, type FormValues } from './clinical-fields';
 import { SectionForm } from './section-form';
 
-type PanelKey = SectionKey | 'records' | 'clinical' | 'prescriptions' | 'bhrt' | 'history';
+type PanelKey = SectionKey | 'records' | 'clinical' | 'prescriptions';
 
 interface NavItem {
   key: PanelKey;
@@ -78,8 +76,6 @@ function navItems(consultation: Consultation, canPrescribe: boolean): NavItem[] 
     has('referral') && { key: 'referral', label: 'Referred to specialist', done: saved('referral') },
     canPrescribe && { key: 'prescriptions', label: 'Prescription' },
     { key: 'plans', label: 'Educational resources', done: saved('plans') },
-    { key: 'bhrt', label: 'BHRT' },
-    { key: 'history', label: 'Patient history' },
   ];
   return items.filter((item): item is NavItem => Boolean(item));
 }
@@ -357,16 +353,6 @@ function Workspace({
         );
       case 'prescriptions':
         return <ConsultationPrescriptions consultation={consultation} />;
-      case 'bhrt':
-        return (
-          <BhrtPanel
-            patientId={consultation.patientId}
-            appointmentId={consultation.appointmentId}
-            canEdit={can('consultations.create') || can('consultations.update')}
-          />
-        );
-      case 'history':
-        return <PatientTimelineView patientId={consultation.patientId} />;
       case 'basic_info':
         return (
           <div className="space-y-6">
