@@ -149,7 +149,7 @@ function ResultsSheet({
         description={
           editDate
             ? 'Change any value, or clear it to remove that result. Changing the date moves the whole column.'
-            : 'Fill only the tests that were done. Empty or zero means not done, as in posSoft.'
+            : 'Fill only the tests that were done. Empty or zero means not done, as in posSoft. If this date already has a result for a test, the new value replaces it.'
         }
         onSubmit={submit}
         submitting={saving}
@@ -279,7 +279,7 @@ export function BloodWorkPanel({
   return (
     <Panel
       title="Blood work"
-      description="One column per test date. Edit or delete a whole date from its header, or click a value to correct it."
+      description="One column per test date. Use ✏️ / 🗑️ on a date, or click a value to correct it."
       bodyClassName="p-0"
       actions={
         canEdit ? (
@@ -317,62 +317,85 @@ export function BloodWorkPanel({
                 </SelectContent>
               </Select>
             </div>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartRows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-                  <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={48}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--popover)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      color: 'var(--popover-foreground)',
-                      fontSize: 12,
-                    }}
-                    formatter={(value, name) => {
-                      const test = BLOOD_TESTS.find((t) => t.test === name);
-                      return [`${String(value)} ${test?.unit ?? ''}`, test?.label ?? String(name)];
-                    }}
-                  />
-                  {shown.length > 1 ? (
-                    <Legend
-                      formatter={(value: string) => BLOOD_TEST_LABELS[value as BloodTest] ?? value}
-                      wrapperStyle={{ fontSize: 12, color: 'var(--muted-foreground)' }}
-                    />
-                  ) : null}
+            {dates.length < 2 ? (
+              <div className="space-y-3">
+                <p className="rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                  Only one test date so far ({formatDate(dates[0] ?? '')}). The trend lines appear once a
+                  second date is added; until then the results are listed here.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
                   {shown.map((t) => {
-                    const style =
-                      SERIES_STYLE[BLOOD_TESTS.findIndex((b) => b.test === t.test)] ?? SERIES_STYLE[0];
+                    const point = data?.tests.find((r) => r.test === t.test)?.points[0];
                     return (
-                      <Line
-                        key={t.test}
-                        type="monotone"
-                        dataKey={t.test}
-                        name={t.test}
-                        stroke={style?.stroke}
-                        strokeDasharray={style?.dash}
-                        strokeWidth={2}
-                        dot={{ r: 4, fill: style?.stroke, strokeWidth: 2, stroke: 'var(--card)' }}
-                        activeDot={{ r: 6 }}
-                        connectNulls
-                      />
+                      <div key={t.test} className="rounded-lg border bg-muted/30 px-3 py-2">
+                        <div className="text-xs text-muted-foreground">{t.label}</div>
+                        <div className="font-semibold tabular-nums">
+                          {point ? formatQuantity(point.value) : '—'}{' '}
+                          <span className="text-xs font-normal text-muted-foreground">{t.unit}</span>
+                        </div>
+                      </div>
                     );
                   })}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartRows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
+                    <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={48}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--popover)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        color: 'var(--popover-foreground)',
+                        fontSize: 12,
+                      }}
+                      formatter={(value, name) => {
+                        const test = BLOOD_TESTS.find((t) => t.test === name);
+                        return [`${String(value)} ${test?.unit ?? ''}`, test?.label ?? String(name)];
+                      }}
+                    />
+                    {shown.length > 1 ? (
+                      <Legend
+                        formatter={(value: string) => BLOOD_TEST_LABELS[value as BloodTest] ?? value}
+                        wrapperStyle={{ fontSize: 12, color: 'var(--muted-foreground)' }}
+                      />
+                    ) : null}
+                    {shown.map((t) => {
+                      const style =
+                        SERIES_STYLE[BLOOD_TESTS.findIndex((b) => b.test === t.test)] ?? SERIES_STYLE[0];
+                      return (
+                        <Line
+                          key={t.test}
+                          type="monotone"
+                          dataKey={t.test}
+                          name={t.test}
+                          stroke={style?.stroke}
+                          strokeDasharray={style?.dash}
+                          strokeWidth={2}
+                          dot={{ r: 4, fill: style?.stroke, strokeWidth: 2, stroke: 'var(--card)' }}
+                          activeDot={{ r: 6 }}
+                          connectNulls
+                        />
+                      );
+                    })}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

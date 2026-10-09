@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Blood work: same date replaces, single-date view (2026-10-09)
+
+- Adding a result for a test and date that already exist replaces the value instead of adding a hidden duplicate. The list keeps the latest value per test and date.
+- With only one test date, the chart area shows a note and the values as tiles instead of a vertical column of dots.
+
 ## Blood work editing and overall chart, Save & next, referral patient name, link prefill (2026-10-09)
 
 - **Blood work:**
