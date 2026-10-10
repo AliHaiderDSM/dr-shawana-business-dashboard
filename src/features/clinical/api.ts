@@ -220,3 +220,15 @@ export function usePatientTimeline(patientId: string) {
     enabled: Boolean(patientId),
   });
 }
+
+export type ReadBloodReport = Schemas['ReadBloodReport'];
+
+export function useReadBloodReport(patientId: string) {
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return uploadForm<ReadBloodReport>(`/branch/patients/${patientId}/blood-work/read-report`, form);
+    },
+  });
+}

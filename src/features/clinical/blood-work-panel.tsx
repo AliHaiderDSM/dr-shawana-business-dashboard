@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ import {
   BLOOD_TESTS,
   useAddBloodWork,
   useBloodWork,
+  useReadBloodReport,
   useRemoveBloodWork,
   useUpdateBloodWork,
   type BloodTest,
@@ -70,6 +71,7 @@ function ResultsSheet({
   consultationId,
   editDate,
   data,
+  prefill,
   open,
   onOpenChange,
 }: {
@@ -77,6 +79,7 @@ function ResultsSheet({
   consultationId?: string;
   editDate: string | null;
   data: BloodData | undefined;
+  prefill?: Record<string, string>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -88,8 +91,8 @@ function ResultsSheet({
     resolver: zodResolver(schema),
     defaultValues: {
       testDate: editDate ?? isoDate(),
-      values: BLOOD_TESTS.map((_, index) => ({
-        value: existing[index] ? String(Number(existing[index].value)) : '',
+      values: BLOOD_TESTS.map((test, index) => ({
+        value: existing[index] ? String(Number(existing[index].value)) : (prefill?.[test.test] ?? ''),
       })),
     },
   });
@@ -149,7 +152,9 @@ function ResultsSheet({
         description={
           editDate
             ? 'Change any value, or clear it to remove that result. Changing the date moves the whole column.'
-            : 'Fill only the tests that were done. Empty or zero means not done, as in posSoft. If this date already has a result for a test, the new value replaces it.'
+            : prefill
+              ? 'Values were read from the report by AI, but the report shows no date. Set the test date, check the values and save.'
+              : 'Fill only the tests that were done. Empty or zero means not done, as in posSoft. If this date already has a result for a test, the new value replaces it.'
         }
         onSubmit={submit}
         submitting={saving}
@@ -258,7 +263,49 @@ export function BloodWorkPanel({
 }) {
   const blood = useBloodWork(patientId);
   const remove = useRemoveBloodWork(patientId);
-  const [sheet, setSheet] = useState<{ date: string | null; key: number } | null>(null);
+  const [sheet, setSheet] = useState<{
+    date: string | null;
+    key: number;
+    prefill?: Record<string, string>;
+  } | null>(null);
+  const read = useReadBloodReport(patientId);
+  const add = useAddBloodWork(patientId);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [reading, setReading] = useState(false);
+
+  const readReport = async (file: File) => {
+    setReading(true);
+    try {
+      const found = await read.mutateAsync(file);
+      if (found.results.length === 0) {
+        toast.error(
+          'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found in this report.',
+        );
+        return;
+      }
+      if (!found.testDate) {
+        setSheet((current) => ({
+          date: null,
+          key: (current?.key ?? 0) + 1,
+          prefill: Object.fromEntries(found.results.map((r) => [r.test, r.value])),
+        }));
+        return;
+      }
+      await add.mutateAsync({
+        consultationId: consultationId ?? null,
+        results: found.results.map((r) => ({ ...r, testDate: found.testDate as string })),
+      });
+      setChartTest(ALL);
+      toast.success(
+        `${found.results.length} ${found.results.length === 1 ? 'value' : 'values'} saved for ${formatDate(found.testDate)} from the report. Check them in the table; ✏️ corrects any mistake.`,
+      );
+    } catch (error) {
+      toastError(error);
+    } finally {
+      setReading(false);
+      if (fileInput.current) fileInput.current.value = '';
+    }
+  };
   const [removingDate, setRemovingDate] = useState<string | null>(null);
   const [chartTest, setChartTest] = useState<BloodTest | typeof ALL>(ALL);
   const data = blood.data;
@@ -283,10 +330,32 @@ export function BloodWorkPanel({
       bodyClassName="p-0"
       actions={
         canEdit ? (
-          <Button size="sm" variant="outline" onClick={() => setSheet({ date: null, key: Date.now() })}>
-            <Plus />
-            Add results
-          </Button>
+          <>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="application/pdf,image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void readReport(file);
+              }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={reading}
+              title="Upload a lab report (PDF or photo); AI reads the values and saves them"
+              onClick={() => fileInput.current?.click()}
+            >
+              {reading ? <Loader2 className="animate-spin" /> : <Sparkles />}
+              {reading ? 'Reading report…' : 'Read report (AI)'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSheet({ date: null, key: Date.now() })}>
+              <Plus />
+              Add results
+            </Button>
+          </>
         ) : null
       }
     >
@@ -476,6 +545,7 @@ export function BloodWorkPanel({
           patientId={patientId}
           consultationId={consultationId}
           editDate={sheet.date}
+          prefill={sheet.prefill}
           data={data}
           open
           onOpenChange={(open) => !open && setSheet(null)}

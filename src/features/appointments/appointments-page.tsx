@@ -52,9 +52,6 @@ import { StatusDialog, type StatusChange } from './status-dialog';
 
 const CALENDAR_KEYS = new Set(['view', 'span', 'day']);
 
-const PAYMENT_LABELS = { paid: 'Paid', partial: 'Advance', unpaid: 'Unpaid' } as const;
-const PAYMENT_TONES = { paid: 'success', partial: 'warning', unpaid: 'danger' } as const;
-
 export function AppointmentsPage() {
   const navigate = useNavigate();
   const { me, can, isSuperAdmin } = useAuth();
@@ -178,13 +175,6 @@ export function AppointmentsPage() {
       ),
     },
     {
-      id: 'fee',
-      header: 'Fee',
-      accessorKey: 'fee',
-      meta: { align: 'right' },
-      cell: ({ row }) => <span className="tabular-nums">{formatMoney(row.original.fee)}</span>,
-    },
-    {
       id: 'receivedAmount',
       header: 'Received',
       accessorKey: 'receivedAmount',
@@ -204,16 +194,6 @@ export function AppointmentsPage() {
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
-    },
-    {
-      id: 'paymentStatus',
-      header: 'Payment',
-      accessorFn: (a) => PAYMENT_LABELS[a.paymentStatus],
-      cell: ({ row }) => (
-        <StatusBadge tone={PAYMENT_TONES[row.original.paymentStatus]}>
-          {PAYMENT_LABELS[row.original.paymentStatus]}
-        </StatusBadge>
-      ),
     },
     {
       id: 'status',

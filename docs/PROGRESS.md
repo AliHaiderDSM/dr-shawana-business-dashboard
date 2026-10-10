@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Read blood report with AI, appointment table trimmed (2026-10-10)
+
+- **Blood work:**
+  - A "Read report (AI)" button uploads a PDF or photo. The backend asks Gemini for the 9 tracked tests.
+  - When the report has a date, the values are saved at once and the chart updates. Without a date, the add sheet opens prefilled.
+  - Values with < or > are skipped.
+- **Appointments table:** the Fee and Payment columns are removed. Received and Remaining stay.
+
 ## Appointment fee, advance and remaining; Patient History page is the posSoft report (2026-10-10)
 
 - **Appointments:**

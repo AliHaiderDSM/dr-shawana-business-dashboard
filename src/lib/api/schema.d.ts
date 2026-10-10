@@ -15855,6 +15855,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/patients/{id}/blood-work/read-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read blood work values from an uploaded report (multipart "file": PDF or image) with AI. Nothing is saved; the caller reviews and saves. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Values found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ReadBloodReport"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/prescription-catalog": {
         parameters: {
             query?: never;
@@ -24771,6 +24858,16 @@ export interface components {
             createdBy: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        ReadBloodReport: {
+            /** Format: date */
+            testDate: string | null;
+            results: {
+                /** @enum {string} */
+                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
+                value: string;
+                unit: string;
+            }[];
         };
         CreatePrescriptionCatalogItem: {
             /** @enum {string} */
