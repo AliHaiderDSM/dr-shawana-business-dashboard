@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Clickable expiry alerts (2026-10-11)
+
+- Each expiry alert row opens a side sheet: branch, branch type, batch, stock, expiry and status, plus every branch where the same product is expiring with totals.
+- The branch shows on every row, and "Show more" expands the full list.
+
 ## Online catalog on Add Sale (2026-10-11)
 
 - When a Dispatch Department exists and the sale type is Online, the POS catalog shows the department products and their free stock (no bundles). Barcode scans search the same catalog.
