@@ -16,8 +16,23 @@ export function useCurrentBranch() {
   return branches.data?.find((b) => b.id === branchId) ?? null;
 }
 
+export function useBranchKind() {
+  const { me, isSuperAdmin } = useAuth();
+  const current = useCurrentBranch();
+  return isSuperAdmin ? (current?.kind ?? null) : (me?.branch?.kind ?? null);
+}
+
 export function useInWarehouse() {
   return useCurrentBranch()?.kind === 'warehouse';
+}
+
+export function useInDispatch() {
+  return useBranchKind() === 'dispatch';
+}
+
+export function useHasDispatch() {
+  const { me } = useAuth();
+  return Boolean(me?.dispatchDepartmentId);
 }
 
 export function useCanReceiveStock() {

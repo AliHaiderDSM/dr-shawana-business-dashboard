@@ -250,7 +250,9 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
   const [files, setFiles] = useState<File[]>([]);
   const transfer = config.kind === 'out' && inWarehouse;
   const schema = buildSchema(config, transfer);
-  const targets = (branchOptions.data ?? []).filter((b) => b.kind === 'branch' && b.status === 'active');
+  const targets = (branchOptions.data ?? []).filter(
+    (b) => (b.kind === 'branch' || b.kind === 'dispatch') && b.status === 'active',
+  );
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

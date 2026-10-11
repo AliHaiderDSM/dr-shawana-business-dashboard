@@ -257,7 +257,11 @@ export function SalesPage() {
                 label: 'Dispatch',
                 icon: Truck,
                 separatorBefore: true,
-                hidden: !online || s.deliveryStatus !== 'pending' || !can('sales.update'),
+                hidden:
+                  !online ||
+                  s.deliveryStatus !== 'pending' ||
+                  !can('sales.update') ||
+                  Boolean(s.fulfillmentBranchId),
                 onSelect: () => orders.dispatch(s),
               },
               {

@@ -196,7 +196,7 @@ export function InventoryReportPage() {
                 allLabel="Stock to: any"
                 className="w-44"
                 options={(branches.data ?? [])
-                  .filter((b) => b.kind === 'branch')
+                  .filter((b) => b.kind === 'branch' || b.kind === 'dispatch')
                   .map((b) => ({ value: b.id, label: b.name }))}
               />
             ) : null}

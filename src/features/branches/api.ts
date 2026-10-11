@@ -30,10 +30,12 @@ export function useBranch(id: string) {
 export function useSaveBranch() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id?: string; body: BranchInput }) =>
-      id
-        ? unwrap(api.PATCH('/admin/branches/{id}', { params: { path: { id } }, body }))
-        : unwrap(api.POST('/admin/branches', { body })),
+    mutationFn: ({ id, body }: { id?: string; body: BranchInput }) => {
+      const { kind, ...fields } = body;
+      return id
+        ? unwrap(api.PATCH('/admin/branches/{id}', { params: { path: { id } }, body: fields }))
+        : unwrap(api.POST('/admin/branches', { body: { ...fields, kind } }));
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
   });
 }

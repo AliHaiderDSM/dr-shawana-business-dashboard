@@ -17,6 +17,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   pharmacy: 'Pharmacy',
   store_keeper: 'Store Keeper',
   delivery_print: 'Delivery Print',
+  dispatcher: 'Dispatcher',
 };
 
 export const BRANCH_ROLES: BranchRole[] = [

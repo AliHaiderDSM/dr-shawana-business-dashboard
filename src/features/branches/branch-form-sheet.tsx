@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { FieldRow, TextField, TextareaField } from '@/components/shared/form-fields';
+import { FieldRow, SelectField, TextField, TextareaField } from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
@@ -20,6 +20,7 @@ const schema = z.object({
   address: optionalText(500),
   phone: optionalText(30),
   email: optionalEmail,
+  kind: z.enum(['branch', 'dispatch']),
 });
 
 type Values = z.input<typeof schema>;
@@ -41,6 +42,7 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
       address: branch?.address ?? null,
       phone: branch?.phone ?? null,
       email: branch?.email ?? null,
+      kind: branch?.kind === 'dispatch' ? 'dispatch' : 'branch',
     },
   });
 
@@ -69,6 +71,18 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
         submitting={save.isPending}
         submitLabel={branch ? 'Save changes' : 'Create branch'}
       >
+        {branch ? null : (
+          <SelectField
+            control={form.control}
+            name="kind"
+            label="Type"
+            description="The Dispatch Department ships every online order from its own stock. There can be only one."
+            options={[
+              { value: 'branch', label: 'Branch (sells in the office and books online orders)' },
+              { value: 'dispatch', label: 'Dispatch Department (ships online orders)' },
+            ]}
+          />
+        )}
         <TextField
           control={form.control}
           name="name"

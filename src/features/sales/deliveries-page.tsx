@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useInDispatch } from '@/lib/auth/branches';
 import { formatCount, formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useDeliveries, useDeliveryCalendar, type DeliveryDay, type DeliveryOrder } from './api';
@@ -125,6 +126,7 @@ export function DeliveriesPage() {
   const navigate = useNavigate();
   const [bulk, setBulk] = useState(false);
   const { can } = useAuth();
+  const inDispatch = useInDispatch();
   const [params, setParams] = useSearchParams();
   const todayIso = isoDate();
   const month = params.get('month') ?? todayIso.slice(0, 7);
@@ -179,6 +181,23 @@ export function DeliveriesPage() {
         </div>
       ),
     },
+    ...(inDispatch
+      ? ([
+          {
+            id: 'branch',
+            header: 'From branch',
+            accessorFn: (o) => o.branch?.name ?? '',
+            cell: ({ row }) => (
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">
+                  {row.original.branch?.code ?? '—'}
+                </span>
+                {row.original.branch?.name ?? '—'}
+              </span>
+            ),
+          },
+        ] as ColumnDef<DeliveryOrder, unknown>[])
+      : []),
     {
       id: 'customer',
       header: 'Customer',
@@ -303,8 +322,12 @@ export function DeliveriesPage() {
   return (
     <>
       <PageHeader
-        title="Deliveries"
-        description="Online orders by the day they were booked. Dispatch an order by scanning it; its stock leaves the inventory on the dispatch day."
+        title={inDispatch ? 'Dispatch Department' : 'Deliveries'}
+        description={
+          inDispatch
+            ? 'Online orders from every branch, by the day they were booked. Scan to dispatch: the stock leaves the Dispatch Department inventory.'
+            : 'Online orders by the day they were booked. Dispatch an order by scanning it; its stock leaves the inventory on the dispatch day.'
+        }
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <button type="button" className="text-left" onClick={() => set({ view: undefined })}>

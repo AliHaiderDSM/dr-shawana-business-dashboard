@@ -12,6 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Dispatch Department UI (2026-10-11)
+
+- **Branches:** the New branch form has a Type (Branch / Dispatch Department), and the list shows the type.
+- **Menu:**
+  - Deliveries shows only inside the Dispatch Department once one exists. Without one, branches keep their Deliveries as before.
+  - Inside the department, Add Sale, View Sales and Patients & Care are hidden.
+- **Deliveries (department):** titled "Dispatch Department", with a "From branch" column (code + name). Scan & print works on the department's labels.
+- **Branch sale pages:** no Dispatch action for orders the department ships, and the sale detail notes "The Dispatch Department ships this order from its own stock".
+- **Transfers and reports:** stock out can target the Dispatch Department, and the inventory report branch filter includes it.
+- **Roles:** new Dispatcher role label.
+- **Code:** `useBranchKind`, `useInDispatch`, `useHasDispatch`.
+
 ## Read blood report with AI, appointment table trimmed (2026-10-10)
 
 - **Blood work:**

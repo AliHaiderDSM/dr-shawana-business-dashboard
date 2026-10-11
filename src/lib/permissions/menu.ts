@@ -50,6 +50,8 @@ export interface MenuItem {
   superAdminOnly?: boolean;
   warehouseOnly?: boolean;
   showInWarehouse?: boolean;
+  dispatchOnly?: boolean;
+  notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
 }
 
@@ -57,6 +59,7 @@ export interface MenuGroup {
   label: string;
   items: MenuItem[];
   notInWarehouse?: boolean;
+  notInDispatch?: boolean;
 }
 
 export const MENU: MenuGroup[] = [
@@ -107,6 +110,7 @@ export const MENU: MenuGroup[] = [
   {
     label: 'Patients & Care',
     notInWarehouse: true,
+    notInDispatch: true,
     items: [
       {
         key: 'patients',
@@ -158,6 +162,7 @@ export const MENU: MenuGroup[] = [
       {
         key: 'sales-new',
         label: 'Add Sale',
+        notInDispatch: true,
         path: '/sales/new',
         icon: ShoppingCart,
         anyOf: ['sales.create'],
@@ -171,6 +176,7 @@ export const MENU: MenuGroup[] = [
         anyOf: ['sales.view'],
         scope: 'branch',
         showInWarehouse: true,
+        notInDispatch: true,
       },
       {
         key: 'deliveries',
@@ -179,6 +185,7 @@ export const MENU: MenuGroup[] = [
         icon: CalendarClock,
         anyOf: ['sales.view'],
         scope: 'branch',
+        dispatchOnly: true,
       },
       {
         key: 'delivery',
@@ -415,12 +422,15 @@ export function visibleMenu(
   isSuperAdmin: boolean,
   role?: Role,
   inWarehouse = false,
+  dispatch: { inDispatch: boolean; hasDispatch: boolean } = { inDispatch: false, hasDispatch: false },
 ): MenuGroup[] {
   return MENU.map((group) => ({
     ...group,
     items: group.items
       .filter(
         (item) =>
+          !(dispatch.inDispatch && (group.notInDispatch || item.notInDispatch)) &&
+          (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.superAdminOnly || isSuperAdmin) &&
           (!item.warehouseOnly || inWarehouse) &&
           (!(inWarehouse && group.notInWarehouse) || item.showInWarehouse) &&

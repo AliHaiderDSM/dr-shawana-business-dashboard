@@ -66,7 +66,7 @@ export interface paths {
                     pageSize?: number;
                     search?: string;
                     sort?: "createdAt" | "-createdAt" | "firstName" | "-firstName" | "lastName" | "-lastName" | "username" | "-username" | "role" | "-role";
-                    role?: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print";
+                    role?: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
                     status?: "active" | "inactive";
                     branchId?: string;
                 };
@@ -1315,10 +1315,10 @@ export interface paths {
                                 /** @enum {string} */
                                 status: "active" | "inactive";
                                 /**
-                                 * @description warehouse: the Super Admin stock (Super Admin only); branch: a selling branch
+                                 * @description warehouse: the Super Admin stock (Super Admin only); branch: a selling branch; dispatch: the Dispatch Department that ships online orders
                                  * @enum {string}
                                  */
-                                kind: "branch" | "warehouse";
+                                kind: "branch" | "warehouse" | "dispatch";
                             }[];
                         };
                     };
@@ -17102,6 +17102,11 @@ export interface paths {
                                 paymentStatus: "unpaid" | "partial" | "paid" | "awaiting_approval";
                                 /** @enum {string|null} */
                                 deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
+                                /**
+                                 * Format: uuid
+                                 * @description Dispatch Department that ships this online order from its own stock
+                                 */
+                                fulfillmentBranchId: string | null;
                                 /** Format: date */
                                 dispatchedOn: string | null;
                                 /** Format: date */
@@ -22052,7 +22057,7 @@ export interface components {
             gender?: "male" | "female" | null;
             designation?: string | null;
             /** @enum {string} */
-            role: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print";
+            role: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
             password: string;
         };
         CreateBranchAdmin: {
@@ -22078,7 +22083,7 @@ export interface components {
             gender?: "male" | "female" | null;
             designation?: string | null;
             /** @enum {string} */
-            role?: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print";
+            role?: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
         };
         ResetPassword: {
             password: string;
@@ -22089,7 +22094,7 @@ export interface components {
             /** Format: uuid */
             branchId: string | null;
             /** @enum {string} */
-            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print";
+            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
             firstName: string;
             lastName: string;
             email: string;
@@ -22132,15 +22137,22 @@ export interface components {
         Me: {
             profile: components["schemas"]["Staff"];
             /** @enum {string} */
-            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print";
+            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
             branch: {
                 /** Format: uuid */
                 id: string;
                 name: string;
                 code: string;
                 city: string;
+                /** @enum {string} */
+                kind: "branch" | "warehouse" | "dispatch";
             } | null;
             permissions: string[];
+            /**
+             * Format: uuid
+             * @description The Dispatch Department, when one exists: online orders ship from it
+             */
+            dispatchDepartmentId: string | null;
         };
         Session: {
             accessToken: string;
@@ -22160,6 +22172,12 @@ export interface components {
             /** Format: email */
             email?: string | null;
             logoPath?: string | null;
+            /**
+             * @description dispatch: the single Dispatch Department that ships every online order from its own stock
+             * @default branch
+             * @enum {string}
+             */
+            kind: "branch" | "dispatch";
         };
         UpdateBranch: {
             name?: string;
@@ -22182,10 +22200,10 @@ export interface components {
             email: string | null;
             logoPath: string | null;
             /**
-             * @description warehouse: the Super Admin stock (Super Admin only); branch: a selling branch
+             * @description warehouse: the Super Admin stock (Super Admin only); branch: a selling branch; dispatch: the Dispatch Department that ships online orders
              * @enum {string}
              */
-            kind: "branch" | "warehouse";
+            kind: "branch" | "warehouse" | "dispatch";
             /** @enum {string} */
             status: "active" | "inactive";
             /** Format: date-time */
@@ -23038,7 +23056,7 @@ export interface components {
             branchId: string;
             branchName: string;
             /** @enum {string} */
-            branchKind: "branch" | "warehouse";
+            branchKind: "branch" | "warehouse" | "dispatch";
             /** Format: uuid */
             productId: string;
             productName: string;
@@ -25584,6 +25602,11 @@ export interface components {
             paymentStatus: "unpaid" | "partial" | "paid" | "awaiting_approval";
             /** @enum {string|null} */
             deliveryStatus: "pending" | "dispatched" | "delivered" | "returned" | "cancelled" | null;
+            /**
+             * Format: uuid
+             * @description Dispatch Department that ships this online order from its own stock
+             */
+            fulfillmentBranchId: string | null;
             /** Format: date */
             dispatchedOn: string | null;
             /** Format: date */
@@ -25688,6 +25711,15 @@ export interface components {
             remaining: string;
             /** @enum {string} */
             paymentStatus: "unpaid" | "partial" | "paid" | "awaiting_approval";
+            /** @description Branch that booked the order */
+            branch: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+            } | null;
+            /** Format: uuid */
+            createdBy: string | null;
             city: string;
             note: string | null;
             customer: {

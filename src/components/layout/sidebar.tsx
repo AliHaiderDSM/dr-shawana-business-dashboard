@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/lib/auth/auth-context';
-import { useInWarehouse } from '@/lib/auth/branches';
+import { useHasDispatch, useInDispatch, useInWarehouse } from '@/lib/auth/branches';
 import { findMenuItem, visibleMenu } from '@/lib/permissions/menu';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +33,9 @@ export function BrandMark({ collapsed }: { collapsed?: boolean }) {
 export function SidebarNav({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   const { me, can, isSuperAdmin } = useAuth();
   const inWarehouse = useInWarehouse();
-  const groups = visibleMenu(can, isSuperAdmin, me?.role, inWarehouse);
+  const inDispatch = useInDispatch();
+  const hasDispatch = useHasDispatch();
+  const groups = visibleMenu(can, isSuperAdmin, me?.role, inWarehouse, { inDispatch, hasDispatch });
   const { pathname } = useLocation();
   const activeKey = pathname === '/' ? 'dashboard' : findMenuItem(pathname)?.key;
 
