@@ -155,6 +155,15 @@ export function useDeliveries(query: { date?: string; by?: 'order' | 'dispatch';
   });
 }
 
+export function useOnlineCatalog(query: { search?: string; categoryId?: string }, enabled = true) {
+  return useQuery({
+    queryKey: ['sales', 'online-catalog', query],
+    queryFn: () => unwrap(api.GET('/branch/sales/online-catalog', { params: { query } })).then((r) => r.data),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
 export function useSaveSalePayment(saleId: string) {
   const invalidate = useInvalidate();
   return useMutation({

@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Online catalog on Add Sale (2026-10-11)
+
+- When a Dispatch Department exists and the sale type is Online, the POS catalog shows the department products and their free stock (no bundles). Barcode scans search the same catalog.
+- Switching between Office and Online clears the cart, because the two use different stock.
+- Without a Dispatch Department, Online works as before with the branch stock.
+
 ## Dispatch Department UI (2026-10-11)
 
 - **Branches:** the New branch form has a Type (Branch / Dispatch Department), and the list shows the type.

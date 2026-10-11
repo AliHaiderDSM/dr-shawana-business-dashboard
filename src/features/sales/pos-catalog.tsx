@@ -1,4 +1,4 @@
-import { Gift, Package, Search } from 'lucide-react';
+import { Gift, Package, Search, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BarcodeScanInput } from '@/components/shared/barcode-scan-input';
 import { Thumb } from '@/components/shared/thumb';
@@ -7,6 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { bundlesApi, categoriesApi, findProductByBarcode, productsApi } from '@/features/catalog/api';
 import { useStockBalances } from '@/features/inventory/api';
+import { useOnlineCatalog } from '@/features/sales/api';
+import { useHasDispatch } from '@/lib/auth/branches';
+import { api, unwrap } from '@/lib/api/client';
 import { toastError } from '@/lib/api/errors';
 import { formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -89,18 +92,28 @@ export function PosCatalog({
   inCart: (kind: CatalogPick['kind'], refId: string) => string | undefined;
   online?: boolean;
 }) {
-  const [tab, setTab] = useState<'products' | 'bundles'>('products');
+  const [pickedTab, setTab] = useState<'products' | 'bundles'>('products');
+  const hasDispatch = useHasDispatch();
+  const fromDispatch = online && hasDispatch;
+  const tab = fromDispatch ? 'products' : pickedTab;
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const term = useDebounced(search.trim());
   const categories = categoriesApi.useOptions();
-  const products = productsApi.useList({
-    pageSize: 100,
-    status: 'active',
-    sort: 'name',
-    ...(term ? { search: term } : {}),
-    ...(categoryId ? { categoryId } : {}),
-  });
+  const products = productsApi.useList(
+    {
+      pageSize: 100,
+      status: 'active',
+      sort: 'name',
+      ...(term ? { search: term } : {}),
+      ...(categoryId ? { categoryId } : {}),
+    },
+    !fromDispatch,
+  );
+  const dispatchCatalog = useOnlineCatalog(
+    { ...(term ? { search: term } : {}), ...(categoryId ? { categoryId } : {}) },
+    fromDispatch,
+  );
   const bundles = bundlesApi.useList(
     { pageSize: 100, sort: 'name', ...(term ? { search: term } : {}) },
     tab === 'bundles',
@@ -124,6 +137,21 @@ export function PosCatalog({
         await onPiece(code);
         return;
       }
+      if (fromDispatch) {
+        const found = await queryDispatch(code);
+        if (!found) {
+          toast.error('The Dispatch Department does not stock this product.');
+          return;
+        }
+        onPick({
+          kind: 'product',
+          refId: found.id,
+          name: found.name,
+          price: found.salePrice,
+          available: found.available,
+        });
+        return;
+      }
       const product = await findProductByBarcode(code);
       if (product.trackSerials && !online) {
         toast.error(`${product.name} is labelled. Scan the DSM label on the pack.`);
@@ -141,23 +169,42 @@ export function PosCatalog({
     }
   };
 
-  const loading = tab === 'products' ? products.isLoading : bundles.isLoading;
+  const loading = fromDispatch
+    ? dispatchCatalog.isLoading
+    : tab === 'products'
+      ? products.isLoading
+      : bundles.isLoading;
+  const dispatchItems = dispatchCatalog.data?.items ?? [];
+  const queryDispatch = async (code: string) => {
+    const result = await unwrap(
+      api.GET('/branch/sales/online-catalog', { params: { query: { search: code } } }),
+    );
+    const items = result.data.items;
+    return items.length === 1 ? items[0] : null;
+  };
 
   return (
     <div className="flex min-h-0 flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as 'products' | 'bundles')}>
-          <TabsList>
-            <TabsTrigger value="products">
-              <Package />
-              Products
-            </TabsTrigger>
-            <TabsTrigger value="bundles">
-              <Gift />
-              Bundles
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {fromDispatch ? (
+          <span className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-info-soft px-3 text-sm font-medium text-info-soft-foreground">
+            <Truck className="size-4" />
+            {dispatchCatalog.data?.dispatch?.name ?? 'Dispatch Department'} stock
+          </span>
+        ) : (
+          <Tabs value={tab} onValueChange={(v) => setTab(v as 'products' | 'bundles')}>
+            <TabsList>
+              <TabsTrigger value="products">
+                <Package />
+                Products
+              </TabsTrigger>
+              <TabsTrigger value="bundles">
+                <Gift />
+                Bundles
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         <div className="relative min-w-48 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -192,53 +239,79 @@ export function PosCatalog({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
         {loading
           ? Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-xl" />)
-          : tab === 'products'
-            ? (products.data?.data ?? []).map((p) => {
-                const balance = balances.get(p.id);
-                return (
-                  <Card
-                    key={p.id}
-                    name={p.name}
-                    price={p.salePrice}
-                    imageUrl={p.imageUrl}
-                    meta={balance ? `${formatQuantity(sellable(p.id))} ${balance.unit}` : undefined}
-                    low={balance ? Number(sellable(p.id)) <= 0 || balance.isLowStock : false}
-                    inCart={inCart('product', p.id)}
-                    onPick={() =>
-                      p.trackSerials && !online
-                        ? toast.error(`${p.name} is labelled. Scan the DSM label on the pack.`)
-                        : onPick({
-                            kind: 'product',
-                            refId: p.id,
-                            name: p.name,
-                            price: p.salePrice,
-                            available: sellable(p.id),
-                          })
-                    }
-                  />
-                );
-              })
-            : (bundles.data?.data ?? []).map((b) => (
+          : fromDispatch
+            ? dispatchItems.map((p) => (
                 <Card
-                  key={b.id}
-                  name={b.name}
-                  price={b.totalPrice}
-                  imageUrl={b.imageUrl}
-                  meta={`${b.items.length} items`}
-                  inCart={inCart('bundle', b.id)}
+                  key={p.id}
+                  name={p.name}
+                  price={p.salePrice}
+                  imageUrl={p.imageUrl}
+                  meta={`${formatQuantity(p.available)} ${p.unit}`}
+                  low={Number(p.available) <= 0}
+                  inCart={inCart('product', p.id)}
                   onPick={() =>
                     onPick({
-                      kind: 'bundle',
-                      refId: b.id,
-                      name: b.name,
-                      price: b.totalPrice,
-                      parts: b.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+                      kind: 'product',
+                      refId: p.id,
+                      name: p.name,
+                      price: p.salePrice,
+                      available: p.available,
                     })
                   }
                 />
-              ))}
+              ))
+            : tab === 'products'
+              ? (products.data?.data ?? []).map((p) => {
+                  const balance = balances.get(p.id);
+                  return (
+                    <Card
+                      key={p.id}
+                      name={p.name}
+                      price={p.salePrice}
+                      imageUrl={p.imageUrl}
+                      meta={balance ? `${formatQuantity(sellable(p.id))} ${balance.unit}` : undefined}
+                      low={balance ? Number(sellable(p.id)) <= 0 || balance.isLowStock : false}
+                      inCart={inCart('product', p.id)}
+                      onPick={() =>
+                        p.trackSerials && !online
+                          ? toast.error(`${p.name} is labelled. Scan the DSM label on the pack.`)
+                          : onPick({
+                              kind: 'product',
+                              refId: p.id,
+                              name: p.name,
+                              price: p.salePrice,
+                              available: sellable(p.id),
+                            })
+                      }
+                    />
+                  );
+                })
+              : (bundles.data?.data ?? []).map((b) => (
+                  <Card
+                    key={b.id}
+                    name={b.name}
+                    price={b.totalPrice}
+                    imageUrl={b.imageUrl}
+                    meta={`${b.items.length} items`}
+                    inCart={inCart('bundle', b.id)}
+                    onPick={() =>
+                      onPick({
+                        kind: 'bundle',
+                        refId: b.id,
+                        name: b.name,
+                        price: b.totalPrice,
+                        parts: b.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+                      })
+                    }
+                  />
+                ))}
       </div>
-      {!loading && (tab === 'products' ? products.data?.data.length : bundles.data?.data.length) === 0 ? (
+      {!loading &&
+      (fromDispatch
+        ? dispatchItems.length
+        : tab === 'products'
+          ? products.data?.data.length
+          : bundles.data?.data.length) === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Nothing matches.</p>
       ) : null}
     </div>

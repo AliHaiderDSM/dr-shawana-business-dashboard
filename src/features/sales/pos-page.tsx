@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useHasDispatch } from '@/lib/auth/branches';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -240,6 +241,15 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const lines = useFieldArray({ control: form.control, name: 'items' });
   const payments = useFieldArray({ control: form.control, name: 'payments' });
   const values = useWatch({ control: form.control }) as Values;
+  const hasDispatch = useHasDispatch();
+  const { replace: replaceLines } = lines;
+  useEffect(() => {
+    if (sale || !hasDispatch) return;
+    const sub = form.watch((_, { name }) => {
+      if (name === 'saleType') replaceLines([]);
+    });
+    return () => sub.unsubscribe();
+  }, [form, sale, hasDispatch, replaceLines]);
   const patientMode = values.patientMode;
   const saving = create.isPending || update.isPending;
   const shortProducts = new Set(shortages.map((s) => s.productId));
@@ -541,8 +551,12 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                 label="Sale type"
                 description={
                   values.saleType === 'online'
-                    ? 'The stock is booked now and leaves the inventory when the order is dispatched and scanned.'
-                    : undefined
+                    ? hasDispatch
+                      ? 'Pick from the Dispatch Department stock. It ships the order; the sale and payments stay with this branch.'
+                      : 'The stock is booked now and leaves the inventory when the order is dispatched and scanned.'
+                    : hasDispatch
+                      ? 'Switching the sale type clears the cart: online orders use the Dispatch Department stock.'
+                      : undefined
                 }
                 options={[
                   { value: 'office', label: 'Office sale' },
