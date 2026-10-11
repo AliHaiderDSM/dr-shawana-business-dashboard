@@ -7,6 +7,7 @@ import { FormSheet } from '@/components/shared/form-sheet';
 import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
 import { optionalEmail, optionalText, requiredText } from '@/lib/validation';
+import { useHasDispatch } from '@/lib/auth/branches';
 import { useSaveBranch, type Branch } from './api';
 
 const schema = z.object({
@@ -33,6 +34,7 @@ interface BranchFormSheetProps {
 
 export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetProps) {
   const save = useSaveBranch();
+  const hasDispatch = useHasDispatch();
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     values: {
@@ -71,7 +73,7 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
         submitting={save.isPending}
         submitLabel={branch ? 'Save changes' : 'Create branch'}
       >
-        {branch ? null : (
+        {branch || hasDispatch ? null : (
           <SelectField
             control={form.control}
             name="kind"

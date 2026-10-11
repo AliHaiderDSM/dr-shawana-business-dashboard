@@ -29,6 +29,7 @@ export const BRANCH_ROLES: BranchRole[] = [
   'pharmacy',
   'store_keeper',
   'delivery_print',
+  'dispatcher',
 ];
 
 export function creatableRoles(actor: Role): BranchRole[] {
