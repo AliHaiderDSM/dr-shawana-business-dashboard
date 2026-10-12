@@ -45,6 +45,7 @@ const keys = {
   bhrt: (patientId: string) => ['clinical', 'bhrt', patientId] as const,
   records: (patientId: string) => ['clinical', 'records', patientId] as const,
   timeline: (patientId: string) => ['clinical', 'timeline', patientId] as const,
+  summaries: (patientId: string) => ['clinical', 'report-summaries', patientId] as const,
 };
 
 function useInvalidatePatient(patientId: string) {
@@ -224,11 +225,39 @@ export function usePatientTimeline(patientId: string) {
 export type ReadBloodReport = Schemas['ReadBloodReport'];
 
 export function useReadBloodReport(patientId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => {
       const form = new FormData();
       form.append('file', file);
       return uploadForm<ReadBloodReport>(`/branch/patients/${patientId}/blood-work/read-report`, form);
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.summaries(patientId) }),
+  });
+}
+
+export type LabReportSummary = Schemas['LabReportSummary'];
+
+export function useReportSummaries(patientId: string) {
+  return useQuery({
+    queryKey: keys.summaries(patientId),
+    queryFn: () =>
+      unwrap(api.GET('/branch/patients/{id}/report-summaries', { params: { path: { id: patientId } } })).then(
+        (r) => r.data,
+      ),
+    enabled: Boolean(patientId),
+  });
+}
+
+export function useRemoveReportSummary(patientId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (summaryId: string) =>
+      unwrap(
+        api.DELETE('/branch/patients/{id}/report-summaries/{summaryId}', {
+          params: { path: { id: patientId, summaryId } },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.summaries(patientId) }),
   });
 }

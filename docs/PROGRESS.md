@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Lab report summaries (2026-10-12)
+
+- Blood work panel: under the table, "Lab report summaries" lists every report read with AI (newest open): details, abnormal findings table with High/Low, normal findings, clinical summary, review points, items to check, and the disclaimer. Values found are saved; tests not on the report stay "—". A report with none of the 9 tests still gets its summary.
+
 ## Warehouse Keeper (2026-10-12)
 
 - New role Warehouse Keeper (created by the Super Admin at Super Admin Stock). Menu limited to Stock Requests, Stock Out, Incoming Stock, Stock, Batches & Expiry and Labels; home shows requests to send and transfers not received.

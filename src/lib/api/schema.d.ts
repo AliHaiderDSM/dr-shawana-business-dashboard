@@ -15855,6 +15855,177 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/patients/{id}/report-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** AI summaries of the lab reports read for this patient, newest first */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Summaries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["LabReportSummary"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/patients/{id}/report-summaries/{summaryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove one AI report summary */
+        delete: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    summaryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/patients/{id}/blood-work/read-report": {
         parameters: {
             query?: never;
@@ -15864,7 +16035,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Read blood work values from an uploaded report (multipart "file": PDF or image) with AI. Nothing is saved; the caller reviews and saves. */
+        /** Read blood work values from an uploaded report (multipart "file": PDF or image) with AI, and write a clinical summary of the whole report. The values are not saved (the caller saves them); the summary is saved on the patient. */
         post: {
             parameters: {
                 query?: {
@@ -27374,6 +27545,37 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        LabReportSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            testDate: string | null;
+            fileName: string | null;
+            valuesFound: number;
+            model: string | null;
+            createdAt: string;
+            createdBy: string | null;
+            summary: {
+                patient: {
+                    label: string;
+                    value: string;
+                }[];
+                abnormal: {
+                    test: string;
+                    value: string;
+                    unit: string;
+                    range: string;
+                    flag: string;
+                }[];
+                normal: {
+                    category: string;
+                    tests: string;
+                }[];
+                overview: string;
+                reviewPoints: string[];
+                unreadable: string[];
+            };
+        };
         ReadBloodReport: {
             /** Format: date */
             testDate: string | null;
@@ -27383,6 +27585,7 @@ export interface components {
                 value: string;
                 unit: string;
             }[];
+            summary: components["schemas"]["LabReportSummary"] & (Record<string, never> | null);
         };
         CreatePrescriptionCatalogItem: {
             /** @enum {string} */

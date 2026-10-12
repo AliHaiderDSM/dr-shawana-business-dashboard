@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
+import { ReportSummaries } from './report-summaries';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import {
   BLOOD_TEST_LABELS,
@@ -278,8 +279,10 @@ export function BloodWorkPanel({
     try {
       const found = await read.mutateAsync(file);
       if (found.results.length === 0) {
-        toast.error(
-          'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found in this report.',
+        toast.message(
+          found.summary
+            ? 'None of the 9 blood work tests is on this report, so no value was added. The report summary is below.'
+            : 'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found in this report.',
         );
         return;
       }
@@ -297,7 +300,7 @@ export function BloodWorkPanel({
       });
       setChartTest(ALL);
       toast.success(
-        `${found.results.length} ${found.results.length === 1 ? 'value' : 'values'} saved for ${formatDate(found.testDate)} from the report. Check them in the table; ✏️ corrects any mistake.`,
+        `${found.results.length} of 9 values saved for ${formatDate(found.testDate)}; tests not on the report show —.${found.summary ? ' The report summary is below.' : ''} ✏️ corrects any mistake.`,
       );
     } catch (error) {
       toastError(error);
@@ -539,6 +542,7 @@ export function BloodWorkPanel({
           </div>
         </>
       )}
+      <ReportSummaries patientId={patientId} canEdit={canEdit} />
       {canEdit && sheet ? (
         <ResultsSheet
           key={sheet.key}
