@@ -147,7 +147,7 @@ function BranchHome() {
         description={`${titleCase(me?.role ?? '')}${me?.branch ? ` · ${me.branch.name}` : ''}`}
       />
       <ExpiryAlertsPanel className="mb-6" />
-      {me?.role === 'warehouse_keeper' ? (
+      {me?.role === 'warehouse_keeper' || me?.role === 'lab_officer' ? (
         <KeeperOverview />
       ) : dispatchView ? (
         <DispatchOverview />

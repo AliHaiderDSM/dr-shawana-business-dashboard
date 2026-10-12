@@ -66,7 +66,7 @@ export interface paths {
                     pageSize?: number;
                     search?: string;
                     sort?: "createdAt" | "-createdAt" | "firstName" | "-firstName" | "lastName" | "-lastName" | "username" | "-username" | "role" | "-role";
-                    role?: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
+                    role?: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper" | "lab_officer";
                     status?: "active" | "inactive";
                     branchId?: string;
                 };
@@ -20996,6 +20996,183 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/stock-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock In entries of the Super Admin stock by GRN number. A new entry waits until the Warehouse Keeper counts and confirms it; only then it is stock. */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "pending" | "confirmed";
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Receipts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StoreReceipt"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/stock-receipts/{grnNo}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Warehouse Keeper confirms what arrived. Short lines keep the received quantity and a note; missing labels are written off. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    grnNo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmStoreReceipt"];
+                };
+            };
+            responses: {
+                /** @description Confirmed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StoreReceipt"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/badges": {
         parameters: {
             query?: never;
@@ -24682,7 +24859,7 @@ export interface components {
             gender?: "male" | "female" | null;
             designation?: string | null;
             /** @enum {string} */
-            role: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
+            role: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper" | "lab_officer";
             password: string;
         };
         CreateBranchAdmin: {
@@ -24714,7 +24891,7 @@ export interface components {
             gender?: "male" | "female" | null;
             designation?: string | null;
             /** @enum {string} */
-            role?: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
+            role?: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper" | "lab_officer";
         };
         ResetPassword: {
             password: string;
@@ -24725,7 +24902,7 @@ export interface components {
             /** Format: uuid */
             branchId: string | null;
             /** @enum {string} */
-            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
+            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper" | "lab_officer";
             firstName: string;
             lastName: string;
             email: string;
@@ -24775,7 +24952,7 @@ export interface components {
         Me: {
             profile: components["schemas"]["Staff"];
             /** @enum {string} */
-            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
+            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper" | "lab_officer";
             branch: {
                 /** Format: uuid */
                 id: string;
@@ -25468,6 +25645,17 @@ export interface components {
              * @description Set when the stock came from the Super Admin stock
              */
             transferOutId: string | null;
+            grnNo?: string | null;
+            /**
+             * @description Super Admin stock: pending until the Warehouse Keeper confirms what arrived
+             * @enum {string|null}
+             */
+            receiptStatus?: "pending" | "confirmed" | null;
+            receivedQty?: string | null;
+            receiptNote?: string | null;
+            /** Format: uuid */
+            confirmedBy?: string | null;
+            confirmedAt?: string | null;
             /** Format: date */
             manufacturingDate: string | null;
             /** Format: date */
@@ -28730,16 +28918,72 @@ export interface components {
                 labels: number;
             }[];
         };
+        ConfirmStoreReceipt: {
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+            /** @description Lines that did not arrive in full. Lines left out arrived in full. */
+            lines?: {
+                /** Format: uuid */
+                id: string;
+                /** @example 10.000 */
+                receivedQty: string;
+                note?: string | null;
+                /** @description Scanned piece labels. Required for products tracked by label. */
+                missingSerials?: string[];
+            }[];
+        };
+        StoreReceipt: {
+            grnNo: string;
+            /** Format: date */
+            date: string;
+            createdAt: string;
+            /** @enum {string} */
+            status: "pending" | "confirmed";
+            supplier: string | null;
+            note: string | null;
+            enteredBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+            } | null;
+            confirmedBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+            } | null;
+            confirmedAt: string | null;
+            lines: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                productId: string;
+                productName: string;
+                unit: string;
+                qty: string;
+                receivedQty: string | null;
+                batch: string | null;
+                expiryDate: string | null;
+                labels: number;
+                receiptNote: string | null;
+            }[];
+        };
         SidebarBadges: {
             stockRequests: number;
             incomingStock: number;
             writeOffs: number;
             discountRequests: number;
             returns: number;
+            stockReceipts: number;
         };
         Trace: {
             /** @enum {string} */
-            kind: "sale" | "return" | "stock_request" | "transfer" | "discount_request" | "write_off";
+            kind: "sale" | "return" | "stock_request" | "transfer" | "discount_request" | "write_off" | "store_receipt";
             number: string;
             /** Format: uuid */
             id: string;
@@ -28768,7 +29012,7 @@ export interface components {
             }[];
             links: {
                 /** @enum {string} */
-                kind: "sale" | "return" | "stock_request" | "transfer" | "discount_request" | "write_off";
+                kind: "sale" | "return" | "stock_request" | "transfer" | "discount_request" | "write_off" | "store_receipt";
                 number: string;
                 status: string | null;
             }[];

@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Lab Officer and store receipts (2026-10-12)
+
+- New role Lab Officer (Super Admin stock): menu Stock In, Store Receipts, Labels; no sales. Home shows entries waiting for the keeper.
+- Store Receipts page: GRNs waiting / confirmed with entered vs received; the Warehouse Keeper counts and confirms (received qty per line, reason, missing labels by scan). Stock In list shows the GRN and Waiting / Confirmed / Received N.
+- Select fields no longer push the option hint into the closed field (the Branch field overflow).
+
 ## Lab report summaries (2026-10-12)
 
 - Blood work panel: under the table, "Lab report summaries" lists every report read with AI (newest open): details, abnormal findings table with High/Low, normal findings, clinical summary, review points, items to check, and the disclaimer. Values found are saved; tests not on the report stay "—". A report with none of the 9 tests still gets its summary.

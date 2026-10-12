@@ -36,7 +36,7 @@ export function useHasDispatch() {
 }
 
 export function useCanReceiveStock() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, me } = useAuth();
   const inWarehouse = useInWarehouse();
-  return isSuperAdmin && inWarehouse;
+  return inWarehouse && (isSuperAdmin || me?.role === 'lab_officer' || me?.role === 'warehouse_keeper');
 }

@@ -144,7 +144,7 @@ export function StaffFormSheet({
                     b.kind === 'dispatch'
                       ? 'Dispatch Department'
                       : b.kind === 'warehouse'
-                        ? 'Super Admin stock (Warehouse Keeper)'
+                        ? 'Warehouse Keeper, Lab Officer'
                         : undefined,
                 }))}
               />
@@ -159,7 +159,7 @@ export function StaffFormSheet({
                 branchKind === 'dispatch'
                   ? 'The Dispatch Department has Branch Admin, Store Keeper, Delivery Print and Dispatcher only.'
                   : branchKind === 'warehouse'
-                    ? 'The Super Admin stock has Warehouse Keepers only: they send the approved stock requests.'
+                    ? 'Super Admin stock roles: the Lab Officer enters Stock In; the Warehouse Keeper confirms what arrived and sends the approved requests.'
                     : undefined
               }
             />

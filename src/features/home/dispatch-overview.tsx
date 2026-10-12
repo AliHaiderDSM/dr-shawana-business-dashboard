@@ -5,6 +5,7 @@ import { useSidebarBadges } from '@/components/layout/sidebar-badges';
 import { StatCard } from '@/components/shared/stat-card';
 import { useIncomingStock, useWriteOffs } from '@/features/inventory/requests-api';
 import { useDeliveryCalendar } from '@/features/sales/api';
+import { useAuth } from '@/lib/auth/auth-context';
 import { formatCount, formatDate, isoDate } from '@/lib/format';
 
 function Tile({ to, children }: { to: string; children: ReactNode }) {
@@ -83,25 +84,40 @@ export function DispatchOverview() {
 
 export function KeeperOverview() {
   const badges = useSidebarBadges(true);
+  const { me } = useAuth();
+  const lab = me?.role === 'lab_officer';
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Tile to="/stock-requests">
+      <Tile to="/store-receipts">
         <StatCard
-          label="Approved requests to send"
-          value={formatCount(badges.data?.stockRequests ?? 0)}
-          hint="Open a request and use Send stock"
-          tone={badges.data?.stockRequests ? 'warning' : undefined}
-          icon={ClipboardList}
+          label={lab ? 'Stock In waiting for the Warehouse Keeper' : 'Stock In to count and confirm'}
+          value={formatCount(badges.data?.stockReceipts ?? 0)}
+          hint={lab ? 'It becomes stock once confirmed' : 'Open Store Receipts and confirm what arrived'}
+          tone={badges.data?.stockReceipts ? 'warning' : undefined}
+          icon={PackageCheck}
         />
       </Tile>
-      <Tile to="/incoming-stock">
-        <StatCard
-          label="Transfers not received yet"
-          value={formatCount(badges.data?.incomingStock ?? 0)}
-          hint="Sent stock the branches still have to check"
-          icon={Truck}
-        />
-      </Tile>
+      {lab ? null : (
+        <Tile to="/stock-requests">
+          <StatCard
+            label="Approved requests to send"
+            value={formatCount(badges.data?.stockRequests ?? 0)}
+            hint="Open a request and use Send stock"
+            tone={badges.data?.stockRequests ? 'warning' : undefined}
+            icon={ClipboardList}
+          />
+        </Tile>
+      )}
+      {lab ? null : (
+        <Tile to="/incoming-stock">
+          <StatCard
+            label="Transfers not received yet"
+            value={formatCount(badges.data?.incomingStock ?? 0)}
+            hint="Sent stock the branches still have to check"
+            icon={Truck}
+          />
+        </Tile>
+      )}
     </div>
   );
 }

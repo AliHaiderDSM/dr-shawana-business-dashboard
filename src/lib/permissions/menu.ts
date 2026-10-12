@@ -55,7 +55,7 @@ export interface MenuItem {
   dispatchOnly?: boolean;
   notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
-  badge?: 'stockRequests' | 'incomingStock' | 'writeOffs' | 'discountRequests' | 'returns';
+  badge?: 'stockRequests' | 'incomingStock' | 'writeOffs' | 'discountRequests' | 'returns' | 'stockReceipts';
 }
 
 export interface MenuGroup {
@@ -65,8 +65,11 @@ export interface MenuGroup {
   notInDispatch?: boolean;
 }
 
+const LAB_OFFICER_KEYS = new Set(['dashboard', 'stock-in', 'store-receipts', 'labels']);
+
 const WAREHOUSE_KEEPER_KEYS = new Set([
   'dashboard',
+  'store-receipts',
   'stock-requests',
   'stock-out',
   'incoming-stock',
@@ -304,6 +307,16 @@ export const MENU: MenuGroup[] = [
         scope: 'branch',
       },
       {
+        key: 'store-receipts',
+        badge: 'stockReceipts',
+        label: 'Store Receipts',
+        path: '/store-receipts',
+        icon: PackageCheck,
+        anyOf: ['stock.view'],
+        scope: 'branch',
+        warehouseOnly: true,
+      },
+      {
         key: 'stock-out',
         label: 'Stock Out',
         path: '/stock-out',
@@ -480,12 +493,14 @@ export function visibleMenu(
   dispatch: { inDispatch: boolean; hasDispatch: boolean } = { inDispatch: false, hasDispatch: false },
 ): MenuGroup[] {
   const keeperOnly = role === 'warehouse_keeper';
+  const labOnly = role === 'lab_officer';
   return MENU.map((group) => ({
     ...group,
     items: group.items
       .filter(
         (item) =>
           (!keeperOnly || WAREHOUSE_KEEPER_KEYS.has(item.key)) &&
+          (!labOnly || LAB_OFFICER_KEYS.has(item.key)) &&
           !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.superAdminOnly || isSuperAdmin) &&

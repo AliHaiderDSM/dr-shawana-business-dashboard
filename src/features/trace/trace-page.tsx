@@ -25,6 +25,7 @@ const KIND_LABELS: Record<Kind, string> = {
   transfer: 'Stock transfer',
   discount_request: 'Discount request',
   write_off: 'Write-off',
+  store_receipt: 'Store receipt (GRN)',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -42,6 +43,7 @@ const ACTION_LABELS: Record<string, string> = {
   request_write_off: 'Reported for write-off',
   approve_write_off: 'Write-off approved',
   reject_write_off: 'Write-off rejected',
+  confirm_receipt: 'Confirmed at the store',
 };
 
 const actionLabel = (action: string) => {
@@ -67,6 +69,8 @@ function openPath(trace: Trace) {
       return '/discount-requests';
     case 'write_off':
       return '/write-offs';
+    case 'store_receipt':
+      return '/store-receipts';
   }
 }
 

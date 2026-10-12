@@ -192,7 +192,7 @@ export function SelectField<T extends FieldValues>({
             disabled={disabled}
           >
             <FormControl>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full min-w-0 overflow-hidden">
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
             </FormControl>
@@ -200,8 +200,12 @@ export function SelectField<T extends FieldValues>({
               {allowEmpty ? <SelectItem value={NONE}>{emptyLabel}</SelectItem> : null}
               {options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  <span>{option.label}</span>
-                  {option.hint ? <span className="text-muted-foreground">{option.hint}</span> : null}
+                  <span className="truncate">{option.label}</span>
+                  {option.hint ? (
+                    <span className="text-muted-foreground in-data-[slot=select-value]:hidden">
+                      {option.hint}
+                    </span>
+                  ) : null}
                 </SelectItem>
               ))}
             </SelectContent>

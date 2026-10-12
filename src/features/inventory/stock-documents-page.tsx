@@ -1,4 +1,4 @@
-import { useCanReceiveStock } from '@/lib/auth/branches';
+import { useCanReceiveStock, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ClipboardList, Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -88,6 +88,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
   const [editing, setEditing] = useState<StockDocument | null>(null);
   const [removing, setRemoving] = useState<StockDocument | null>(null);
   const canReceive = useCanReceiveStock();
+  const inWarehouseView = useInWarehouse();
   const rows = query.data?.data ?? [];
 
   const printSlip = (row: StockDocument) => {
@@ -98,7 +99,40 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
   const transferOf = (r: StockDocument) =>
     'transferNo' in r && r.transferNo ? { no: r.transferNo, received: Boolean(r.receivedAt) } : null;
 
+  const receiptOf = (r: StockDocument) =>
+    'grnNo' in r && r.grnNo
+      ? { no: r.grnNo, status: r.receiptStatus ?? null, received: r.receivedQty ?? null }
+      : null;
+
   const columns: ColumnDef<StockDocument, unknown>[] = [
+    ...(kind === 'in' && inWarehouseView
+      ? ([
+          {
+            id: 'grnNo',
+            header: 'GRN',
+            accessorFn: (r) => receiptOf(r)?.no ?? '',
+            cell: ({ row }) => {
+              const g = receiptOf(row.original);
+              if (!g) return <span className="text-muted-foreground">—</span>;
+              return (
+                <div className="space-y-1 whitespace-nowrap">
+                  <TraceNumber
+                    number={g.no}
+                    className="block font-mono text-xs font-medium text-primary hover:underline"
+                  />
+                  <StatusBadge tone={g.status === 'confirmed' ? 'success' : 'warning'}>
+                    {g.status === 'confirmed'
+                      ? g.received !== null && Number(g.received) < Number(row.original.qty)
+                        ? `Received ${formatQuantity(g.received)}`
+                        : 'Confirmed'
+                      : 'Waiting for keeper'}
+                  </StatusBadge>
+                </div>
+              );
+            },
+          },
+        ] as ColumnDef<StockDocument, unknown>[])
+      : []),
     ...(kind === 'out'
       ? ([
           {
