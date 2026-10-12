@@ -9,13 +9,13 @@ import { generatePassword, SecretReveal } from '@/components/shared/secret-revea
 import { Form, FormLabel } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { optionalText, requiredText, usernameString } from '@/lib/validation';
+import { emailString, optionalText, requiredText, usernameString } from '@/lib/validation';
 import { BRANCH_ROLES, creatableRoles, ROLE_LABELS, useSaveStaff, type Staff } from './api';
 
 const schema = z.object({
   firstName: requiredText(100, 'First name'),
   lastName: requiredText(100, 'Last name'),
-  email: z.email('Enter a valid email').trim().toLowerCase(),
+  email: emailString,
   username: usernameString,
   phone: optionalText(30),
   gender: z.enum(['male', 'female']).nullable(),

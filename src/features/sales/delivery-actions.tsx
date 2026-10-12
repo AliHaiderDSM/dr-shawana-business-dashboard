@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, Printer, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Printer, ShieldAlert, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useHref } from 'react-router';
 import { toast } from 'sonner';
@@ -83,6 +83,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
     lines.set(item.productId, line);
   }
   const rows = [...lines.values()];
+  const unverified = (sale.data?.payments ?? []).filter((p) => !p.approvedAt).length;
   const scannedFor = (productId: string) => pieces.filter((p) => p.productId === productId);
   const needsScan = rows.some((r) => tracked.has(r.productId));
   const complete = rows.every((r) => !tracked.has(r.productId) || scannedFor(r.productId).length === r.qty);
@@ -124,6 +125,13 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {unverified ? (
+            <p className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+              {unverified === 1 ? '1 payment is' : `${unverified} payments are`} not verified yet. The branch
+              admin approves the payment first, then the order can be dispatched.
+            </p>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-end">
             <div className="space-y-2">
               <Label htmlFor="dispatch-date">Dispatch date</Label>
@@ -250,7 +258,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
             Cancel
           </Button>
           <Button
-            disabled={!complete || !date || dispatch.isPending || sale.isLoading}
+            disabled={!complete || !date || dispatch.isPending || sale.isLoading || unverified > 0}
             onClick={() =>
               dispatch
                 .mutateAsync({ id: order.id, date, serials: pieces.map((p) => p.serial) })

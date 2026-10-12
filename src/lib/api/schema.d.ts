@@ -22156,7 +22156,10 @@ export interface components {
         CreateStaff: {
             firstName: string;
             lastName: string;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email: string;
             username: string;
             phone?: string | null;
@@ -22170,7 +22173,10 @@ export interface components {
         CreateBranchAdmin: {
             firstName: string;
             lastName: string;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email: string;
             username: string;
             phone?: string | null;
@@ -22182,7 +22188,10 @@ export interface components {
         UpdateStaff: {
             firstName?: string;
             lastName?: string;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email?: string;
             username?: string;
             phone?: string | null;
@@ -22276,7 +22285,10 @@ export interface components {
             city: string;
             address?: string | null;
             phone?: string | null;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email?: string | null;
             logoPath?: string | null;
             /**
@@ -22292,7 +22304,10 @@ export interface components {
             city?: string;
             address?: string | null;
             phone?: string | null;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email?: string | null;
             logoPath?: string | null;
         };
@@ -22321,7 +22336,10 @@ export interface components {
         UpdateCompanyInfo: {
             name: string;
             phone?: string | null;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email?: string | null;
             address?: string | null;
             logoPath?: string | null;
@@ -23580,7 +23598,10 @@ export interface components {
         CreateDoctor: {
             displayName?: string;
             phone?: string | null;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email?: string | null;
             details?: string | null;
             /** @example 1250.50 */
@@ -23601,7 +23622,10 @@ export interface components {
             account?: {
                 firstName: string;
                 lastName: string;
-                /** Format: email */
+                /**
+                 * Format: email
+                 * @example name@example.com
+                 */
                 email: string;
                 username: string;
                 phone?: string | null;
@@ -23614,7 +23638,10 @@ export interface components {
         UpdateDoctor: {
             displayName?: string;
             phone?: string | null;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example name@example.com
+             */
             email?: string | null;
             details?: string | null;
             /** @example 1250.50 */

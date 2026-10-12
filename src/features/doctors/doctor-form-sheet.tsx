@@ -17,7 +17,7 @@ import { generatePassword, SecretReveal } from '@/components/shared/secret-revea
 import { Form, FormLabel } from '@/components/ui/form';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { applyServerErrors } from '@/lib/api/errors';
-import { moneyString, optionalEmail, optionalText, usernameString } from '@/lib/validation';
+import { isEmail, moneyString, optionalEmail, optionalText, usernameString } from '@/lib/validation';
 import {
   doctorsApi,
   doctorSignatureUrl,
@@ -63,8 +63,12 @@ const schema = z
     if (!v.firstName)
       ctx.addIssue({ code: 'custom', path: ['firstName'], message: 'First name is required' });
     if (!v.lastName) ctx.addIssue({ code: 'custom', path: ['lastName'], message: 'Last name is required' });
-    if (!z.email().safeParse(v.accountEmail).success)
-      ctx.addIssue({ code: 'custom', path: ['accountEmail'], message: 'Enter a valid email' });
+    if (!isEmail(v.accountEmail ?? ''))
+      ctx.addIssue({
+        code: 'custom',
+        path: ['accountEmail'],
+        message: 'Enter a valid email address, e.g. name@example.com',
+      });
     const username = usernameString.safeParse(v.username);
     if (!username.success)
       ctx.addIssue({

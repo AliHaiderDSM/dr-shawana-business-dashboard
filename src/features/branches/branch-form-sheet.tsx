@@ -16,7 +16,12 @@ const schema = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z0-9]{2,10}$/, '2–10 capital letters or digits, e.g. LHR'),
+    .min(2, 'Use at least 2 characters')
+    .max(12, 'Use at most 12 characters')
+    .regex(
+      /^[A-Z0-9]+(-[A-Z0-9]+)*$/,
+      'Use letters and digits, with a dash between parts, e.g. LHR or LHR-00001',
+    ),
   city: requiredText(100, 'City').refine((v) => v.length >= 2, 'Use at least 2 characters'),
   address: optionalText(500),
   phone: optionalText(30),
@@ -97,8 +102,8 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
             control={form.control}
             name="code"
             label="Code"
-            placeholder="LHR"
-            description="Used in invoice numbers."
+            placeholder="LHR-00001"
+            description="Used in invoice numbers. Small letters become capitals."
             required
           />
           <TextField control={form.control} name="city" label="City" placeholder="Lahore" required />

@@ -16,13 +16,13 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormLabel } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
-import { optionalText, passwordString, requiredText, usernameString } from '@/lib/validation';
+import { emailString, optionalText, passwordString, requiredText, usernameString } from '@/lib/validation';
 import { useCreateBranchAdmin, type Branch } from './api';
 
 const schema = z.object({
   firstName: requiredText(100, 'First name'),
   lastName: requiredText(100, 'Last name'),
-  email: z.email('Enter a valid email').trim().toLowerCase(),
+  email: emailString,
   username: usernameString,
   phone: optionalText(30),
   password: passwordString,

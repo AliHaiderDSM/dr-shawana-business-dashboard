@@ -52,7 +52,9 @@ export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[
 
   const scannedFor = (orderId: string, productId: string) =>
     pieces.filter((p) => p.orderId === orderId && p.productId === productId);
+  const verified = (order: DeliveryOrder) => order.paymentStatus !== 'awaiting_approval';
   const complete = (order: DeliveryOrder) =>
+    verified(order) &&
     linesOf(order).every((l) => !l.tracked || scannedFor(order.id, l.productId).length === l.qty);
   const ready = orders.filter((o) => complete(o) && !skipped.has(o.id));
 
@@ -67,10 +69,13 @@ export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[
         toast.error(`${piece.serial} is ${piece.status.replace(/_/g, ' ')}`);
         return;
       }
-      const target = orders.find((o) =>
-        linesOf(o).some(
-          (l) => l.tracked && l.productId === piece.productId && scannedFor(o.id, l.productId).length < l.qty,
-        ),
+      const target = orders.find(
+        (o) =>
+          verified(o) &&
+          linesOf(o).some(
+            (l) =>
+              l.tracked && l.productId === piece.productId && scannedFor(o.id, l.productId).length < l.qty,
+          ),
       );
       if (!target) {
         toast.error(`${piece.serial} (${piece.productName}) is not needed by any waiting order`);
@@ -218,7 +223,9 @@ export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[
                         </ul>
                       </td>
                       <td className="px-3 py-2.5">
-                        {isComplete ? (
+                        {!verified(order) ? (
+                          <span className="text-warning-soft-foreground">Payment not verified</span>
+                        ) : isComplete ? (
                           <span className="inline-flex items-center gap-1 text-success">
                             <CheckCircle2 className="size-4" />
                             Ready

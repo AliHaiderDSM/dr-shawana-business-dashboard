@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Info } from 'lucide-react';
+import { Info, Landmark } from 'lucide-react';
+import { useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { ChoiceField } from '@/components/shared/choice-field';
@@ -50,6 +51,14 @@ export function toPaymentBody(values: z.output<typeof paymentSchema>) {
   };
 }
 
+export interface ReceivingAccount {
+  id: string;
+  accountName: string;
+  accountCode?: string | null;
+  type: string;
+  bankName?: string | null;
+}
+
 export function useReceivingAccounts(enabled = true) {
   return useQuery({
     queryKey: ['account-sheets', 'options'],
@@ -77,12 +86,25 @@ export function PaymentFields({
   maxProofs = 1,
 }: {
   prefix?: string;
-  accounts: { id: string; accountName: string; type: string }[];
+  accounts: ReceivingAccount[];
   maxProofs?: number;
 }) {
   const form = useFormContext();
   const name = (field: keyof PaymentValues) => `${prefix}${field}`;
   const method = useWatch({ control: form.control, name: name('method') }) as PaymentValues['method'];
+  const accountSheetId = useWatch({ control: form.control, name: name('accountSheetId') }) as string;
+  const wanted = method === 'online' ? 'bank' : 'cash';
+  const matching = accounts.filter((a) => a.type === wanted);
+  const choices = matching.length ? matching : accounts;
+  const selected = accounts.find((a) => a.id === accountSheetId);
+  const accountField = name('accountSheetId');
+  const onlyChoice = choices.length === 1 ? choices[0]?.id : undefined;
+  const selectedFits = Boolean(selected && choices.some((a) => a.id === selected.id));
+
+  useEffect(() => {
+    if (selectedFits) return;
+    form.setValue(accountField, onlyChoice ?? '', { shouldDirty: true });
+  }, [form, accountField, onlyChoice, selectedFits]);
   const proofs = (useWatch({ control: form.control, name: name('proofs') }) ?? []) as File[];
 
   return (
@@ -100,13 +122,41 @@ export function PaymentFields({
         <SelectField
           control={form.control}
           name={name('accountSheetId')}
-          label="Received in"
+          label={method === 'online' ? 'Received in bank' : 'Received in'}
           required
-          placeholder="Choose account"
-          options={accounts.map((a) => ({ value: a.id, label: a.accountName, hint: a.type }))}
+          placeholder={method === 'online' ? 'Choose bank' : 'Choose account'}
+          options={choices.map((a) => ({
+            value: a.id,
+            label: a.type === 'bank' && a.bankName ? `${a.bankName} · ${a.accountName}` : a.accountName,
+            hint: a.type === 'bank' ? (a.accountCode ?? 'bank') : 'cash',
+          }))}
         />
         <TextField control={form.control} name={name('date')} label="Date" type="date" required />
       </FieldRow>
+      {method === 'online' && selected?.type === 'bank' ? (
+        <div className="flex items-start gap-3 rounded-lg border bg-muted/40 px-3 py-2.5 text-sm">
+          <Landmark className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <dl className="grid flex-1 gap-x-6 gap-y-1 sm:grid-cols-3">
+            <div>
+              <dt className="text-xs text-muted-foreground">Bank</dt>
+              <dd className="font-medium">{selected.bankName ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Account title</dt>
+              <dd className="font-medium">{selected.accountName}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Account no</dt>
+              <dd className="font-mono">{selected.accountCode ?? '—'}</dd>
+            </div>
+          </dl>
+        </div>
+      ) : null}
+      {method === 'online' && matching.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          No bank account yet. Add one under Bank &amp; Cash Accounts to pick it here.
+        </p>
+      ) : null}
       {method === 'online' ? (
         <>
           <FieldRow>

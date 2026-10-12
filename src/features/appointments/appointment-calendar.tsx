@@ -1,4 +1,15 @@
-import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
@@ -116,6 +127,96 @@ function TimeGrid({
   );
 }
 
+const MONTH_PREVIEW = 3;
+
+function MonthGrid({
+  start,
+  end,
+  month,
+  entries,
+  onOpenDay,
+}: {
+  start: Date;
+  end: Date;
+  month: Date;
+  entries: CalendarEntry[];
+  onOpenDay: (day: Date) => void;
+}) {
+  const navigate = useNavigate();
+  const days: Date[] = [];
+  for (let day = start; day <= end; day = addDays(day, 1)) days.push(day);
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[44rem]">
+        <div className="grid grid-cols-7 border-b bg-card">
+          {days.slice(0, 7).map((day) => (
+            <div
+              key={day.toISOString()}
+              className="border-l px-3 py-2 text-xs font-medium text-muted-foreground first:border-l-0"
+            >
+              {format(day, 'EEE')}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {days.map((day) => {
+            const key = isoDate(day);
+            const dayEntries = entries
+              .filter((e) => e.date === key)
+              .sort((a, b) => minutes(a.timeFrom) - minutes(b.timeFrom));
+            const outside = !isSameMonth(day, month);
+            return (
+              <div
+                key={key}
+                className={cn(
+                  'flex min-h-28 flex-col gap-1 border-b border-l p-1.5 [&:nth-child(7n+1)]:border-l-0',
+                  outside && 'bg-muted/40',
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => onOpenDay(day)}
+                  className={cn(
+                    'flex size-7 items-center justify-center self-start rounded-full text-xs font-medium hover:bg-muted',
+                    outside && 'text-muted-foreground',
+                    isSameDay(day, new Date()) && 'bg-primary text-primary-foreground hover:bg-primary/90',
+                  )}
+                  aria-label={`Open ${format(day, 'dd MMM yyyy')}`}
+                >
+                  {format(day, 'd')}
+                </button>
+                {dayEntries.slice(0, MONTH_PREVIEW).map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => void navigate(`/appointments/${entry.id}`)}
+                    className={cn(
+                      'truncate rounded border px-1.5 py-0.5 text-left text-xs transition-shadow hover:shadow-sm',
+                      STATUS_STYLES[entry.status],
+                    )}
+                  >
+                    <span className="font-medium tabular-nums">{timeLabel(entry.timeFrom)}</span>{' '}
+                    {entry.patient?.name}
+                  </button>
+                ))}
+                {dayEntries.length > MONTH_PREVIEW ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenDay(day)}
+                    className="self-start px-1.5 text-xs font-medium text-primary hover:underline"
+                  >
+                    +{dayEntries.length - MONTH_PREVIEW} more
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface AppointmentCalendarProps {
   list: ListState;
   doctors: { id: string; name: string }[];
@@ -123,10 +224,20 @@ interface AppointmentCalendarProps {
 }
 
 export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCalendarProps) {
-  const view = list.filters.span === 'week' ? 'week' : 'day';
+  const view = list.filters.span === 'week' ? 'week' : list.filters.span === 'month' ? 'month' : 'day';
   const anchor = list.filters.day ? parseISO(list.filters.day) : new Date();
-  const start = view === 'week' ? startOfWeek(anchor, { weekStartsOn: 1 }) : anchor;
-  const end = view === 'week' ? addDays(start, 6) : anchor;
+  const start =
+    view === 'month'
+      ? startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 })
+      : view === 'week'
+        ? startOfWeek(anchor, { weekStartsOn: 1 })
+        : anchor;
+  const end =
+    view === 'month'
+      ? endOfWeek(endOfMonth(anchor), { weekStartsOn: 1 })
+      : view === 'week'
+        ? addDays(start, 6)
+        : anchor;
   const doctorId = list.filters.doctorId;
   const calendar = useAppointmentCalendar({
     from: isoDate(start),
@@ -136,7 +247,17 @@ export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCa
   const entries = calendar.data ?? [];
 
   const shift = (direction: number) =>
-    list.setFilter('day', isoDate(addDays(anchor, direction * (view === 'week' ? 7 : 1))));
+    list.setFilter(
+      'day',
+      isoDate(
+        view === 'month'
+          ? addMonths(anchor, direction)
+          : addDays(anchor, direction * (view === 'week' ? 7 : 1)),
+      ),
+    );
+  const openDay = (day: Date) => {
+    list.setFilters({ span: undefined, day: isoDate(day) });
+  };
 
   const visibleDoctors = doctorId ? doctors.filter((d) => d.id === doctorId) : doctors;
   const columns: Column[] =
@@ -186,9 +307,11 @@ export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCa
             <ChevronRight />
           </Button>
           <span className="ml-2 text-sm font-semibold">
-            {view === 'week'
-              ? `${format(start, 'dd MMM')} – ${format(end, 'dd MMM yyyy')}`
-              : format(anchor, 'EEEE, dd MMM yyyy')}
+            {view === 'month'
+              ? format(anchor, 'MMMM yyyy')
+              : view === 'week'
+                ? `${format(start, 'dd MMM')} – ${format(end, 'dd MMM yyyy')}`
+                : format(anchor, 'EEEE, dd MMM yyyy')}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -214,13 +337,16 @@ export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCa
             type="single"
             variant="outline"
             value={view}
-            onValueChange={(value) => value && list.setFilter('span', value === 'week' ? 'week' : undefined)}
+            onValueChange={(value) => value && list.setFilter('span', value === 'day' ? undefined : value)}
           >
             <ToggleGroupItem value="day" className="h-9 px-3">
               Day
             </ToggleGroupItem>
             <ToggleGroupItem value="week" className="h-9 px-3">
               Week
+            </ToggleGroupItem>
+            <ToggleGroupItem value="month" className="h-9 px-3">
+              Month
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
@@ -229,6 +355,10 @@ export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCa
         <div className="space-y-3 p-4">
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-64 w-full" />
+        </div>
+      ) : view === 'month' ? (
+        <div className={cn('max-h-[75vh] overflow-y-auto', calendar.isFetching && 'opacity-70')}>
+          <MonthGrid start={start} end={end} month={anchor} entries={entries} onOpenDay={openDay} />
         </div>
       ) : columns.length === 0 ? (
         <p className="p-10 text-center text-sm text-muted-foreground">Add a doctor to see the calendar.</p>

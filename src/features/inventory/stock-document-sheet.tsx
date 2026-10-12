@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronDown, Tags, X } from 'lucide-react';
 import { useId, useState } from 'react';
 import { useFieldArray, useForm, useWatch, type Control } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -18,6 +19,7 @@ import { FormSheet } from '@/components/shared/form-sheet';
 import { arrayError, InlineQuantityField, InlineTextField, LineItems } from '@/components/shared/line-items';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { findProductByBarcode, productsApi, suppliersApi } from '@/features/catalog/api';
@@ -220,16 +222,61 @@ function LabelsCell({ control, index }: { control: Control<Values>; index: numbe
   );
 }
 
-function ScannedCell({ serials, onClear }: { serials: string[]; onClear: () => void }) {
+function ScannedCell({
+  serials,
+  onRemove,
+  onClear,
+}: {
+  serials: string[];
+  onRemove: (serial: string) => void;
+  onClear: () => void;
+}) {
   if (serials.length === 0)
     return <span className="flex h-9 items-center text-xs text-muted-foreground">Not scanned</span>;
   return (
-    <div className="flex h-9 items-center gap-1 text-xs" title={serials.join(', ')}>
-      <span className="font-medium">{serials.length} scanned</span>
-      <Button type="button" variant="ghost" size="sm" className="h-7 px-1.5" onClick={onClear}>
-        Clear
-      </Button>
-    </div>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
+          <Tags className="size-3.5" />
+          {serials.length} scanned
+          <ChevronDown className="size-3.5 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-0">
+        <div className="flex items-center justify-between border-b px-3 py-2">
+          <span className="text-xs font-medium">Scanned labels</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-destructive"
+            onClick={onClear}
+          >
+            Clear all
+          </Button>
+        </div>
+        <ul className="max-h-60 divide-y overflow-y-auto">
+          {serials.map((serial) => (
+            <li key={serial} className="flex items-center justify-between gap-2 px-3 py-1.5">
+              <span className="font-mono text-xs">{serial}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground hover:text-destructive"
+                aria-label={`Remove ${serial}`}
+                onClick={() => onRemove(serial)}
+              >
+                <X className="size-3.5" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+        <p className="border-t px-3 py-2 text-xs text-muted-foreground">
+          Scanned by mistake? Remove it here. The qty follows the labels.
+        </p>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -515,6 +562,15 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
                     <ScannedCell
                       key="labels"
                       serials={items[index]?.serials ?? []}
+                      onRemove={(serial) => {
+                        const rest = (items[index]?.serials ?? []).filter((x) => x !== serial);
+                        form.setValue(`items.${index}.serials`, rest, { shouldDirty: true });
+                        form.setValue(`items.${index}.qty`, rest.length ? String(rest.length) : '', {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                        toast.success(`${serial} removed`);
+                      }}
                       onClear={() => {
                         form.setValue(`items.${index}.serials`, []);
                         if (scansOnly(items[index]?.productId)) form.setValue(`items.${index}.qty`, '');

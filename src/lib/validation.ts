@@ -11,12 +11,29 @@ export const optionalText = (max: number) =>
     .nullable()
     .transform((v) => (v ? v : null));
 
+const EMAIL_PATTERN =
+  /^[a-z0-9](?:[a-z0-9._%+-]*[a-z0-9_%+-])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/;
+
+export const isEmail = (value: string) => {
+  const v = value.trim().toLowerCase();
+  return v.length <= 150 && EMAIL_PATTERN.test(v) && !v.includes('..');
+};
+
+const EMAIL_MESSAGE = 'Enter a valid email address, e.g. name@example.com';
+
+export const emailString = z
+  .string()
+  .trim()
+  .min(1, 'Email is required')
+  .refine(isEmail, EMAIL_MESSAGE)
+  .transform((v) => v.toLowerCase());
+
 export const optionalEmail = z
   .string()
   .trim()
   .max(150)
   .nullable()
-  .refine((v) => !v || z.email().safeParse(v).success, 'Enter a valid email')
+  .refine((v) => !v || isEmail(v), EMAIL_MESSAGE)
   .transform((v) => (v ? v.toLowerCase() : null));
 
 export const moneyString = (label = 'Amount') =>

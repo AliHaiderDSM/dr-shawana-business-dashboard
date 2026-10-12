@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Branch code, emails, labels, month calendar, verified dispatch, bank picker (2026-10-12)
+
+- Branch form accepts codes like lhr-00001 (turned into LHR-00001).
+- Shared `emailString` / `optionalEmail` / `isEmail` with the same strict rule as the backend; used by staff, branch admin, branch, company and doctor forms.
+- Stock documents: "N scanned" opens a list of the labels; each one can be removed, and the qty follows. Clear all stays.
+- Appointments calendar has Day, Week and Month. Month shows each day with up to 3 appointments; clicking a day or "+N more" opens that day.
+- Dispatch dialog warns and blocks while a payment is not verified; Scan & print skips those orders and shows "Payment not verified".
+- Payments: Online lists only bank accounts as "Bank · Account title" and shows the bank, title and account no once picked; Cash lists cash accounts. A single match is picked on its own.
+
 ## Clickable expiry alerts (2026-10-11)
 
 - Each expiry alert row opens a side sheet: branch, branch type, batch, stock, expiry and status, plus every branch where the same product is expiring with totals.
