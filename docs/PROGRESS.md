@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Table and filter polish (2026-10-12)
+
+- DataTable header in three rows: search with Reset on the left and Export / Columns on the right; a quick status row (quickFilters); then the filters. Headers and cells share the same padding (first and last columns a little wider), totals row too.
+- Sales: status filters are one segmented control (All, Completed, Pending, Payment pending, Awaiting approval, Awaiting dispatch); invoice links to the trace, branch with its code, type as a badge, dates on one line, "dispatched" wording.
+- Employees: role shown as a colored badge.
+- Reports (Patient History and others): short values stay on one line, two-line values show the name over a muted second line, long text wraps at a readable width.
+- Checkbox: clearer border, and a dash when part of a list is picked (delivery report select-all).
+
 ## GRN print, discount badge, several reports (2026-10-12)
 
 - Goods Received Note print (/print/store-receipt?grn=): GRN details, entered vs received vs short per line, notes, signatures (Lab Officer, Warehouse Keeper, authorized). Opens after the keeper confirms; Print GRN on every receipt.

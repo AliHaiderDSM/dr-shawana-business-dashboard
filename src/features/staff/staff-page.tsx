@@ -8,7 +8,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { generatePassword, SecretReveal } from '@/components/shared/secret-reveal';
-import { StatusBadge } from '@/components/shared/status-badge';
+import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -89,6 +89,17 @@ function ResetPasswordDialog({
     </Dialog>
   );
 }
+
+const ROLE_TONES: Partial<Record<Staff['role'], Tone>> = {
+  branch_admin: 'primary',
+  doctor: 'success',
+  accountant: 'info',
+  warehouse_keeper: 'warning',
+  lab_officer: 'warning',
+  dispatcher: 'info',
+  store_keeper: 'info',
+  delivery_print: 'info',
+};
 
 export function StaffPage() {
   const { me, can, isSuperAdmin } = useAuth();
@@ -172,7 +183,11 @@ export function StaffPage() {
       header: 'Role',
       accessorFn: (s) => ROLE_LABELS[s.role],
       meta: { sortKey: 'role' },
-      cell: ({ row }) => <span className="text-sm">{ROLE_LABELS[row.original.role]}</span>,
+      cell: ({ row }) => (
+        <StatusBadge tone={ROLE_TONES[row.original.role] ?? 'neutral'} dot={false}>
+          {ROLE_LABELS[row.original.role]}
+        </StatusBadge>
+      ),
     },
     {
       id: 'phone',

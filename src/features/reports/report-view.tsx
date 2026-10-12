@@ -136,17 +136,35 @@ function columnsFor(data: ReportData): ColumnDef<Row, unknown>[] {
         hideable: index !== 0,
         exportValue: (row: unknown) => (row as Row)[column.key] as string,
       },
-      cell: ({ row }) => (
-        <span
-          className={cn(
-            'whitespace-pre-line',
-            row.original.__total && 'font-semibold',
-            index === 0 && 'font-medium',
-          )}
-        >
-          {row.original.__total && index === 0 ? 'Total' : displayValue(row.original[column.key] ?? null)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        if (row.original.__total && index === 0) return <span className="font-semibold">Total</span>;
+        const shown = displayValue(row.original[column.key] ?? null);
+        const lines = typeof shown === 'string' ? shown.split('\n').filter(Boolean) : [];
+        if (lines.length > 1) {
+          return (
+            <div className="min-w-32">
+              <div className={cn('font-medium', row.original.__total && 'font-semibold')}>{lines[0]}</div>
+              {lines.slice(1).map((line, i) => (
+                <div key={i} className="text-xs text-muted-foreground tabular-nums">
+                  {line}
+                </div>
+              ))}
+            </div>
+          );
+        }
+        const long = typeof shown === 'string' && shown.length > 40;
+        return (
+          <span
+            className={cn(
+              long ? 'block max-w-md min-w-56 whitespace-normal' : 'whitespace-nowrap',
+              row.original.__total && 'font-semibold',
+              index === 0 && 'font-medium',
+            )}
+          >
+            {shown}
+          </span>
+        );
+      },
     } satisfies ColumnDef<Row, unknown>;
   });
 }

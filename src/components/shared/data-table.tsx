@@ -65,6 +65,7 @@ interface DataTableProps<T> {
   onRetry?: () => void;
   searchPlaceholder?: string;
   toolbar?: ReactNode;
+  quickFilters?: ReactNode;
   actions?: ReactNode;
   emptyTitle?: ReactNode;
   emptyDescription?: ReactNode;
@@ -96,6 +97,7 @@ export function DataTable<T>({
   onRetry,
   searchPlaceholder = 'Search…',
   toolbar,
+  quickFilters,
   actions,
   emptyTitle = 'Nothing here yet',
   emptyDescription,
@@ -152,9 +154,9 @@ export function DataTable<T>({
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-xs print:overflow-visible print:shadow-none">
-      {list || toolbar || actions || exportFileName ? (
-        <div className="flex flex-col gap-3 border-b p-3 lg:flex-row lg:items-center lg:justify-between print:hidden">
-          <div className="flex flex-1 flex-wrap items-center gap-2">
+      {list || toolbar || quickFilters || actions || exportFileName ? (
+        <div className="space-y-3 border-b p-3 print:hidden">
+          <div className="flex flex-wrap items-center gap-2">
             {list ? (
               <div className="relative w-full sm:w-72">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -167,7 +169,7 @@ export function DataTable<T>({
                 />
               </div>
             ) : null}
-            {toolbar}
+            {list ? null : toolbar}
             {hasFilters ? (
               <Button
                 variant="ghost"
@@ -182,40 +184,42 @@ export function DataTable<T>({
                 Reset
               </Button>
             ) : null}
+            <div className="ml-auto flex items-center gap-2">
+              {actions}
+              {exportFileName ? (
+                <Button variant="outline" size="sm" onClick={exportExcel} disabled={rows.length === 0}>
+                  <Download />
+                  Export
+                </Button>
+              ) : null}
+              {columnsMenu !== false && hideable.length > 1 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" aria-label="Choose columns">
+                      <Settings2 />
+                      <span className="hidden sm:inline">Columns</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {hideable.map((column) => (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) => column.toggleVisibility(Boolean(value))}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {actions}
-            {exportFileName ? (
-              <Button variant="outline" size="sm" onClick={exportExcel} disabled={rows.length === 0}>
-                <Download />
-                Export
-              </Button>
-            ) : null}
-            {columnsMenu !== false && hideable.length > 1 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" aria-label="Choose columns">
-                    <Settings2 />
-                    <span className="hidden sm:inline">Columns</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {hideable.map((column) => (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(Boolean(value))}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-          </div>
+          {quickFilters ? <div className="-mx-1 overflow-x-auto px-1 pb-0.5">{quickFilters}</div> : null}
+          {list && toolbar ? <div className="flex flex-wrap items-center gap-2">{toolbar}</div> : null}
         </div>
       ) : null}
 
@@ -249,7 +253,7 @@ export function DataTable<T>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        'h-10 text-xs font-medium text-muted-foreground',
+                        'h-10 px-3 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4',
                         columnMeta?.align === 'right' && 'text-right',
                         columnMeta?.align === 'center' && 'text-center',
                         columnMeta?.className,
@@ -264,7 +268,7 @@ export function DataTable<T>({
                           onClick={() => toggleSort(sortKey)}
                           className={cn(
                             '-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-foreground',
-                            columnMeta?.align === 'right' && 'flex-row-reverse',
+                            columnMeta?.align === 'right' && 'ml-auto flex-row-reverse',
                           )}
                         >
                           {content}
@@ -327,7 +331,7 @@ export function DataTable<T>({
                       <TableCell
                         key={cell.id}
                         className={cn(
-                          'py-3',
+                          'px-3 py-3 first:pl-4 last:pr-4',
                           columnMeta?.align === 'right' && 'text-right tabular-nums',
                           columnMeta?.align === 'center' && 'text-center',
                           columnMeta?.className,
@@ -350,7 +354,7 @@ export function DataTable<T>({
                     <TableCell
                       key={column.id}
                       className={cn(
-                        'py-3 font-semibold',
+                        'px-3 py-3 font-semibold first:pl-4 last:pr-4',
                         columnMeta?.align === 'right' && 'text-right tabular-nums',
                         columnMeta?.align === 'center' && 'text-center',
                       )}

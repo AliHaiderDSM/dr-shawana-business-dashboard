@@ -12,12 +12,12 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useStaffList } from '@/features/staff/api';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils';
+import { TraceNumber } from '@/features/trace/trace-page';
 import { formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
   DELIVERY_LABELS,
@@ -65,8 +65,6 @@ export function SalesPage() {
   const pending = list.filters.pending === 'true';
   const approve = useApprovePayments();
   const byBranch = query.data?.meta.byBranch;
-  const quickFilter = (name: 'due' | 'deliveryStatus', on: boolean) =>
-    list.setFilter(name, on ? (name === 'due' ? 'true' : 'pending') : undefined);
   const totals = query.data?.meta.totals;
 
   const columns: ColumnDef<SaleListItem, unknown>[] = [
@@ -75,7 +73,7 @@ export function SalesPage() {
       header: 'Invoice',
       accessorKey: 'invoiceNo',
       meta: { sortKey: 'invoiceSeq', hideable: false },
-      cell: ({ row }) => <span className="font-medium">{row.original.invoiceNo}</span>,
+      cell: ({ row }) => <TraceNumber number={row.original.invoiceNo} />,
     },
     ...(inWarehouse
       ? [
@@ -83,7 +81,17 @@ export function SalesPage() {
             id: 'branch',
             header: 'Branch',
             accessorFn: (r: SaleListItem) => r.branch?.name ?? '',
-            cell: ({ row }: { row: { original: SaleListItem } }) => row.original.branch?.name ?? '—',
+            cell: ({ row }: { row: { original: SaleListItem } }) =>
+              row.original.branch ? (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">
+                    {row.original.branch.code}
+                  </span>
+                  {row.original.branch.name}
+                </span>
+              ) : (
+                '—'
+              ),
           } satisfies ColumnDef<SaleListItem, unknown>,
         ]
       : []),
@@ -92,7 +100,7 @@ export function SalesPage() {
       header: 'Date',
       accessorKey: 'date',
       meta: { sortKey: 'date' },
-      cell: ({ row }) => formatDate(row.original.date),
+      cell: ({ row }) => <span className="whitespace-nowrap">{formatDate(row.original.date)}</span>,
     },
     {
       id: 'customer',
@@ -128,8 +136,10 @@ export function SalesPage() {
       header: 'Type',
       accessorFn: (s) => SALE_TYPE_LABELS[s.saleType],
       cell: ({ row }) => (
-        <div className="text-sm">
-          <div>{SALE_TYPE_LABELS[row.original.saleType]}</div>
+        <div className="space-y-0.5">
+          <StatusBadge tone={row.original.saleType === 'online' ? 'info' : 'neutral'} dot={false}>
+            {SALE_TYPE_LABELS[row.original.saleType]}
+          </StatusBadge>
           <div className="text-xs text-muted-foreground">{row.original.city}</div>
         </div>
       ),
@@ -202,7 +212,7 @@ export function SalesPage() {
             <DeliveryBadge status={row.original.deliveryStatus} />
             {row.original.dispatchedOn ? (
               <div className="mt-0.5 text-xs text-muted-foreground">
-                sent {formatDate(row.original.dispatchedOn)}
+                dispatched {formatDate(row.original.dispatchedOn)}
               </div>
             ) : null}
           </div>
@@ -361,56 +371,51 @@ export function SalesPage() {
               }
             : undefined
         }
-        toolbar={
-          <>
+        quickFilters={
+          <div
+            className="inline-flex items-center gap-1 rounded-lg bg-muted p-1"
+            role="tablist"
+            aria-label="Sale status"
+          >
             {(
               [
                 ['all', 'All sales', !due && !awaiting && !approval && !completed && !pending],
                 ['completed', 'Completed', completed],
-                ['pending', 'Pending (payment or dispatch)', pending],
+                ['pending', 'Pending', pending],
                 ['due', 'Payment pending', due],
                 ['approval', 'Awaiting approval', approval],
                 ['awaiting', 'Awaiting dispatch', awaiting],
               ] as const
-            ).map(([key, label, checked]) => (
-              <label
+            ).map(([key, label, active]) => (
+              <button
                 key={key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                title={key === 'pending' ? 'Payment or dispatch still pending' : undefined}
+                onClick={() =>
+                  list.setFilters({
+                    completed: key === 'completed' ? 'true' : undefined,
+                    pending: key === 'pending' ? 'true' : undefined,
+                    due: key === 'due' ? 'true' : undefined,
+                    paymentStatus: key === 'approval' ? 'awaiting_approval' : undefined,
+                    deliveryStatus: key === 'awaiting' ? 'pending' : undefined,
+                  })
+                }
                 className={cn(
-                  'flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm whitespace-nowrap transition-colors',
-                  checked ? 'border-primary bg-primary-soft text-primary-soft-foreground' : 'hover:bg-accent',
+                  'h-8 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors',
+                  active
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(value) => {
-                    if (key === 'all') {
-                      list.setFilters({
-                        due: undefined,
-                        deliveryStatus: undefined,
-                        paymentStatus: undefined,
-                        completed: undefined,
-                        pending: undefined,
-                      });
-                      return;
-                    }
-                    if (key === 'completed' || key === 'pending') {
-                      list.setFilters({
-                        completed: key === 'completed' && value === true ? 'true' : undefined,
-                        pending: key === 'pending' && value === true ? 'true' : undefined,
-                      });
-                      return;
-                    }
-                    if (key === 'approval') {
-                      list.setFilter('paymentStatus', value === true ? 'awaiting_approval' : undefined);
-                      return;
-                    }
-                    quickFilter(key === 'due' ? 'due' : 'deliveryStatus', value === true);
-                  }}
-                />
                 {label}
-              </label>
+              </button>
             ))}
-            <div className="basis-full" aria-hidden />
+          </div>
+        }
+        toolbar={
+          <>
             <DateRangeFilter list={list} />
             {inWarehouse ? (
               <FilterSelect
