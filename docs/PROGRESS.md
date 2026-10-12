@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Write-off approval, employees overview, dispatcher view (2026-10-12)
+
+- Write-offs page: Report stock builds a list (scan labels or pick batches, qty, reason, note) and sends it for approval; the Super Admin approves or rejects each line with a note; status column and Waiting tab; home banner for the Super Admin. Batch write-off asks for approval for everyone but the Super Admin.
+- Employees: the Super Admin sees every branch, newest first, with branch and added date, and a branch filter; New employee asks for the branch. Designation input removed. Roles offered follow the branch (Dispatch Department: Branch Admin, Store Keeper, Delivery Print, Dispatcher).
+- Dispatcher and Dispatch Department: no Catalog, Manufacturing or Finance menus; home shows dispatch numbers (waiting, dispatched today and this month, returned, stock to receive, write-offs waiting).
+- Stock Out from a request: scanning stops at the approved quantity.
+
 ## Stock requests, incoming stock, write-offs (2026-10-12)
 
 - Stock Requests page: branches ask for Super Admin products; the Super Admin approves (less per line if needed) or rejects, then Send stock opens Stock Out filled with the approved lines.

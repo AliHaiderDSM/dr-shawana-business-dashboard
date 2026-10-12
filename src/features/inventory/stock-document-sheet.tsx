@@ -328,6 +328,12 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
   const scansOnly = (productId: string | undefined) =>
     !config.batched && Boolean(productId && tracked.has(productId));
 
+  const approvedFor = (productId: string) => {
+    if (!prefill) return null;
+    const item = prefill.items.find((i) => i.productId === productId);
+    return item ? Number(item.qty) : 0;
+  };
+
   const addPiece = async (code: string) => {
     const piece = await findItemBySerial(code);
     if (piece.status !== 'in_stock') {
@@ -340,6 +346,18 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
       return;
     }
     const index = current.findIndex((line) => line.productId === piece.productId);
+    const limit = approvedFor(piece.productId);
+    if (limit !== null) {
+      const scanned = index >= 0 ? (current[index]?.serials.length ?? 0) : 0;
+      if (limit === 0) {
+        toast.error(`${piece.productName} is not on ${prefill?.requestNo}`);
+        return;
+      }
+      if (scanned >= limit) {
+        toast.error(`Only ${limit} ${piece.productName} approved on ${prefill?.requestNo}. All are scanned.`);
+        return;
+      }
+    }
     if (index >= 0) {
       const serials = [...(current[index]?.serials ?? []), piece.serial];
       form.setValue(`items.${index}.serials`, serials, { shouldDirty: true });
@@ -373,6 +391,15 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
       }
       const current = form.getValues('items');
       const existing = current.findIndex((item) => item.productId === product.id);
+      const limit = approvedFor(product.id);
+      if (limit === 0) {
+        toast.error(`${product.name} is not on ${prefill?.requestNo}`);
+        return;
+      }
+      if (limit !== null && existing >= 0 && (Number(current[existing]?.qty) || 0) >= limit) {
+        toast.error(`Only ${limit} ${product.name} approved on ${prefill?.requestNo}`);
+        return;
+      }
       if (existing >= 0) {
         const qty = String((Number(current[existing]?.qty) || 0) + 1);
         form.setValue(`items.${existing}.qty`, qty, { shouldDirty: true, shouldValidate: true });

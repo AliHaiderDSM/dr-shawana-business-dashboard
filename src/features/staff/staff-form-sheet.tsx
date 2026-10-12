@@ -9,6 +9,7 @@ import { generatePassword, SecretReveal } from '@/components/shared/secret-revea
 import { Form, FormLabel } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useBranchKind, useBranchOptions } from '@/lib/auth/branches';
 import { emailString, optionalText, requiredText, usernameString } from '@/lib/validation';
 import { BRANCH_ROLES, creatableRoles, ROLE_LABELS, useSaveStaff, type Staff } from './api';
 
@@ -19,7 +20,7 @@ const schema = z.object({
   username: usernameString,
   phone: optionalText(30),
   gender: z.enum(['male', 'female']).nullable(),
-  designation: optionalText(100),
+  branchId: z.string(),
   role: z.enum(BRANCH_ROLES as [string, ...string[]], 'Choose a role'),
   password: z.string(),
 });
@@ -30,13 +31,24 @@ interface StaffFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   staff?: Staff | null;
+  defaultBranchId?: string | null;
   onCreated?: (staff: Staff, password: string) => void;
 }
 
-export function StaffFormSheet({ open, onOpenChange, staff, onCreated }: StaffFormSheetProps) {
-  const { me } = useAuth();
+export function StaffFormSheet({
+  open,
+  onOpenChange,
+  staff,
+  defaultBranchId,
+  onCreated,
+}: StaffFormSheetProps) {
+  const { me, isSuperAdmin } = useAuth();
+  const ownKind = useBranchKind();
   const save = useSaveStaff();
-  const roles = creatableRoles(me?.role ?? 'front_desk');
+  const branchOptions = useBranchOptions(isSuperAdmin && open);
+  const targets = (branchOptions.data ?? []).filter(
+    (b) => (b.kind === 'branch' || b.kind === 'dispatch') && b.status === 'active',
+  );
   const [suggested] = useState(generatePassword);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -47,17 +59,21 @@ export function StaffFormSheet({ open, onOpenChange, staff, onCreated }: StaffFo
       username: staff?.username ?? '',
       phone: staff?.phone ?? null,
       gender: (staff?.gender as 'male' | 'female' | null) ?? null,
-      designation: staff?.designation ?? null,
+      branchId: staff?.branchId ?? defaultBranchId ?? '',
       role: staff?.role ?? '',
       password: staff ? '' : suggested,
     },
   });
 
   const submit = form.handleSubmit((values) => {
-    const { password, ...rest } = values;
+    const { password, branchId, ...rest } = values;
+    if (isSuperAdmin && !branchId) {
+      form.setError('branchId', { message: 'Choose the branch' });
+      return;
+    }
     const body = staff ? rest : { ...rest, password };
     save.mutate(
-      { id: staff?.id, body: body as never },
+      { id: staff?.id, body: body as never, branchId: isSuperAdmin ? branchId : undefined },
       {
         onSuccess: (result) => {
           toast.success(staff ? 'Employee updated' : 'Employee created');
@@ -72,6 +88,11 @@ export function StaffFormSheet({ open, onOpenChange, staff, onCreated }: StaffFo
   });
 
   const password = useWatch({ control: form.control, name: 'password' });
+  const chosenBranch = useWatch({ control: form.control, name: 'branchId' });
+  const branchKind = isSuperAdmin
+    ? ((branchOptions.data ?? []).find((b) => b.id === chosenBranch)?.kind ?? staff?.branch?.kind ?? null)
+    : ownKind;
+  const roles = creatableRoles(me?.role ?? 'front_desk', branchKind);
   const roleOptions = roles.map((r) => ({ value: r, label: ROLE_LABELS[r] }));
 
   return (
@@ -109,8 +130,32 @@ export function StaffFormSheet({ open, onOpenChange, staff, onCreated }: StaffFo
         </FormSection>
         <FormSection title="Role and sign-in">
           <FieldRow>
-            <SelectField control={form.control} name="role" label="Role" options={roleOptions} required />
-            <TextField control={form.control} name="designation" label="Designation" />
+            {isSuperAdmin && !staff ? (
+              <SelectField
+                control={form.control}
+                name="branchId"
+                label="Branch"
+                required
+                placeholder="Choose branch"
+                options={targets.map((b) => ({
+                  value: b.id,
+                  label: b.name,
+                  hint: b.kind === 'dispatch' ? 'Dispatch Department' : undefined,
+                }))}
+              />
+            ) : null}
+            <SelectField
+              control={form.control}
+              name="role"
+              label="Role"
+              options={roleOptions}
+              required
+              description={
+                branchKind === 'dispatch'
+                  ? 'The Dispatch Department has Branch Admin, Store Keeper, Delivery Print and Dispatcher only.'
+                  : undefined
+              }
+            />
           </FieldRow>
           <FieldRow>
             <TextField control={form.control} name="email" label="Email" type="email" required />

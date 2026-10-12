@@ -1,6 +1,7 @@
 import { ExpiryAlertsPanel } from '@/features/inventory/expiry-alerts';
 import { PendingDiscountsBanner } from '@/features/sales/discount-requests-page';
 import { PendingStockRequestsBanner } from '@/features/inventory/stock-requests-page';
+import { PendingWriteOffsBanner } from '@/features/inventory/write-offs-page';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Building2, MapPin, Plus } from 'lucide-react';
 import { Link } from 'react-router';
@@ -13,10 +14,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api, unwrap } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatMoney, titleCase } from '@/lib/format';
-import { useInWarehouse } from '@/lib/auth/branches';
+import { useHasDispatch, useInDispatch, useInWarehouse } from '@/lib/auth/branches';
 import { visibleMenu } from '@/lib/permissions/menu';
 import { useDashboard } from './api';
 import { DashboardOverview } from './dashboard-overview';
+import { DispatchOverview } from './dispatch-overview';
 
 function greeting() {
   const hour = new Date().getHours();
@@ -59,6 +61,7 @@ function SuperAdminHome() {
       />
       <PendingDiscountsBanner className="mb-4" />
       <PendingStockRequestsBanner className="mb-4" />
+      <PendingWriteOffsBanner className="mb-4" />
       <ExpiryAlertsPanel className="mb-6" />
       <DashboardOverview />
       <h2 className="mt-8 mb-3 text-sm font-semibold">Branches</h2>
@@ -130,7 +133,10 @@ function SuperAdminHome() {
 function BranchHome() {
   const { me, can, isSuperAdmin } = useAuth();
   const inWarehouse = useInWarehouse();
-  const links = visibleMenu(can, isSuperAdmin, me?.role, inWarehouse)
+  const inDispatch = useInDispatch();
+  const hasDispatch = useHasDispatch();
+  const dispatchView = inDispatch || me?.role === 'dispatcher';
+  const links = visibleMenu(can, isSuperAdmin, me?.role, inWarehouse, { inDispatch, hasDispatch })
     .flatMap((g) => g.items)
     .filter((i) => i.path !== '/');
 
@@ -141,7 +147,7 @@ function BranchHome() {
         description={`${titleCase(me?.role ?? '')}${me?.branch ? ` · ${me.branch.name}` : ''}`}
       />
       <ExpiryAlertsPanel className="mb-6" />
-      <DashboardOverview />
+      {dispatchView ? <DispatchOverview /> : <DashboardOverview />}
       <div className="mt-8 rounded-xl border bg-card shadow-xs">
         <div className="border-b px-5 py-4">
           <h2 className="text-sm font-semibold">Quick access</h2>

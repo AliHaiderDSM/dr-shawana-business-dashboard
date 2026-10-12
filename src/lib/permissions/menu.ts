@@ -105,7 +105,7 @@ export const MENU: MenuGroup[] = [
         path: '/staff',
         icon: UserCog,
         anyOf: ['staff.view'],
-        scope: 'branch',
+        scope: 'any',
       },
     ],
   },
@@ -218,6 +218,7 @@ export const MENU: MenuGroup[] = [
   },
   {
     label: 'Catalog',
+    notInDispatch: true,
     items: [
       {
         key: 'categories',
@@ -333,6 +334,7 @@ export const MENU: MenuGroup[] = [
   },
   {
     label: 'Manufacturing',
+    notInDispatch: true,
     items: [
       {
         key: 'materials',
@@ -394,6 +396,7 @@ export const MENU: MenuGroup[] = [
   },
   {
     label: 'Finance',
+    notInDispatch: true,
     items: [
       {
         key: 'account-sheets',
@@ -464,7 +467,7 @@ export function visibleMenu(
     items: group.items
       .filter(
         (item) =>
-          !(dispatch.inDispatch && (group.notInDispatch || item.notInDispatch)) &&
+          !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.superAdminOnly || isSuperAdmin) &&
           (!item.warehouseOnly || inWarehouse) &&

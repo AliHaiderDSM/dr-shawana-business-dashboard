@@ -38,6 +38,7 @@ const OVERVIEW_PATHS = [
   '/branch/incoming-stock',
   '/branch/inventory/write-offs',
   '/branch/discount-requests',
+  '/branch/staff',
 ];
 
 let refreshing: Promise<StoredSession | null> | null = null;

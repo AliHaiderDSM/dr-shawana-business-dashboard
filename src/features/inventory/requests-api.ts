@@ -136,6 +136,7 @@ export function useReceiveStock() {
 
 export function useWriteOffs(query: {
   reason?: WriteOffReason;
+  status?: WriteOffRecord['status'];
   from?: string;
   to?: string;
   search?: string;
@@ -144,5 +145,42 @@ export function useWriteOffs(query: {
     queryKey: ['stock', 'write-offs', query],
     queryFn: () => unwrap(api.GET('/branch/inventory/write-offs', { params: { query } })).then((r) => r.data),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function usePendingWriteOffCount(enabled: boolean) {
+  return useQuery({
+    queryKey: ['stock', 'write-offs', 'pending-count'],
+    queryFn: () => unwrap(api.GET('/admin/write-offs/pending-count')).then((r) => r.data.pending),
+    enabled,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useReportWriteOffs() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (body: Schemas['ReportWriteOffs']) =>
+      unwrap(api.POST('/branch/inventory/write-offs', { body })).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDecideWriteOff() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, approve, note }: { id: string; approve: boolean; note?: string | null }) =>
+      unwrap(
+        approve
+          ? api.POST('/admin/write-offs/{id}/approve', {
+              params: { path: { id } },
+              body: { note: note ?? null },
+            })
+          : api.POST('/admin/write-offs/{id}/reject', {
+              params: { path: { id } },
+              body: { note: note ?? null },
+            }),
+      ).then((r) => r.data),
+    onSuccess: invalidate,
   });
 }

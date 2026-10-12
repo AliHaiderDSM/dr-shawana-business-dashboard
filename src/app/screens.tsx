@@ -43,7 +43,7 @@ export const screenRoutes: ScreenRoute[] = [
     path: 'staff',
     element: page(() => import('@/features/staff/staff-page'), 'StaffPage'),
     anyOf: ['staff.view'],
-    scope: 'branch',
+    scope: 'any',
   },
   {
     path: 'categories',

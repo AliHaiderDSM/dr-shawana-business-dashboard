@@ -203,6 +203,7 @@ export function BatchesPage() {
 }
 
 function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose: () => void }) {
+  const { isSuperAdmin } = useAuth();
   const writeOff = useWriteOff(batch.id);
   const [qty, setQty] = useState(batch.quantity);
   const [reason, setReason] = useState<WriteOffInput['reason']>(
@@ -233,8 +234,9 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
         <DialogHeader>
           <DialogTitle>Write off stock</DialogTitle>
           <DialogDescription>
-            Removes stock of batch {batch.batchNo} from {batch.productName}. It is recorded in the batch
-            history.
+            {isSuperAdmin
+              ? `Removes stock of batch ${batch.batchNo} from ${batch.productName} now. It is recorded in the batch history.`
+              : `Sends a write-off of batch ${batch.batchNo} (${batch.productName}) to the Super Admin. The stock leaves only after approval; scanned labels are held until then.`}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
@@ -314,14 +316,18 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
                   ...(serials.length ? { serials } : {}),
                 })
                 .then(() => {
-                  toast.success(`${formatQuantity(count)} written off from ${batch.batchNo}`);
+                  toast.success(
+                    isSuperAdmin
+                      ? `${formatQuantity(count)} written off from ${batch.batchNo}`
+                      : `Write-off of ${formatQuantity(count)} sent to the Super Admin`,
+                  );
                   onClose();
                 })
                 .catch(toastError)
             }
           >
             {writeOff.isPending ? <Loader2 className="animate-spin" /> : <PackageMinus />}
-            Write off
+            {isSuperAdmin ? 'Write off' : 'Ask to write off'}
           </Button>
         </DialogFooter>
       </DialogContent>

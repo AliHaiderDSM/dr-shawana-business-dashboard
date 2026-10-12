@@ -23,7 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatRelative, initials } from '@/lib/format';
+import { useBranchOptions } from '@/lib/auth/branches';
+import { formatRelative, initials, formatDate } from '@/lib/format';
 import {
   BRANCH_ROLES,
   ROLE_LABELS,
@@ -72,7 +73,7 @@ function ResetPasswordDialog({
             disabled={reset.isPending}
             onClick={() =>
               reset.mutate(
-                { id: staff.id, password },
+                { id: staff.id, password, branchId: staff.branchId },
                 {
                   onSuccess: () => onDone({ staff, password, reason: 'reset' }),
                   onError: (error) => toastError(error),
@@ -90,8 +91,12 @@ function ResetPasswordDialog({
 }
 
 export function StaffPage() {
-  const { me, can } = useAuth();
-  const list = useListState({ defaultSort: 'firstName' });
+  const { me, can, isSuperAdmin } = useAuth();
+  const list = useListState({ defaultSort: isSuperAdmin ? '-createdAt' : 'firstName' });
+  const branchOptions = useBranchOptions(isSuperAdmin);
+  const branchChoices = (branchOptions.data ?? []).filter(
+    (b) => b.kind === 'branch' || b.kind === 'dispatch',
+  );
   const query = useStaffList(list.query);
   const setStatus = useStaffStatus();
   const remove = useRemoveStaff();
@@ -132,6 +137,35 @@ export function StaffPage() {
         );
       },
     },
+    ...(isSuperAdmin
+      ? ([
+          {
+            id: 'branch',
+            header: 'Branch',
+            accessorFn: (s) => s.branch?.name ?? '',
+            cell: ({ row }) =>
+              row.original.branch ? (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">
+                    {row.original.branch.code}
+                  </span>
+                  {row.original.branch.name}
+                </span>
+              ) : (
+                '—'
+              ),
+          },
+          {
+            id: 'createdAt',
+            header: 'Added',
+            accessorKey: 'createdAt',
+            meta: { sortKey: 'createdAt' },
+            cell: ({ row }) => (
+              <span className="whitespace-nowrap">{formatDate(row.original.createdAt)}</span>
+            ),
+          },
+        ] as ColumnDef<Staff, unknown>[])
+      : []),
     { id: 'username', header: 'Username', accessorKey: 'username', meta: { sortKey: 'username' } },
     {
       id: 'role',
@@ -219,7 +253,11 @@ export function StaffPage() {
     <>
       <PageHeader
         title="Employees"
-        description="Staff accounts of this branch. Each role sees only its own screens."
+        description={
+          isSuperAdmin
+            ? 'Employees of every branch, newest first. Filter by branch to see one branch only.'
+            : 'Staff accounts of this branch. Each role sees only its own screens.'
+        }
         actions={
           canCreate ? (
             <Button
@@ -258,6 +296,24 @@ export function StaffPage() {
         }
         toolbar={
           <>
+            {isSuperAdmin ? (
+              <Select
+                value={list.filters.branchId ?? 'all'}
+                onValueChange={(v) => list.setFilter('branchId', v === 'all' ? undefined : v)}
+              >
+                <SelectTrigger size="sm" className="h-9 w-48" aria-label="Branch">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All branches</SelectItem>
+                  {branchChoices.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
             <Select
               value={list.filters.role ?? 'all'}
               onValueChange={(v) => list.setFilter('role', v === 'all' ? undefined : v)}
@@ -291,6 +347,7 @@ export function StaffPage() {
         }
       />
       <StaffFormSheet
+        defaultBranchId={isSuperAdmin ? (list.filters.branchId ?? null) : null}
         key={formKey}
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -333,7 +390,11 @@ export function StaffPage() {
         onConfirm={() =>
           toggling
             ? setStatus
-                .mutateAsync({ id: toggling.id, active: toggling.status !== 'active' })
+                .mutateAsync({
+                  id: toggling.id,
+                  active: toggling.status !== 'active',
+                  branchId: toggling.branchId,
+                })
                 .then(() => toast.success('Employee status updated'))
                 .catch(toastError)
             : undefined
@@ -349,7 +410,7 @@ export function StaffPage() {
         onConfirm={() =>
           removing
             ? remove
-                .mutateAsync(removing.id)
+                .mutateAsync({ id: removing.id, branchId: removing.branchId })
                 .then(() => toast.success('Employee removed'))
                 .catch(toastError)
             : undefined
