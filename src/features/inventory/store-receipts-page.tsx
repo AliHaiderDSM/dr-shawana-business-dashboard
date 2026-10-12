@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Loader2, PackageCheck } from 'lucide-react';
+import { CheckCircle2, Loader2, PackageCheck, Printer } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { BarcodeScanInput } from '@/components/shared/barcode-scan-input';
@@ -63,6 +64,7 @@ interface Count {
 
 function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
   const confirm = useConfirm();
+  const navigate = useNavigate();
   const [date, setDate] = useState(isoDate());
   const [counts, setCounts] = useState<Record<string, Count>>(() =>
     Object.fromEntries(
@@ -201,6 +203,7 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
                 .then(() => {
                   toast.success(`${receipt.grnNo} confirmed. It is in the Super Admin stock now.`);
                   onClose();
+                  void navigate(`/print/store-receipt?grn=${encodeURIComponent(receipt.grnNo)}`);
                 })
                 .catch(toastError)
             }
@@ -268,12 +271,20 @@ export function StoreReceiptsPage() {
                       : ''}
                   </div>
                 </div>
-                {keeper && r.status === 'pending' ? (
-                  <Button onClick={() => setConfirming(r)}>
-                    <PackageCheck />
-                    Count & confirm
+                <div className="flex gap-2">
+                  <Button asChild variant="outline">
+                    <Link to={`/print/store-receipt?grn=${encodeURIComponent(r.grnNo)}`}>
+                      <Printer />
+                      Print GRN
+                    </Link>
                   </Button>
-                ) : null}
+                  {keeper && r.status === 'pending' ? (
+                    <Button onClick={() => setConfirming(r)}>
+                      <PackageCheck />
+                      Count & confirm
+                    </Button>
+                  ) : null}
+                </div>
               </header>
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-xs text-muted-foreground">

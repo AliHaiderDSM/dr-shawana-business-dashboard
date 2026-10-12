@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GRN print, discount badge, several reports (2026-10-12)
+
+- Goods Received Note print (/print/store-receipt?grn=): GRN details, entered vs received vs short per line, notes, signatures (Lab Officer, Warehouse Keeper, authorized). Opens after the keeper confirms; Print GRN on every receipt.
+- Discount Requests shows in the Super Admin sidebar (with its count) in the Super Admin stock view too.
+- Read report (AI) takes up to 5 files at once; values are saved per report date; one summary with a Documents section (Doc 1, Doc 2… with date and what each holds).
+
 ## Lab Officer and store receipts (2026-10-12)
 
 - New role Lab Officer (Super Admin stock): menu Stock In, Store Receipts, Labels; no sales. Home shows entries waiting for the keeper.

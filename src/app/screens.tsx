@@ -384,6 +384,12 @@ export const screenRoutes: ScreenRoute[] = [
 
 export const printRoutes: ScreenRoute[] = [
   {
+    path: 'store-receipt',
+    element: page(() => import('@/features/inventory/store-receipt-print'), 'StoreReceiptPrint'),
+    anyOf: ['stock.view'],
+    scope: 'branch',
+  },
+  {
     path: 'labels',
     element: page(() => import('@/features/inventory/labels-print'), 'LabelsPrint'),
     anyOf: ['stock.view'],

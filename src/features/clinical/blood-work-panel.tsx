@@ -274,34 +274,48 @@ export function BloodWorkPanel({
   const fileInput = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
 
-  const readReport = async (file: File) => {
+  const readReport = async (files: File[]) => {
+    if (files.length > 5) {
+      toast.error('Choose up to 5 reports at a time');
+      return;
+    }
     setReading(true);
     try {
-      const found = await read.mutateAsync(file);
+      const found = await read.mutateAsync(files);
       if (found.results.length === 0) {
         toast.message(
           found.summary
-            ? 'None of the 9 blood work tests is on this report, so no value was added. The report summary is below.'
-            : 'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found in this report.',
+            ? 'None of the 9 blood work tests is on these reports, so no value was added. The report summary is below.'
+            : 'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found.',
         );
         return;
       }
-      if (!found.testDate) {
+      const dated = new Map<string, typeof found.results>();
+      const undated = found.results.filter((r) => !r.testDate);
+      for (const r of found.results) {
+        if (!r.testDate) continue;
+        dated.set(r.testDate, [...(dated.get(r.testDate) ?? []), r]);
+      }
+      for (const [testDate, results] of dated) {
+        await add.mutateAsync({
+          consultationId: consultationId ?? null,
+          results: results.map((r) => ({ test: r.test, value: r.value, unit: r.unit, testDate })),
+        });
+      }
+      setChartTest(ALL);
+      const saved = found.results.length - undated.length;
+      if (saved > 0) {
+        toast.success(
+          `${saved} value${saved === 1 ? '' : 's'} saved for ${[...dated.keys()].map((d) => formatDate(d)).join(', ')}; tests not on the reports show —.${found.summary ? ' One summary of all reports is below.' : ''} ✏️ corrects any mistake.`,
+        );
+      }
+      if (undated.length) {
         setSheet((current) => ({
           date: null,
           key: (current?.key ?? 0) + 1,
-          prefill: Object.fromEntries(found.results.map((r) => [r.test, r.value])),
+          prefill: Object.fromEntries(undated.map((r) => [r.test, r.value])),
         }));
-        return;
       }
-      await add.mutateAsync({
-        consultationId: consultationId ?? null,
-        results: found.results.map((r) => ({ ...r, testDate: found.testDate as string })),
-      });
-      setChartTest(ALL);
-      toast.success(
-        `${found.results.length} of 9 values saved for ${formatDate(found.testDate)}; tests not on the report show —.${found.summary ? ' The report summary is below.' : ''} ✏️ corrects any mistake.`,
-      );
     } catch (error) {
       toastError(error);
     } finally {
@@ -338,17 +352,18 @@ export function BloodWorkPanel({
               ref={fileInput}
               type="file"
               accept="application/pdf,image/*"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void readReport(file);
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) void readReport(files);
               }}
             />
             <Button
               size="sm"
               variant="outline"
               disabled={reading}
-              title="Upload a lab report (PDF or photo); AI reads the values and saves them"
+              title="Upload up to 5 lab reports (PDFs or photos) at once; AI reads the values and writes one summary"
               onClick={() => fileInput.current?.click()}
             >
               {reading ? <Loader2 className="animate-spin" /> : <Sparkles />}

@@ -227,9 +227,9 @@ export type ReadBloodReport = Schemas['ReadBloodReport'];
 export function useReadBloodReport(patientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (file: File) => {
+    mutationFn: (files: File[]) => {
       const form = new FormData();
-      form.append('file', file);
+      for (const file of files) form.append('files', file);
       return uploadForm<ReadBloodReport>(`/branch/patients/${patientId}/blood-work/read-report`, form);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.summaries(patientId) }),

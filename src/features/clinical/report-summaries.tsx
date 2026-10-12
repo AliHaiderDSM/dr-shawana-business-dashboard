@@ -22,8 +22,29 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function SummaryBody({ item }: { item: LabReportSummary }) {
   const s = item.summary;
+  const documents = s.documents ?? [];
   return (
     <div className="space-y-5 px-4 pb-4">
+      {documents.length > 1 ? (
+        <Section title={`Documents in this summary (${documents.length})`}>
+          <ol className="space-y-2 text-sm">
+            {documents.map((d, index) => (
+              <li key={index} className="rounded-lg border bg-muted/30 px-3 py-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">
+                    Doc {index + 1}
+                  </span>
+                  <span className="font-medium">{d.name}</span>
+                  {d.date ? (
+                    <span className="text-xs text-muted-foreground">{formatDate(d.date)}</span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-muted-foreground">{d.detail}</p>
+              </li>
+            ))}
+          </ol>
+        </Section>
+      ) : null}
       {s.patient.length ? (
         <Section title="Patient & report details">
           <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
@@ -160,7 +181,11 @@ export function ReportSummaries({ patientId, canEdit }: { patientId: string; can
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium">
-                      {item.testDate ? `Report of ${formatDate(item.testDate)}` : 'Report (no date)'}
+                      {(item.summary.documents?.length ?? 0) > 1
+                        ? `${item.summary.documents!.length} reports`
+                        : item.testDate
+                          ? `Report of ${formatDate(item.testDate)}`
+                          : 'Report (no date)'}
                       {item.fileName ? (
                         <span className="font-normal text-muted-foreground"> · {item.fileName}</span>
                       ) : null}

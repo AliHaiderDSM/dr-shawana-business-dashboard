@@ -203,6 +203,7 @@ export const MENU: MenuGroup[] = [
         anyOf: ['sales.view'],
         scope: 'any',
         notInDispatch: true,
+        showInWarehouse: true,
       },
       {
         key: 'deliveries',

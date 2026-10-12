@@ -16035,7 +16035,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Read blood work values from an uploaded report (multipart "file": PDF or image) with AI, and write a clinical summary of the whole report. The values are not saved (the caller saves them); the summary is saved on the patient. */
+        /** Read blood work values from an uploaded report (multipart "file" or up to 5 "files": PDFs or images) with AI, and write a clinical summary of the whole report. The values are not saved (the caller saves them); the summary is saved on the patient. */
         post: {
             parameters: {
                 query?: {
@@ -21003,11 +21003,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Stock In entries of the Super Admin stock by GRN number. A new entry waits until the Warehouse Keeper counts and confirms it; only then it is stock. */
+        /** Stock In entries of the Super Admin stock by GRN number. A Lab Officer entry waits until the Warehouse Keeper counts and confirms it; a Super Admin entry is stock at once. */
         get: {
             parameters: {
                 query?: {
                     status?: "pending" | "confirmed";
+                    grnNo?: string;
                     branchId?: string;
                 };
                 header?: never;
@@ -27762,6 +27763,13 @@ export interface components {
                 overview: string;
                 reviewPoints: string[];
                 unreadable: string[];
+                /** @description What each uploaded document holds */
+                documents?: {
+                    name: string;
+                    /** Format: date */
+                    date: string | null;
+                    detail: string;
+                }[];
             };
         };
         ReadBloodReport: {
@@ -27772,6 +27780,11 @@ export interface components {
                 test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
                 value: string;
                 unit: string;
+                /**
+                 * Format: date
+                 * @description Date of the document the value came from
+                 */
+                testDate: string | null;
             }[];
             summary: components["schemas"]["LabReportSummary"] & (Record<string, never> | null);
         };
