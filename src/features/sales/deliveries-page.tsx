@@ -60,12 +60,7 @@ function DayCell({
   today: boolean;
   onSelect: () => void;
 }) {
-  const chips = day
-    ? ([
-        ['dispatched', day.dispatched + day.delivered, 'bg-success'],
-        ['returned', day.returned, 'bg-muted-foreground'],
-      ] as const)
-    : [];
+  const chips = day ? ([['returned', day.returned, 'bg-muted-foreground']] as const) : [];
   return (
     <button
       type="button"
@@ -113,9 +108,9 @@ function DayCell({
         </span>
       ) : null}
       {inMonth && day && day.dispatchedOn > 0 ? (
-        <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-medium text-info">
+        <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-medium text-success">
           <Truck className="size-3" />
-          {day.dispatchedOn} sent
+          {day.dispatchedOn} dispatched
         </span>
       ) : null}
     </button>
@@ -259,7 +254,7 @@ export function DeliveriesPage() {
           <DeliveryBadge status={row.original.deliveryStatus} />
           {row.original.dispatchedOn ? (
             <div className="mt-0.5 text-xs text-muted-foreground">
-              sent {formatDate(row.original.dispatchedOn)}
+              dispatched {formatDate(row.original.dispatchedOn)}
             </div>
           ) : null}
         </div>
@@ -378,7 +373,6 @@ export function DeliveriesPage() {
             {(
               [
                 ['Left to dispatch', 'bg-destructive'],
-                ['Dispatched', 'bg-success'],
                 ['Returned', 'bg-muted-foreground'],
               ] as const
             ).map(([label, dot]) => (
@@ -387,9 +381,9 @@ export function DeliveriesPage() {
                 {label}
               </span>
             ))}
-            <span className="inline-flex items-center gap-1.5 text-info">
+            <span className="inline-flex items-center gap-1.5 text-success">
               <Truck className="size-3.5" />
-              Sent that day
+              Dispatched that day
             </span>
           </div>
         </header>
@@ -430,7 +424,7 @@ export function DeliveriesPage() {
               All awaiting dispatch{awaiting?.orders ? ` (${awaiting.orders})` : ''}
             </TabsTrigger>
             <TabsTrigger value="order">Booked {selectedLabel}</TabsTrigger>
-            <TabsTrigger value="dispatch">Sent {selectedLabel}</TabsTrigger>
+            <TabsTrigger value="dispatch">Dispatched {selectedLabel}</TabsTrigger>
           </TabsList>
         </Tabs>
         <p className="text-xs text-muted-foreground">

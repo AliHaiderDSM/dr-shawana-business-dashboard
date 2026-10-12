@@ -1,4 +1,5 @@
 import {
+  PackageX,
   BadgePercent,
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -295,6 +296,30 @@ export const MENU: MenuGroup[] = [
         anyOf: ['stock.view'],
         scope: 'branch',
         warehouseOnly: true,
+      },
+      {
+        key: 'stock-requests',
+        label: 'Stock Requests',
+        path: '/stock-requests',
+        icon: ClipboardList,
+        anyOf: ['stock.view', 'inventoryReport.view'],
+        scope: 'any',
+      },
+      {
+        key: 'incoming-stock',
+        label: 'Incoming Stock',
+        path: '/incoming-stock',
+        icon: PackageCheck,
+        anyOf: ['stock.view', 'inventoryReport.view'],
+        scope: 'any',
+      },
+      {
+        key: 'write-offs',
+        label: 'Write-offs',
+        path: '/write-offs',
+        icon: PackageX,
+        anyOf: ['stock.view', 'inventoryReport.view'],
+        scope: 'any',
       },
       {
         key: 'inventory-report',

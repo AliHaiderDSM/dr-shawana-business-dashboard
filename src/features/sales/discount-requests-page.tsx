@@ -58,7 +58,9 @@ function DecideDialog({
     <Dialog open onOpenChange={(open) => !open && !decide.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{approve ? 'Approve discount' : 'Reject discount'}</DialogTitle>
+          <DialogTitle>
+            {approve ? 'Approve' : 'Reject'} {request.requestNo}
+          </DialogTitle>
           <DialogDescription>
             {request.discountPercent}% off {formatQuantity(request.qty)} × {request.itemName} for{' '}
             {request.branch.name}, asked by {request.requestedBy?.name ?? 'staff'}. It takes{' '}
@@ -109,6 +111,14 @@ export function DiscountRequestsPage() {
   const [decision, setDecision] = useState<{ request: DiscountRequest; approve: boolean } | null>(null);
 
   const columns: ColumnDef<DiscountRequest, unknown>[] = [
+    {
+      id: 'requestNo',
+      header: 'Request no',
+      accessorKey: 'requestNo',
+      cell: ({ row }) => (
+        <span className="font-mono font-medium whitespace-nowrap">{row.original.requestNo}</span>
+      ),
+    },
     {
       id: 'createdAt',
       header: 'Asked',

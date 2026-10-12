@@ -280,13 +280,21 @@ function ScannedCell({
   );
 }
 
+export interface StockRequestPrefill {
+  stockRequestId: string;
+  requestNo: string;
+  toBranchId: string;
+  items: { productId: string; qty: string }[];
+}
+
 interface StockDocumentSheetProps {
   config: StockKindConfig;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prefill?: StockRequestPrefill | null;
 }
 
-export function StockDocumentSheet({ config, open, onOpenChange }: StockDocumentSheetProps) {
+export function StockDocumentSheet({ config, open, onOpenChange, prefill }: StockDocumentSheetProps) {
   const inWarehouse = useInWarehouse();
   const { isSuperAdmin } = useAuth();
   const branchOptions = useBranchOptions(isSuperAdmin && config.kind === 'out');
@@ -295,7 +303,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
   const products = productsApi.useOptions({}, open);
   const parties = suppliersApi.useOptions({ type: config.partyType }, open);
   const [files, setFiles] = useState<File[]>([]);
-  const transfer = config.kind === 'out' && inWarehouse;
+  const transfer = config.kind === 'out' && (inWarehouse || Boolean(prefill));
   const schema = buildSchema(config, transfer);
   const targets = (branchOptions.data ?? []).filter(
     (b) => (b.kind === 'branch' || b.kind === 'dispatch') && b.status === 'active',
@@ -304,10 +312,12 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
     resolver: zodResolver(schema),
     defaultValues: {
       partyId: null,
-      toBranchId: '',
+      toBranchId: prefill?.toBranchId ?? '',
       date: isoDate(),
-      note: null,
-      items: [emptyLine],
+      note: prefill ? `For ${prefill.requestNo}` : null,
+      items: prefill?.items.length
+        ? prefill.items.map((i) => ({ ...emptyLine, productId: i.productId, qty: i.qty }))
+        : [emptyLine],
     },
   });
   const lines = useFieldArray({ control: form.control, name: 'items' });
@@ -388,6 +398,7 @@ export function StockDocumentSheet({ config, open, onOpenChange }: StockDocument
     const body = {
       [config.partyField]: values.partyId,
       ...(transfer ? { toBranchId: values.toBranchId } : {}),
+      ...(prefill ? { stockRequestId: prefill.stockRequestId } : {}),
       date: values.date,
       note: values.note,
       items: values.items.map((item) => ({

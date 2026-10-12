@@ -94,12 +94,22 @@ export function PosCatalog({
 }) {
   const [pickedTab, setTab] = useState<'products' | 'bundles'>('products');
   const hasDispatch = useHasDispatch();
-  const fromDispatch = online && hasDispatch;
-  const tab = fromDispatch ? 'products' : pickedTab;
   const [search, setSearch] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [category, setCategory] = useState<{ online: boolean; id: string | null }>({ online, id: null });
+  const categoryId = category.online === online ? category.id : null;
+  const setCategoryId = (id: string | null) => setCategory({ online, id });
   const term = useDebounced(search.trim());
-  const categories = categoriesApi.useOptions();
+  const dispatchCatalog = useOnlineCatalog(
+    { ...(term ? { search: term } : {}), ...(categoryId ? { categoryId } : {}) },
+    online,
+  );
+  const fromDispatch =
+    online && (dispatchCatalog.data ? dispatchCatalog.data.dispatch !== null : hasDispatch);
+  const tab = fromDispatch ? 'products' : pickedTab;
+  const branchCategories = categoriesApi.useOptions();
+  const categoryOptions = fromDispatch
+    ? (dispatchCatalog.data?.categories ?? [])
+    : (branchCategories.data ?? []);
   const products = productsApi.useList(
     {
       pageSize: 100,
@@ -108,11 +118,7 @@ export function PosCatalog({
       ...(term ? { search: term } : {}),
       ...(categoryId ? { categoryId } : {}),
     },
-    !fromDispatch,
-  );
-  const dispatchCatalog = useOnlineCatalog(
-    { ...(term ? { search: term } : {}), ...(categoryId ? { categoryId } : {}) },
-    fromDispatch,
+    !online || (dispatchCatalog.data !== undefined && !fromDispatch),
   );
   const bundles = bundlesApi.useList(
     { pageSize: 100, sort: 'name', ...(term ? { search: term } : {}) },
@@ -169,11 +175,14 @@ export function PosCatalog({
     }
   };
 
-  const loading = fromDispatch
-    ? dispatchCatalog.isLoading
-    : tab === 'products'
-      ? products.isLoading
-      : bundles.isLoading;
+  const loading =
+    online && dispatchCatalog.isLoading
+      ? true
+      : fromDispatch
+        ? dispatchCatalog.isLoading
+        : tab === 'products'
+          ? products.isLoading
+          : bundles.isLoading;
   const dispatchItems = dispatchCatalog.data?.items ?? [];
   const queryDispatch = async (code: string) => {
     const result = await unwrap(
@@ -219,7 +228,7 @@ export function PosCatalog({
       <BarcodeScanInput onScan={scan} placeholder="Scan a product barcode" />
       {tab === 'products' ? (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {[{ id: null, name: 'All' }, ...(categories.data ?? [])].map((c) => (
+          {[{ id: null, name: 'All' }, ...categoryOptions].map((c) => (
             <button
               key={c.id ?? 'all'}
               type="button"

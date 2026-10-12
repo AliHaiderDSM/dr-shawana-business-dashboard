@@ -94,7 +94,31 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
     void navigate(`${config.printPath}?ids=${ids.join(',')}`);
   };
 
+  const transferOf = (r: StockDocument) =>
+    'transferNo' in r && r.transferNo ? { no: r.transferNo, received: Boolean(r.receivedAt) } : null;
+
   const columns: ColumnDef<StockDocument, unknown>[] = [
+    ...(kind === 'out'
+      ? ([
+          {
+            id: 'transferNo',
+            header: 'Transfer no',
+            accessorFn: (r) => transferOf(r)?.no ?? '',
+            cell: ({ row }) => {
+              const t = transferOf(row.original);
+              if (!t) return <span className="text-muted-foreground">—</span>;
+              return (
+                <div className="space-y-1 whitespace-nowrap">
+                  <div className="font-mono text-xs font-medium">{t.no}</div>
+                  <StatusBadge tone={t.received ? 'success' : 'warning'}>
+                    {t.received ? 'Received' : 'On the way'}
+                  </StatusBadge>
+                </div>
+              );
+            },
+          },
+        ] as ColumnDef<StockDocument, unknown>[])
+      : []),
     {
       id: 'date',
       header: 'Date',

@@ -1,0 +1,587 @@
+import type { ColumnDef } from '@tanstack/react-table';
+import { Check, Loader2, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+import { Combobox } from '@/components/shared/combobox';
+import { DataTable } from '@/components/shared/data-table';
+import { MoneyInput } from '@/components/shared/money-input';
+import { PageHeader } from '@/components/shared/page-header';
+import { StatusBadge, type Tone } from '@/components/shared/status-badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { ROLE_LABELS } from '@/features/staff/api';
+import { toastError } from '@/lib/api/errors';
+import type { Role } from '@/lib/api/types';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useBranchKind } from '@/lib/auth/branches';
+import { formatDateTime, formatQuantity } from '@/lib/format';
+import {
+  STOCK_REQUEST_LABELS,
+  useAskStock,
+  useDecideStockRequest,
+  useStockRequestCatalog,
+  useStockRequestCounts,
+  useStockRequests,
+  useWithdrawStockRequest,
+  type StockRequest,
+  type StockRequestStatus,
+} from './requests-api';
+import { StockDocumentSheet, type StockRequestPrefill } from './stock-document-sheet';
+import { STOCK_KINDS } from './stock-config';
+
+export const STOCK_REQUEST_TONES: Record<StockRequestStatus, Tone> = {
+  pending: 'warning',
+  approved: 'primary',
+  rejected: 'danger',
+  cancelled: 'neutral',
+  sent: 'info',
+  received: 'success',
+};
+
+const roleLabel = (role?: string) => (role ? (ROLE_LABELS[role as Role] ?? role.replace(/_/g, ' ')) : '');
+
+interface DraftLine {
+  key: number;
+  productId: string;
+  name: string;
+  available: string;
+  qty: string;
+  note: string;
+}
+
+function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const ask = useAskStock();
+  const [search, setSearch] = useState('');
+  const catalog = useStockRequestCatalog(search, open);
+  const [lines, setLines] = useState<DraftLine[]>([]);
+  const [note, setNote] = useState('');
+  const [nextKey, setNextKey] = useState(1);
+  const options = (catalog.data ?? [])
+    .filter((p) => !lines.some((l) => l.productId === p.id))
+    .map((p) => ({
+      value: p.id,
+      label: p.name,
+      hint: `${formatQuantity(p.available)} ${p.unit} at Super Admin${p.batchNo ? ` · ${p.batchNo}` : ''}`,
+    }));
+  const ready = lines.length > 0 && lines.every((l) => Number(l.qty) > 0);
+
+  const close = (value: boolean) => {
+    if (!value) {
+      setLines([]);
+      setNote('');
+    }
+    onOpenChange(value);
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={(v) => !ask.isPending && close(v)}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
+        <SheetHeader>
+          <SheetTitle>Ask the Super Admin for stock</SheetTitle>
+          <SheetDescription>
+            Pick the products and how many you need. The request gets its own number; the Super Admin approves
+            it and sends the stock, and your branch admin receives it.
+          </SheetDescription>
+        </SheetHeader>
+        <div className="space-y-4 px-4">
+          <Combobox
+            value={null}
+            onChange={(value) => {
+              const product = (catalog.data ?? []).find((p) => p.id === value);
+              if (!product) return;
+              setLines((current) => [
+                ...current,
+                {
+                  key: nextKey,
+                  productId: product.id,
+                  name: product.name,
+                  available: product.available,
+                  qty: '',
+                  note: '',
+                },
+              ]);
+              setNextKey((k) => k + 1);
+            }}
+            onSearchChange={setSearch}
+            loading={catalog.isFetching && !catalog.data}
+            options={options}
+            placeholder="Add a product"
+            aria-label="Add a product"
+          />
+          {lines.length ? (
+            <ul className="divide-y rounded-lg border">
+              {lines.map((line) => (
+                <li key={line.key} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                  <div className="min-w-40 flex-1">
+                    <div className="text-sm font-medium">{line.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatQuantity(line.available)} at Super Admin
+                    </div>
+                  </div>
+                  <MoneyInput
+                    prefix=""
+                    decimals={3}
+                    placeholder="Qty"
+                    aria-label={`${line.name} quantity`}
+                    className="h-9 w-24 text-right"
+                    value={line.qty}
+                    onChange={(e) =>
+                      setLines((current) =>
+                        current.map((l) => (l.key === line.key ? { ...l, qty: e.target.value } : l)),
+                      )
+                    }
+                  />
+                  <Input
+                    placeholder="Note (optional)"
+                    className="h-9 w-44"
+                    value={line.note}
+                    maxLength={500}
+                    onChange={(e) =>
+                      setLines((current) =>
+                        current.map((l) => (l.key === line.key ? { ...l, note: e.target.value } : l)),
+                      )
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground"
+                    aria-label={`Remove ${line.name}`}
+                    onClick={() => setLines((current) => current.filter((l) => l.key !== line.key))}
+                  >
+                    <Trash2 />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-lg border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
+              Add the products you need.
+            </p>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="request-note">Note for the Super Admin</Label>
+            <Textarea
+              id="request-note"
+              value={note}
+              maxLength={1000}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+        </div>
+        <SheetFooter>
+          <Button variant="outline" onClick={() => close(false)} disabled={ask.isPending}>
+            Cancel
+          </Button>
+          <Button
+            disabled={!ready || ask.isPending}
+            onClick={() =>
+              ask
+                .mutateAsync({
+                  note: note.trim() || null,
+                  items: lines.map((l) => ({
+                    productId: l.productId,
+                    qty: l.qty,
+                    note: l.note.trim() || null,
+                  })),
+                })
+                .then((created) => {
+                  toast.success(`${created.requestNo} sent to the Super Admin`);
+                  close(false);
+                })
+                .catch(toastError)
+            }
+          >
+            {ask.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+            Send request
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function RequestSheet({
+  request,
+  onClose,
+  onSend,
+}: {
+  request: StockRequest | null;
+  onClose: () => void;
+  onSend: (prefill: StockRequestPrefill) => void;
+}) {
+  const { isSuperAdmin } = useAuth();
+  const decide = useDecideStockRequest();
+  const withdraw = useWithdrawStockRequest();
+  const [approved, setApproved] = useState<Record<string, string>>({});
+  const [note, setNote] = useState('');
+  if (!request) return null;
+  const pending = request.status === 'pending';
+  const toSend = request.items
+    .map((i) => ({
+      productId: i.productId,
+      qty: Math.max(Number(i.approvedQty ?? 0) - Number(i.sentQty), 0),
+    }))
+    .filter((i) => i.qty > 0);
+  const canSend =
+    isSuperAdmin && (request.status === 'approved' || request.status === 'sent') && toSend.length > 0;
+
+  const answer = (approve: boolean) =>
+    decide
+      .mutateAsync({
+        id: request.id,
+        approve,
+        body: {
+          note: note.trim() || null,
+          ...(approve
+            ? {
+                items: request.items
+                  .filter((i) => approved[i.id] !== undefined && approved[i.id] !== '')
+                  .map((i) => ({ id: i.id, approvedQty: approved[i.id]! })),
+              }
+            : {}),
+        },
+      })
+      .then(() => {
+        toast.success(`${request.requestNo} ${approve ? 'approved' : 'rejected'}`);
+        onClose();
+      })
+      .catch(toastError);
+
+  return (
+    <Sheet open onOpenChange={(open) => !open && !decide.isPending && onClose()}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+        <SheetHeader>
+          <SheetTitle className="flex flex-wrap items-center gap-2">
+            {request.requestNo}
+            <StatusBadge tone={STOCK_REQUEST_TONES[request.status]}>
+              {STOCK_REQUEST_LABELS[request.status]}
+            </StatusBadge>
+          </SheetTitle>
+          <SheetDescription>
+            {request.branch.name} · asked by {request.requestedBy?.name ?? '—'} (
+            {roleLabel(request.requestedBy?.role)}) on {formatDateTime(request.createdAt)}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="space-y-4 px-4 pb-4">
+          {request.note ? <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm">“{request.note}”</p> : null}
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Product</th>
+                  <th className="px-3 py-2 text-right font-medium">Asked</th>
+                  <th className="px-3 py-2 text-right font-medium">Approved</th>
+                  <th className="px-3 py-2 text-right font-medium">Sent</th>
+                  <th className="px-3 py-2 text-right font-medium">Received</th>
+                  {isSuperAdmin ? <th className="px-3 py-2 text-right font-medium">At Super Admin</th> : null}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {request.items.map((i) => (
+                  <tr key={i.id}>
+                    <td className="px-3 py-2">
+                      <div className="font-medium">{i.productName}</div>
+                      {i.note ? <div className="text-xs text-muted-foreground">{i.note}</div> : null}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {formatQuantity(i.qty)} {i.unit}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {isSuperAdmin && pending ? (
+                        <MoneyInput
+                          prefix=""
+                          decimals={3}
+                          aria-label={`Approve ${i.productName}`}
+                          className="ml-auto h-8 w-24 text-right"
+                          placeholder={String(Number(i.qty))}
+                          value={approved[i.id] ?? ''}
+                          onChange={(e) => setApproved((current) => ({ ...current, [i.id]: e.target.value }))}
+                        />
+                      ) : i.approvedQty === null ? (
+                        '—'
+                      ) : (
+                        formatQuantity(i.approvedQty)
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(i.sentQty)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(i.receivedQty)}</td>
+                    {isSuperAdmin ? (
+                      <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">
+                        {formatQuantity(i.available)}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {request.decidedBy ? (
+            <p className="text-sm text-muted-foreground">
+              {request.status === 'rejected' ? 'Rejected' : 'Approved'} by {request.decidedBy.name}
+              {request.decidedAt ? ` on ${formatDateTime(request.decidedAt)}` : ''}
+              {request.decisionNote ? ` · “${request.decisionNote}”` : ''}
+            </p>
+          ) : null}
+          {request.transferNos.length ? (
+            <p className="text-sm">
+              Transfers: <span className="font-mono">{request.transferNos.join(', ')}</span>
+              {request.receivedBy ? ` · received by ${request.receivedBy.name}` : ''}
+            </p>
+          ) : null}
+          {isSuperAdmin && pending ? (
+            <div className="space-y-2">
+              <Label htmlFor="decision">Note for the branch (optional)</Label>
+              <Textarea
+                id="decision"
+                value={note}
+                maxLength={500}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave Approved empty to give what was asked; type a smaller number to give less, or 0 for
+                none.
+              </p>
+            </div>
+          ) : null}
+        </div>
+        <SheetFooter className="flex-row flex-wrap justify-end gap-2">
+          {isSuperAdmin && pending ? (
+            <>
+              <Button variant="outline" disabled={decide.isPending} onClick={() => void answer(false)}>
+                <X />
+                Reject
+              </Button>
+              <Button disabled={decide.isPending} onClick={() => void answer(true)}>
+                {decide.isPending ? <Loader2 className="animate-spin" /> : <Check />}
+                Approve
+              </Button>
+            </>
+          ) : null}
+          {canSend ? (
+            <Button
+              onClick={() =>
+                onSend({
+                  stockRequestId: request.id,
+                  requestNo: request.requestNo,
+                  toBranchId: request.branch.id,
+                  items: toSend.map((i) => ({ productId: i.productId, qty: String(i.qty) })),
+                })
+              }
+            >
+              <Send />
+              Send stock
+            </Button>
+          ) : null}
+          {!isSuperAdmin && pending ? (
+            <Button
+              variant="outline"
+              disabled={withdraw.isPending}
+              onClick={() =>
+                withdraw
+                  .mutateAsync(request.id)
+                  .then(() => {
+                    toast.success(`${request.requestNo} withdrawn`);
+                    onClose();
+                  })
+                  .catch(toastError)
+              }
+            >
+              <Undo2 />
+              Withdraw
+            </Button>
+          ) : null}
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+export function StockRequestsPage() {
+  const { isSuperAdmin, can } = useAuth();
+  const kind = useBranchKind();
+  const [status, setStatus] = useState<StockRequestStatus | 'all'>('all');
+  const requests = useStockRequests(status === 'all' ? undefined : status);
+  const counts = useStockRequestCounts(isSuperAdmin);
+  const [asking, setAsking] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [prefill, setPrefill] = useState<StockRequestPrefill | null>(null);
+  const opened = (requests.data ?? []).find((r) => r.id === openId) ?? null;
+  const canAsk =
+    !isSuperAdmin &&
+    (kind === 'branch' || kind === 'dispatch') &&
+    (can('stock.create') || can('stock.update'));
+
+  const columns: ColumnDef<StockRequest, unknown>[] = [
+    {
+      id: 'requestNo',
+      header: 'Request no',
+      accessorKey: 'requestNo',
+      cell: ({ row }) => (
+        <span className="font-mono font-medium whitespace-nowrap">{row.original.requestNo}</span>
+      ),
+    },
+    {
+      id: 'createdAt',
+      header: 'Asked',
+      accessorFn: (r) => formatDateTime(r.createdAt),
+      cell: ({ row }) => <span className="whitespace-nowrap">{formatDateTime(row.original.createdAt)}</span>,
+    },
+    ...(isSuperAdmin
+      ? ([
+          {
+            id: 'branch',
+            header: 'Branch',
+            accessorFn: (r) => r.branch.name,
+            cell: ({ row }) => (
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">
+                  {row.original.branch.code}
+                </span>
+                {row.original.branch.name}
+              </span>
+            ),
+          },
+        ] as ColumnDef<StockRequest, unknown>[])
+      : []),
+    {
+      id: 'requestedBy',
+      header: 'Asked by',
+      accessorFn: (r) => r.requestedBy?.name ?? '',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.requestedBy?.name ?? '—'}</div>
+          <div className="text-xs text-muted-foreground">{roleLabel(row.original.requestedBy?.role)}</div>
+        </div>
+      ),
+    },
+    {
+      id: 'items',
+      header: 'Products',
+      accessorFn: (r) => r.items.map((i) => `${i.productName} × ${Number(i.qty)}`).join(', '),
+      cell: ({ row }) => (
+        <div className="max-w-80 truncate" title={row.original.items.map((i) => i.productName).join(', ')}>
+          <span className="font-medium">{row.original.items.length}</span>{' '}
+          <span className="text-muted-foreground">
+            · {row.original.items.map((i) => `${i.productName} × ${formatQuantity(i.qty)}`).join(', ')}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      accessorFn: (r) => STOCK_REQUEST_LABELS[r.status],
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <StatusBadge tone={STOCK_REQUEST_TONES[row.original.status]}>
+            {STOCK_REQUEST_LABELS[row.original.status]}
+          </StatusBadge>
+          {row.original.transferNos.length ? (
+            <div className="font-mono text-xs text-muted-foreground">
+              {row.original.transferNos.join(', ')}
+            </div>
+          ) : null}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <PageHeader
+        title="Stock requests"
+        description={
+          isSuperAdmin
+            ? 'What the branches asked for. Approve a request, then send it with Send stock; the branch admin receives it.'
+            : 'Ask the Super Admin for stock. Approved requests come as a transfer that your branch admin receives under Incoming stock.'
+        }
+        actions={
+          canAsk ? (
+            <Button onClick={() => setAsking(true)}>
+              <Plus />
+              New request
+            </Button>
+          ) : null
+        }
+      />
+      <DataTable
+        columns={columns}
+        data={requests.data}
+        isLoading={requests.isLoading}
+        isFetching={requests.isFetching}
+        error={requests.error}
+        onRetry={() => void requests.refetch()}
+        getRowId={(r) => r.id}
+        onRowClick={(r) => setOpenId(r.id)}
+        exportFileName="stock-requests"
+        emptyTitle="No stock requests"
+        toolbar={
+          <Tabs value={status} onValueChange={(v) => setStatus(v as StockRequestStatus | 'all')}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="pending">
+                Waiting{counts.data?.pending ? ` (${counts.data.pending})` : ''}
+              </TabsTrigger>
+              <TabsTrigger value="approved">
+                To send{counts.data?.toSend ? ` (${counts.data.toSend})` : ''}
+              </TabsTrigger>
+              <TabsTrigger value="sent">On the way</TabsTrigger>
+              <TabsTrigger value="received">Received</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
+      />
+      <NewRequestSheet open={asking} onOpenChange={setAsking} />
+      <RequestSheet
+        key={opened?.id ?? 'none'}
+        request={opened}
+        onClose={() => setOpenId(null)}
+        onSend={(value) => {
+          setOpenId(null);
+          setPrefill(value);
+        }}
+      />
+      {prefill ? (
+        <StockDocumentSheet
+          key={prefill.stockRequestId}
+          config={STOCK_KINDS.out}
+          open
+          prefill={prefill}
+          onOpenChange={(open) => !open && setPrefill(null)}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export function PendingStockRequestsBanner({ className }: { className?: string }) {
+  const { isSuperAdmin } = useAuth();
+  const counts = useStockRequestCounts(isSuperAdmin);
+  if (!isSuperAdmin || !counts.data || (counts.data.pending === 0 && counts.data.toSend === 0)) return null;
+  const parts = [
+    counts.data.pending ? `${counts.data.pending} waiting for approval` : null,
+    counts.data.toSend ? `${counts.data.toSend} approved and not sent` : null,
+  ].filter(Boolean);
+  return (
+    <Link
+      to="/stock-requests"
+      className={`flex items-center justify-between gap-3 rounded-xl border border-info/40 bg-info-soft px-4 py-3 text-sm text-info-soft-foreground transition-colors hover:bg-info-soft/80 ${className ?? ''}`}
+    >
+      <span className="font-medium">Stock requests: {parts.join(', ')}</span>
+      <span className="font-semibold">Review</span>
+    </Link>
+  );
+}

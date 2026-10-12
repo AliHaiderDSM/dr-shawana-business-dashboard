@@ -34,6 +34,10 @@ const OVERVIEW_PATHS = [
   '/branch/inventory/expiry-alerts',
   '/branch/sales',
   '/branch/sales/delivery-slips',
+  '/branch/stock-requests',
+  '/branch/incoming-stock',
+  '/branch/inventory/write-offs',
+  '/branch/discount-requests',
 ];
 
 let refreshing: Promise<StoredSession | null> | null = null;

@@ -295,6 +295,24 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'any',
   },
   {
+    path: 'stock-requests',
+    element: page(() => import('@/features/inventory/stock-requests-page'), 'StockRequestsPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'any',
+  },
+  {
+    path: 'incoming-stock',
+    element: page(() => import('@/features/inventory/incoming-stock-page'), 'IncomingStockPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'any',
+  },
+  {
+    path: 'write-offs',
+    element: page(() => import('@/features/inventory/write-offs-page'), 'WriteOffsPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'any',
+  },
+  {
     path: 'deliveries',
     element: page(() => import('@/features/sales/deliveries-page'), 'DeliveriesPage'),
     anyOf: ['sales.view'],

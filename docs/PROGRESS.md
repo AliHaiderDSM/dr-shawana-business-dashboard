@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Stock requests, incoming stock, write-offs (2026-10-12)
+
+- Stock Requests page: branches ask for Super Admin products; the Super Admin approves (less per line if needed) or rejects, then Send stock opens Stock Out filled with the approved lines.
+- Incoming Stock page: transfers by number; the branch admin checks and receives with a date; only then it shows in Stock In and stock. Stock Out list shows the transfer number and On the way / Received.
+- Write-offs page: number, product, batch, qty (minus), reason, labels, who. Super Admin sees every branch.
+- Request numbers show on stock and discount requests (tables, POS line, dialogs). Super Admin home shows banners for waiting requests.
+- POS Online: the catalog and its categories come from the server (Dispatch Department products and categories); an empty department shows nothing instead of branch products.
+- Deliveries calendar: one "dispatched" count per day (no separate "sent").
+
 ## Discount approval, save customer, inventory report split (2026-10-12)
 
 - POS: a line discount shows "Ask for approval"; the request goes to the Super Admin and the line shows waiting / approved / rejected (checks every 8 s). The sale saves only when every discount is approved.

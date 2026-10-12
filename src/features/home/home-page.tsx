@@ -1,5 +1,6 @@
 import { ExpiryAlertsPanel } from '@/features/inventory/expiry-alerts';
 import { PendingDiscountsBanner } from '@/features/sales/discount-requests-page';
+import { PendingStockRequestsBanner } from '@/features/inventory/stock-requests-page';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Building2, MapPin, Plus } from 'lucide-react';
 import { Link } from 'react-router';
@@ -57,6 +58,7 @@ function SuperAdminHome() {
         }
       />
       <PendingDiscountsBanner className="mb-4" />
+      <PendingStockRequestsBanner className="mb-4" />
       <ExpiryAlertsPanel className="mb-6" />
       <DashboardOverview />
       <h2 className="mt-8 mb-3 text-sm font-semibold">Branches</h2>

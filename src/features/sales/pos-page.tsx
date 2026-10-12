@@ -242,7 +242,7 @@ function DiscountApproval({
     return (
       <div className="mt-1 inline-flex items-center gap-1 text-xs text-success">
         <BadgeCheck className="size-3.5" />
-        Discount approved by {request.decidedBy?.name ?? 'Super Admin'}
+        {request.requestNo} approved by {request.decidedBy?.name ?? 'Super Admin'}
       </div>
     );
   }
@@ -250,7 +250,7 @@ function DiscountApproval({
     return (
       <div className="mt-1 inline-flex items-center gap-1 text-xs text-warning-soft-foreground">
         <Loader2 className="size-3.5 animate-spin" />
-        Waiting for the Super Admin…
+        {request.requestNo} · waiting for the Super Admin…
       </div>
     );
   }
