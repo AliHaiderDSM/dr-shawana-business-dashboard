@@ -1,4 +1,5 @@
 import {
+  BadgePercent,
   ArrowDownToLine,
   ArrowUpFromLine,
   Banknote,
@@ -176,6 +177,15 @@ export const MENU: MenuGroup[] = [
         anyOf: ['sales.view'],
         scope: 'branch',
         showInWarehouse: true,
+        notInDispatch: true,
+      },
+      {
+        key: 'discount-requests',
+        label: 'Discount Requests',
+        path: '/discount-requests',
+        icon: BadgePercent,
+        anyOf: ['sales.view'],
+        scope: 'any',
         notInDispatch: true,
       },
       {

@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Discount approval, save customer, inventory report split (2026-10-12)
+
+- POS: a line discount shows "Ask for approval"; the request goes to the Super Admin and the line shows waiting / approved / rejected (checks every 8 s). The sale saves only when every discount is approved.
+- New Discount Requests page (sales menu): the Super Admin approves or rejects with a note; branches see and withdraw their own. Super Admin home shows a banner while requests wait.
+- POS new customer: "Save customer" saves the patient right away and selects them.
+- Categories: no image upload.
+- Inventory report: rows show totals only; a row click opens the branch split (sent, sold, returned, now). Outgoing stock (stock out, sent, sold) shows and exports as a minus.
+
 ## Branch code, emails, labels, month calendar, verified dispatch, bank picker (2026-10-12)
 
 - Branch form accepts codes like lhr-00001 (turned into LHR-00001).

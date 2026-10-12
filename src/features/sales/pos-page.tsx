@@ -2,6 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertTriangle,
   ArrowLeft,
+  BadgeCheck,
+  BadgePercent,
   Loader2,
   Minus,
   Plus,
@@ -35,7 +37,7 @@ import {
   useReceivingAccounts,
 } from '@/features/appointments/payment-fields';
 import { bundlesApi, type Bundle } from '@/features/catalog/api';
-import { usePatientSearch } from '@/features/patients/api';
+import { patientsApi, usePatientSearch } from '@/features/patients/api';
 import {
   patientDefaults,
   PatientFields,
@@ -51,6 +53,7 @@ import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
 import { SALE_CITIES, salesApi, useCreateSale, type Sale, type SaleInput } from './api';
 import { PosCatalog, type CatalogPick } from './pos-catalog';
+import { useAskDiscount, useDiscountRequests, type DiscountRequest } from './discount-requests-api';
 import { findItemBySerial } from '@/features/inventory/api';
 
 const lineSchema = z.object({
@@ -61,6 +64,8 @@ const lineSchema = z.object({
   available: z.string().optional(),
   tracked: z.boolean().optional(),
   parts: z.array(z.object({ productId: z.string(), qty: z.string() })).optional(),
+  discountRequestId: z.string().optional(),
+  approvedDiscount: z.string().optional(),
   discount: z
     .string()
     .trim()
@@ -141,6 +146,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
         qty: String(part ? Number(item.qty) / Number(part.qty) : 1),
         parts: bundle?.items.map((i) => ({ productId: i.productId, qty: i.qty })),
         discount: discountText(item.discountPercent),
+        approvedDiscount: discountText(item.discountPercent),
       });
       continue;
     }
@@ -152,6 +158,7 @@ function fromSale(sale: Sale | undefined, bundles: Bundle[]): Values {
       qty: String(Number(item.qty)),
       tracked: (sale?.serials ?? []).some((p) => p.productId === item.productId),
       discount: discountText(item.discountPercent),
+      approvedDiscount: discountText(item.discountPercent),
     });
   }
   const names = new Map((sale?.items ?? []).map((i) => [i.productId, i.product?.name ?? 'Product']));
@@ -220,9 +227,59 @@ function Totals({ values, saving }: { values: Values; saving: boolean }) {
   );
 }
 
+function DiscountApproval({
+  approval,
+  asking,
+  onAsk,
+}: {
+  approval: { needed: false } | { needed: true; request?: DiscountRequest };
+  asking: boolean;
+  onAsk: () => void;
+}) {
+  if (!approval.needed) return null;
+  const request = approval.request;
+  if (request?.status === 'approved') {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1 text-xs text-success">
+        <BadgeCheck className="size-3.5" />
+        Discount approved by {request.decidedBy?.name ?? 'Super Admin'}
+      </div>
+    );
+  }
+  if (request?.status === 'pending') {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1 text-xs text-warning-soft-foreground">
+        <Loader2 className="size-3.5 animate-spin" />
+        Waiting for the Super Admin…
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+      <span className={cn(request ? 'text-destructive' : 'text-muted-foreground')}>
+        {request
+          ? `Discount ${request.status === 'rejected' ? 'rejected' : request.status}${request.decisionNote ? `: ${request.decisionNote}` : ''}`
+          : 'This discount needs the Super Admin'}
+      </span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-6 px-2 text-xs"
+        disabled={asking}
+        onClick={onAsk}
+      >
+        {asking ? <Loader2 className="animate-spin" /> : <BadgePercent />}
+        {request ? 'Ask again' : 'Ask for approval'}
+      </Button>
+    </div>
+  );
+}
+
 function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
+  const askDiscount = useAskDiscount();
   const editing = Boolean(sale);
   const create = useCreateSale();
   const update = salesApi.useSave();
@@ -234,6 +291,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     sale?.patient ? `${sale.patient.name} · ${sale.patient.phone}` : null,
   );
   const [shortages, setShortages] = useState<Shortage[]>([]);
+  const savePatient = patientsApi.useSave();
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: fromSale(sale, bundles),
@@ -241,6 +299,23 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const lines = useFieldArray({ control: form.control, name: 'items' });
   const payments = useFieldArray({ control: form.control, name: 'payments' });
   const values = useWatch({ control: form.control }) as Values;
+  const requestIds = [
+    ...new Set((values.items ?? []).flatMap((l) => (l.discountRequestId ? [l.discountRequestId] : []))),
+  ];
+  const discountRequests = useDiscountRequests({ ids: requestIds }, requestIds.length > 0 && !isSuperAdmin);
+  const requestById = new Map((discountRequests.data ?? []).map((r) => [r.id, r]));
+  const approvalOf = (line: Values['items'][number] | undefined) => {
+    const percent = Number(line?.discount) || 0;
+    if (!line || percent <= 0 || isSuperAdmin) return { needed: false as const };
+    if (line.approvedDiscount && Number(line.approvedDiscount) === percent) return { needed: false as const };
+    const request = line.discountRequestId ? requestById.get(line.discountRequestId) : undefined;
+    const fits =
+      request &&
+      Number(request.discountPercent) === percent &&
+      (Number(line.qty) || 0) <= Number(request.qty) &&
+      (line.kind === 'product' ? request.productId === line.refId : request.bundleId === line.refId);
+    return { needed: true as const, request: fits ? request : undefined };
+  };
   const hasDispatch = useHasDispatch();
   const { replace: replaceLines } = lines;
   useEffect(() => {
@@ -369,11 +444,25 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       return;
     }
     setShortages([]);
-    const items = v.items.map((l) => ({
-      ...(l.kind === 'product' ? { productId: l.refId } : { bundleId: l.refId }),
-      qty: l.qty,
-      ...(l.discount ? { discountPercent: l.discount } : {}),
-    }));
+    const waiting = v.items.filter((l) => {
+      const approval = approvalOf(l);
+      return approval.needed && approval.request?.status !== 'approved';
+    });
+    if (waiting.length) {
+      toast.error(
+        `${waiting.map((l) => l.name).join(', ')}: the product discount needs the Super Admin's approval first.`,
+      );
+      return;
+    }
+    const items = v.items.map((l) => {
+      const approval = approvalOf(l);
+      return {
+        ...(l.kind === 'product' ? { productId: l.refId } : { bundleId: l.refId }),
+        qty: l.qty,
+        ...(l.discount ? { discountPercent: l.discount } : {}),
+        ...(approval.needed && approval.request ? { discountRequestId: approval.request.id } : {}),
+      };
+    });
     const serials = v.pieces.map((p) => p.serial);
     if (v.saleType === 'online' && serials.length) {
       toast.error(
@@ -535,6 +624,45 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                     setPatientLabel(`${existing.name} · ${existing.phone}`);
                   }}
                 />
+                <div className="flex items-center justify-between gap-3 border-t pt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Save the customer now so the details stay even if you leave this page.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={savePatient.isPending}
+                    onClick={() => {
+                      const parsed = patientFieldsSchema.safeParse(form.getValues('patient'));
+                      if (!parsed.success) {
+                        for (const issue of parsed.error.issues) {
+                          form.setError(`patient.${issue.path.map(String).join('.')}` as 'patient', {
+                            message: issue.message,
+                          });
+                        }
+                        toast.error('Fill in the customer details first');
+                        return;
+                      }
+                      savePatient.mutate(
+                        { body: toPatientInput(parsed.data) },
+                        {
+                          onSuccess: ({ data }) => {
+                            form.setValue('patientMode', 'existing');
+                            form.setValue('patientId', data.id, { shouldValidate: true });
+                            form.setValue('patient', patientDefaults());
+                            setPatientLabel(`${data.name} · ${data.phone}`);
+                            if (data.city && !cityEdited.current) form.setValue('city', data.city);
+                            toast.success(`${data.name} saved as a customer`);
+                          },
+                          onError: (error) => toastError(error),
+                        },
+                      );
+                    }}
+                  >
+                    {savePatient.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+                    Save customer
+                  </Button>
+                </div>
               </div>
             )}
             {sale ? (
@@ -645,6 +773,26 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                             </span>
                           ) : null}
                         </div>
+                        <DiscountApproval
+                          approval={approvalOf(line)}
+                          asking={askDiscount.isPending}
+                          onAsk={() => {
+                            if (!line) return;
+                            askDiscount
+                              .mutateAsync({
+                                ...(line.kind === 'product'
+                                  ? { productId: line.refId }
+                                  : { bundleId: line.refId }),
+                                qty: line.qty,
+                                discountPercent: line.discount ?? '0',
+                              })
+                              .then((request) => {
+                                form.setValue(`items.${index}.discountRequestId`, request.id);
+                                toast.success('Sent to the Super Admin');
+                              })
+                              .catch(toastError);
+                          }}
+                        />
                         {field.kind === 'product' && line?.tracked ? (
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             {(values.pieces ?? [])
