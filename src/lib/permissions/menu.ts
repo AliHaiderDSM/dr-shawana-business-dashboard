@@ -65,6 +65,16 @@ export interface MenuGroup {
   notInDispatch?: boolean;
 }
 
+const WAREHOUSE_KEEPER_KEYS = new Set([
+  'dashboard',
+  'stock-requests',
+  'stock-out',
+  'incoming-stock',
+  'stock',
+  'batches',
+  'labels',
+]);
+
 export const MENU: MenuGroup[] = [
   {
     label: 'Overview',
@@ -469,11 +479,13 @@ export function visibleMenu(
   inWarehouse = false,
   dispatch: { inDispatch: boolean; hasDispatch: boolean } = { inDispatch: false, hasDispatch: false },
 ): MenuGroup[] {
+  const keeperOnly = role === 'warehouse_keeper';
   return MENU.map((group) => ({
     ...group,
     items: group.items
       .filter(
         (item) =>
+          (!keeperOnly || WAREHOUSE_KEEPER_KEYS.has(item.key)) &&
           !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.superAdminOnly || isSuperAdmin) &&

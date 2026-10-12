@@ -66,7 +66,7 @@ export interface paths {
                     pageSize?: number;
                     search?: string;
                     sort?: "createdAt" | "-createdAt" | "firstName" | "-firstName" | "lastName" | "-lastName" | "username" | "-username" | "role" | "-role";
-                    role?: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
+                    role?: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
                     status?: "active" | "inactive";
                     branchId?: string;
                 };
@@ -24511,7 +24511,7 @@ export interface components {
             gender?: "male" | "female" | null;
             designation?: string | null;
             /** @enum {string} */
-            role: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
+            role: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
             password: string;
         };
         CreateBranchAdmin: {
@@ -24543,7 +24543,7 @@ export interface components {
             gender?: "male" | "female" | null;
             designation?: string | null;
             /** @enum {string} */
-            role?: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
+            role?: "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
         };
         ResetPassword: {
             password: string;
@@ -24554,7 +24554,7 @@ export interface components {
             /** Format: uuid */
             branchId: string | null;
             /** @enum {string} */
-            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
+            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
             firstName: string;
             lastName: string;
             email: string;
@@ -24604,7 +24604,7 @@ export interface components {
         Me: {
             profile: components["schemas"]["Staff"];
             /** @enum {string} */
-            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher";
+            role: "super_admin" | "branch_admin" | "accountant" | "doctor" | "front_desk" | "team_manager" | "pharmacy" | "store_keeper" | "delivery_print" | "dispatcher" | "warehouse_keeper";
             branch: {
                 /** Format: uuid */
                 id: string;
@@ -28454,6 +28454,15 @@ export interface components {
                 role: string;
             } | null;
             transferNos: string[];
+            transfers: {
+                transferNo: string;
+                sentAt: string;
+                qty: string;
+                received: boolean;
+                receivedAt: string | null;
+                sentBy: string | null;
+                receivedBy: string | null;
+            }[];
             items: {
                 /** Format: uuid */
                 id: string;

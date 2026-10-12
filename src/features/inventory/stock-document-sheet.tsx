@@ -284,6 +284,7 @@ export interface StockRequestPrefill {
   stockRequestId: string;
   requestNo: string;
   toBranchId: string;
+  toBranchName: string;
   items: { productId: string; qty: string }[];
 }
 
@@ -498,14 +499,22 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
           />
           <TextField control={form.control} name="date" label="Date" type="date" required />
         </FieldRow>
-        {transfer ? (
+        {prefill ? (
+          <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+            <div className="text-xs text-muted-foreground">Request {prefill.requestNo} · send to</div>
+            <div className="font-medium">{prefill.toBranchName}</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Only the approved products, up to the approved quantities. The branch admin receives it.
+            </div>
+          </div>
+        ) : transfer ? (
           <SelectField
             control={form.control}
             name="toBranchId"
             label="Transfer to branch"
             required
             placeholder="Choose the branch that receives this stock"
-            description="The branch gets this stock straight away, with the same batches and labels."
+            description="The branch admin receives this stock, with the same batches and labels."
             options={targets.map((b) => ({ value: b.id, label: `${b.name} · ${b.code}` }))}
           />
         ) : null}

@@ -18,7 +18,8 @@ import { useIncomingStock, useReceiveStock, type IncomingStock } from './request
 function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canReceive: boolean }) {
   const receive = useReceiveStock();
   const [date, setDate] = useState(isoDate());
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, me } = useAuth();
+  const overview = isSuperAdmin || me?.role === 'warehouse_keeper';
   return (
     <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
@@ -41,7 +42,7 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
           </div>
           <div className="text-xs text-muted-foreground">
             Sent {formatDate(transfer.date)} by {transfer.sentBy?.name ?? 'Super Admin'}
-            {isSuperAdmin ? ` · to ${transfer.toBranch.name}` : ''}
+            {overview ? ` · to ${transfer.toBranch.name}` : ''}
             {transfer.received && transfer.receivedAt
               ? ` · received ${formatDateTime(transfer.receivedAt)} by ${transfer.receivedBy?.name ?? '—'}`
               : ''}
@@ -119,7 +120,7 @@ export function IncomingStockPage() {
       <PageHeader
         title="Incoming stock"
         description={
-          isSuperAdmin
+          isSuperAdmin || me?.role === 'warehouse_keeper'
             ? 'Every transfer from the Super Admin stock and whether the branch has received it.'
             : canReceive
               ? 'Stock the Super Admin sent. Count it, then receive it: only then it shows in Stock In and in your stock.'

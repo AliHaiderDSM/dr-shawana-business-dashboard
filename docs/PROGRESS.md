@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Warehouse Keeper (2026-10-12)
+
+- New role Warehouse Keeper (created by the Super Admin at Super Admin Stock). Menu limited to Stock Requests, Stock Out, Incoming Stock, Stock, Batches & Expiry and Labels; home shows requests to send and transfers not received.
+- The keeper opens an approved request and uses Send stock; the form shows the target branch and caps scans at the approved quantities. The Super Admin only approves and sees every transfer (sent by, when, qty, received by).
+- Staff form offers roles by branch: Super Admin stock → Warehouse Keeper; Dispatch Department → its four roles; branches → no Store Keeper.
+
 ## Trace page, seller return approval, stock out from requests (2026-10-12)
 
 - Top bar search finds any number (or a DSM label) and opens /trace/:number: details, items, linked numbers (clickable) and every step with who and when; Open goes to the record page. Numbers in Stock Requests, Discount Requests, Write-offs, Incoming Stock and Stock Out link to the trace.

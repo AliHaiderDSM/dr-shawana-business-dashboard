@@ -1,6 +1,7 @@
-import { CalendarClock, PackageCheck, PackageX, RotateCcw, Truck } from 'lucide-react';
+import { CalendarClock, ClipboardList, PackageCheck, PackageX, RotateCcw, Truck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useSidebarBadges } from '@/components/layout/sidebar-badges';
 import { StatCard } from '@/components/shared/stat-card';
 import { useIncomingStock, useWriteOffs } from '@/features/inventory/requests-api';
 import { useDeliveryCalendar } from '@/features/sales/api';
@@ -74,6 +75,31 @@ export function DispatchOverview() {
           value={formatCount(writeOffs.data?.length ?? 0)}
           hint="Expired, damaged or lost stock waiting for the Super Admin"
           icon={PackageX}
+        />
+      </Tile>
+    </div>
+  );
+}
+
+export function KeeperOverview() {
+  const badges = useSidebarBadges(true);
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Tile to="/stock-requests">
+        <StatCard
+          label="Approved requests to send"
+          value={formatCount(badges.data?.stockRequests ?? 0)}
+          hint="Open a request and use Send stock"
+          tone={badges.data?.stockRequests ? 'warning' : undefined}
+          icon={ClipboardList}
+        />
+      </Tile>
+      <Tile to="/incoming-stock">
+        <StatCard
+          label="Transfers not received yet"
+          value={formatCount(badges.data?.incomingStock ?? 0)}
+          hint="Sent stock the branches still have to check"
+          icon={Truck}
         />
       </Tile>
     </div>

@@ -18,7 +18,7 @@ import { useHasDispatch, useInDispatch, useInWarehouse } from '@/lib/auth/branch
 import { visibleMenu } from '@/lib/permissions/menu';
 import { useDashboard } from './api';
 import { DashboardOverview } from './dashboard-overview';
-import { DispatchOverview } from './dispatch-overview';
+import { DispatchOverview, KeeperOverview } from './dispatch-overview';
 
 function greeting() {
   const hour = new Date().getHours();
@@ -147,7 +147,13 @@ function BranchHome() {
         description={`${titleCase(me?.role ?? '')}${me?.branch ? ` · ${me.branch.name}` : ''}`}
       />
       <ExpiryAlertsPanel className="mb-6" />
-      {dispatchView ? <DispatchOverview /> : <DashboardOverview />}
+      {me?.role === 'warehouse_keeper' ? (
+        <KeeperOverview />
+      ) : dispatchView ? (
+        <DispatchOverview />
+      ) : (
+        <DashboardOverview />
+      )}
       <div className="mt-8 rounded-xl border bg-card shadow-xs">
         <div className="border-b px-5 py-4">
           <h2 className="text-sm font-semibold">Quick access</h2>

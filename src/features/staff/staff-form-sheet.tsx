@@ -47,7 +47,7 @@ export function StaffFormSheet({
   const save = useSaveStaff();
   const branchOptions = useBranchOptions(isSuperAdmin && open);
   const targets = (branchOptions.data ?? []).filter(
-    (b) => (b.kind === 'branch' || b.kind === 'dispatch') && b.status === 'active',
+    (b) => (b.kind === 'branch' || b.kind === 'dispatch' || b.kind === 'warehouse') && b.status === 'active',
   );
   const [suggested] = useState(generatePassword);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
@@ -140,7 +140,12 @@ export function StaffFormSheet({
                 options={targets.map((b) => ({
                   value: b.id,
                   label: b.name,
-                  hint: b.kind === 'dispatch' ? 'Dispatch Department' : undefined,
+                  hint:
+                    b.kind === 'dispatch'
+                      ? 'Dispatch Department'
+                      : b.kind === 'warehouse'
+                        ? 'Super Admin stock (Warehouse Keeper)'
+                        : undefined,
                 }))}
               />
             ) : null}
@@ -153,7 +158,9 @@ export function StaffFormSheet({
               description={
                 branchKind === 'dispatch'
                   ? 'The Dispatch Department has Branch Admin, Store Keeper, Delivery Print and Dispatcher only.'
-                  : undefined
+                  : branchKind === 'warehouse'
+                    ? 'The Super Admin stock has Warehouse Keepers only: they send the approved stock requests.'
+                    : undefined
               }
             />
           </FieldRow>

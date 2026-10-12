@@ -95,7 +95,7 @@ export function StaffPage() {
   const list = useListState({ defaultSort: isSuperAdmin ? '-createdAt' : 'firstName' });
   const branchOptions = useBranchOptions(isSuperAdmin);
   const branchChoices = (branchOptions.data ?? []).filter(
-    (b) => b.kind === 'branch' || b.kind === 'dispatch',
+    (b) => b.kind === 'branch' || b.kind === 'dispatch' || b.kind === 'warehouse',
   );
   const query = useStaffList(list.query);
   const setStatus = useStaffStatus();

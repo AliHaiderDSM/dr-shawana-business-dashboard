@@ -23,7 +23,7 @@ export function useBranchKind() {
 }
 
 export function useInWarehouse() {
-  return useCurrentBranch()?.kind === 'warehouse';
+  return useBranchKind() === 'warehouse';
 }
 
 export function useInDispatch() {

@@ -223,7 +223,8 @@ function RequestSheet({
   onClose: () => void;
   onSend: (prefill: StockRequestPrefill) => void;
 }) {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, me } = useAuth();
+  const sender = isSuperAdmin || me?.role === 'warehouse_keeper';
   const decide = useDecideStockRequest();
   const withdraw = useWithdrawStockRequest();
   const [approved, setApproved] = useState<Record<string, string>>({});
@@ -236,8 +237,7 @@ function RequestSheet({
       qty: Math.max(Number(i.approvedQty ?? 0) - Number(i.sentQty), 0),
     }))
     .filter((i) => i.qty > 0);
-  const canSend =
-    isSuperAdmin && (request.status === 'approved' || request.status === 'sent') && toSend.length > 0;
+  const canSend = sender && (request.status === 'approved' || request.status === 'sent') && toSend.length > 0;
 
   const answer = (approve: boolean) =>
     decide
@@ -287,7 +287,7 @@ function RequestSheet({
                   <th className="px-3 py-2 text-right font-medium">Approved</th>
                   <th className="px-3 py-2 text-right font-medium">Sent</th>
                   <th className="px-3 py-2 text-right font-medium">Received</th>
-                  {isSuperAdmin ? <th className="px-3 py-2 text-right font-medium">At Super Admin</th> : null}
+                  {sender ? <th className="px-3 py-2 text-right font-medium">At Super Admin</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -319,7 +319,7 @@ function RequestSheet({
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(i.sentQty)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(i.receivedQty)}</td>
-                    {isSuperAdmin ? (
+                    {sender ? (
                       <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">
                         {formatQuantity(i.available)}
                       </td>
@@ -336,11 +336,43 @@ function RequestSheet({
               {request.decisionNote ? ` · “${request.decisionNote}”` : ''}
             </p>
           ) : null}
-          {request.transferNos.length ? (
-            <p className="text-sm">
-              Transfers: <span className="font-mono">{request.transferNos.join(', ')}</span>
-              {request.receivedBy ? ` · received by ${request.receivedBy.name}` : ''}
-            </p>
+          {request.transfers.length ? (
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Transfer</th>
+                    <th className="px-3 py-2 text-left font-medium">Sent</th>
+                    <th className="px-3 py-2 text-right font-medium">Qty</th>
+                    <th className="px-3 py-2 text-left font-medium">Received</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {request.transfers.map((t) => (
+                    <tr key={t.transferNo}>
+                      <td className="px-3 py-2">
+                        <TraceNumber number={t.transferNo} />
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {formatDateTime(t.sentAt)}
+                        <div className="text-xs text-muted-foreground">by {t.sentBy ?? '—'}</div>
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(t.qty)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {t.received && t.receivedAt ? (
+                          <>
+                            {formatDateTime(t.receivedAt)}
+                            <div className="text-xs text-muted-foreground">by {t.receivedBy ?? '—'}</div>
+                          </>
+                        ) : (
+                          <StatusBadge tone="warning">On the way</StatusBadge>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
           {isSuperAdmin && pending ? (
             <div className="space-y-2">
@@ -378,6 +410,7 @@ function RequestSheet({
                   stockRequestId: request.id,
                   requestNo: request.requestNo,
                   toBranchId: request.branch.id,
+                  toBranchName: request.branch.name,
                   items: toSend.map((i) => ({ productId: i.productId, qty: String(i.qty) })),
                 })
               }
@@ -411,7 +444,8 @@ function RequestSheet({
 }
 
 export function StockRequestsPage() {
-  const { isSuperAdmin, can } = useAuth();
+  const { isSuperAdmin, can, me } = useAuth();
+  const overview = isSuperAdmin || me?.role === 'warehouse_keeper';
   const kind = useBranchKind();
   const [status, setStatus] = useState<StockRequestStatus | 'all'>('all');
   const requests = useStockRequests(status === 'all' ? undefined : status);
@@ -438,7 +472,7 @@ export function StockRequestsPage() {
       accessorFn: (r) => formatDateTime(r.createdAt),
       cell: ({ row }) => <span className="whitespace-nowrap">{formatDateTime(row.original.createdAt)}</span>,
     },
-    ...(isSuperAdmin
+    ...(overview
       ? ([
           {
             id: 'branch',
@@ -504,8 +538,10 @@ export function StockRequestsPage() {
         title="Stock requests"
         description={
           isSuperAdmin
-            ? 'What the branches asked for. Approve a request, then send it with Send stock; the branch admin receives it.'
-            : 'Ask the Super Admin for stock. Approved requests come as a transfer that your branch admin receives under Incoming stock.'
+            ? 'What the branches asked for. Approve a request; the Warehouse Keeper sends it and the branch admin receives it. Every request keeps its number from start to end.'
+            : me?.role === 'warehouse_keeper'
+              ? 'Requests the Super Admin approved. Open one and use Send stock: scan the approved products only. The branch admin receives it.'
+              : 'Ask the Super Admin for stock. Approved requests come as a transfer that your branch admin receives under Incoming stock.'
         }
         actions={
           canAsk ? (

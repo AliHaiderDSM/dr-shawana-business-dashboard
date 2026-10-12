@@ -18,6 +18,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   store_keeper: 'Store Keeper',
   delivery_print: 'Delivery Print',
   dispatcher: 'Dispatcher',
+  warehouse_keeper: 'Warehouse Keeper',
 };
 
 export const BRANCH_ROLES: BranchRole[] = [
@@ -30,6 +31,7 @@ export const BRANCH_ROLES: BranchRole[] = [
   'store_keeper',
   'delivery_print',
   'dispatcher',
+  'warehouse_keeper',
 ];
 
 export const DISPATCH_ROLES: BranchRole[] = ['branch_admin', 'store_keeper', 'delivery_print', 'dispatcher'];
@@ -41,7 +43,9 @@ export function creatableRoles(actor: Role, branchKind?: string | null): BranchR
       : actor === 'branch_admin'
         ? BRANCH_ROLES.filter((r) => r !== 'branch_admin')
         : [];
-  return branchKind === 'dispatch' ? base.filter((r) => DISPATCH_ROLES.includes(r)) : base;
+  if (branchKind === 'warehouse') return base.filter((r) => r === 'warehouse_keeper');
+  if (branchKind === 'dispatch') return base.filter((r) => DISPATCH_ROLES.includes(r));
+  return base.filter((r) => r !== 'store_keeper' && r !== 'warehouse_keeper');
 }
 
 const inBranch = (branchId?: string | null) => (branchId ? { query: { branchId } } : {});
