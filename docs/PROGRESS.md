@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## MRS and additional symptoms linked (2026-10-12)
+
+- Remarks 2.0 (consultation): MRS scale and Additional symptoms share one "Visit history" panel (per visit: MRS total, %, severity, and that visit's symptoms with severity); the current visit is highlighted. Saving the MRS opens the additional symptoms; that tab names the MRS date it belongs to. The MRS chart skips visits without an MRS.
+- The section list stays below the patient header whatever its height (measured), so its first items (Basic information … MRS scale) are no longer hidden under it.
+
 ## Table and filter polish (2026-10-12)
 
 - DataTable header in three rows: search with Reset on the left and Export / Columns on the right; a quick status row (quickFilters); then the filters. Headers and cells share the same padding (first and last columns a little wider), totals row too.

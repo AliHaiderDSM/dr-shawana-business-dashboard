@@ -14644,7 +14644,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** MRS scores of the patient over time (this branch) */
+        /** Each visit of the patient with its MRS scores and the additional symptoms of the same visit (this branch) */
         get: {
             parameters: {
                 query?: {
@@ -14668,7 +14668,10 @@ export interface paths {
                             data: {
                                 /** Format: uuid */
                                 consultationId: string;
-                                /** Format: date */
+                                /**
+                                 * Format: date
+                                 * @description MRS date of the visit, or the appointment date
+                                 */
                                 date: string;
                                 scores: {
                                     somatic: number;
@@ -14678,7 +14681,12 @@ export interface paths {
                                     percentage: number;
                                     /** @enum {string} */
                                     severity: "none" | "mild" | "moderate" | "severe";
-                                };
+                                } | null;
+                                symptoms: {
+                                    key: string;
+                                    severity: number | null;
+                                }[];
+                                otherSymptoms: string | null;
                             }[];
                         };
                     };

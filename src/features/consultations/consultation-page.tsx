@@ -12,7 +12,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -33,6 +33,7 @@ import { StatusDialog, type StatusChange } from '@/features/appointments/status-
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
+import { MrsSymptomsHistory } from '@/features/clinical/visit-history';
 import { patientsApi, usePatientSummary } from '@/features/patients/api';
 import { BhrtBadge } from '@/features/patients/bhrt-badge';
 import { ConsultationPrescriptions } from '@/features/prescriptions/consultation-prescriptions';
@@ -80,6 +81,24 @@ function navItems(consultation: Consultation, canPrescribe: boolean): NavItem[] 
   return items.filter((item): item is NavItem => Boolean(item));
 }
 
+function useHeaderHeight() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const root = document.documentElement;
+    const update = () => root.style.setProperty('--consult-header', `${node.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--consult-header');
+    };
+  }, []);
+  return ref;
+}
+
 function PatientHeader({
   consultation,
   appointment,
@@ -90,11 +109,15 @@ function PatientHeader({
   lastVisit: string | null | undefined;
 }) {
   const { can } = useAuth();
+  const headerRef = useHeaderHeight();
   const status = useConsultationStatus(consultation);
   const patient = consultation.patient;
   const completed = consultation.status === 'completed';
   return (
-    <div className="sticky top-topbar z-20 -mx-4 mb-6 border-b bg-background/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <div
+      ref={headerRef}
+      className="sticky top-topbar z-20 -mx-4 mb-6 border-b bg-background/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -298,10 +321,22 @@ function Workspace({
       onDirtyChange={onDirtyChange}
       onSaved={() => advance(key === 'imaging_results' ? 'records' : key)}
       aside={
-        key === 'mrs_scale' ? (
-          <Panel title="MRS history" description="Scores are calculated by the server on every save.">
-            <MrsScores consultation={consultation} />
-            <MrsChart patientId={consultation.patientId} />
+        key === 'mrs_scale' || key === 'additional_symptoms' ? (
+          <Panel
+            title="Visit history: MRS and additional symptoms"
+            description={
+              key === 'mrs_scale'
+                ? 'The MRS scale and the additional symptoms are one record of this visit. Save the MRS, then the additional symptoms open.'
+                : `Saved with the MRS scale of this visit${
+                    consultation.sections.mrs_scale?.data?.date
+                      ? ` (${formatDate(String(consultation.sections.mrs_scale.data.date))})`
+                      : ''
+                  }.`
+            }
+          >
+            {key === 'mrs_scale' ? <MrsScores consultation={consultation} /> : null}
+            {key === 'mrs_scale' ? <MrsChart patientId={consultation.patientId} /> : null}
+            <MrsSymptomsHistory patientId={consultation.patientId} currentId={consultation.id} />
           </Panel>
         ) : undefined
       }
@@ -379,7 +414,7 @@ function Workspace({
       <div className="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <nav
           aria-label="Consultation sections"
-          className="lg:sticky lg:top-[calc(var(--topbar-height)+8.5rem)] lg:self-start"
+          className="lg:sticky lg:top-[calc(var(--topbar-height)+var(--consult-header,8.5rem)+0.5rem)] lg:max-h-[calc(100vh-var(--topbar-height)-var(--consult-header,8.5rem)-1rem)] lg:self-start lg:overflow-y-auto"
         >
           <ul className="flex gap-1 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
             {items.map((item) => (

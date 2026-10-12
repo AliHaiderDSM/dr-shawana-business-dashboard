@@ -13,10 +13,9 @@ const SERIES = [
 export function MrsChart({ patientId }: { patientId: string }) {
   const history = useMrsHistory(patientId);
   if (history.isLoading) return <Skeleton className="h-56 w-full" />;
-  const points = (history.data ?? []).map((entry) => ({
-    date: formatDate(entry.date, 'dd MMM yy'),
-    ...entry.scores,
-  }));
+  const points = (history.data ?? []).flatMap((entry) =>
+    entry.scores ? [{ date: formatDate(entry.date, 'dd MMM yy'), ...entry.scores }] : [],
+  );
   if (points.length === 0)
     return <p className="py-6 text-center text-sm text-muted-foreground">No MRS assessments saved yet.</p>;
   return (
