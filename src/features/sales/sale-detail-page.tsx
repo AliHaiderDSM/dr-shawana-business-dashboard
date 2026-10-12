@@ -351,7 +351,6 @@ export function SaleDetailPage() {
   const s = sale.data;
   const editable = canChange(s, 'update');
   const online = s.saleType === 'online';
-  const shipsFromDispatch = online && Boolean(s.fulfillmentBranchId) && !inDispatch;
   const canApprove = can('salePayments.update') && s.deliveryStatus !== 'cancelled';
   const waiting = (s.payments ?? []).filter((p) => !p.approvedAt);
 
@@ -600,11 +599,6 @@ export function SaleDetailPage() {
           </div>
         </div>
         <div className="space-y-6">
-          {shipsFromDispatch ? (
-            <p className="rounded-lg border border-info/30 bg-info-soft px-3 py-2 text-sm text-info-soft-foreground">
-              The Dispatch Department ships this order from its own stock.
-            </p>
-          ) : null}
           {online ? <DeliveryTimeline sale={s} /> : null}
           <Panel title="Customer">
             <DetailList
@@ -646,6 +640,7 @@ export function SaleDetailPage() {
             </dl>
           </Panel>
           {can('returns.create') &&
+          s.deliveryStatus !== 'returned' &&
           !(online && (s.deliveryStatus === 'pending' || s.deliveryStatus === 'cancelled')) ? (
             <Button
               variant="outline"

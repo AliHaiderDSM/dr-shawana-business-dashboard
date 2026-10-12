@@ -39,7 +39,9 @@ const OVERVIEW_PATHS = [
   '/branch/inventory/write-offs',
   '/branch/discount-requests',
   '/branch/staff',
+  '/branch/returns',
 ];
+const OVERVIEW_PREFIXES = ['/branch/returns/'];
 
 let refreshing: Promise<StoredSession | null> | null = null;
 
@@ -75,7 +77,13 @@ function withBranch(href: string): string {
   const url = new URL(href, window.location.origin);
   const path = url.pathname.replace(new URL(env.VITE_API_BASE_URL, window.location.origin).pathname, '');
   if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return href;
-  if (branchStore.inWarehouse() && OVERVIEW_PATHS.includes(path)) return href;
+  if (
+    branchStore.inWarehouse() &&
+    (OVERVIEW_PATHS.includes(path) ||
+      (url.searchParams.size === 0 &&
+        OVERVIEW_PREFIXES.some((p) => path.startsWith(p) && !path.includes('/sale/'))))
+  )
+    return href;
   url.searchParams.set('branchId', branchId);
   return url.toString();
 }

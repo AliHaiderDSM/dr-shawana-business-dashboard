@@ -33,6 +33,7 @@ function useInvalidate() {
       queryClient.invalidateQueries({ queryKey: [KEY] }),
       queryClient.invalidateQueries({ queryKey: ['incoming-stock'] }),
       queryClient.invalidateQueries({ queryKey: ['stock'] }),
+      queryClient.invalidateQueries({ queryKey: ['sidebar-badges'] }),
     ]);
 }
 

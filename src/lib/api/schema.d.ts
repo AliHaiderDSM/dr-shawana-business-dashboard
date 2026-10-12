@@ -20825,6 +20825,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts for the red sidebar badges. Super Admin: requests waiting for a decision or to send, transfers not received yet, write-offs and discounts to approve, returns to inspect. Branch: approved or on-the-way stock requests, transfers to receive, write-offs and discounts waiting or ready, returns to inspect. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SidebarBadges"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/returns": {
         parameters: {
             query?: never;
@@ -20843,6 +20926,8 @@ export interface paths {
                     status?: "pending" | "completed";
                     reason?: "damaged" | "expired" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
                     disposition?: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
+                    /** @description inspect: items nobody checked yet; approve: online return items waiting for the Super Admin */
+                    stage?: "inspect" | "approve";
                     productId?: string;
                     saleId?: string;
                     from?: string;
@@ -21413,6 +21498,186 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/returns/{id}/items/{itemId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Super Admin approves what the dispatcher found on an online return item (restock, damaged, expired...); the stock follows now */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DecideReturnItem"];
+                };
+            };
+            responses: {
+                /** @description Approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReturn"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/returns/{id}/items/{itemId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Super Admin sends the item back to be checked again */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DecideReturnItem"];
+                };
+            };
+            responses: {
+                /** @description Rejected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReturn"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -27314,6 +27579,9 @@ export interface components {
         SetReturnRefund: {
             refund: components["schemas"]["ReturnRefundInput"] | null;
         };
+        DecideReturnItem: {
+            note?: string | null;
+        };
         SaleReturn: {
             /** Format: uuid */
             id: string;
@@ -27374,6 +27642,16 @@ export interface components {
                 /** Format: uuid */
                 resolvedBy: string | null;
                 resolutionNote: string | null;
+                /**
+                 * @description Online returns: what the dispatcher found, waiting for the Super Admin
+                 * @enum {string|null}
+                 */
+                proposedDisposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | null;
+                /** Format: uuid */
+                proposedBy: string | null;
+                /** Format: date-time */
+                proposedAt: string | null;
+                proposalNote: string | null;
                 /** @description The returned label (detail only) */
                 serial?: string | null;
             }[];
@@ -27970,6 +28248,13 @@ export interface components {
                 received: boolean;
                 labels: number;
             }[];
+        };
+        SidebarBadges: {
+            stockRequests: number;
+            incomingStock: number;
+            writeOffs: number;
+            discountRequests: number;
+            returns: number;
         };
         CreateJournalEntry: {
             /**

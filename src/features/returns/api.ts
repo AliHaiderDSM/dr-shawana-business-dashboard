@@ -32,7 +32,10 @@ const DEPENDENTS = ['returns', 'stock', 'products', 'dashboard', 'sales'];
 
 function useInvalidate() {
   const queryClient = useQueryClient();
-  return () => Promise.all(DEPENDENTS.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+  return () =>
+    Promise.all(
+      [...DEPENDENTS, 'sidebar-badges'].map((key) => queryClient.invalidateQueries({ queryKey: [key] })),
+    );
 }
 
 export function useReturns(query: Record<string, unknown>) {
@@ -103,6 +106,25 @@ export function useResolveItem(returnId: string) {
           params: { path: { id: returnId, itemId } },
           body: { disposition, note },
         }),
+      ).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDecideReturnItem(returnId: string) {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ itemId, approve, note }: { itemId: string; approve: boolean; note?: string | null }) =>
+      unwrap(
+        approve
+          ? api.POST('/admin/returns/{id}/items/{itemId}/approve', {
+              params: { path: { id: returnId, itemId } },
+              body: { note: note ?? null },
+            })
+          : api.POST('/admin/returns/{id}/items/{itemId}/reject', {
+              params: { path: { id: returnId, itemId } },
+              body: { note: note ?? null },
+            }),
       ).then((r) => r.data),
     onSuccess: invalidate,
   });

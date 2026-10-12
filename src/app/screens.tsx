@@ -256,13 +256,13 @@ export const screenRoutes: ScreenRoute[] = [
     path: 'returns',
     element: page(() => import('@/features/returns/returns-page'), 'ReturnsPage'),
     anyOf: ['returns.view'],
-    scope: 'branch',
+    scope: 'any',
   },
   {
     path: 'returns/:id',
     element: page(() => import('@/features/returns/return-detail-page'), 'ReturnDetailPage'),
     anyOf: ['returns.view'],
-    scope: 'branch',
+    scope: 'any',
   },
   {
     path: 'sales',

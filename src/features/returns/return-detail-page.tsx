@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Ban,
   CalendarX,
+  Check,
   ChevronDown,
   ClipboardCheck,
   Loader2,
@@ -12,6 +13,7 @@ import {
   Truck,
   Undo2,
   Wallet,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -53,6 +55,7 @@ import {
   DISPOSITION_LABELS,
   REASON_LABELS,
   useRemoveReturn,
+  useDecideReturnItem,
   useResolveItem,
   useReturn,
   useSetRefund,
@@ -118,8 +121,10 @@ function InspectDialog({
   onClose: () => void;
 }) {
   const resolve = useResolveItem(record.id);
+  const { isSuperAdmin } = useAuth();
   const [note, setNote] = useState('');
   const choice = OUTCOMES.find((o) => o.value === outcome);
+  const proposing = record.sale?.saleType === 'online' && !isSuperAdmin;
   return (
     <Dialog open onOpenChange={(open) => !open && !resolve.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -127,7 +132,11 @@ function InspectDialog({
           <DialogTitle>
             {choice?.label}: {item.product?.name} × {formatQuantity(item.qty)}
           </DialogTitle>
-          <DialogDescription>{choice?.description} This cannot be changed later.</DialogDescription>
+          <DialogDescription>
+            {proposing
+              ? `${choice?.description ?? ''} This is an online return: it goes to the Super Admin, and the stock changes only after approval.`
+              : `${choice?.description ?? ''} This cannot be changed later.`}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <Label htmlFor="inspect-note">Inspection note</Label>
@@ -145,7 +154,9 @@ function InspectDialog({
                 .mutateAsync({ itemId: item.id, disposition: outcome, note: note.trim() || null })
                 .then(() => {
                   toast.success(
-                    `${item.product?.name ?? 'Item'}: ${DISPOSITION_LABELS[outcome].toLowerCase()}`,
+                    proposing
+                      ? `${item.product?.name ?? 'Item'}: sent to the Super Admin as ${DISPOSITION_LABELS[outcome].toLowerCase()}`
+                      : `${item.product?.name ?? 'Item'}: ${DISPOSITION_LABELS[outcome].toLowerCase()}`,
                   );
                   onClose();
                 })
@@ -153,7 +164,7 @@ function InspectDialog({
             }
           >
             {resolve.isPending ? <Loader2 className="animate-spin" /> : null}
-            Confirm
+            {proposing ? 'Send for approval' : 'Confirm'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -266,8 +277,9 @@ function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => 
 export function ReturnDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
   const query = useReturn(id);
+  const decide = useDecideReturnItem(id);
   const remove = useRemoveReturn();
   const [inspecting, setInspecting] = useState<{ item: ReturnItem; outcome: Outcome } | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
@@ -405,6 +417,17 @@ export function ReturnDetailPage() {
                           {formatDateTime(item.resolvedAt)}
                         </div>
                       ) : null}
+                      {open && item.proposedDisposition ? (
+                        <div className="mt-1.5 rounded-md border border-warning/40 bg-warning-soft px-2 py-1 text-xs text-warning-soft-foreground">
+                          Checked as{' '}
+                          <strong>{DISPOSITION_LABELS[item.proposedDisposition].toLowerCase()}</strong>
+                          {item.proposedAt ? ` on ${formatDateTime(item.proposedAt)}` : ''} · waiting for the
+                          Super Admin
+                          {item.proposalNote ? (
+                            <div className="mt-0.5 whitespace-pre-wrap">{item.proposalNote}</div>
+                          ) : null}
+                        </div>
+                      ) : null}
                       {item.resolutionNote ? (
                         <div className="mt-0.5 max-w-56 text-xs whitespace-pre-wrap text-muted-foreground">
                           {item.resolutionNote}
@@ -412,7 +435,42 @@ export function ReturnDetailPage() {
                       ) : null}
                     </TableCell>
                     <TableCell className="py-3 text-right print:hidden">
-                      {open && canInspect ? (
+                      {open && isSuperAdmin && item.proposedDisposition ? (
+                        <div className="flex justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            disabled={decide.isPending}
+                            onClick={() =>
+                              decide
+                                .mutateAsync({ itemId: item.id, approve: true })
+                                .then(() => toast.success(`${item.product?.name ?? 'Item'} approved`))
+                                .catch(toastError)
+                            }
+                          >
+                            <Check />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={decide.isPending}
+                            onClick={() =>
+                              decide
+                                .mutateAsync({ itemId: item.id, approve: false })
+                                .then(() => toast.success('Sent back to be checked again'))
+                                .catch(toastError)
+                            }
+                          >
+                            <X />
+                            Reject
+                          </Button>
+                        </div>
+                      ) : open &&
+                        item.proposedDisposition &&
+                        !isSuperAdmin &&
+                        r.sale?.saleType === 'online' ? (
+                        <span className="text-xs text-muted-foreground">Waiting for approval</span>
+                      ) : open && canInspect ? (
                         <div className="flex justify-end gap-1.5">
                           <Button size="sm" onClick={() => setInspecting({ item, outcome: 'restocked' })}>
                             <PackageCheck />

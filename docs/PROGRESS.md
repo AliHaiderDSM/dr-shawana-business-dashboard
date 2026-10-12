@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Online return approval (2026-10-12)
+
+- Return detail: on an online return the check is sent for approval ("Send for approval"); the item shows what was found and waits; the Super Admin approves or rejects per item. Returns list has a step filter (To check / Waiting for Super Admin) and opens for the Super Admin across branches.
+
+## Sidebar badges, returned orders (2026-10-12)
+
+- Red count badges on Stock Requests, Incoming Stock, Write-offs, Discount Requests and Returns (dot when the sidebar is collapsed); refreshed every 30 s and after each action.
+- Sale detail: no "Receive a return" on an order already marked returned (its return was created with the mark).
+
 ## Write-off approval, employees overview, dispatcher view (2026-10-12)
 
 - Write-offs page: Report stock builds a list (scan labels or pick batches, qty, reason, note) and sends it for approval; the Super Admin approves or rejects each line with a note; status column and Waiting tab; home banner for the Super Admin. Batch write-off asks for approval for everyone but the Super Admin.

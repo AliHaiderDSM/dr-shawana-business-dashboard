@@ -55,6 +55,7 @@ export interface MenuItem {
   dispatchOnly?: boolean;
   notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
+  badge?: 'stockRequests' | 'incomingStock' | 'writeOffs' | 'discountRequests' | 'returns';
 }
 
 export interface MenuGroup {
@@ -182,6 +183,7 @@ export const MENU: MenuGroup[] = [
       },
       {
         key: 'discount-requests',
+        badge: 'discountRequests',
         label: 'Discount Requests',
         path: '/discount-requests',
         icon: BadgePercent,
@@ -208,11 +210,13 @@ export const MENU: MenuGroup[] = [
       },
       {
         key: 'returns',
+        badge: 'returns',
         label: 'Returns',
         path: '/returns',
         icon: Undo2,
         anyOf: ['returns.view'],
-        scope: 'branch',
+        scope: 'any',
+        showInWarehouse: true,
       },
     ],
   },
@@ -300,6 +304,7 @@ export const MENU: MenuGroup[] = [
       },
       {
         key: 'stock-requests',
+        badge: 'stockRequests',
         label: 'Stock Requests',
         path: '/stock-requests',
         icon: ClipboardList,
@@ -308,6 +313,7 @@ export const MENU: MenuGroup[] = [
       },
       {
         key: 'incoming-stock',
+        badge: 'incomingStock',
         label: 'Incoming Stock',
         path: '/incoming-stock',
         icon: PackageCheck,
@@ -316,6 +322,7 @@ export const MENU: MenuGroup[] = [
       },
       {
         key: 'write-offs',
+        badge: 'writeOffs',
         label: 'Write-offs',
         path: '/write-offs',
         icon: PackageX,

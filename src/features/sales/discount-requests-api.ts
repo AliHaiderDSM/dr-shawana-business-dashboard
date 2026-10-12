@@ -17,7 +17,11 @@ const KEY = 'discount-requests';
 
 function useInvalidate() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: [KEY] });
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: [KEY] }),
+      queryClient.invalidateQueries({ queryKey: ['sidebar-badges'] }),
+    ]);
 }
 
 export function useDiscountRequests(

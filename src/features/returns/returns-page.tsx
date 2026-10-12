@@ -198,6 +198,16 @@ export function ReturnsPage() {
             />
             <FilterSelect
               list={list}
+              name="stage"
+              allLabel="Any step"
+              className="w-48"
+              options={[
+                { value: 'inspect', label: 'To check' },
+                { value: 'approve', label: 'Waiting for Super Admin' },
+              ]}
+            />
+            <FilterSelect
+              list={list}
               name="disposition"
               allLabel="Any outcome"
               className="w-44"

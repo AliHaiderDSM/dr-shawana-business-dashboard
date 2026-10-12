@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useHasDispatch, useInDispatch, useInWarehouse } from '@/lib/auth/branches';
 import { findMenuItem, visibleMenu } from '@/lib/permissions/menu';
 import { cn } from '@/lib/utils';
+import { useSidebarBadges } from './sidebar-badges';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -38,6 +39,7 @@ export function SidebarNav({ collapsed, onNavigate }: { collapsed?: boolean; onN
   const groups = visibleMenu(can, isSuperAdmin, me?.role, inWarehouse, { inDispatch, hasDispatch });
   const { pathname } = useLocation();
   const activeKey = pathname === '/' ? 'dashboard' : findMenuItem(pathname)?.key;
+  const badges = useSidebarBadges(Boolean(me));
 
   return (
     <nav className="space-y-5 px-3 py-4" aria-label="Main">
@@ -66,8 +68,21 @@ export function SidebarNav({ collapsed, onNavigate }: { collapsed?: boolean; onN
                   )
                 }
               >
-                <item.icon className="size-4 shrink-0" />
+                <span className="relative">
+                  <item.icon className="size-4 shrink-0" />
+                  {collapsed && item.badge && badges.data?.[item.badge] ? (
+                    <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive ring-2 ring-sidebar" />
+                  ) : null}
+                </span>
                 {collapsed ? null : <span className="truncate">{item.label}</span>}
+                {!collapsed && item.badge && badges.data?.[item.badge] ? (
+                  <span
+                    className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground tabular-nums"
+                    aria-label={`${badges.data[item.badge]} waiting`}
+                  >
+                    {badges.data[item.badge] > 99 ? '99+' : badges.data[item.badge]}
+                  </span>
+                ) : null}
                 {!collapsed && item.phase ? (
                   <span className="ml-auto rounded px-1.5 text-[10px] font-medium text-sidebar-muted-foreground">
                     Soon
