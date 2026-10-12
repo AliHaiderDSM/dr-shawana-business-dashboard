@@ -228,7 +228,7 @@ export function StoreReceiptsPage() {
         description={
           keeper
             ? 'Stock In entries waiting for you. Count what arrived and confirm; only then it becomes stock.'
-            : 'Every Stock In of the Super Admin stock by GRN number. It becomes stock when the Warehouse Keeper confirms it.'
+            : 'Every Stock In of the Super Admin stock by GRN number. A Lab Officer entry becomes stock when the Warehouse Keeper confirms it; a Super Admin entry is stock at once.'
         }
       />
       <Tabs className="mb-4" value={status} onValueChange={(v) => setStatus(v as typeof status)}>
