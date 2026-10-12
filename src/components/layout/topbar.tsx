@@ -185,7 +185,7 @@ function UserMenu() {
 }
 
 export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
-  const { me, isSuperAdmin, canAny } = useAuth();
+  const { me, isSuperAdmin } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const location = useLocation();
   const section = findMenuItem(location.pathname);
@@ -199,9 +199,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         {section?.label}
       </div>
       <div className="ml-auto flex items-center gap-2">
-        {canAny(['stock.view', 'inventoryReport.view', 'sales.create', 'returns.create']) ? (
-          <LabelSearch />
-        ) : null}
+        <LabelSearch />
         {isSuperAdmin ? (
           <BranchSwitcher />
         ) : me?.branch ? (

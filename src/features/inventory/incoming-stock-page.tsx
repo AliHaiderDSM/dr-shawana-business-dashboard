@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity, isoDate } from '@/lib/format';
+import { TraceNumber } from '@/features/trace/trace-page';
 import { useIncomingStock, useReceiveStock, type IncomingStock } from './requests-api';
 
 function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canReceive: boolean }) {
@@ -23,7 +24,10 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm font-semibold">{transfer.transferNo}</span>
+            <TraceNumber
+              number={transfer.transferNo}
+              className="font-mono text-sm font-semibold text-primary hover:underline"
+            />
             {transfer.received ? (
               <StatusBadge tone="success">Received</StatusBadge>
             ) : (

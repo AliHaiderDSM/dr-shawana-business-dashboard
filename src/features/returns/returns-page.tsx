@@ -203,7 +203,7 @@ export function ReturnsPage() {
               className="w-48"
               options={[
                 { value: 'inspect', label: 'To check' },
-                { value: 'approve', label: 'Waiting for Super Admin' },
+                { value: 'approve', label: 'Waiting for approval' },
               ]}
             />
             <FilterSelect

@@ -114,18 +114,31 @@ export function useResolveItem(returnId: string) {
 export function useDecideReturnItem(returnId: string) {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: ({ itemId, approve, note }: { itemId: string; approve: boolean; note?: string | null }) =>
-      unwrap(
+    mutationFn: ({
+      itemId,
+      approve,
+      note,
+      asSuperAdmin,
+    }: {
+      itemId: string;
+      approve: boolean;
+      note?: string | null;
+      asSuperAdmin: boolean;
+    }) => {
+      const init = { params: { path: { id: returnId, itemId } }, body: { note: note ?? null } };
+      if (asSuperAdmin) {
+        return unwrap(
+          approve
+            ? api.POST('/admin/returns/{id}/items/{itemId}/approve', init)
+            : api.POST('/admin/returns/{id}/items/{itemId}/reject', init),
+        ).then((r) => r.data);
+      }
+      return unwrap(
         approve
-          ? api.POST('/admin/returns/{id}/items/{itemId}/approve', {
-              params: { path: { id: returnId, itemId } },
-              body: { note: note ?? null },
-            })
-          : api.POST('/admin/returns/{id}/items/{itemId}/reject', {
-              params: { path: { id: returnId, itemId } },
-              body: { note: note ?? null },
-            }),
-      ).then((r) => r.data),
+          ? api.POST('/branch/returns/{id}/items/{itemId}/approve', init)
+          : api.POST('/branch/returns/{id}/items/{itemId}/reject', init),
+      ).then((r) => r.data);
+    },
     onSuccess: invalidate,
   });
 }

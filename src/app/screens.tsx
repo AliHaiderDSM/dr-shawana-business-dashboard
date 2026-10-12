@@ -16,6 +16,18 @@ const anyStaff = ['dashboard.view', 'branches.view', 'deliveryReport.view'];
 
 export const screenRoutes: ScreenRoute[] = [
   {
+    path: 'trace',
+    element: page(() => import('@/features/trace/trace-page'), 'TracePage'),
+    anyOf: anyStaff,
+    scope: 'any',
+  },
+  {
+    path: 'trace/:number',
+    element: page(() => import('@/features/trace/trace-page'), 'TracePage'),
+    anyOf: anyStaff,
+    scope: 'any',
+  },
+  {
     path: 'profile',
     element: page(() => import('@/features/profile/profile-page'), 'ProfilePage'),
     anyOf: anyStaff,

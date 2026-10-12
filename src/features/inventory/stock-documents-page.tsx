@@ -1,6 +1,6 @@
 import { useCanReceiveStock } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
+import { ClipboardList, Paperclip, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -27,6 +27,7 @@ import {
 } from './api';
 import { STOCK_KINDS } from './stock-config';
 import { StockDocumentSheet } from './stock-document-sheet';
+import { TraceNumber } from '@/features/trace/trace-page';
 import { StockEntrySheet } from './stock-entry-sheet';
 
 function sameSlip(a: StockDocument, b: StockDocument) {
@@ -109,7 +110,10 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
               if (!t) return <span className="text-muted-foreground">—</span>;
               return (
                 <div className="space-y-1 whitespace-nowrap">
-                  <div className="font-mono text-xs font-medium">{t.no}</div>
+                  <TraceNumber
+                    number={t.no}
+                    className="block font-mono text-xs font-medium text-primary hover:underline"
+                  />
                   <StatusBadge tone={t.received ? 'success' : 'warning'}>
                     {t.received ? 'Received' : 'On the way'}
                   </StatusBadge>
@@ -283,10 +287,19 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
         description={
           kind === 'in' && !canReceive
             ? 'Stock this branch received from the Super Admin stock. Branches do not receive stock directly.'
-            : config.description
+            : kind === 'out'
+              ? 'Stock sent to branches. Stock goes out only for an approved branch request: open it in Stock Requests and use Send stock.'
+              : config.description
         }
         actions={
-          can('stock.create') && canReceive ? (
+          kind === 'out' ? (
+            <Button asChild variant="outline">
+              <Link to="/stock-requests">
+                <ClipboardList />
+                Stock requests
+              </Link>
+            </Button>
+          ) : can('stock.create') && canReceive ? (
             <Button onClick={() => setCreating(true)}>
               <Plus />
               New {config.title.toLowerCase()}

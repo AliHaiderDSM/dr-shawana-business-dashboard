@@ -121,10 +121,11 @@ function InspectDialog({
   onClose: () => void;
 }) {
   const resolve = useResolveItem(record.id);
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, me } = useAuth();
   const [note, setNote] = useState('');
   const choice = OUTCOMES.find((o) => o.value === outcome);
-  const proposing = record.sale?.saleType === 'online' && !isSuperAdmin;
+  const sellerAdmin = me?.role === 'branch_admin' && me.branch?.id === record.branchId;
+  const proposing = record.sale?.saleType === 'online' && !isSuperAdmin && !sellerAdmin;
   return (
     <Dialog open onOpenChange={(open) => !open && !resolve.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -134,7 +135,7 @@ function InspectDialog({
           </DialogTitle>
           <DialogDescription>
             {proposing
-              ? `${choice?.description ?? ''} This is an online return: it goes to the Super Admin, and the stock changes only after approval.`
+              ? `${choice?.description ?? ''} This is an online return: it goes to the admin of the branch that made the sale, and the stock changes only after approval.`
               : `${choice?.description ?? ''} This cannot be changed later.`}
           </DialogDescription>
         </DialogHeader>
@@ -155,7 +156,7 @@ function InspectDialog({
                 .then(() => {
                   toast.success(
                     proposing
-                      ? `${item.product?.name ?? 'Item'}: sent to the Super Admin as ${DISPOSITION_LABELS[outcome].toLowerCase()}`
+                      ? `${item.product?.name ?? 'Item'}: sent for approval as ${DISPOSITION_LABELS[outcome].toLowerCase()}`
                       : `${item.product?.name ?? 'Item'}: ${DISPOSITION_LABELS[outcome].toLowerCase()}`,
                   );
                   onClose();
@@ -277,7 +278,7 @@ function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => 
 export function ReturnDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { can, isSuperAdmin } = useAuth();
+  const { can, isSuperAdmin, me } = useAuth();
   const query = useReturn(id);
   const decide = useDecideReturnItem(id);
   const remove = useRemoveReturn();
@@ -435,14 +436,16 @@ export function ReturnDetailPage() {
                       ) : null}
                     </TableCell>
                     <TableCell className="py-3 text-right print:hidden">
-                      {open && isSuperAdmin && item.proposedDisposition ? (
+                      {open &&
+                      item.proposedDisposition &&
+                      (isSuperAdmin || (me?.role === 'branch_admin' && me.branch?.id === r.branchId)) ? (
                         <div className="flex justify-end gap-1.5">
                           <Button
                             size="sm"
                             disabled={decide.isPending}
                             onClick={() =>
                               decide
-                                .mutateAsync({ itemId: item.id, approve: true })
+                                .mutateAsync({ itemId: item.id, approve: true, asSuperAdmin: isSuperAdmin })
                                 .then(() => toast.success(`${item.product?.name ?? 'Item'} approved`))
                                 .catch(toastError)
                             }
@@ -456,7 +459,7 @@ export function ReturnDetailPage() {
                             disabled={decide.isPending}
                             onClick={() =>
                               decide
-                                .mutateAsync({ itemId: item.id, approve: false })
+                                .mutateAsync({ itemId: item.id, approve: false, asSuperAdmin: isSuperAdmin })
                                 .then(() => toast.success('Sent back to be checked again'))
                                 .catch(toastError)
                             }

@@ -39,6 +39,7 @@ import {
   type StockRequestStatus,
 } from './requests-api';
 import { StockDocumentSheet, type StockRequestPrefill } from './stock-document-sheet';
+import { TraceNumber } from '@/features/trace/trace-page';
 import { STOCK_KINDS } from './stock-config';
 
 export const STOCK_REQUEST_TONES: Record<StockRequestStatus, Tone> = {
@@ -429,9 +430,7 @@ export function StockRequestsPage() {
       id: 'requestNo',
       header: 'Request no',
       accessorKey: 'requestNo',
-      cell: ({ row }) => (
-        <span className="font-mono font-medium whitespace-nowrap">{row.original.requestNo}</span>
-      ),
+      cell: ({ row }) => <TraceNumber number={row.original.requestNo} />,
     },
     {
       id: 'createdAt',

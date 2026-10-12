@@ -41,7 +41,7 @@ const OVERVIEW_PATHS = [
   '/branch/staff',
   '/branch/returns',
 ];
-const OVERVIEW_PREFIXES = ['/branch/returns/'];
+const OVERVIEW_PREFIXES = ['/branch/returns/', '/branch/trace/'];
 
 let refreshing: Promise<StoredSession | null> | null = null;
 

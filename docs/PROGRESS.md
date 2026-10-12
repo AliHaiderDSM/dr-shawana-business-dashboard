@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Trace page, seller return approval, stock out from requests (2026-10-12)
+
+- Top bar search finds any number (or a DSM label) and opens /trace/:number: details, items, linked numbers (clickable) and every step with who and when; Open goes to the record page. Numbers in Stock Requests, Discount Requests, Write-offs, Incoming Stock and Stock Out link to the trace.
+- Return detail: the selling branch admin approves or rejects what the dispatcher found; the dispatcher sends checks for approval.
+- Stock Out page has no New button; it points to Stock Requests (Send stock).
+
 ## Online return approval (2026-10-12)
 
 - Return detail: on an online return the check is sent for approval ("Send for approval"); the item shows what was found and waits; the Super Admin approves or rejects per item. Returns list has a step filter (To check / Waiting for Super Admin) and opens for the Super Admin across branches.

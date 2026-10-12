@@ -23,6 +23,7 @@ import { toastError } from '@/lib/api/errors';
 import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
+import { TraceNumber } from '@/features/trace/trace-page';
 import {
   DISCOUNT_STATUS_LABELS,
   useDecideDiscount,
@@ -115,9 +116,7 @@ export function DiscountRequestsPage() {
       id: 'requestNo',
       header: 'Request no',
       accessorKey: 'requestNo',
-      cell: ({ row }) => (
-        <span className="font-mono font-medium whitespace-nowrap">{row.original.requestNo}</span>
-      ),
+      cell: ({ row }) => <TraceNumber number={row.original.requestNo} />,
     },
     {
       id: 'createdAt',

@@ -37,6 +37,7 @@ import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatQuantity } from '@/lib/format';
 import { findItemBySerial, useBatches, type ProductBatch } from './api';
+import { TraceNumber } from '@/features/trace/trace-page';
 import {
   useDecideWriteOff,
   usePendingWriteOffCount,
@@ -360,9 +361,7 @@ export function WriteOffsPage() {
       id: 'writeOffNo',
       header: 'Write-off no',
       accessorKey: 'writeOffNo',
-      cell: ({ row }) => (
-        <span className="font-mono font-medium whitespace-nowrap">{row.original.writeOffNo}</span>
-      ),
+      cell: ({ row }) => <TraceNumber number={row.original.writeOffNo} />,
     },
     {
       id: 'date',
