@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient app: access codes and requests (2026-10-13)
+
+- Patient profile: "Mobile app" panel under Details shows whether the patient uses the app, creates a 6-digit activation code (shown once, also used to reset a forgotten password) and turns access off.
+- "Patient Requests" page (Patients & Care, `patients.view`) with Open / Resolved / Closed / All tabs and a sheet to change status and reply; red sidebar badge for open requests.
+- Medical records uploaded from the app show a "From patient app" badge.
+- Note: `src/features/home/home-page.tsx` (last commit) has unused imports and variables, so `tsc -b` / `npm run build` fail until they are removed; `vite build` passes.
+
 ## Read saved reports with AI (2026-10-13)
 
 - Medical and imaging records files (PDF and photos) have checkboxes on the patient profile and the consultation Records tab; up to 5. With files ticked, the Blood work button reads "Read N selected (AI)" and reads them straight away; with none ticked it opens the device picker as before.
