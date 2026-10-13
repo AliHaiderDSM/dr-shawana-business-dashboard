@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { ReportSummaries } from './report-summaries';
 import { prepareReportFiles, REPORT_ACCEPT, ReportFileError } from './prepare-report-files';
+import { useReportSelection } from './report-selection';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import {
   BLOOD_TEST_LABELS,
@@ -272,10 +273,12 @@ export function BloodWorkPanel({
   } | null>(null);
   const read = useReadBloodReport(patientId);
   const add = useAddBloodWork(patientId);
-  const fileInput = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const selection = useReportSelection();
+  const chosen = selection?.selected ?? [];
 
-  const readReport = async (picked: File[]) => {
+  const readReport = async (picked: File[], recordFileIds: string[]) => {
     setReading(true);
     try {
       let files: File[];
@@ -284,18 +287,19 @@ export function BloodWorkPanel({
       } catch (error) {
         if (error instanceof ReportFileError) {
           toast.error(error.message, { duration: 10000 });
-          return;
+          return false;
         }
         throw error;
       }
-      const found = await read.mutateAsync(files);
+      const found = await read.mutateAsync({ files, recordFileIds });
+      if (recordFileIds.length) selection?.clear();
       if (found.results.length === 0) {
         toast.message(
           found.summary
             ? 'None of the 9 blood work tests is on these reports, so no value was added. The report summary is below.'
             : 'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found.',
         );
-        return;
+        return true;
       }
       const dated = new Map<string, typeof found.results>();
       const undated = found.results.filter((r) => !r.testDate);
@@ -323,8 +327,10 @@ export function BloodWorkPanel({
           prefill: Object.fromEntries(undated.map((r) => [r.test, r.value])),
         }));
       }
+      return true;
     } catch (error) {
       toastError(error);
+      return false;
     } finally {
       setReading(false);
       if (fileInput.current) fileInput.current.value = '';
@@ -363,18 +369,26 @@ export function BloodWorkPanel({
               className="hidden"
               onChange={(e) => {
                 const files = Array.from(e.target.files ?? []);
-                if (files.length) void readReport(files);
+                if (files.length) void readReport(files, []);
               }}
             />
             <Button
               size="sm"
-              variant="outline"
+              variant={chosen.length ? 'default' : 'outline'}
               disabled={reading}
-              title="Upload up to 5 lab reports at once (PDF, JPG, PNG, WebP or HEIC; 4.3 MB in total, photos are made smaller first). AI reads the values and writes one summary."
-              onClick={() => fileInput.current?.click()}
+              title={
+                chosen.length
+                  ? 'Read the reports ticked under Medical and imaging records. AI reads the values and writes one summary.'
+                  : 'Tick saved reports under Medical and imaging records first, or click to upload up to 5 lab reports from this device (PDF, JPG, PNG, WebP or HEIC; 4.3 MB in total). AI reads the values and writes one summary.'
+              }
+              onClick={() => (chosen.length ? void readReport([], chosen) : fileInput.current?.click())}
             >
               {reading ? <Loader2 className="animate-spin" /> : <Sparkles />}
-              {reading ? 'Reading report…' : 'Read report (AI)'}
+              {reading
+                ? 'Reading report…'
+                : chosen.length
+                  ? `Read ${chosen.length} selected (AI)`
+                  : 'Read report (AI)'}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setSheet({ date: null, key: Date.now() })}>
               <Plus />

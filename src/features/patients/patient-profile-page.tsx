@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { timeRange, useAppointmentList, type Appointment } from '@/features/appointments/api';
 import { BhrtPanel } from '@/features/clinical/bhrt-panel';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
+import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
 import { prescriptionsApi, type Prescription } from '@/features/prescriptions/api';
@@ -310,8 +311,10 @@ export function PatientProfilePage() {
           ) : null}
           {clinical ? (
             <TabsContent value="records" className="mt-4 space-y-6">
-              <MedicalRecordsPanel patientId={p.id} canEdit={canEditClinical} />
-              <BloodWorkPanel patientId={p.id} canEdit={canEditClinical} />
+              <ReportSelectionProvider>
+                <MedicalRecordsPanel patientId={p.id} canEdit={canEditClinical} />
+                <BloodWorkPanel patientId={p.id} canEdit={canEditClinical} />
+              </ReportSelectionProvider>
             </TabsContent>
           ) : null}
           {clinical ? (

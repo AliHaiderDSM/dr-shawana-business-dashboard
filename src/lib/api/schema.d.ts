@@ -15950,6 +15950,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/patients/{id}/report-summaries/{summaryId}/files/{index}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Short-lived link to a report uploaded with an AI summary */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    summaryId: string;
+                    index: number | null;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Signed URL */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                url: string;
+                                expiresIn: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/patients/{id}/report-summaries/{summaryId}": {
         parameters: {
             query?: never;
@@ -16043,7 +16135,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Read blood work values from an uploaded report (multipart "file" or up to 5 "files": PDFs or images) with AI, and write a clinical summary of the whole report. The values are not saved (the caller saves them); the summary is saved on the patient. */
+        /** Read blood work values with AI from up to 5 reports: uploaded ones (multipart "files": PDFs or images) and saved medical record files ("recordFileIds"). One clinical summary of all of them is saved on the patient with the uploaded files kept beside it. The values are not saved (the caller saves them). */
         post: {
             parameters: {
                 query?: {
@@ -27748,6 +27840,16 @@ export interface components {
             /** Format: date */
             testDate: string | null;
             fileName: string | null;
+            /** @description Reports read for this summary. A saved record file opens by recordFileId; an uploaded one through the summary file link when stored. */
+            files: {
+                index: number;
+                name: string;
+                contentType: string;
+                sizeBytes: number;
+                /** Format: uuid */
+                recordFileId: string | null;
+                stored: boolean;
+            }[];
             valuesFound: number;
             model: string | null;
             createdAt: string;

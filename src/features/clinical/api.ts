@@ -227,8 +227,9 @@ export type ReadBloodReport = Schemas['ReadBloodReport'];
 export function useReadBloodReport(patientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (files: File[]) => {
+    mutationFn: ({ files, recordFileIds }: { files: File[]; recordFileIds: string[] }) => {
       const form = new FormData();
+      for (const id of recordFileIds) form.append('recordFileIds', id);
       for (const file of files) form.append('files', file);
       return uploadForm<ReadBloodReport>(`/branch/patients/${patientId}/blood-work/read-report`, form);
     },
@@ -247,6 +248,15 @@ export function useReportSummaries(patientId: string) {
       ),
     enabled: Boolean(patientId),
   });
+}
+
+export async function reportSummaryFileUrl(patientId: string, summaryId: string, index: number) {
+  const result = await unwrap(
+    api.GET('/branch/patients/{id}/report-summaries/{summaryId}/files/{index}/url', {
+      params: { path: { id: patientId, summaryId, index } },
+    }),
+  );
+  return result.data;
 }
 
 export function useRemoveReportSummary(patientId: string) {

@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Read saved reports with AI (2026-10-13)
+
+- Medical and imaging records files (PDF and photos) have checkboxes on the patient profile and the consultation Records tab; up to 5. With files ticked, the Blood work button reads "Read N selected (AI)" and reads them straight away; with none ticked it opens the device picker as before.
+- Reports from the device stay with the AI summary, not under Medical records. File names on a summary row open the file (saved records and new uploads); older summaries show the name only.
+
 ## Expiry alerts by batch (2026-10-13)
 
 - One row per product batch (same product, batch and expiry): total quantity across all places, the place name or "N places". The side sheet lists every place holding that batch, then the other expiring batches of the product.

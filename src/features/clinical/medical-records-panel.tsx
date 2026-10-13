@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FilePlus2, Trash2, Upload } from 'lucide-react';
+import { FilePlus2, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ import {
   useRemoveRecordFile,
   type MedicalRecord,
 } from './api';
+import { READABLE_RECORD_TYPES, useReportSelection } from './report-selection';
 
 const schema = z.object({
   type: z.enum(['medical_record', 'imaging']),
@@ -118,6 +119,8 @@ function RecordCard({
   const removeFile = useRemoveRecordFile(patientId);
   const [files, setFiles] = useState<File[]>([]);
   const [adding, setAdding] = useState(false);
+  const selection = useReportSelection();
+  const selectable = canEdit && selection;
   return (
     <div className="space-y-3 rounded-lg border p-4">
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -135,12 +138,16 @@ function RecordCard({
       <AttachmentList
         files={record.files}
         getUrl={(file) => patientRecordFileUrl(patientId, file.id)}
+        selected={selectable ? selection.selected : undefined}
+        onSelect={selectable ? (file, checked) => selection.toggle(file.id, checked) : undefined}
+        canSelect={(file) => READABLE_RECORD_TYPES.includes(file.contentType)}
         onRemove={
           canEdit
             ? (file) =>
-                removeFile
-                  .mutateAsync({ recordId: record.id, fileId: file.id })
-                  .then(() => toast.success('File removed'))
+                removeFile.mutateAsync({ recordId: record.id, fileId: file.id }).then(() => {
+                  selection?.toggle(file.id, false);
+                  toast.success('File removed');
+                })
             : undefined
         }
       />
@@ -195,6 +202,8 @@ export function MedicalRecordsPanel({
   const remove = useRemoveMedicalRecord(patientId);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<MedicalRecord | null>(null);
+  const selection = useReportSelection();
+  const chosen = canEdit ? (selection?.selected.length ?? 0) : 0;
 
   return (
     <Panel
@@ -209,6 +218,19 @@ export function MedicalRecordsPanel({
         ) : null
       }
     >
+      {chosen > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary-soft/40 px-3 py-2 text-sm">
+          <Sparkles className="size-4 text-primary" />
+          <span className="flex-1">
+            {chosen} report{chosen === 1 ? '' : 's'} selected. Click <strong>Read report (AI)</strong> under
+            Blood work to read {chosen === 1 ? 'it' : 'them'}.
+          </span>
+          <Button size="sm" variant="ghost" onClick={selection?.clear}>
+            <X />
+            Clear
+          </Button>
+        </div>
+      ) : null}
       {records.isLoading ? (
         <Skeleton className="h-24 w-full" />
       ) : !records.data?.length ? (

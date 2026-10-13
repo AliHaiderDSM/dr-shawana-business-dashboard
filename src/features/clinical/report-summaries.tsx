@@ -1,13 +1,20 @@
 import { AlertTriangle, ChevronDown, FileText, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { openSignedUrl } from '@/components/shared/attachment-list';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { toastError } from '@/lib/api/errors';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useRemoveReportSummary, useReportSummaries, type LabReportSummary } from './api';
+import { patientRecordFileUrl } from '@/features/patients/api';
+import {
+  reportSummaryFileUrl,
+  useRemoveReportSummary,
+  useReportSummaries,
+  type LabReportSummary,
+} from './api';
 
 const DISCLAIMER = 'AI-generated summary; clinician verification required.';
 
@@ -138,6 +145,41 @@ function SummaryBody({ item }: { item: LabReportSummary }) {
   );
 }
 
+function SummaryFiles({ patientId, item }: { patientId: string; item: LabReportSummary }) {
+  if (item.files.length === 0) {
+    return item.fileName ? <span className="text-muted-foreground">{item.fileName}</span> : null;
+  }
+  return (
+    <>
+      {item.files.map((file, index) => {
+        const recordFileId = file.recordFileId;
+        const open = recordFileId
+          ? () => patientRecordFileUrl(patientId, recordFileId)
+          : file.stored
+            ? () => reportSummaryFileUrl(patientId, item.id, file.index)
+            : null;
+        return (
+          <span key={file.index} className="min-w-0">
+            {open ? (
+              <button
+                type="button"
+                className="text-left text-primary hover:underline"
+                title={`Open ${file.name}`}
+                onClick={() => void openSignedUrl(open)}
+              >
+                {file.name}
+              </button>
+            ) : (
+              <span className="text-muted-foreground">{file.name}</span>
+            )}
+            {index < item.files.length - 1 ? <span className="text-muted-foreground">,</span> : null}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 export function ReportSummaries({ patientId, canEdit }: { patientId: string; canEdit: boolean }) {
   const summaries = useReportSummaries(patientId);
   const remove = useRemoveReportSummary(patientId);
@@ -167,39 +209,46 @@ export function ReportSummaries({ patientId, canEdit }: { patientId: string; can
         {items.map((item) => {
           const open = item.id === expanded;
           const abnormal = item.summary.abnormal.length;
+          const toggle = () => setOpenId(open ? 'none' : item.id);
           return (
             <li key={item.id}>
               <div className="flex items-center gap-2 px-4 py-2.5">
-                <button
-                  type="button"
-                  onClick={() => setOpenId(open ? 'none' : item.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  aria-expanded={open}
-                >
-                  <ChevronDown
-                    className={cn(
-                      'size-4 shrink-0 text-muted-foreground transition-transform',
-                      !open && '-rotate-90',
-                    )}
-                  />
-                  <FileText className="size-4 shrink-0 text-muted-foreground" />
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggle}
+                    className="flex shrink-0 items-center gap-2"
+                    aria-expanded={open}
+                    aria-label={open ? 'Hide summary' : 'Show summary'}
+                  >
+                    <ChevronDown
+                      className={cn(
+                        'size-4 shrink-0 text-muted-foreground transition-transform',
+                        !open && '-rotate-90',
+                      )}
+                    />
+                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                  </button>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">
-                      {(item.summary.documents?.length ?? 0) > 1
-                        ? `${item.summary.documents!.length} reports`
-                        : item.testDate
-                          ? `Report of ${formatDate(item.testDate)}`
-                          : 'Report (no date)'}
-                      {item.fileName ? (
-                        <span className="font-normal text-muted-foreground"> · {item.fileName}</span>
+                    <span className="flex flex-wrap items-baseline gap-x-1.5 text-sm">
+                      <button type="button" onClick={toggle} className="text-left font-medium">
+                        {(item.summary.documents?.length ?? 0) > 1
+                          ? `${item.summary.documents!.length} reports`
+                          : item.testDate
+                            ? `Report of ${formatDate(item.testDate)}`
+                            : 'Report (no date)'}
+                      </button>
+                      {item.files.length || item.fileName ? (
+                        <span className="text-muted-foreground">·</span>
                       ) : null}
+                      <SummaryFiles patientId={patientId} item={item} />
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       Read {formatDateTime(item.createdAt)}
                       {item.createdBy ? ` by ${item.createdBy}` : ''} · {item.valuesFound} values added
                     </span>
                   </span>
-                </button>
+                </div>
                 {abnormal ? (
                   <StatusBadge tone="warning">{abnormal} abnormal</StatusBadge>
                 ) : (

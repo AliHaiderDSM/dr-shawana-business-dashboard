@@ -1,6 +1,7 @@
 import { FileImage, FileText, Loader2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toastError } from '@/lib/api/errors';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,9 @@ interface AttachmentListProps {
   onRemove?: (file: StoredFile) => Promise<unknown>;
   emptyText?: string;
   className?: string;
+  selected?: string[];
+  onSelect?: (file: StoredFile, checked: boolean) => void;
+  canSelect?: (file: StoredFile) => boolean;
 }
 
 const MB = 1024 * 1024;
@@ -40,7 +44,16 @@ export async function openSignedUrl(getUrl: () => Promise<{ url: string }>) {
   }
 }
 
-export function AttachmentList({ files, getUrl, onRemove, emptyText, className }: AttachmentListProps) {
+export function AttachmentList({
+  files,
+  getUrl,
+  onRemove,
+  emptyText,
+  className,
+  selected,
+  onSelect,
+  canSelect,
+}: AttachmentListProps) {
   const [busy, setBusy] = useState<string | null>(null);
 
   if (files.length === 0) {
@@ -56,6 +69,14 @@ export function AttachmentList({ files, getUrl, onRemove, emptyText, className }
           .join(' · ');
         return (
           <li key={file.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+            {onSelect ? (
+              <Checkbox
+                checked={selected?.includes(file.id) ?? false}
+                disabled={canSelect ? !canSelect(file) : false}
+                onCheckedChange={(value) => onSelect(file, value === true)}
+                aria-label={`Select ${file.originalName}`}
+              />
+            ) : null}
             <Icon className="size-4 shrink-0 text-muted-foreground" />
             <button
               type="button"

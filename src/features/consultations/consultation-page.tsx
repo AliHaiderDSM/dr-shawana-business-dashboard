@@ -31,6 +31,7 @@ import {
 } from '@/features/appointments/api';
 import { StatusDialog, type StatusChange } from '@/features/appointments/status-dialog';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
+import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
 import { MrsSymptomsHistory } from '@/features/clinical/visit-history';
@@ -362,19 +363,21 @@ function Workspace({
     switch (active) {
       case 'records':
         return (
-          <div className="space-y-6">
-            <MedicalRecordsPanel
-              patientId={consultation.patientId}
-              appointmentId={consultation.appointmentId}
-              canEdit={can('consultations.create') || can('consultations.update')}
-            />
-            <BloodWorkPanel
-              patientId={consultation.patientId}
-              consultationId={consultation.id}
-              canEdit={can('consultations.create') || can('consultations.update')}
-            />
-            <div className="rounded-xl border bg-card p-6 shadow-xs">{sectionPanel('imaging_results')}</div>
-          </div>
+          <ReportSelectionProvider>
+            <div className="space-y-6">
+              <MedicalRecordsPanel
+                patientId={consultation.patientId}
+                appointmentId={consultation.appointmentId}
+                canEdit={can('consultations.create') || can('consultations.update')}
+              />
+              <BloodWorkPanel
+                patientId={consultation.patientId}
+                consultationId={consultation.id}
+                canEdit={can('consultations.create') || can('consultations.update')}
+              />
+              <div className="rounded-xl border bg-card p-6 shadow-xs">{sectionPanel('imaging_results')}</div>
+            </div>
+          </ReportSelectionProvider>
         );
       case 'clinical':
         return (
