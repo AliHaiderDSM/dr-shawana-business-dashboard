@@ -64,68 +64,7 @@ function SuperAdminHome() {
       <PendingWriteOffsBanner className="mb-4" />
       <ExpiryAlertsPanel className="mb-6" />
       <DashboardOverview />
-      <h2 className="mt-8 mb-3 text-sm font-semibold">Branches</h2>
-      {branches.isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-52 rounded-xl" />
-          ))}
-        </div>
-      ) : branches.error ? (
-        <ErrorState error={branches.error} onRetry={() => void branches.refetch()} />
-      ) : branches.data?.data.length === 0 ? (
-        <div className="rounded-xl border bg-card">
-          <EmptyState
-            icon={Building2}
-            title="No branches yet"
-            description="Create your first branch, then add its branch admin."
-            action={
-              <Button asChild size="sm">
-                <Link to="/admin/branches?new=1">Create branch</Link>
-              </Button>
-            }
-          />
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {branches.data?.data.map((branch) => (
-            <div key={branch.id} className="flex flex-col rounded-xl border bg-card p-5 shadow-xs">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft px-2 text-xs font-semibold text-primary-soft-foreground">
-                    {branch.code}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{branch.name}</div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="size-3" />
-                      {branch.city}
-                      {branch.kind === 'warehouse' ? ' · Super Admin stock' : ''}
-                    </div>
-                  </div>
-                </div>
-                <StatusBadge status={branch.status} />
-              </div>
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <BranchFigure label="Sales this month" value={figures.get(branch.code)?.salesMonth} />
-                <BranchFigure
-                  label="Appointment payments"
-                  value={figures.get(branch.code)?.appointmentsMonth}
-                />
-              </div>
-              <div className="mt-5 flex items-center gap-2 border-t pt-4">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/admin/branches/${branch.id}`}>Details</Link>
-                </Button>
-                <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setBranchId(branch.id)}>
-                  Work in branch
-                  <ArrowUpRight />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+ 
     </>
   );
 }
