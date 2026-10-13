@@ -12,12 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Dispatcher menu and stock out report (2026-10-13)
+- "Send stock" on an approved request shows for the Warehouse Keeper only; the Super Admin approves.
+- Staff form: Dispatcher is offered only for the Dispatch Department.
+
+- Dispatcher sidebar: Dashboard, Deliveries, Delivery report, Returns, Write-offs, Stock, Labels only. Incoming stock can be received by the branch admin only. The write-off report button stays for the dispatcher.
+- New "Stock Out Report" page (Inventory, warehouse view; also in the Warehouse Keeper menu): transfers with date, destination, request, products, quantity, labels scanned, sent by and received; tabs for on the way / received, date range and branch filters, export, and a sheet with each item and its labels.
+
 ## Patient app: access codes and requests (2026-10-13)
 
 - Patient profile: "Mobile app" panel under Details shows whether the patient uses the app, creates a 6-digit activation code (shown once, also used to reset a forgotten password) and turns access off.
 - "Patient Requests" page (Patients & Care, `patients.view`) with Open / Resolved / Closed / All tabs and a sheet to change status and reply; red sidebar badge for open requests.
 - Medical records uploaded from the app show a "From patient app" badge.
-- Note: `src/features/home/home-page.tsx` (last commit) has unused imports and variables, so `tsc -b` / `npm run build` fail until they are removed; `vite build` passes.
 
 ## Read saved reports with AI (2026-10-13)
 

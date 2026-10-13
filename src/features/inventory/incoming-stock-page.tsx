@@ -113,7 +113,7 @@ export function IncomingStockPage() {
   const { me, isSuperAdmin } = useAuth();
   const [status, setStatus] = useState<'waiting' | 'received' | 'all'>('waiting');
   const transfers = useIncomingStock(status === 'all' ? undefined : status);
-  const canReceive = !isSuperAdmin && (me?.role === 'branch_admin' || me?.role === 'dispatcher');
+  const canReceive = !isSuperAdmin && me?.role === 'branch_admin';
 
   return (
     <>

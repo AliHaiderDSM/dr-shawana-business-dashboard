@@ -47,7 +47,9 @@ export function creatableRoles(actor: Role, branchKind?: string | null): BranchR
         : [];
   if (branchKind === 'warehouse') return base.filter((r) => r === 'warehouse_keeper' || r === 'lab_officer');
   if (branchKind === 'dispatch') return base.filter((r) => DISPATCH_ROLES.includes(r));
-  return base.filter((r) => r !== 'store_keeper' && r !== 'warehouse_keeper' && r !== 'lab_officer');
+  return base.filter(
+    (r) => r !== 'store_keeper' && r !== 'dispatcher' && r !== 'warehouse_keeper' && r !== 'lab_officer',
+  );
 }
 
 const inBranch = (branchId?: string | null) => (branchId ? { query: { branchId } } : {});

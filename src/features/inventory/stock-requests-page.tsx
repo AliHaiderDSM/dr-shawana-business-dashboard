@@ -224,7 +224,7 @@ function RequestSheet({
   onSend: (prefill: StockRequestPrefill) => void;
 }) {
   const { isSuperAdmin, me } = useAuth();
-  const sender = isSuperAdmin || me?.role === 'warehouse_keeper';
+  const sender = me?.role === 'warehouse_keeper';
   const decide = useDecideStockRequest();
   const withdraw = useWithdrawStockRequest();
   const [approved, setApproved] = useState<Record<string, string>>({});

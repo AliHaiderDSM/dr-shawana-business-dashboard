@@ -23439,6 +23439,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/inventory/stock-out-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One line per transfer sent from stock: transfer and request numbers, destination, products with the scanned labels, who sent it and who received it. The Super Admin sees every branch without ?branchId=; a branch sees what it sent or got. */
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                    toBranchId?: string;
+                    status?: "received" | "on_the_way";
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Transfers */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StockOutTransfer"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/returns": {
         parameters: {
             query?: never;
@@ -31227,6 +31316,37 @@ export interface components {
                     name: string;
                     role: string;
                 } | null;
+            }[];
+        };
+        StockOutTransfer: {
+            transferNo: string;
+            /** Format: date */
+            date: string;
+            sentAt: string;
+            from: {
+                name: string;
+                code: string;
+            };
+            to: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                code: string;
+            } | null;
+            requestNo: string | null;
+            sentBy: {
+                name: string;
+                role: string;
+            } | null;
+            receivedAt: string | null;
+            receivedBy: string | null;
+            products: number;
+            qty: string;
+            serials: number;
+            items: {
+                product: string;
+                qty: string;
+                serials: string[];
             }[];
         };
         CreateJournalEntry: {

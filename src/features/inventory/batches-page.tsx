@@ -344,7 +344,8 @@ function referenceLink(m: ProductBatchDetail['movements'][number]) {
 
 export function BatchDetailPage() {
   const { id = '' } = useParams();
-  const { can } = useAuth();
+  const { can, me } = useAuth();
+  const canReport = can('stock.update') || me?.role === 'dispatcher';
   const query = useBatch(id);
   const [writingOff, setWritingOff] = useState(false);
 
@@ -372,7 +373,7 @@ export function BatchDetailPage() {
         actions={
           <>
             <PrintButton />
-            {can('stock.update') && Number(b.quantity) > 0 ? (
+            {canReport && Number(b.quantity) > 0 ? (
               <Button variant="outline" onClick={() => setWritingOff(true)}>
                 <PackageMinus />
                 Write off

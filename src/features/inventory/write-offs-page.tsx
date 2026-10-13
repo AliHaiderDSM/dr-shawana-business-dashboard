@@ -345,7 +345,8 @@ function DecideDialog({
 }
 
 export function WriteOffsPage() {
-  const { isSuperAdmin, can } = useAuth();
+  const { isSuperAdmin, can, me } = useAuth();
+  const canReport = can('stock.update') || me?.role === 'dispatcher';
   const [status, setStatus] = useState<WriteOffRecord['status'] | 'all'>('all');
   const [search, setSearch] = useState('');
   const [reporting, setReporting] = useState(false);
@@ -495,7 +496,7 @@ export function WriteOffsPage() {
             : 'Report expired, damaged or lost stock. It leaves the inventory only after the Super Admin approves; held labels cannot be sold or dispatched.'
         }
         actions={
-          can('stock.update') ? (
+          canReport ? (
             <Button variant={isSuperAdmin ? 'outline' : 'default'} onClick={() => setReporting(true)}>
               {isSuperAdmin ? <PackageX /> : <Plus />}
               Report stock

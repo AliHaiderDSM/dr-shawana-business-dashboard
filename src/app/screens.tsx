@@ -313,6 +313,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'any',
   },
   {
+    path: 'stock-out-report',
+    element: page(() => import('@/features/inventory/stock-out-report-page'), 'StockOutReportPage'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'any',
+  },
+  {
     path: 'store-receipts',
     element: page(() => import('@/features/inventory/store-receipts-page'), 'StoreReceiptsPage'),
     anyOf: ['stock.view'],

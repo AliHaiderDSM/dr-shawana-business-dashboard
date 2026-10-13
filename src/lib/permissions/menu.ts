@@ -80,9 +80,20 @@ const WAREHOUSE_KEEPER_KEYS = new Set([
   'store-receipts',
   'stock-requests',
   'stock-out',
+  'stock-out-report',
   'incoming-stock',
   'stock',
   'batches',
+  'labels',
+]);
+
+const DISPATCHER_KEYS = new Set([
+  'dashboard',
+  'deliveries',
+  'delivery',
+  'returns',
+  'write-offs',
+  'stock',
   'labels',
 ]);
 
@@ -344,6 +355,15 @@ export const MENU: MenuGroup[] = [
         warehouseOnly: true,
       },
       {
+        key: 'stock-out-report',
+        label: 'Stock Out Report',
+        path: '/stock-out-report',
+        icon: ScrollText,
+        anyOf: ['stock.view', 'inventoryReport.view'],
+        scope: 'any',
+        warehouseOnly: true,
+      },
+      {
         key: 'stock-requests',
         badge: 'stockRequests',
         label: 'Stock Requests',
@@ -512,6 +532,7 @@ export function visibleMenu(
 ): MenuGroup[] {
   const keeperOnly = role === 'warehouse_keeper';
   const labOnly = role === 'lab_officer';
+  const dispatcherOnly = role === 'dispatcher';
   return MENU.map((group) => ({
     ...group,
     items: group.items
@@ -519,6 +540,7 @@ export function visibleMenu(
         (item) =>
           (!keeperOnly || WAREHOUSE_KEEPER_KEYS.has(item.key)) &&
           (!labOnly || LAB_OFFICER_KEYS.has(item.key)) &&
+          (!dispatcherOnly || DISPATCHER_KEYS.has(item.key)) &&
           !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.superAdminOnly || isSuperAdmin) &&
