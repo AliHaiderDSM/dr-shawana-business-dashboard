@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Expiry alerts by batch (2026-10-13)
+
+- One row per product batch (same product, batch and expiry): total quantity across all places, the place name or "N places". The side sheet lists every place holding that batch, then the other expiring batches of the product.
+
 ## Report upload sizes (2026-10-13)
 
 - Before upload, photos larger than 0.8 MB or 2000 px are redrawn as JPG (longest side 2000 px, quality 0.85); HEIC is converted where the browser can decode it (Safari/iPhone), else sent as HEIC. PDFs are sent as they are.
