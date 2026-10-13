@@ -36,6 +36,7 @@ import {
   Users,
   Wallet,
   Warehouse,
+  MessageSquareText,
 } from 'lucide-react';
 import type { Role } from '@/lib/api/types';
 
@@ -55,7 +56,14 @@ export interface MenuItem {
   dispatchOnly?: boolean;
   notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
-  badge?: 'stockRequests' | 'incomingStock' | 'writeOffs' | 'discountRequests' | 'returns' | 'stockReceipts';
+  badge?:
+    | 'stockRequests'
+    | 'incomingStock'
+    | 'writeOffs'
+    | 'discountRequests'
+    | 'returns'
+    | 'stockReceipts'
+    | 'patientRequests';
 }
 
 export interface MenuGroup {
@@ -160,6 +168,15 @@ export const MENU: MenuGroup[] = [
         icon: FileHeart,
         anyOf: ['prescriptions.view'],
         scope: 'branch',
+      },
+      {
+        key: 'patient-requests',
+        badge: 'patientRequests',
+        label: 'Patient Requests',
+        path: '/patient-requests',
+        icon: MessageSquareText,
+        anyOf: ['patients.view'],
+        scope: 'any',
       },
       {
         key: 'patient-history',

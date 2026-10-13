@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, CalendarPlus, FilePlus2, Pencil, Receipt } from 'lucide-react';
+import { AppAccessPanel } from '@/features/patient-requests/app-access-panel';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
@@ -249,19 +250,24 @@ export function PatientProfilePage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[20rem_minmax(0,1fr)]">
-        <Panel title="Details" className="self-start">
-          <DetailList
-            items={[
-              { label: 'Phone', value: p.phone },
-              { label: 'City', value: p.city },
-              { label: 'Country', value: p.country },
-              { label: 'Age', value: p.age },
-              { label: 'Date of birth', value: p.dateOfBirth ? formatDate(p.dateOfBirth) : null },
-              { label: 'Patient since', value: formatDate(p.createdAt) },
-            ]}
-          />
-          {p.address ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{p.address}</p> : null}
-        </Panel>
+        <div className="space-y-6 self-start">
+          <Panel title="Details">
+            <DetailList
+              items={[
+                { label: 'Phone', value: p.phone },
+                { label: 'City', value: p.city },
+                { label: 'Country', value: p.country },
+                { label: 'Age', value: p.age },
+                { label: 'Date of birth', value: p.dateOfBirth ? formatDate(p.dateOfBirth) : null },
+                { label: 'Patient since', value: formatDate(p.createdAt) },
+              ]}
+            />
+            {p.address ? (
+              <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{p.address}</p>
+            ) : null}
+          </Panel>
+          <AppAccessPanel patientId={p.id} phone={p.phone} canManage={can('patients.update')} />
+        </div>
 
         <Tabs
           value={tab}

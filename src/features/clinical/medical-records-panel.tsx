@@ -131,6 +131,11 @@ function RecordCard({
         {record.appointmentId ? (
           <span className="text-xs text-muted-foreground">· from an appointment</span>
         ) : null}
+        {record.uploadedByPatient ? (
+          <StatusBadge tone="info" dot={false}>
+            From patient app
+          </StatusBadge>
+        ) : null}
       </div>
       {record.note ? (
         <p className="text-sm whitespace-pre-wrap text-muted-foreground">{record.note}</p>
