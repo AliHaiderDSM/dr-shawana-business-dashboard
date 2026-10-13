@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Report upload sizes (2026-10-13)
+
+- Before upload, photos larger than 0.8 MB or 2000 px are redrawn as JPG (longest side 2000 px, quality 0.85); HEIC is converted where the browser can decode it (Safari/iPhone), else sent as HEIC. PDFs are sent as they are.
+- Up to 5 files and 4.3 MB in total (under the Vercel 4.5 MB limit); a clear message names each file and its size when the total is too big. "No patient results were found on this document" when a document holds no results.
+
 ## MRS and additional symptoms linked (2026-10-12)
 
 - Remarks 2.0 (consultation): MRS scale and Additional symptoms share one "Visit history" panel (per visit: MRS total, %, severity, and that visit's symptoms with severity); the current visit is highlighted. Saving the MRS opens the additional symptoms; that tab names the MRS date it belongs to. The MRS chart skips visits without an MRS.

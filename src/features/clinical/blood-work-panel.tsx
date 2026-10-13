@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { ReportSummaries } from './report-summaries';
+import { prepareReportFiles, REPORT_ACCEPT, ReportFileError } from './prepare-report-files';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import {
   BLOOD_TEST_LABELS,
@@ -274,13 +275,19 @@ export function BloodWorkPanel({
   const fileInput = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
 
-  const readReport = async (files: File[]) => {
-    if (files.length > 5) {
-      toast.error('Choose up to 5 reports at a time');
-      return;
-    }
+  const readReport = async (picked: File[]) => {
     setReading(true);
     try {
+      let files: File[];
+      try {
+        files = await prepareReportFiles(picked);
+      } catch (error) {
+        if (error instanceof ReportFileError) {
+          toast.error(error.message, { duration: 10000 });
+          return;
+        }
+        throw error;
+      }
       const found = await read.mutateAsync(files);
       if (found.results.length === 0) {
         toast.message(
@@ -351,7 +358,7 @@ export function BloodWorkPanel({
             <input
               ref={fileInput}
               type="file"
-              accept="application/pdf,image/*"
+              accept={REPORT_ACCEPT}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -363,7 +370,7 @@ export function BloodWorkPanel({
               size="sm"
               variant="outline"
               disabled={reading}
-              title="Upload up to 5 lab reports (PDFs or photos) at once; AI reads the values and writes one summary"
+              title="Upload up to 5 lab reports at once (PDF, JPG, PNG, WebP or HEIC; 4.3 MB in total, photos are made smaller first). AI reads the values and writes one summary."
               onClick={() => fileInput.current?.click()}
             >
               {reading ? <Loader2 className="animate-spin" /> : <Sparkles />}

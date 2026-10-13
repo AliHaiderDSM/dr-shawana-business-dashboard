@@ -88,7 +88,11 @@ function SummaryBody({ item }: { item: LabReportSummary }) {
             </table>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No result is outside the lab's reference ranges.</p>
+          <p className="text-sm text-muted-foreground">
+            {s.normal.length
+              ? "No result is outside the lab's reference ranges."
+              : 'No patient results were found on this document.'}
+          </p>
         )}
       </Section>
       {s.normal.length ? (
