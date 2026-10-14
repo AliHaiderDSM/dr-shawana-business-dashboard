@@ -77,6 +77,7 @@ interface DataTableProps<T> {
   rowClassName?: (row: T) => string | undefined;
   footer?: ReactNode;
   totalsRow?: Partial<Record<string, ReactNode>>;
+  dense?: boolean;
 }
 
 const PAGE_SIZES = [10, 20, 50, 100];
@@ -109,6 +110,7 @@ export function DataTable<T>({
   rowClassName,
   footer,
   totalsRow,
+  dense,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -229,7 +231,7 @@ export function DataTable<T>({
           isFetching && !isLoading && 'opacity-70',
         )}
       >
-        <Table>
+        <Table className={cn(dense && 'text-xs')}>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id} className="bg-muted/50 hover:bg-muted/50">

@@ -18,7 +18,7 @@ import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils';
 import { TraceNumber } from '@/features/trace/trace-page';
-import { formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
+import { formatAmount, formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
   DELIVERY_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -119,7 +119,7 @@ export function SalesPage() {
       accessorFn: (s) =>
         (s.products ?? []).map((p) => (p.qty ? `${p.name} x ${Number(p.qty)}` : p.name)).join('; '),
       cell: ({ row }) => (
-        <ul className="space-y-0.5 text-sm">
+        <ul className="space-y-0.5">
           {(row.original.products ?? []).map((p, index) => (
             <li key={`${p.name}-${index}`} className="max-w-56 truncate" title={p.name}>
               {p.name}
@@ -156,7 +156,7 @@ export function SalesPage() {
       header: 'Actual amount',
       accessorKey: 'grossAmount',
       meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.grossAmount),
+      cell: ({ row }) => formatAmount(row.original.grossAmount),
     },
     {
       id: 'discount',
@@ -165,17 +165,17 @@ export function SalesPage() {
       meta: { align: 'right' },
       cell: ({ row }) =>
         Number(row.original.discountTotal) ? (
-          <span className="text-destructive tabular-nums">−{formatMoney(row.original.discountTotal)}</span>
+          <span className="text-destructive tabular-nums">−{formatAmount(row.original.discountTotal)}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
     },
     {
       id: 'total',
-      header: 'Sub-amount',
+      header: 'Net-amount',
       accessorKey: 'total',
       meta: { align: 'right' },
-      cell: ({ row }) => <span className="font-medium">{formatMoney(row.original.total)}</span>,
+      cell: ({ row }) => <span className="font-medium">{formatAmount(row.original.total)}</span>,
     },
     {
       id: 'remaining',
@@ -185,7 +185,7 @@ export function SalesPage() {
       cell: ({ row }) =>
         Number(row.original.remaining) > 0 ? (
           <span className="font-medium text-destructive tabular-nums">
-            {formatMoney(row.original.remaining)}
+            {formatAmount(row.original.remaining)}
           </span>
         ) : (
           <span className="text-muted-foreground">—</span>
@@ -359,15 +359,16 @@ export function SalesPage() {
         exportFileName="sales"
         onRowClick={(s) => open(s)}
         emptyTitle="No sales yet"
+        dense
         totalsRow={
           totals
             ? {
                 invoiceNo: `Total · ${formatCount(query.data?.meta.total ?? 0)} sales`,
                 qty: formatQuantity(totals.qty),
-                subtotal: formatMoney(totals.gross),
-                discount: formatMoney(totals.discountTotal),
-                total: formatMoney(totals.total),
-                remaining: formatMoney(totals.remaining),
+                subtotal: formatAmount(totals.gross),
+                discount: formatAmount(totals.discountTotal),
+                total: formatAmount(totals.total),
+                remaining: formatAmount(totals.remaining),
               }
             : undefined
         }

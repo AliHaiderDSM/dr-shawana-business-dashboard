@@ -8,6 +8,8 @@ const moneyFormatter = new Intl.NumberFormat('en-PK', {
   maximumFractionDigits: 2,
 });
 
+const amountFormatter = new Intl.NumberFormat('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
 const quantityFormatter = new Intl.NumberFormat('en-PK', { maximumFractionDigits: 3 });
 const integerFormatter = new Intl.NumberFormat('en-PK');
 
@@ -17,6 +19,11 @@ const toNumber = (value: string | number | null | undefined) =>
 export function formatMoney(value: string | number | null | undefined, fallback = '—') {
   const n = toNumber(value);
   return n === null || Number.isNaN(n) ? fallback : moneyFormatter.format(n).replace('Rs', 'Rs ');
+}
+
+export function formatAmount(value: string | number | null | undefined, fallback = '—') {
+  const n = toNumber(value);
+  return n === null || Number.isNaN(n) ? fallback : amountFormatter.format(n);
 }
 
 const compactFormatter = new Intl.NumberFormat('en-PK', { notation: 'compact', maximumFractionDigits: 1 });

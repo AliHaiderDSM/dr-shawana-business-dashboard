@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Sales table compact amounts (2026-10-14)
+
+View Sales table shows amounts without "Rs" (new `formatAmount` in lib/format) and uses extra-small text through the new `dense` prop on DataTable. Branch total cards above the table still show "Rs".
+
 ## Patients edited in the app (2026-10-14)
 
 - Patients table: "Edited in app" column with the date the patient last changed their details in the mobile app.
