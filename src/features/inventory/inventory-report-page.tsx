@@ -19,12 +19,13 @@ import { useInventoryReport, type InventoryReport } from './api';
 
 type ReportRow = InventoryReport['rows'][number] & { isTotal?: boolean };
 type QuantityKey = keyof InventoryReport['totals'];
-type BranchPart = 'sent' | 'sold' | 'returned' | 'inBranch';
+type BranchPart = 'sent' | 'sold' | 'booked' | 'returned' | 'inBranch';
 
 const QUANTITY_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockIn', label: 'Stock in' },
   { key: 'stockOut', label: 'Stock out' },
   { key: 'sold', label: 'Sold' },
+  { key: 'booked', label: 'Booked (not dispatched)' },
   { key: 'returned', label: 'Returned' },
   { key: 'closing', label: 'Total stock' },
 ];
@@ -33,14 +34,17 @@ const SUPER_ADMIN_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockIn', label: 'Stock in' },
   { key: 'stockOut', label: 'Sent to branches' },
   { key: 'branchSold', label: 'Sold in branches' },
+  { key: 'booked', label: 'Booked (not dispatched)' },
   { key: 'branchReturned', label: 'Returned in branches' },
   { key: 'inBranch', label: 'Now in branches' },
   { key: 'closing', label: 'Super Admin stock' },
+  { key: 'total', label: 'Total' },
 ];
 
 const BRANCH_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockOut', label: 'Stock out' },
   { key: 'branchSold', label: 'Sale qty' },
+  { key: 'booked', label: 'Booked (not dispatched)' },
   { key: 'branchReturned', label: 'Returned' },
   { key: 'inBranch', label: 'In branch (offices qty)' },
 ];
@@ -132,6 +136,7 @@ function BranchSplitSheet({
   const parts: { part: BranchPart; label: string; outgoing: boolean }[] = [
     { part: 'sent', label: 'Sent', outgoing: false },
     { part: 'sold', label: 'Sold', outgoing: true },
+    { part: 'booked', label: 'Booked', outgoing: false },
     { part: 'returned', label: 'Returned', outgoing: false },
     { part: 'inBranch', label: 'Now in branch', outgoing: false },
   ];
@@ -148,12 +153,13 @@ function BranchSplitSheet({
               </SheetDescription>
             </SheetHeader>
             <div className="space-y-4 px-4 pb-6">
-              <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 {(
                   [
                     ['Stock in', 'stockIn'],
                     ['Sent to branches', 'stockOut'],
                     ['Super Admin stock', 'closing'],
+                    ['Total (branches + Super Admin)', 'total'],
                   ] as const
                 ).map(([label, key]) => (
                   <div key={key} className="rounded-lg border bg-muted/30 px-3 py-2">

@@ -12,6 +12,16 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Catalog, inventory report and sales table (2026-10-14)
+
+- Catalog menu (Categories, Products, Bundles, Supply chain) and its routes are Super Admin only (routes need the create permission).
+- Inventory report: "Booked (not dispatched)" and "Total" columns; the branch sheet shows booked per branch and the total. Warehouse Keeper and Lab Officer see the report in their menu.
+- View Sales: Actual amount → Discount (item + sale, shown with a minus) → Sub-amount (after discount); Remaining now comes before Payment.
+
+## Patient app: login codes (2026-10-14)
+
+- Patient profile "Mobile app" panel: "Create login code" / "New login code"; the dialog tells staff the patient logs in with the phone number and this code.
+
 ## Dispatcher menu and stock out report (2026-10-13)
 - "Send stock" on an approved request shows for the Warehouse Keeper only; the Super Admin approves.
 - Staff form: Dispatcher is offered only for the Dispatch Department.

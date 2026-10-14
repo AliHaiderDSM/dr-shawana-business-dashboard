@@ -69,7 +69,7 @@ export function AppAccessPanel({
                 onClick={() => void createCode()}
               >
                 {issue.isPending ? <Loader2 className="animate-spin" /> : <KeyRound />}
-                {a.status === 'active' ? 'Code to reset password' : 'Create activation code'}
+                {a.status === 'active' ? 'New login code' : 'Create login code'}
               </Button>
               {a.status === 'active' || a.status === 'invited' ? (
                 <Button
@@ -90,10 +90,10 @@ export function AppAccessPanel({
       <Dialog open={code !== null} onOpenChange={(open) => !open && setCode(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Activation code</DialogTitle>
+            <DialogTitle>Login code</DialogTitle>
             <DialogDescription>
-              Give this code to the patient. In the app they enter {phone}, this code and a new password. It
-              works once, until {code ? formatDateTime(code.expiresAt) : ''}, and is not shown again.
+              Give this code to the patient. In the app they log in with {phone} and this code. It works once,
+              until {code ? formatDateTime(code.expiresAt) : ''}, and is not shown again.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-lg border bg-muted/40 py-4 text-center font-mono text-3xl font-semibold tracking-[0.4em] tabular-nums">

@@ -60,31 +60,31 @@ export const screenRoutes: ScreenRoute[] = [
   {
     path: 'categories',
     element: page(() => import('@/features/catalog/categories-page'), 'CategoriesPage'),
-    anyOf: ['categories.view'],
+    anyOf: ['categories.create'],
     scope: 'branch',
   },
   {
     path: 'products',
     element: page(() => import('@/features/catalog/products-page'), 'ProductsPage'),
-    anyOf: ['products.view'],
+    anyOf: ['products.create'],
     scope: 'branch',
   },
   {
     path: 'products/:id',
     element: page(() => import('@/features/catalog/product-detail-page'), 'ProductDetailPage'),
-    anyOf: ['products.view'],
+    anyOf: ['products.create'],
     scope: 'branch',
   },
   {
     path: 'bundles',
     element: page(() => import('@/features/catalog/bundles-page'), 'BundlesPage'),
-    anyOf: ['bundles.view'],
+    anyOf: ['bundles.create'],
     scope: 'branch',
   },
   {
     path: 'supply-chain',
     element: page(() => import('@/features/catalog/supply-chain-page'), 'SupplyChainPage'),
-    anyOf: ['suppliers.view'],
+    anyOf: ['suppliers.create'],
     scope: 'branch',
   },
   {

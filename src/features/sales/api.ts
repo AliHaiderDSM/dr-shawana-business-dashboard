@@ -6,6 +6,9 @@ import type { PageMeta, Schemas } from '@/lib/api/types';
 export type Sale = Schemas['Sale'];
 export type SaleListItem = Omit<Sale, 'items' | 'payments'> & {
   products: { name: string; qty: string | null }[];
+  itemDiscount: string;
+  grossAmount: string;
+  discountTotal: string;
 };
 export type SaleInput = Schemas['CreateSale'];
 export type SaleUpdate = Schemas['UpdateSale'];
@@ -16,6 +19,9 @@ export interface SaleTotals {
   qty: string;
   subtotal: string;
   discount: string;
+  itemDiscount: string;
+  gross: string;
+  discountTotal: string;
   total: string;
   received: string;
   remaining: string;

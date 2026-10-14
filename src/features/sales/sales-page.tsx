@@ -153,40 +153,29 @@ export function SalesPage() {
     },
     {
       id: 'subtotal',
-      header: 'Sub amount',
-      accessorKey: 'subtotal',
+      header: 'Actual amount',
+      accessorKey: 'grossAmount',
       meta: { align: 'right' },
-      cell: ({ row }) => formatMoney(row.original.subtotal),
+      cell: ({ row }) => formatMoney(row.original.grossAmount),
     },
     {
       id: 'discount',
       header: 'Discount',
-      accessorKey: 'discountAmount',
+      accessorKey: 'discountTotal',
       meta: { align: 'right' },
       cell: ({ row }) =>
-        Number(row.original.discountAmount) ? (
-          formatMoney(row.original.discountAmount)
+        Number(row.original.discountTotal) ? (
+          <span className="text-destructive tabular-nums">−{formatMoney(row.original.discountTotal)}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
     },
     {
       id: 'total',
-      header: 'Total',
+      header: 'Sub-amount',
       accessorKey: 'total',
       meta: { align: 'right' },
       cell: ({ row }) => <span className="font-medium">{formatMoney(row.original.total)}</span>,
-    },
-    {
-      id: 'payment',
-      header: 'Payment',
-      accessorKey: 'paymentStatus',
-      cell: ({ row }) =>
-        row.original.paymentStatus === 'partial' ? (
-          <StatusBadge tone="warning">Remaining</StatusBadge>
-        ) : (
-          <StatusBadge status={row.original.paymentStatus} />
-        ),
     },
     {
       id: 'remaining',
@@ -200,6 +189,17 @@ export function SalesPage() {
           </span>
         ) : (
           <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: 'payment',
+      header: 'Payment',
+      accessorKey: 'paymentStatus',
+      cell: ({ row }) =>
+        row.original.paymentStatus === 'partial' ? (
+          <StatusBadge tone="warning">Remaining</StatusBadge>
+        ) : (
+          <StatusBadge status={row.original.paymentStatus} />
         ),
     },
     {
@@ -364,8 +364,8 @@ export function SalesPage() {
             ? {
                 invoiceNo: `Total · ${formatCount(query.data?.meta.total ?? 0)} sales`,
                 qty: formatQuantity(totals.qty),
-                subtotal: formatMoney(totals.subtotal),
-                discount: formatMoney(totals.discount),
+                subtotal: formatMoney(totals.gross),
+                discount: formatMoney(totals.discountTotal),
                 total: formatMoney(totals.total),
                 remaining: formatMoney(totals.remaining),
               }

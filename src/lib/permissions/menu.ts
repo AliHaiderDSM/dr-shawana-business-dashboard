@@ -73,7 +73,7 @@ export interface MenuGroup {
   notInDispatch?: boolean;
 }
 
-const LAB_OFFICER_KEYS = new Set(['dashboard', 'stock-in', 'store-receipts', 'labels']);
+const LAB_OFFICER_KEYS = new Set(['dashboard', 'stock-in', 'store-receipts', 'labels', 'inventory-report']);
 
 const WAREHOUSE_KEEPER_KEYS = new Set([
   'dashboard',
@@ -81,6 +81,7 @@ const WAREHOUSE_KEEPER_KEYS = new Set([
   'stock-requests',
   'stock-out',
   'stock-out-report',
+  'inventory-report',
   'incoming-stock',
   'stock',
   'batches',
@@ -273,6 +274,7 @@ export const MENU: MenuGroup[] = [
         icon: FolderTree,
         anyOf: ['categories.view'],
         scope: 'branch',
+        superAdminOnly: true,
       },
       {
         key: 'products',
@@ -281,6 +283,7 @@ export const MENU: MenuGroup[] = [
         icon: Package,
         anyOf: ['products.view'],
         scope: 'branch',
+        superAdminOnly: true,
       },
       {
         key: 'bundles',
@@ -289,6 +292,7 @@ export const MENU: MenuGroup[] = [
         icon: Gift,
         anyOf: ['bundles.view'],
         scope: 'branch',
+        superAdminOnly: true,
       },
       {
         key: 'supply-chain',
@@ -297,6 +301,7 @@ export const MENU: MenuGroup[] = [
         icon: Truck,
         anyOf: ['suppliers.view'],
         scope: 'branch',
+        superAdminOnly: true,
       },
     ],
   },
