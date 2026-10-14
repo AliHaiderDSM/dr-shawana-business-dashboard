@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient Messages: voice notes (2026-10-14)
+
+Voice messages from patients show a "Voice message" button in the thread; clicking it loads a signed link and plays it in an audio player.
+
 ## Sales table compact amounts (2026-10-14)
 
 View Sales table shows amounts without "Rs" (new `formatAmount` in lib/format) and uses extra-small text through the new `dense` prop on DataTable. Branch total cards above the table still show "Rs".

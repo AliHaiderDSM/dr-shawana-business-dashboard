@@ -8,7 +8,10 @@ const moneyFormatter = new Intl.NumberFormat('en-PK', {
   maximumFractionDigits: 2,
 });
 
-const amountFormatter = new Intl.NumberFormat('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const amountFormatter = new Intl.NumberFormat('en-PK', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
 
 const quantityFormatter = new Intl.NumberFormat('en-PK', { maximumFractionDigits: 3 });
 const integerFormatter = new Intl.NumberFormat('en-PK');

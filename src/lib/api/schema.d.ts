@@ -15917,7 +15917,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Message a doctor the patient has seen. Send text in "body" and/or one PDF or photo (JPG, PNG, WebP, 10 MB) in "file" (multipart). */
+        /** Message a doctor the patient has seen. Send text in "body" and/or one photo (JPG, PNG, WebP) or voice note (M4A, AAC, MP3, WebM, OGG) up to 10 MB in "file" (multipart). */
         post: {
             parameters: {
                 query?: never;
@@ -16000,7 +16000,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Two-minute link to a file in the chat */
+        /** Ten-minute link to a file or voice note in the chat */
         get: {
             parameters: {
                 query?: never;
@@ -16089,7 +16089,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Files shared with one doctor, newest first (both sides) */
+        /** Files shared with one doctor, newest first (both sides, without voice notes) */
         get: {
             parameters: {
                 query?: never;
@@ -16499,7 +16499,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Doctor only: two-minute link to a file in the chat */
+        /** Doctor only: ten-minute link to a file or voice note in the chat */
         get: {
             parameters: {
                 query?: never;

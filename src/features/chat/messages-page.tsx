@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { FileImage, FileText, Loader2, MessagesSquare, Paperclip, Send, X } from 'lucide-react';
+import { FileImage, FileText, Loader2, MessagesSquare, Mic, Paperclip, Play, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { openSignedUrl } from '@/components/shared/attachment-list';
@@ -93,6 +93,49 @@ function ConversationList({
   );
 }
 
+function VoiceMessage({
+  message,
+  conversationId,
+  mine,
+}: {
+  message: ChatMessage;
+  conversationId: string;
+  mine: boolean;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      setUrl((await chatFileUrl(conversationId, message.id)).url);
+    } catch (error) {
+      toastError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (url) {
+    return <audio controls autoPlay src={url} className="h-10 w-64 max-w-full" aria-label="Voice message" />;
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => void load()}
+      disabled={loading}
+      className={cn(
+        'flex items-center gap-2 rounded-lg px-2 py-1.5 text-left',
+        mine ? 'bg-primary-foreground/15' : 'bg-muted',
+      )}
+    >
+      {loading ? <Loader2 className="size-4 shrink-0 animate-spin" /> : <Play className="size-4 shrink-0" />}
+      <Mic className="size-4 shrink-0" />
+      <span>Voice message</span>
+    </button>
+  );
+}
+
 function Bubble({ message, conversationId }: { message: ChatMessage; conversationId: string }) {
   const mine = message.sender === 'doctor';
   const Icon = message.file?.type.startsWith('image/') ? FileImage : FileText;
@@ -104,7 +147,9 @@ function Bubble({ message, conversationId }: { message: ChatMessage; conversatio
           mine ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border bg-card',
         )}
       >
-        {message.file ? (
+        {message.file?.type.startsWith('audio/') ? (
+          <VoiceMessage message={message} conversationId={conversationId} mine={mine} />
+        ) : message.file ? (
           <button
             type="button"
             onClick={() => void openSignedUrl(() => chatFileUrl(conversationId, message.id))}
