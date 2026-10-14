@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patients edited in the app (2026-10-14)
+
+- Patients table: "Edited in app" column with the date the patient last changed their details in the mobile app.
+
 ## Patient Messages for doctors (2026-10-14)
 
 - "Patient Messages" (Patients & Care, doctors only, red badge for unread): patient list with search and unread counts, WhatsApp-style thread (refreshes every 5 s, earlier messages on demand), reply with text and a PDF or photo; Enter sends.

@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { CalendarPlus, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { CalendarPlus, Eye, Pencil, Smartphone, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
@@ -85,6 +86,20 @@ export function PatientsPage() {
       accessorKey: 'createdAt',
       meta: { sortKey: 'createdAt' },
       cell: ({ row }) => formatDate(row.original.createdAt),
+    },
+    {
+      id: 'appUpdatedAt',
+      header: 'Edited in app',
+      accessorFn: (p) => (p.appUpdatedAt ? formatDate(p.appUpdatedAt) : ''),
+      cell: ({ row }) =>
+        row.original.appUpdatedAt ? (
+          <StatusBadge tone="info" dot={false}>
+            <Smartphone className="size-3" />
+            {formatDate(row.original.appUpdatedAt)}
+          </StatusBadge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       id: 'actions',
