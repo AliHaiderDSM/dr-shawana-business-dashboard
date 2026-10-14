@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient Messages for doctors (2026-10-14)
+
+- "Patient Messages" (Patients & Care, doctors only, red badge for unread): patient list with search and unread counts, WhatsApp-style thread (refreshes every 5 s, earlier messages on demand), reply with text and a PDF or photo; Enter sends.
+
 ## Catalog, inventory report and sales table (2026-10-14)
 
 - Catalog menu (Categories, Products, Bundles, Supply chain) and its routes are Super Admin only (routes need the create permission).

@@ -37,6 +37,7 @@ import {
   Wallet,
   Warehouse,
   MessageSquareText,
+  MessagesSquare,
 } from 'lucide-react';
 import type { Role } from '@/lib/api/types';
 
@@ -51,6 +52,7 @@ export interface MenuItem {
   scope: BranchScope;
   phase?: string;
   superAdminOnly?: boolean;
+  doctorOnly?: boolean;
   warehouseOnly?: boolean;
   showInWarehouse?: boolean;
   dispatchOnly?: boolean;
@@ -63,7 +65,8 @@ export interface MenuItem {
     | 'discountRequests'
     | 'returns'
     | 'stockReceipts'
-    | 'patientRequests';
+    | 'patientRequests'
+    | 'patientMessages';
 }
 
 export interface MenuGroup {
@@ -180,6 +183,16 @@ export const MENU: MenuGroup[] = [
         icon: FileHeart,
         anyOf: ['prescriptions.view'],
         scope: 'branch',
+      },
+      {
+        key: 'messages',
+        badge: 'patientMessages',
+        label: 'Patient Messages',
+        path: '/messages',
+        icon: MessagesSquare,
+        anyOf: ['consultations.view'],
+        scope: 'any',
+        doctorOnly: true,
       },
       {
         key: 'patient-requests',
@@ -549,6 +562,7 @@ export function visibleMenu(
           !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.superAdminOnly || isSuperAdmin) &&
+          (!item.doctorOnly || role === 'doctor') &&
           (!item.warehouseOnly || inWarehouse) &&
           (!(inWarehouse && group.notInWarehouse) || item.showInWarehouse) &&
           item.anyOf.some((p) => can(p)),

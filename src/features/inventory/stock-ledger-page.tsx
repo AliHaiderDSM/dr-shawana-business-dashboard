@@ -29,6 +29,33 @@ const MOVEMENT_TONES: Record<Movement['type'], Tone> = {
   adjustment: 'neutral',
 };
 
+function documentIds(movements: Movement[] | undefined, kind: 'stock_in' | 'stock_out') {
+  const list = (movements ?? []).filter((m) => m.type === kind && m.referenceType === kind);
+  const reversed = new Set(list.filter((m) => m.isReversal).map((m) => m.referenceId));
+  return [
+    ...new Set(list.filter((m) => !m.isReversal && !reversed.has(m.referenceId)).map((m) => m.referenceId)),
+  ];
+}
+
+function PrintDocumentsButton({ label, path, ids }: { label: string; path: string; ids: string[] }) {
+  if (ids.length === 0) {
+    return (
+      <Button variant="outline" size="sm" disabled title="Nothing to print in this period">
+        <Printer />
+        {label}
+      </Button>
+    );
+  }
+  return (
+    <Button asChild variant="outline" size="sm">
+      <Link to={`${path}?ids=${ids.join(',')}`}>
+        <Printer />
+        {label}
+      </Link>
+    </Button>
+  );
+}
+
 const REFERENCE_PATHS: Record<string, (id: string) => string> = {
   sale: (id) => `/sales/${id}`,
   sale_return: (id) => `/returns/${id}`,
@@ -239,6 +266,20 @@ export function StockLedgerPage() {
         error={ledger.error}
         onRetry={() => void ledger.refetch()}
         exportFileName={`stock-history-${product.data?.name ?? productId}`}
+        actions={
+          <>
+            <PrintDocumentsButton
+              label="Print stock in"
+              path="/print/stock-in"
+              ids={documentIds(data?.movements, 'stock_in')}
+            />
+            <PrintDocumentsButton
+              label="Print stock out"
+              path="/print/stock-out"
+              ids={documentIds(data?.movements, 'stock_out')}
+            />
+          </>
+        }
         emptyTitle="No movements"
         emptyDescription="Nothing moved in this period."
       />

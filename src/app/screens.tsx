@@ -301,6 +301,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'messages',
+    element: page(() => import('@/features/chat/messages-page'), 'MessagesPage'),
+    anyOf: ['consultations.view'],
+    scope: 'any',
+  },
+  {
     path: 'patient-requests',
     element: page(() => import('@/features/patient-requests/patient-requests-page'), 'PatientRequestsPage'),
     anyOf: ['patients.view'],
