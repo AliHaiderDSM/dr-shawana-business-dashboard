@@ -324,7 +324,10 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
   const lines = useFieldArray({ control: form.control, name: 'items' });
   const items = useWatch({ control: form.control, name: 'items' });
   const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
-  const productOptions = (products.data ?? []).map((p) => ({ value: p.id, label: p.name }));
+  const approvedIds = prefill ? new Set(prefill.items.map((i) => i.productId)) : null;
+  const productOptions = (products.data ?? [])
+    .filter((p) => !approvedIds || approvedIds.has(p.id))
+    .map((p) => ({ value: p.id, label: p.name }));
   const tracked = new Set((products.data ?? []).filter((p) => p.trackSerials).map((p) => p.id));
   const scansOnly = (productId: string | undefined) =>
     !config.batched && Boolean(productId && tracked.has(productId));
@@ -423,6 +426,23 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
   };
 
   const submit = form.handleSubmit((values) => {
+    if (prefill) {
+      const totals = new Map<string, number>();
+      for (const item of values.items)
+        totals.set(item.productId, (totals.get(item.productId) ?? 0) + Number(item.qty));
+      for (const [productId, qty] of totals) {
+        const limit = approvedFor(productId) ?? 0;
+        const name = productOptions.find((o) => o.value === productId)?.label ?? 'This product';
+        if (limit === 0) {
+          toast.error(`${name} is not on ${prefill.requestNo}`);
+          return;
+        }
+        if (qty > limit) {
+          toast.error(`Only ${formatQuantity(String(limit))} ${name} approved on ${prefill.requestNo}`);
+          return;
+        }
+      }
+    }
     const body = {
       [config.partyField]: values.partyId,
       ...(transfer ? { toBranchId: values.toBranchId } : {}),
@@ -627,7 +647,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
             ]}
             onAdd={() => lines.append(emptyLine)}
             onRemove={(index) => lines.remove(index)}
-            addLabel="Add product"
+            addLabel={prefill ? 'Add approved product' : 'Add product'}
             summary={
               <>
                 <span className="text-muted-foreground">Total qty </span>

@@ -13,18 +13,19 @@ function page<K extends string, T extends Record<K, ComponentType>>(loader: () =
 }
 
 const anyStaff = ['dashboard.view', 'branches.view', 'deliveryReport.view'];
+const traceViewers = [...anyStaff, 'stock.view', 'inventoryReport.view'];
 
 export const screenRoutes: ScreenRoute[] = [
   {
     path: 'trace',
     element: page(() => import('@/features/trace/trace-page'), 'TracePage'),
-    anyOf: anyStaff,
+    anyOf: traceViewers,
     scope: 'any',
   },
   {
     path: 'trace/:number',
     element: page(() => import('@/features/trace/trace-page'), 'TracePage'),
-    anyOf: anyStaff,
+    anyOf: traceViewers,
     scope: 'any',
   },
   {
@@ -401,6 +402,12 @@ export const screenRoutes: ScreenRoute[] = [
 ];
 
 export const printRoutes: ScreenRoute[] = [
+  {
+    path: 'transfer-receipt',
+    element: page(() => import('@/features/inventory/transfer-receipt-print'), 'TransferReceiptPrint'),
+    anyOf: ['stock.view', 'inventoryReport.view'],
+    scope: 'any',
+  },
   {
     path: 'store-receipt',
     element: page(() => import('@/features/inventory/store-receipt-print'), 'StoreReceiptPrint'),

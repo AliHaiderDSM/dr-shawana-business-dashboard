@@ -1,5 +1,6 @@
-import { CheckCircle2, Loader2, PackageCheck, Truck } from 'lucide-react';
+import { CheckCircle2, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
@@ -74,6 +75,14 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
             </Button>
           </div>
         ) : null}
+        {transfer.received ? (
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/print/transfer-receipt?transfer=${encodeURIComponent(transfer.transferNo)}`}>
+              <Printer />
+              Print receipt
+            </Link>
+          </Button>
+        ) : null}
       </header>
       <table className="w-full text-sm">
         <thead className="bg-muted/40 text-xs text-muted-foreground">
@@ -114,16 +123,17 @@ export function IncomingStockPage() {
   const [status, setStatus] = useState<'waiting' | 'received' | 'all'>('waiting');
   const transfers = useIncomingStock(status === 'all' ? undefined : status);
   const canReceive = !isSuperAdmin && me?.role === 'branch_admin';
+  const outgoing = isSuperAdmin || me?.role === 'warehouse_keeper';
 
   return (
     <>
       <PageHeader
-        title="Incoming stock"
+        title={outgoing ? 'Outgoing stock' : 'Incoming stock'}
         description={
-          isSuperAdmin || me?.role === 'warehouse_keeper'
-            ? 'Every transfer from the Super Admin stock and whether the branch has received it.'
+          outgoing
+            ? 'Every transfer sent from the Super Admin stock: when it went, to which branch, and whether the branch has received it.'
             : canReceive
-              ? 'Stock the Super Admin sent. Count it, then receive it: only then it shows in Stock In and in your stock.'
+              ? 'Stock the Super Admin sent. Count it, then receive it: only then it shows in Stock In and in your stock. Received transfers keep a printable receipt.'
               : 'Stock the Super Admin sent. Your branch admin checks and receives it.'
         }
       />
@@ -145,7 +155,11 @@ export function IncomingStockPage() {
         <EmptyState
           icon={Truck}
           title={status === 'waiting' ? 'Nothing is on the way' : 'No transfers yet'}
-          description="Transfers from the Super Admin stock show here."
+          description={
+            outgoing
+              ? 'Transfers you send to the branches show here.'
+              : 'Transfers from the Super Admin stock show here.'
+          }
         />
       ) : (
         <div className="space-y-4">

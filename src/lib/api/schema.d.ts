@@ -5151,6 +5151,8 @@ export interface paths {
                     withoutBatch?: "true" | "false";
                     saleId?: string;
                     status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                    /** @description Same groups as the label batch counts: in stock here, in stock at branches it was sent to, sold, or anything else */
+                    group?: "in_stock" | "in_branches" | "sold" | "other";
                     source?: "stock_in" | "production" | "labelled";
                     sourceId?: string;
                     /** @description First label of a range */
@@ -23686,6 +23688,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "waiting" | "received";
+                    transferNo?: string;
                     branchId?: string;
                 };
                 header?: never;
@@ -31830,6 +31833,13 @@ export interface components {
             /** @example 15 */
             discountPercent: string;
             note?: string | null;
+            /**
+             * Format: uuid
+             * @description The customer of the sale, when already saved
+             */
+            patientId?: string;
+            /** @description Name of a new customer that is not saved yet */
+            customerName?: string;
         };
         DecideDiscountRequest: {
             note?: string | null;
@@ -31877,6 +31887,12 @@ export interface components {
             /** Format: uuid */
             saleId: string | null;
             invoiceNo: string | null;
+            customer: {
+                /** Format: uuid */
+                id: string | null;
+                name: string;
+                phone: string | null;
+            } | null;
             /** Format: date-time */
             createdAt: string;
         };

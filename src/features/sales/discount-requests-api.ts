@@ -61,6 +61,8 @@ export function useAskDiscount() {
       qty: string;
       discountPercent: string;
       note?: string | null;
+      patientId?: string;
+      customerName?: string;
     }) => unwrap(api.POST('/branch/discount-requests', { body })).then((r) => r.data),
     onSuccess: invalidate,
   });

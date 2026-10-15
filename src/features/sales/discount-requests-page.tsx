@@ -138,6 +138,22 @@ export function DiscountRequestsPage() {
       ),
     },
     {
+      id: 'customer',
+      header: 'Customer',
+      accessorFn: (r) => r.customer?.name ?? '',
+      cell: ({ row }) =>
+        row.original.customer ? (
+          <div className="min-w-0">
+            <div className="font-medium">{row.original.customer.name}</div>
+            {row.original.customer.phone ? (
+              <div className="text-xs text-muted-foreground tabular-nums">{row.original.customer.phone}</div>
+            ) : null}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       id: 'requestedBy',
       header: 'Asked by',
       accessorFn: (r) => `${r.requestedBy?.name ?? ''} (${roleLabel(r.requestedBy?.role ?? '')})`,

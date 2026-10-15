@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ErrorState } from '@/components/shared/error-state';
 import { FilterSelect } from '@/components/shared/list-filters';
-import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,25 +15,94 @@ import { ITEM_STATUS, ItemStatusBadge } from './item-status';
 
 const PIECES_PER_PAGE = 50;
 
+type PieceGroup = 'in_stock' | 'in_branches' | 'sold' | 'other';
+
+const GROUP_TITLES: Record<PieceGroup, string> = {
+  in_stock: 'in stock here',
+  in_branches: 'in stock at branches',
+  sold: 'sold',
+  other: 'in quarantine, written off, returned or sent to the supplier',
+};
+
+const CHIP_TONES = {
+  neutral: 'bg-muted text-muted-foreground ring-border',
+  success: 'bg-success-soft text-success-soft-foreground ring-success/40',
+  info: 'bg-info-soft text-info-soft-foreground ring-info/40',
+  warning: 'bg-warning-soft text-warning-soft-foreground ring-warning/40',
+} as const;
+
+function Chip({
+  label,
+  count,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  tone: keyof typeof CHIP_TONES;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap transition-shadow hover:ring-1',
+        CHIP_TONES[tone],
+        active && 'ring-2',
+      )}
+    >
+      {label}
+      {count !== undefined ? <span className="tabular-nums">{count}</span> : null}
+    </button>
+  );
+}
+
 function piecesQuery(group: LabelBatch) {
   return group.batchId ? { batchId: group.batchId } : { productId: group.productId, withoutBatch: 'true' };
 }
 
-function BatchPieces({ group, status }: { group: LabelBatch; status?: string }) {
+function BatchPieces({
+  group,
+  status,
+  show,
+  onShowAll,
+}: {
+  group: LabelBatch;
+  status?: string;
+  show: PieceGroup | null;
+  onShowAll: () => void;
+}) {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const query = useItems({
     ...piecesQuery(group),
     includeSent: 'true',
-    ...(status ? { status } : {}),
+    ...(status && !show ? { status } : {}),
+    ...(show ? { group: show } : {}),
     page,
     pageSize: PIECES_PER_PAGE,
   });
   const meta = query.data?.meta;
   if (query.isLoading) return <Skeleton className="m-4 h-24" />;
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
+  const rows = query.data?.data ?? [];
   return (
     <div className="border-t bg-muted/20">
+      {show ? (
+        <div className="flex items-center justify-between gap-2 border-b px-12 py-2 text-xs">
+          <span>
+            Showing the labels {GROUP_TITLES[show]} · <span className="tabular-nums">{meta?.total ?? 0}</span>
+          </span>
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onShowAll}>
+            Show all
+          </Button>
+        </div>
+      ) : null}
+      {rows.length === 0 ? <p className="px-12 py-6 text-sm text-muted-foreground">No labels here.</p> : null}
       <div className="grid grid-cols-[9rem_10rem_minmax(0,1fr)_7rem] gap-3 border-b px-12 py-2 text-xs font-medium text-muted-foreground">
         <span>Label</span>
         <span>Status</span>
@@ -42,7 +110,7 @@ function BatchPieces({ group, status }: { group: LabelBatch; status?: string }) 
         <span className="text-right">Received</span>
       </div>
       <ul className="divide-y">
-        {(query.data?.data ?? []).map((item) => (
+        {rows.map((item) => (
           <li key={item.id}>
             <button
               type="button"
@@ -110,6 +178,7 @@ export function LabelBatchesView() {
   const productId = list.filters.productId;
   const batches = useBatches({ productId, pageSize: 100 }, Boolean(productId));
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [shown, setShown] = useState<Record<string, PieceGroup | null>>({});
   const rows = query.data?.data ?? [];
   const meta = query.data?.meta;
   const toggle = (key: string) =>
@@ -119,6 +188,10 @@ export function LabelBatchesView() {
       else next.add(key);
       return next;
     });
+  const showGroup = (key: string, group: PieceGroup | null) => {
+    setShown((current) => ({ ...current, [key]: current[key] === group ? null : group }));
+    setOpen((current) => new Set(current).add(key));
+  };
 
   return (
     <div className="rounded-xl border bg-card shadow-xs">
@@ -177,6 +250,7 @@ export function LabelBatchesView() {
         <ul className="divide-y">
           {rows.map((group) => {
             const expanded = open.has(group.key);
+            const show = shown[group.key] ?? null;
             const expired =
               group.expiryDate !== null && group.expiryDate < new Date().toISOString().slice(0, 10);
             return (
@@ -212,16 +286,50 @@ export function LabelBatchesView() {
                         {group.firstSerial} – {group.lastSerial}
                       </div>
                     </div>
-                    <div className="hidden flex-wrap justify-end gap-1.5 sm:flex">
-                      <StatusBadge tone="neutral">{group.total} labels</StatusBadge>
-                      <StatusBadge tone="success">In stock {group.inStock}</StatusBadge>
-                      {group.inBranches ? (
-                        <StatusBadge tone="neutral">In branches {group.inBranches}</StatusBadge>
-                      ) : null}
-                      <StatusBadge tone="info">Sold {group.sold}</StatusBadge>
-                      {group.other ? <StatusBadge tone="warning">Other {group.other}</StatusBadge> : null}
-                    </div>
                   </button>
+                  <div className="hidden flex-wrap justify-end gap-1.5 sm:flex">
+                    <Chip
+                      label={`${group.total} labels`}
+                      tone="neutral"
+                      active={expanded && show === null}
+                      onClick={() => {
+                        setShown((current) => ({ ...current, [group.key]: null }));
+                        setOpen((current) => new Set(current).add(group.key));
+                      }}
+                    />
+                    <Chip
+                      label="In stock"
+                      count={group.inStock}
+                      tone="success"
+                      active={expanded && show === 'in_stock'}
+                      onClick={() => showGroup(group.key, 'in_stock')}
+                    />
+                    {group.inBranches ? (
+                      <Chip
+                        label="In branches"
+                        count={group.inBranches}
+                        tone="neutral"
+                        active={expanded && show === 'in_branches'}
+                        onClick={() => showGroup(group.key, 'in_branches')}
+                      />
+                    ) : null}
+                    <Chip
+                      label="Sold"
+                      count={group.sold}
+                      tone="info"
+                      active={expanded && show === 'sold'}
+                      onClick={() => showGroup(group.key, 'sold')}
+                    />
+                    {group.other ? (
+                      <Chip
+                        label="Other"
+                        count={group.other}
+                        tone="warning"
+                        active={expanded && show === 'other'}
+                        onClick={() => showGroup(group.key, 'other')}
+                      />
+                    ) : null}
+                  </div>
                   <Button
                     asChild
                     variant="ghost"
@@ -234,7 +342,15 @@ export function LabelBatchesView() {
                     </Link>
                   </Button>
                 </div>
-                {expanded ? <BatchPieces group={group} status={list.filters.status} /> : null}
+                {expanded ? (
+                  <BatchPieces
+                    key={show ?? 'all'}
+                    group={group}
+                    status={list.filters.status}
+                    show={show}
+                    onShowAll={() => setShown((current) => ({ ...current, [group.key]: null }))}
+                  />
+                ) : null}
               </li>
             );
           })}

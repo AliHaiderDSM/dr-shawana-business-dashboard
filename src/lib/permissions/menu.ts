@@ -394,6 +394,7 @@ export const MENU: MenuGroup[] = [
         key: 'incoming-stock',
         badge: 'incomingStock',
         label: 'Incoming Stock',
+        roleLabels: { warehouse_keeper: 'Outgoing Stock', super_admin: 'Outgoing Stock' },
         path: '/incoming-stock',
         icon: PackageCheck,
         anyOf: ['stock.view', 'inventoryReport.view'],

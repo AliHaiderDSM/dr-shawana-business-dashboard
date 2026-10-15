@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Warehouse and branch stock fixes (2026-10-15)
+
+- Send stock for a request: the product list shows only the approved products, and saving stops when a qty is above the approved qty.
+- Warehouse Keeper and Super Admin see Incoming Stock as **Outgoing Stock**.
+- Received transfers have **Print receipt** (`/print/transfer-receipt?transfer=`): Stock Receiving Receipt for the branch admin.
+- Discount Requests show the **Customer** column; POS sends the chosen or new customer with the request.
+- Labels → By batch: the chips (labels, In stock, In branches, Sold, Other) are clickable. A chip opens the batch and lists only those labels; click it again or Show all for every label. Backend items list takes `group=in_stock|in_branches|sold|other`.
+- Trace pages (request, transfer numbers) open for stock / inventory report viewers, so the Warehouse Keeper no longer sees No access.
+
 ## Patient Messages: voice notes (2026-10-14)
 
 Voice messages from patients show a "Voice message" button in the thread; clicking it loads a signed link and plays it in an audio player.

@@ -299,6 +299,14 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const lines = useFieldArray({ control: form.control, name: 'items' });
   const payments = useFieldArray({ control: form.control, name: 'payments' });
   const values = useWatch({ control: form.control }) as Values;
+  const customerOf = () =>
+    values.patientMode === 'existing'
+      ? values.patientId
+        ? { patientId: values.patientId }
+        : {}
+      : values.patient?.name?.trim()
+        ? { customerName: values.patient.name.trim() }
+        : {};
   const requestIds = [
     ...new Set((values.items ?? []).flatMap((l) => (l.discountRequestId ? [l.discountRequestId] : []))),
   ];
@@ -785,6 +793,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                                   : { bundleId: line.refId }),
                                 qty: line.qty,
                                 discountPercent: line.discount ?? '0',
+                                ...customerOf(),
                               })
                               .then((request) => {
                                 form.setValue(`items.${index}.discountRequestId`, request.id);
