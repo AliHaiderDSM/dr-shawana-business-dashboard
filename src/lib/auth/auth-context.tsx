@@ -107,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setBranchId = useCallback(
     (next: string) => {
       branchStore.set(next);
+      branchStore.setViewBranch(null);
       setBranchState(next);
       queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== ME_QUERY_KEY[0] });
     },

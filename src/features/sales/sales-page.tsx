@@ -16,6 +16,7 @@ import { useStaffList } from '@/features/staff/api';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
+import { branchStore } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { TraceNumber } from '@/features/trace/trace-page';
 import { formatAmount, formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
@@ -41,13 +42,13 @@ export function useCanChangeSale() {
 
 export function SalesPage() {
   const navigate = useNavigate();
-  const { can, setBranchId } = useAuth();
+  const { can } = useAuth();
   const canChange = useCanChangeSale();
   const inWarehouse = useInWarehouse();
   const branches = useBranchOptions(inWarehouse);
   const products = productsApi.useOptions();
   const open = (sale: SaleListItem, path = `/sales/${sale.id}`) => {
-    if (inWarehouse && sale.branch) setBranchId(sale.branch.id);
+    if (inWarehouse && sale.branch) branchStore.setViewBranch(sale.branch.id);
     void navigate(path);
   };
   const list = useListState({ defaultSort: '-invoiceSeq' });

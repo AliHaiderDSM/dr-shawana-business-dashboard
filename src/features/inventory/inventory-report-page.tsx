@@ -25,7 +25,6 @@ const QUANTITY_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockIn', label: 'Stock in' },
   { key: 'stockOut', label: 'Stock out' },
   { key: 'sold', label: 'Sold' },
-  { key: 'booked', label: 'Booked (not dispatched)' },
   { key: 'returned', label: 'Returned' },
   { key: 'closing', label: 'Total stock' },
 ];
@@ -34,7 +33,6 @@ const SUPER_ADMIN_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockIn', label: 'Stock in' },
   { key: 'stockOut', label: 'Sent to branches' },
   { key: 'branchSold', label: 'Sold in branches' },
-  { key: 'booked', label: 'Booked (not dispatched)' },
   { key: 'branchReturned', label: 'Returned in branches' },
   { key: 'inBranch', label: 'Now in branches' },
   { key: 'closing', label: 'Super Admin stock' },
@@ -44,10 +42,14 @@ const SUPER_ADMIN_COLUMNS: { key: QuantityKey; label: string }[] = [
 const BRANCH_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockOut', label: 'Stock out' },
   { key: 'branchSold', label: 'Sale qty' },
-  { key: 'booked', label: 'Booked (not dispatched)' },
   { key: 'branchReturned', label: 'Returned' },
   { key: 'inBranch', label: 'In branch (offices qty)' },
 ];
+
+const BOOKED_COLUMN: { key: QuantityKey; label: string } = {
+  key: 'booked',
+  label: 'Booked (not dispatched)',
+};
 
 const OUTGOING = new Set<QuantityKey>(['stockOut', 'sold', 'branchSold']);
 
@@ -250,29 +252,37 @@ export function InventoryReportPage() {
   const branches = useBranchOptions(inWarehouse);
   const targetBranch = (branches.data ?? []).find((b) => b.id === list.filters.toBranchId);
   const perBranch = Boolean(report.data?.perBranch);
-  const columns = columnsFor(
-    targetBranch ? BRANCH_COLUMNS : perBranch ? SUPER_ADMIN_COLUMNS : QUANTITY_COLUMNS,
-    {
-      from,
-      to,
-    },
-  );
+  const bookedOnly = list.filters.booked === 'true';
+  const baseColumns = targetBranch ? BRANCH_COLUMNS : perBranch ? SUPER_ADMIN_COLUMNS : QUANTITY_COLUMNS;
+  const columns = columnsFor(bookedOnly ? [BOOKED_COLUMN, ...baseColumns] : baseColumns, { from, to });
   const month = list.filters.from?.slice(0, 7) ?? isoDate(today).slice(0, 7);
   const history = (productId: string) => void navigate(`/stock/${productId}?from=${from}&to=${to}`);
 
-  const rows: ReportRow[] = report.data?.rows.length
-    ? [
-        ...report.data.rows,
-        {
-          productId: 'total',
-          name: 'Total',
-          categoryName: null,
-          ...report.data.totals,
-          branches: [],
-          isTotal: true,
-        },
-      ]
-    : [];
+  const shown = (report.data?.rows ?? []).filter((r) => !bookedOnly || Number(r.booked) > 0);
+  const totals = report.data
+    ? bookedOnly
+      ? (Object.fromEntries(
+          Object.keys(report.data.totals).map((key) => [
+            key,
+            String(shown.reduce((sum, r) => sum + (Number(r[key as QuantityKey]) || 0), 0)),
+          ]),
+        ) as InventoryReport['totals'])
+      : report.data.totals
+    : null;
+  const rows: ReportRow[] =
+    shown.length && totals
+      ? [
+          ...shown,
+          {
+            productId: 'total',
+            name: 'Total',
+            categoryName: null,
+            ...totals,
+            branches: [],
+            isTotal: true,
+          },
+        ]
+      : [];
 
   return (
     <>
@@ -302,7 +312,7 @@ export function InventoryReportPage() {
         }}
         rowClassName={(r) => (r.isTotal ? 'bg-muted/50 font-semibold hover:bg-muted/50' : undefined)}
         exportFileName={`inventory-report-${from}-to-${to}`}
-        emptyTitle="No stock in this period"
+        emptyTitle={bookedOnly ? 'No booked orders waiting' : 'No stock in this period'}
         toolbar={
           <>
             <Input
@@ -317,6 +327,13 @@ export function InventoryReportPage() {
               }}
             />
             <DateRangeFilter list={list} placeholder="This month" />
+            <FilterSelect
+              list={list}
+              name="booked"
+              allLabel="All products"
+              className="w-56"
+              options={[{ value: 'true', label: 'Booked orders (not dispatched)' }]}
+            />
             {inWarehouse ? (
               <FilterSelect
                 list={list}

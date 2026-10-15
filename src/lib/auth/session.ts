@@ -45,6 +45,16 @@ export const lastUserStore = {
 let superAdmin = false;
 let warehouseId: string | null = null;
 
+const VIEW_BRANCH_KEY = 'dsm.viewBranch';
+
+function viewBranch() {
+  try {
+    return window.sessionStorage.getItem(VIEW_BRANCH_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export const branchStore = {
   get: () => read<string>(BRANCH_KEY) ?? ALL_BRANCHES,
   set: (branchId: string) => write(BRANCH_KEY, branchId),
@@ -54,9 +64,20 @@ export const branchStore = {
   setWarehouse: (id: string | null) => {
     warehouseId = id;
   },
-  inWarehouse: () => superAdmin && warehouseId !== null && read<string>(BRANCH_KEY) === warehouseId,
+  inWarehouse: () =>
+    superAdmin && !viewBranch() && warehouseId !== null && read<string>(BRANCH_KEY) === warehouseId,
+  setViewBranch: (branchId: string | null) => {
+    try {
+      if (branchId) window.sessionStorage.setItem(VIEW_BRANCH_KEY, branchId);
+      else window.sessionStorage.removeItem(VIEW_BRANCH_KEY);
+    } catch {
+      return;
+    }
+  },
   queryValue: () => {
     if (!superAdmin) return null;
+    const viewing = viewBranch();
+    if (viewing) return viewing;
     const value = read<string>(BRANCH_KEY);
     return value && value !== ALL_BRANCHES ? value : null;
   },

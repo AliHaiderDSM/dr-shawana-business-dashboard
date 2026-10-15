@@ -29219,6 +29219,14 @@ export interface components {
             createdInBranchId: string | null;
             /** Format: uuid */
             createdBy: string | null;
+            /** @description Who added the patient (list only) */
+            enteredBy?: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+                branchName: string | null;
+            } | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */

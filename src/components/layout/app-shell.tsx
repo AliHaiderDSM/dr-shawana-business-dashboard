@@ -11,11 +11,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { api, unwrap } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { branchStore } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { BrandMark, Sidebar, SidebarNav } from './sidebar';
 import { Topbar } from './topbar';
 
 const COLLAPSE_KEY = 'dsm.sidebar.collapsed';
+const SALE_VIEW = /^\/sales\/(?!new$)[^/]+(\/edit)?$/;
 
 export function FullPageLoader() {
   return (
@@ -109,6 +111,7 @@ export function AppShell() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  if (!SALE_VIEW.test(location.pathname)) branchStore.setViewBranch(null);
 
   function toggle() {
     setCollapsed((value) => {

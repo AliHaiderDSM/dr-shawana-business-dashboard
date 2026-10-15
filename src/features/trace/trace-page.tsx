@@ -37,7 +37,7 @@ const ACTION_LABELS: Record<string, string> = {
   cancel: 'Withdrawn',
   receive: 'Received by the branch',
   sent: 'Sent',
-  received: 'Received',
+  received: 'Received by the branch',
   dispatch: 'Dispatched',
   write_off: 'Written off',
   request_write_off: 'Reported for write-off',
@@ -46,7 +46,17 @@ const ACTION_LABELS: Record<string, string> = {
   confirm_receipt: 'Confirmed at the store',
 };
 
-const actionLabel = (action: string) => {
+const CREATED_LABELS: Record<string, string> = {
+  stock_request: 'Request made',
+  stock_out: 'Stock packed for sending',
+  stock_in: 'Stock in entry made',
+  discount_request: 'Discount asked',
+  write_off: 'Reported for write-off',
+  sale_return: 'Return made',
+};
+
+const actionLabel = (action: string, entity?: string) => {
+  if (action === 'create' && entity && CREATED_LABELS[entity]) return CREATED_LABELS[entity];
   if (ACTION_LABELS[action]) return ACTION_LABELS[action];
   if (action.startsWith('item:propose:')) return `Item checked as ${action.slice(13)}, sent for approval`;
   if (action.startsWith('item:approve:')) return `Item approved as ${action.slice(13)}`;
@@ -54,6 +64,24 @@ const actionLabel = (action: string) => {
   if (action.startsWith('item:')) return `Item ${action.slice(5)}`;
   return action.replace(/_/g, ' ');
 };
+
+const SAME_STEP_MS = 5 * 60_000;
+
+function uniqueSteps(timeline: Trace['timeline']) {
+  const steps: (Trace['timeline'][number] & { label: string })[] = [];
+  for (const step of timeline) {
+    const label = actionLabel(step.action, step.entity);
+    const at = new Date(step.at).getTime();
+    const repeat = steps.some(
+      (s) =>
+        s.label === label &&
+        (s.by?.id ?? null) === (step.by?.id ?? null) &&
+        Math.abs(new Date(s.at).getTime() - at) < SAME_STEP_MS,
+    );
+    if (!repeat) steps.push({ ...step, label });
+  }
+  return steps;
+}
 
 function openPath(trace: Trace) {
   switch (trace.kind) {
@@ -233,10 +261,10 @@ export function TracePage() {
             >
               {t.timeline.length ? (
                 <ol className="relative space-y-4 border-l pl-4">
-                  {t.timeline.map((step, index) => (
+                  {uniqueSteps(t.timeline).map((step, index) => (
                     <li key={index} className="relative">
                       <span className="absolute top-1.5 -left-[1.3rem] size-2.5 rounded-full border-2 border-background bg-primary" />
-                      <div className="text-sm font-medium">{actionLabel(step.action)}</div>
+                      <div className="text-sm font-medium">{step.label}</div>
                       <div className="text-xs text-muted-foreground">
                         {formatDateTime(step.at)}
                         {step.by

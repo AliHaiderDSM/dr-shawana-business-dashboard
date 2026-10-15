@@ -5,7 +5,6 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DataTable } from '@/components/shared/data-table';
-import { enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -14,8 +13,8 @@ import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
-import { BHRT_LABELS, patientsApi, type Patient } from './api';
-import { BhrtBadge } from './bhrt-badge';
+import { ROLE_LABELS } from '@/features/staff/api';
+import { patientsApi, type Patient } from './api';
 import { PatientFormSheet } from './patient-form-sheet';
 
 export function PatientsPage() {
@@ -75,10 +74,22 @@ export function PatientsPage() {
       cell: ({ row }) => row.original.age ?? '—',
     },
     {
-      id: 'bhrtStatus',
-      header: 'BHRT',
-      accessorFn: (p) => BHRT_LABELS[p.bhrtStatus],
-      cell: ({ row }) => <BhrtBadge status={row.original.bhrtStatus} />,
+      id: 'enteredBy',
+      header: 'Entered by',
+      accessorFn: (p) => p.enteredBy?.name ?? '',
+      cell: ({ row }) =>
+        row.original.enteredBy ? (
+          <div className="min-w-0">
+            <div className="font-medium">{row.original.enteredBy.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {ROLE_LABELS[row.original.enteredBy.role as keyof typeof ROLE_LABELS] ??
+                row.original.enteredBy.role}
+              {row.original.enteredBy.branchName ? ` · ${row.original.enteredBy.branchName}` : ''}
+            </div>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       id: 'createdAt',
@@ -174,15 +185,6 @@ export function PatientsPage() {
               Add patient
             </Button>
           ) : null
-        }
-        toolbar={
-          <FilterSelect
-            list={list}
-            name="bhrtStatus"
-            allLabel="Any BHRT status"
-            className="w-44"
-            options={enumOptions(['on', 'off', 'recommended', 'none'] as const, BHRT_LABELS)}
-          />
         }
       />
       <PatientFormSheet

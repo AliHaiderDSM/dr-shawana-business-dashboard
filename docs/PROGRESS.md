@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Report, patients, steps and branch fixes (2026-10-15)
+
+- Inventory report: Booked column removed; the **Booked orders (not dispatched)** filter lists only products with booked orders and then shows the Booked column with matching totals.
+- Patients: BHRT column and filter removed; **Entered by** column (name, role, branch).
+- Trace Steps: create steps are named by what was made (Request made, Stock packed for sending, ...), Received and Received by the branch are one step, and the same step by the same person within 5 minutes shows once.
+- Bank & cash accounts: only the Super Admin adds, edits or deletes any account.
+- Super Admin opening a sale from another branch no longer switches the header branch: a per-tab view branch (sessionStorage `dsm.viewBranch`) is used only on `/sales/:id` and `/sales/:id/edit`, cleared on any other page or when the header branch changes.
+
 ## Bill preview, patient picker, shared banks (2026-10-15)
 
 - Save sale & print bill opens a Bill preview dialog with Download PDF (html-to-image + jspdf, loaded on demand) and Print; Close goes to Sales.
