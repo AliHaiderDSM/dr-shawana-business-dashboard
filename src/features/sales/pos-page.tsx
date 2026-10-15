@@ -53,6 +53,7 @@ import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
 import { SALE_CITIES, salesApi, useCreateSale, type Sale, type SaleInput } from './api';
 import { PosCatalog, type CatalogPick } from './pos-catalog';
+import { BillPreviewDialog } from './bill-preview-dialog';
 import { useAskDiscount, useDiscountRequests, type DiscountRequest } from './discount-requests-api';
 import { findItemBySerial } from '@/features/inventory/api';
 
@@ -280,6 +281,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const navigate = useNavigate();
   const { can, isSuperAdmin } = useAuth();
   const askDiscount = useAskDiscount();
+  const [saved, setSaved] = useState<{ id: string; invoiceNo: string } | null>(null);
   const editing = Boolean(sale);
   const create = useCreateSale();
   const update = salesApi.useSave();
@@ -530,7 +532,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
               ? `Order ${created.invoiceNo} booked · awaiting dispatch`
               : `Sale ${created.invoiceNo} saved`,
           );
-          void navigate('/sales');
+          setSaved({ id: created.id, invoiceNo: created.invoiceNo });
         },
         onError: handleError,
       },
@@ -578,6 +580,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                         onSearchChange={setPatientSearch}
                         loading={patients.isFetching && !patients.data}
                         placeholder="Search by phone or name"
+                        listClassName="max-h-52"
                         options={(patients.data ?? []).map((p) => ({
                           value: p.id,
                           label: p.name,
@@ -1015,6 +1018,17 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
           </section>
         </aside>
       </form>
+      {saved ? (
+        <BillPreviewDialog
+          saleId={saved.id}
+          invoiceNo={saved.invoiceNo}
+          open
+          onClose={() => {
+            setSaved(null);
+            void navigate('/sales');
+          }}
+        />
+      ) : null}
     </Form>
   );
 }

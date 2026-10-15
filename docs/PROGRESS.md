@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Bill preview, patient picker, shared banks (2026-10-15)
+
+- Save sale & print bill opens a Bill preview dialog with Download PDF (html-to-image + jspdf, loaded on demand) and Print; Close goes to Sales.
+- Patient pickers (appointment, POS, prescription) show about 6 rows and scroll inside (`listClassName` on Combobox).
+- Bank & cash accounts: bank accounts carry a Shared badge; only the Super Admin can add, edit or delete them. Others add cash accounts only.
+
 ## Warehouse and branch stock fixes (2026-10-15)
 
 - Send stock for a request: the product list shows only the approved products, and saving stops when a qty is above the approved qty.

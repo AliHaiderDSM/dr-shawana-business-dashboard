@@ -250,6 +250,7 @@ export function AppointmentFormSheet({
                       onSearchChange={setPatientSearch}
                       loading={patients.isFetching && !patients.data}
                       placeholder="Search by phone or name"
+                      listClassName="max-h-52"
                       searchPlaceholder="Phone or name…"
                       emptyText="No patient found. Add a new one."
                       options={(patients.data ?? []).map((p) => ({

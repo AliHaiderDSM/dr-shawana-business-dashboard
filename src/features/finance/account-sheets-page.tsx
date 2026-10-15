@@ -47,6 +47,7 @@ function AccountSheetSheet({
   sheet: AccountSheet | null;
 }) {
   const save = accountSheetsApi.useSave();
+  const { isSuperAdmin } = useAuth();
   const accounts = accountSheetsApi.useOptions({}, open);
   const bankListId = useId();
   const bankNames = [...new Set((accounts.data ?? []).flatMap((a) => (a.bankName ? [a.bankName] : [])))];
@@ -81,7 +82,11 @@ function AccountSheetSheet({
         open={open}
         onOpenChange={onOpenChange}
         title={sheet ? 'Edit account' : 'New account'}
-        description="A cash or bank account that receives payments. For a bank account, type the bank name: a new bank is added on its own."
+        description={
+          isSuperAdmin
+            ? 'A cash account belongs to this branch. A bank account is shared by every branch; each branch sees only its own payments in it.'
+            : 'A cash account for this branch. Bank accounts are shared by every branch and only the Super Admin adds them.'
+        }
         onSubmit={submit}
         submitting={save.isPending}
         submitLabel={sheet ? 'Save changes' : 'Add account'}
@@ -99,10 +104,14 @@ function AccountSheetSheet({
             control={form.control}
             name="type"
             label="Type"
-            options={[
-              { value: 'cash', label: 'Cash' },
-              { value: 'bank', label: 'Bank' },
-            ]}
+            options={
+              isSuperAdmin
+                ? [
+                    { value: 'cash', label: 'Cash (this branch)' },
+                    { value: 'bank', label: 'Bank (all branches)' },
+                  ]
+                : [{ value: 'cash', label: 'Cash (this branch)' }]
+            }
           />
         </FieldRow>
         {type === 'bank' ? (
@@ -130,7 +139,8 @@ function AccountSheetSheet({
 }
 
 export function AccountSheetsPage() {
-  const { can } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
+  const locked = (sheet: AccountSheet) => sheet.type === 'bank' && !isSuperAdmin;
   const list = useListState({ defaultSort: 'accountName' });
   const query = accountSheetsApi.useList(list.query);
   const remove = accountSheetsApi.useRemove();
@@ -172,7 +182,16 @@ export function AccountSheetsPage() {
       id: 'type',
       header: 'Type',
       accessorKey: 'type',
-      cell: ({ row }) => <StatusBadge status={row.original.type} dot={false} />,
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5">
+          <StatusBadge status={row.original.type} dot={false} />
+          {row.original.type === 'bank' ? (
+            <StatusBadge tone="info" dot={false}>
+              Shared
+            </StatusBadge>
+          ) : null}
+        </span>
+      ),
     },
     {
       id: 'date',
@@ -191,14 +210,14 @@ export function AccountSheetsPage() {
             {
               label: 'Edit',
               icon: Pencil,
-              hidden: !can('accounts.update'),
+              hidden: !can('accounts.update') || locked(row.original),
               onSelect: () => openSheet(row.original),
             },
             {
               label: 'Delete',
               icon: Trash2,
               destructive: true,
-              hidden: !can('accounts.delete'),
+              hidden: !can('accounts.delete') || locked(row.original),
               onSelect: () => setRemoving(row.original),
             },
           ]}
@@ -211,7 +230,7 @@ export function AccountSheetsPage() {
     <>
       <PageHeader
         title="Bank & cash accounts"
-        description="Every account that receives money, with its bank. Add a bank account by typing the bank name; there is no separate bank list."
+        description="Cash accounts belong to this branch. Bank accounts are shared by every branch and only the Super Admin adds or changes them; each branch sees only its own money in them."
         actions={
           can('accounts.create') ? (
             <Button onClick={() => openSheet(null)}>

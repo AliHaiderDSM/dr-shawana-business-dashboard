@@ -291,6 +291,7 @@ function Builder({
                           }
                           onSearchChange={setPatientSearch}
                           placeholder="Search by phone or name"
+                          listClassName="max-h-52"
                           options={(patients.data ?? []).map((p) => ({
                             value: p.id,
                             label: p.name,

@@ -36,6 +36,7 @@ export interface ComboboxProps {
   clearable?: boolean;
   footer?: (close: () => void) => ReactNode;
   className?: string;
+  listClassName?: string;
   'aria-label'?: string;
 }
 
@@ -53,6 +54,7 @@ export function Combobox({
   clearable,
   footer,
   className,
+  listClassName,
   'aria-label': ariaLabel,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -89,7 +91,7 @@ export function Combobox({
       <PopoverContent className="w-(--radix-popover-trigger-width) min-w-64 p-0" align="start">
         <Command shouldFilter={!serverSearch}>
           <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} />
-          <CommandList>
+          <CommandList className={listClassName}>
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
