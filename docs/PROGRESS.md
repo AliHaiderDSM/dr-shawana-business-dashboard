@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## View Sales refund, request limit, no sale city (2026-10-15)
+
+- View Sales amounts: Actual amount, Discount, Remaining, Refund, Net amount (after discounts and refunds), with totals.
+- Stock request form marks a qty above the Super Admin stock in red and will not send it.
+- Add sale: the Sale city input is gone; the city still comes from the customer.
+
 ## Report, patients, steps and branch fixes (2026-10-15)
 
 - Inventory report: Booked column removed; the **Booked orders (not dispatched)** filter lists only products with booked orders and then shows the Booked column with matching totals.

@@ -20584,6 +20584,16 @@ export interface paths {
                                  * @example 1250.50
                                  */
                                 discountTotal: string;
+                                /**
+                                 * @description Money refunded on returns of this sale
+                                 * @example 1250.50
+                                 */
+                                refund: string;
+                                /**
+                                 * @description Total after discounts minus refunds
+                                 * @example 1250.50
+                                 */
+                                netAmount: string;
                             }[];
                             meta: components["schemas"]["PageMeta"] & {
                                 totals: {
@@ -20611,6 +20621,16 @@ export interface paths {
                                     received: string;
                                     /** @example 1250.50 */
                                     remaining: string;
+                                    /**
+                                     * @description Money refunded on returns of these sales
+                                     * @example 1250.50
+                                     */
+                                    refund: string;
+                                    /**
+                                     * @description Total after discounts minus refunds
+                                     * @example 1250.50
+                                     */
+                                    net: string;
                                 };
                                 /** @description Super Admin across branches: the same totals split by branch */
                                 byBranch?: {

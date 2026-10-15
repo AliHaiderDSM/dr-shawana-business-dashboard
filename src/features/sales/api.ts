@@ -9,6 +9,8 @@ export type SaleListItem = Omit<Sale, 'items' | 'payments'> & {
   itemDiscount: string;
   grossAmount: string;
   discountTotal: string;
+  refund: string;
+  netAmount: string;
 };
 export type SaleInput = Schemas['CreateSale'];
 export type SaleUpdate = Schemas['UpdateSale'];
@@ -25,6 +27,8 @@ export interface SaleTotals {
   total: string;
   received: string;
   remaining: string;
+  refund: string;
+  net: string;
 }
 
 export interface BranchSalesTotals {

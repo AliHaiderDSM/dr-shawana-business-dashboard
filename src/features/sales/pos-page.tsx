@@ -12,7 +12,7 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useHasDispatch } from '@/lib/auth/branches';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -21,13 +21,12 @@ import { z } from 'zod';
 import { ChoiceField } from '@/components/shared/choice-field';
 import { Combobox } from '@/components/shared/combobox';
 import { ErrorState } from '@/components/shared/error-state';
-import { FieldRow, TextField, TextareaField } from '@/components/shared/form-fields';
+import { TextField, TextareaField } from '@/components/shared/form-fields';
 import { MoneyInput } from '@/components/shared/money-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   emptyPayment,
   PaymentFields,
@@ -51,7 +50,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
-import { SALE_CITIES, salesApi, useCreateSale, type Sale, type SaleInput } from './api';
+import { salesApi, useCreateSale, type Sale, type SaleInput } from './api';
 import { PosCatalog, type CatalogPick } from './pos-catalog';
 import { BillPreviewDialog } from './bill-preview-dialog';
 import { useAskDiscount, useDiscountRequests, type DiscountRequest } from './discount-requests-api';
@@ -286,7 +285,6 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const create = useCreateSale();
   const update = salesApi.useSave();
   const accounts = useReceivingAccounts(!editing);
-  const cityListId = useId();
   const [patientSearch, setPatientSearch] = useState('');
   const patients = usePatientSearch(patientSearch);
   const [patientLabel, setPatientLabel] = useState<string | null>(
@@ -703,35 +701,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                 ]}
               />
             )}
-            <FieldRow>
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sale city</FormLabel>
-                    <FormControl>
-                      <Input
-                        list={cityListId}
-                        placeholder="Customer city"
-                        {...field}
-                        onChange={(event) => {
-                          cityEdited.current = true;
-                          field.onChange(event);
-                        }}
-                      />
-                    </FormControl>
-                    <datalist id={cityListId}>
-                      {SALE_CITIES.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <TextField control={form.control} name="date" label="Date" type="date" required />
-            </FieldRow>
+            <TextField control={form.control} name="date" label="Date" type="date" required />
           </section>
 
           <section className="rounded-xl border bg-card shadow-xs">

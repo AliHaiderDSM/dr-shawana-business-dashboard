@@ -172,13 +172,6 @@ export function SalesPage() {
         ),
     },
     {
-      id: 'total',
-      header: 'Net-amount',
-      accessorKey: 'total',
-      meta: { align: 'right' },
-      cell: ({ row }) => <span className="font-medium">{formatAmount(row.original.total)}</span>,
-    },
-    {
       id: 'remaining',
       header: 'Remaining',
       accessorKey: 'remaining',
@@ -191,6 +184,25 @@ export function SalesPage() {
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
+    },
+    {
+      id: 'refund',
+      header: 'Refund',
+      accessorKey: 'refund',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        Number(row.original.refund) > 0 ? (
+          <span className="text-destructive tabular-nums">−{formatAmount(row.original.refund)}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: 'net',
+      header: 'Net amount',
+      accessorKey: 'netAmount',
+      meta: { align: 'right' },
+      cell: ({ row }) => <span className="font-medium">{formatAmount(row.original.netAmount)}</span>,
     },
     {
       id: 'payment',
@@ -368,8 +380,9 @@ export function SalesPage() {
                 qty: formatQuantity(totals.qty),
                 subtotal: formatAmount(totals.gross),
                 discount: formatAmount(totals.discountTotal),
-                total: formatAmount(totals.total),
                 remaining: formatAmount(totals.remaining),
+                refund: formatAmount(totals.refund),
+                net: formatAmount(totals.net),
               }
             : undefined
         }
