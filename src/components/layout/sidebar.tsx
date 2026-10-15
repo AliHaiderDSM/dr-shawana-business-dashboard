@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useHasDispatch, useInDispatch, useInWarehouse } from '@/lib/auth/branches';
 import { findMenuItem, visibleMenu } from '@/lib/permissions/menu';
 import { cn } from '@/lib/utils';
+import { useDoctorChatRealtime } from '@/features/chat/realtime';
 import { useSidebarBadges } from './sidebar-badges';
 
 interface SidebarProps {
@@ -40,6 +41,7 @@ export function SidebarNav({ collapsed, onNavigate }: { collapsed?: boolean; onN
   const { pathname } = useLocation();
   const activeKey = pathname === '/' ? 'dashboard' : findMenuItem(pathname)?.key;
   const badges = useSidebarBadges(Boolean(me));
+  useDoctorChatRealtime(me?.role === 'doctor');
 
   return (
     <nav className="space-y-5 px-3 py-4" aria-label="Main">

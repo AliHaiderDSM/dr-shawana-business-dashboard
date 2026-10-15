@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient Messages realtime (2026-10-15)
+
+- Doctors subscribe to their Supabase Realtime channel (`features/chat/realtime.ts`, mounted in the sidebar). A ping refreshes conversations, the open thread and the sidebar badge. Polling stops while connected; if realtime is off it falls back to 2 min (list) / 30 s (thread) instead of 10 s / 5 s.
+
 ## View Sales refund, request limit, no sale city (2026-10-15)
 
 - View Sales amounts: Actual amount, Discount, Remaining, Refund, Net amount (after discounts and refunds), with totals.
