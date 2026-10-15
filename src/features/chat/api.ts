@@ -1,7 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap, uploadForm } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
-import { FALLBACK_LIST_POLL_MS, FALLBACK_THREAD_POLL_MS, useChatPolling } from './realtime';
 
 export type ChatConversation = Schemas['ChatConversation'];
 export type ChatMessage = Schemas['ChatMessage'];
@@ -12,7 +11,6 @@ export function useConversations() {
   return useQuery({
     queryKey: [KEY, 'list'],
     queryFn: () => unwrap(api.GET('/branch/chats')).then((r) => r.data),
-    refetchInterval: useChatPolling(FALLBACK_LIST_POLL_MS),
   });
 }
 
@@ -31,7 +29,6 @@ export function useThread(conversationId: string | null) {
       ).then((r) => r.data),
     getNextPageParam: (last) => (last.hasMore ? last.items[0]?.createdAt : undefined),
     enabled: Boolean(conversationId),
-    refetchInterval: useChatPolling(FALLBACK_THREAD_POLL_MS),
   });
 }
 

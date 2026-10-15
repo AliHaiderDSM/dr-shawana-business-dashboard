@@ -14,7 +14,7 @@
 
 ## Patient Messages realtime (2026-10-15)
 
-- Doctors subscribe to their Supabase Realtime channel (`features/chat/realtime.ts`, mounted in the sidebar). A ping refreshes conversations, the open thread and the sidebar badge. Polling stops while connected; if realtime is off it falls back to 2 min (list) / 30 s (thread) instead of 10 s / 5 s.
+- Doctors subscribe to their Supabase Realtime channel (`features/chat/realtime.ts`, mounted in the sidebar). A ping refreshes conversations, the open thread and the sidebar badge. No polling at all: data loads when the page opens, on window focus and on each ping.
 
 ## View Sales refund, request limit, no sale city (2026-10-15)
 
