@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Educational Resources page (2026-10-16)
+
+- Super Admin menu: **Educational Resources** (`/educational-resources`). One card per resource: add PDFs or photos (up to 5 at a time, 10 MB each), open or remove them. Patients open these files in the app when their doctor marks the resource Yes.
+
 ## Remarks label and this visit in history (2026-10-16)
 
 - Clinical remarks field is labelled Remarks. Patient history shows this visit too (This visit badge) and refreshes after the remarks are saved.
