@@ -204,15 +204,6 @@ export const MENU: MenuGroup[] = [
         scope: 'any',
       },
       {
-        key: 'educational-resources',
-        label: 'Educational Resources',
-        path: '/educational-resources',
-        icon: BookOpen,
-        anyOf: ['patients.view'],
-        scope: 'any',
-        superAdminOnly: true,
-      },
-      {
         key: 'patient-history',
         label: 'Patient History',
         path: '/patient-history',

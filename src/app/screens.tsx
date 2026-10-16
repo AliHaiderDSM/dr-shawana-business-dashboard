@@ -314,12 +314,6 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'any',
   },
   {
-    path: 'educational-resources',
-    element: page(() => import('@/features/clinical/educational-resources-page'), 'EducationalResourcesPage'),
-    anyOf: ['patients.view'],
-    scope: 'any',
-  },
-  {
     path: 'discount-requests',
     element: page(() => import('@/features/sales/discount-requests-page'), 'DiscountRequestsPage'),
     anyOf: ['sales.view'],
