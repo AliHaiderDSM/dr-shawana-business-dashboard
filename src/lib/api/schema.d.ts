@@ -17649,7 +17649,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The patient’s other appointments with their issues and remarks, every prescription (previous or new), and the additional symptoms of the last earlier visit */
+        /** The patient’s other appointments with the plan from their clinical remarks, every prescription (previous or new), and the additional symptoms of the last earlier visit */
         get: {
             parameters: {
                 query?: {
@@ -30853,6 +30853,10 @@ export interface components {
                 status: string;
                 issues: string | null;
                 remark: string | null;
+                /** @description The appointment of this consultation */
+                thisVisit: boolean;
+                /** @description Plan from the Clinical remarks of that visit (HTML: p, strong, em, u, s, ul, ol, li) */
+                plan: string | null;
                 doctor: string | null;
             }[];
             prescriptions: {

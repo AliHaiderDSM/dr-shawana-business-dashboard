@@ -8,14 +8,7 @@ import { z } from 'zod';
 import { ChoiceField } from '@/components/shared/choice-field';
 import { Combobox } from '@/components/shared/combobox';
 import { FilePicker } from '@/components/shared/file-upload';
-import {
-  FieldRow,
-  FormSection,
-  MoneyField,
-  SelectField,
-  TextField,
-  TextareaField,
-} from '@/components/shared/form-fields';
+import { FieldRow, FormSection, MoneyField, SelectField, TextField } from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -381,7 +374,6 @@ export function AppointmentFormSheet({
               options={(['new', 'followup'] as const).map((v) => ({ value: v, label: VISIT_LABELS[v] }))}
             />
           </FieldRow>
-          <TextareaField control={form.control} name="issues" label="Issues" rows={3} />
           <MoneyField
             control={form.control}
             name="fee"

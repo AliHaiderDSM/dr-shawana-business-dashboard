@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Remarks label and this visit in history (2026-10-16)
+
+- Clinical remarks field is labelled Remarks. Patient history shows this visit too (This visit badge) and refreshes after the remarks are saved.
+
+## Rich text plan, history, booking, chat header (2026-10-16)
+
+- New `components/shared/rich-text.tsx`: Tiptap editor (bold, italic, underline, strike, bullet and numbered lists, undo/redo) and `RichTextView` that sanitises with DOMPurify and shows old plain text as paragraphs.
+- Clinical remarks Plan uses the editor (field kind `richtext`). The consultation Patient history shows each earlier visit's formatted plan instead of the booking issues.
+- Book appointment: the Issues field is removed (old issues still show on the detail page and print when present).
+- Patient Messages: the conversation header opens the patient's profile on the Medical records tab.
+
 ## Patient Messages realtime (2026-10-15)
 
 - Doctors subscribe to their Supabase Realtime channel (`features/chat/realtime.ts`, mounted in the sidebar). A ping refreshes conversations, the open thread and the sidebar badge. No polling at all: data loads when the page opens, on window focus and on each ping.

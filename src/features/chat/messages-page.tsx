@@ -1,6 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { FileImage, FileText, Loader2, MessagesSquare, Mic, Paperclip, Play, Send, X } from 'lucide-react';
+import {
+  FileImage,
+  FileText,
+  FolderHeart,
+  Loader2,
+  MessagesSquare,
+  Mic,
+  Paperclip,
+  Play,
+  Send,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { openSignedUrl } from '@/components/shared/attachment-list';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -210,10 +222,19 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
   let lastDay = '';
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="border-b px-4 py-3">
-        <div className="font-semibold">{conversation.patient.name}</div>
-        <div className="text-xs text-muted-foreground">{conversation.patient.phone}</div>
-      </div>
+      <Link
+        to={`/patients/${conversation.patient.id}?tab=records`}
+        title="Open this patient's medical records"
+        className="group flex items-center justify-between gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/50"
+      >
+        <div className="min-w-0">
+          <div className="truncate font-semibold group-hover:text-primary">{conversation.patient.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {conversation.patient.phone} · Tap for medical records
+          </div>
+        </div>
+        <FolderHeart className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+      </Link>
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-muted/30 p-4">
         {thread.hasNextPage ? (
           <div className="text-center">

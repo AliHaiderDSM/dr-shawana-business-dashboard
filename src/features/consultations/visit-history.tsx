@@ -1,6 +1,7 @@
 import { FileHeart } from 'lucide-react';
 import { Link } from 'react-router';
 import { Panel } from '@/components/shared/panel';
+import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@/lib/format';
 import type { ConsultationHistory } from './api';
@@ -52,17 +53,18 @@ export function VisitHistory({
 }) {
   if (loading) return <Skeleton className="h-40 w-full" />;
   if (!history || (history.visits.length === 0 && history.prescriptions.length === 0)) return null;
+  const earlier = history.visits.filter((v) => !v.thisVisit).length;
   const previous = history.prescriptions.filter((p) => p.previous);
   const current = history.prescriptions.filter((p) => !p.previous);
   return (
     <Panel
       title="Patient history"
-      description={`${history.visits.length} earlier ${history.visits.length === 1 ? 'appointment' : 'appointments'} and ${history.prescriptions.length} ${history.prescriptions.length === 1 ? 'prescription' : 'prescriptions'}`}
+      description={`${earlier} earlier ${earlier === 1 ? 'appointment' : 'appointments'} and ${history.prescriptions.length} ${history.prescriptions.length === 1 ? 'prescription' : 'prescriptions'}`}
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-4">
           {history.visits.length === 0 ? (
-            <p className="text-sm text-muted-foreground">This is the first appointment.</p>
+            <p className="text-sm text-muted-foreground">No appointments yet.</p>
           ) : (
             history.visits.map((visit) => (
               <article key={visit.id} className="space-y-1 border-b pb-4 last:border-b-0 last:pb-0">
@@ -72,17 +74,19 @@ export function VisitHistory({
                     {visit.visitType === 'followup' ? 'Follow up' : 'New'}
                     {visit.doctor ? ` · ${visit.doctor}` : ''}
                   </span>
+                  {visit.thisVisit ? (
+                    <span className="ml-2 rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-medium text-primary-soft-foreground">
+                      This visit
+                    </span>
+                  ) : null}
                 </h4>
-                {visit.issues ? <p className="text-sm whitespace-pre-wrap">{visit.issues}</p> : null}
-                {visit.remark ? (
-                  <p className="text-sm whitespace-pre-wrap">
-                    <span className="font-medium">Plan: </span>
-                    {visit.remark}
+                {richTextIsEmpty(visit.plan) ? (
+                  <p className="text-sm text-muted-foreground">
+                    No remarks recorded in the clinical remarks.
                   </p>
-                ) : null}
-                {!visit.issues && !visit.remark ? (
-                  <p className="text-sm text-muted-foreground">No remark recorded.</p>
-                ) : null}
+                ) : (
+                  <RichTextView value={visit.plan} />
+                )}
               </article>
             ))
           )}

@@ -14,7 +14,7 @@ interface Base {
 }
 
 export type FieldDef =
-  | (Base & { kind: 'text' | 'date' | 'textarea' })
+  | (Base & { kind: 'text' | 'date' | 'textarea' | 'richtext' })
   | (Base & { kind: 'number'; integer?: boolean })
   | (Base & { kind: 'yesNo' })
   | (Base & { kind: 'choice'; options: readonly Choice[] })
@@ -781,7 +781,13 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
           },
         ],
       },
-      { kind: 'textarea', key: 'plan', label: 'Plan', wide: true },
+      {
+        kind: 'richtext',
+        key: 'plan',
+        label: 'Remarks',
+        description: 'Bold, italic and lists are kept. These remarks show in the patient history.',
+        wide: true,
+      },
     ],
   },
   referral: {

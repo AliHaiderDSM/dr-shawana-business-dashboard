@@ -81,6 +81,8 @@ export function useSaveSection(consultation: Pick<Consultation, 'id' | 'appointm
             : current,
       );
       if (result.key === 'basic_info') void queryClient.invalidateQueries({ queryKey: ['patients'] });
+      if (result.key === 'clinical_assessment')
+        void queryClient.invalidateQueries({ queryKey: ['consultations', 'history', consultation.id] });
       if (result.key === 'mrs_scale')
         void queryClient.invalidateQueries({ queryKey: consultationKeys.mrs(consultation.patientId) });
     },

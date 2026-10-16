@@ -3,6 +3,7 @@ import { useEffect, type ReactNode } from 'react';
 import { useForm, useFormContext, useWatch, type Control } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ChoiceField } from '@/components/shared/choice-field';
+import { RichTextEditor } from '@/components/shared/rich-text';
 import { TextField, TextareaField } from '@/components/shared/form-fields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -438,6 +439,32 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
           description={description}
           disabled={disabled}
           rows={3}
+        />
+      );
+    case 'richtext':
+      return (
+        <FormField
+          control={control}
+          name={field.key}
+          render={({ field: f, fieldState }) => (
+            <FormItem>
+              <FormLabel>
+                {field.label}
+                {required ? <span className="text-destructive">*</span> : null}
+              </FormLabel>
+              <FormControl>
+                <RichTextEditor
+                  value={typeof f.value === 'string' ? f.value : ''}
+                  onChange={(html) => f.onChange(html ?? '')}
+                  onBlur={f.onBlur}
+                  disabled={disabled}
+                  invalid={Boolean(fieldState.error)}
+                />
+              </FormControl>
+              {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+              <FormMessage />
+            </FormItem>
+          )}
         />
       );
     case 'number':

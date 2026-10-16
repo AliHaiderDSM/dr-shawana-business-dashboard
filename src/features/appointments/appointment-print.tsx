@@ -41,7 +41,7 @@ export function AppointmentPrint() {
               <PrintField label="Time" value={timeRange(a.timeFrom, a.timeTo)} />
               <PrintField label="Status" value={`${MODE_LABELS[a.mode]} · ${VISIT_LABELS[a.visitType]}`} />
             </div>
-            <PrintField label="Issues" value={a.issues} />
+            {a.issues ? <PrintField label="Issues" value={a.issues} /> : null}
             {a.payments.length ? (
               <div className="space-y-2 border-t-2 border-double border-primary pt-4">
                 <PrintTable
