@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, Loader2, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ import { formatDateTime, formatQuantity } from '@/lib/format';
 import {
   useAskStockMutation,
   useDecideStockRequestMutation,
+  useUpdateStockRequestMutation,
   useStockRequestCatalog,
   useStockRequestCounts,
   useStockRequests,
@@ -62,13 +63,32 @@ interface DraftLine {
   note: string;
 }
 
-function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function NewRequestSheet({
+  open,
+  onOpenChange,
+  editing = null,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editing?: StockRequest | null;
+}) {
   const [ask, askState] = useAskStockMutation();
+  const [update, updateState] = useUpdateStockRequestMutation();
+  const saving = askState.isLoading || updateState.isLoading;
   const [search, setSearch] = useState('');
   const catalog = useStockRequestCatalog(search, open);
-  const [lines, setLines] = useState<DraftLine[]>([]);
-  const [note, setNote] = useState('');
-  const [nextKey, setNextKey] = useState(1);
+  const [lines, setLines] = useState<DraftLine[]>(() =>
+    (editing?.items ?? []).map((i, index) => ({
+      key: index + 1,
+      productId: i.productId,
+      name: i.productName,
+      available: String(i.available),
+      qty: String(Number(i.qty)),
+      note: i.note ?? '',
+    })),
+  );
+  const [note, setNote] = useState(editing?.note ?? '');
+  const [nextKey, setNextKey] = useState((editing?.items.length ?? 0) + 1);
   const options = (catalog.data ?? [])
     .filter((p) => !lines.some((l) => l.productId === p.id))
     .map((p) => ({
@@ -88,13 +108,14 @@ function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => !askState.isLoading && close(v)}>
+    <Sheet open={open} onOpenChange={(v) => !saving && close(v)}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
-          <SheetTitle>Ask the Super Admin for stock</SheetTitle>
+          <SheetTitle>{editing ? `Edit ${editing.requestNo}` : 'Ask the Super Admin for stock'}</SheetTitle>
           <SheetDescription>
-            Pick the products and how many you need. The request gets its own number; the Super Admin approves
-            it and sends the stock, and your branch admin receives it.
+            {editing
+              ? 'Fix the products, quantities or note. You can change the request until the Super Admin answers it.'
+              : 'Pick the products and how many you need. The request gets its own number; the Super Admin approves it and sends the stock, and your branch admin receives it.'}
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4">
@@ -189,30 +210,33 @@ function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
           </div>
         </div>
         <SheetFooter>
-          <Button variant="outline" onClick={() => close(false)} disabled={askState.isLoading}>
+          <Button variant="outline" onClick={() => close(false)} disabled={saving}>
             Cancel
           </Button>
           <Button
-            disabled={!ready || askState.isLoading}
-            onClick={() =>
-              ask({
+            disabled={!ready || saving}
+            onClick={() => {
+              const body = {
                 note: note.trim() || null,
                 items: lines.map((l) => ({
                   productId: l.productId,
                   qty: l.qty,
                   note: l.note.trim() || null,
                 })),
-              })
+              };
+              (editing ? update({ id: editing.id, body }) : ask(body))
                 .unwrap()
-                .then((created) => {
-                  toast.success(`${created.requestNo} sent to the Super Admin`);
+                .then((saved) => {
+                  toast.success(
+                    editing ? `${saved.requestNo} updated` : `${saved.requestNo} sent to the Super Admin`,
+                  );
                   close(false);
                 })
-                .catch(toastError)
-            }
+                .catch(toastError);
+            }}
           >
-            {askState.isLoading ? <Loader2 className="animate-spin" /> : <Send />}
-            Send request
+            {saving ? <Loader2 className="animate-spin" /> : editing ? <Check /> : <Send />}
+            {editing ? 'Save changes' : 'Send request'}
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -224,10 +248,12 @@ function RequestSheet({
   request,
   onClose,
   onSend,
+  onEdit,
 }: {
   request: StockRequest | null;
   onClose: () => void;
   onSend: (prefill: StockRequestPrefill) => void;
+  onEdit: (request: StockRequest) => void;
 }) {
   const { isSuperAdmin, me } = useAuth();
   const sender = me?.role === 'warehouse_keeper';
@@ -237,6 +263,9 @@ function RequestSheet({
   const [note, setNote] = useState('');
   if (!request) return null;
   const pending = request.status === 'pending';
+  const choosing = isSuperAdmin && pending;
+  const busy = decideState.isLoading;
+
   const toSend = request.items
     .map((i) => ({
       productId: i.productId,
@@ -268,7 +297,7 @@ function RequestSheet({
       .catch(toastError);
 
   return (
-    <Sheet open onOpenChange={(open) => !open && !decideState.isLoading && onClose()}>
+    <Sheet open onOpenChange={(open) => !open && !busy && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-2">
@@ -307,7 +336,7 @@ function RequestSheet({
                       {formatQuantity(i.qty)} {i.unit}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {isSuperAdmin && pending ? (
+                      {choosing ? (
                         <MoneyInput
                           prefix=""
                           decimals={3}
@@ -380,7 +409,7 @@ function RequestSheet({
               </table>
             </div>
           ) : null}
-          {isSuperAdmin && pending ? (
+          {choosing ? (
             <div className="space-y-2">
               <Label htmlFor="decision">Note for the branch (optional)</Label>
               <Textarea
@@ -425,6 +454,12 @@ function RequestSheet({
               Send stock
             </Button>
           ) : null}
+          {!isSuperAdmin && !sender && pending ? (
+            <Button variant="outline" onClick={() => onEdit(request)}>
+              <Pencil />
+              Edit
+            </Button>
+          ) : null}
           {!isSuperAdmin && pending ? (
             <Button
               variant="outline"
@@ -458,6 +493,7 @@ export function StockRequestsPage() {
   const counts = useStockRequestCounts(isSuperAdmin);
   const [asking, setAsking] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [editingRequest, setEditingRequest] = useState<StockRequest | null>(null);
   const [prefill, setPrefill] = useState<StockRequestPrefill | null>(null);
   const opened = (requests.data ?? []).find((r) => r.id === openId) ?? null;
   const canAsk =
@@ -586,10 +622,22 @@ export function StockRequestsPage() {
         }
       />
       <NewRequestSheet open={asking} onOpenChange={setAsking} />
+      {editingRequest ? (
+        <NewRequestSheet
+          key={editingRequest.id}
+          open
+          editing={editingRequest}
+          onOpenChange={(value) => !value && setEditingRequest(null)}
+        />
+      ) : null}
       <RequestSheet
         key={opened?.id ?? 'none'}
         request={opened}
         onClose={() => setOpenId(null)}
+        onEdit={(value) => {
+          setOpenId(null);
+          setEditingRequest(value);
+        }}
         onSend={(value) => {
           setOpenId(null);
           setPrefill(value);

@@ -4,10 +4,12 @@ import { api, unwrap } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
 import type {
   DecideStockRequestInput,
+  UpdateStockRequestInput,
   DecideWriteOffInput,
   IncomingStock,
   IncomingStockStatus,
   StockRequestsGetData,
+  StockRequestsPatchData,
   StockRequestsPostData,
   StockRequestStatus,
   WriteOffsQuery,
@@ -71,6 +73,18 @@ export const stockRequestsApi = baseApi.injectEndpoints({
       queryFn: (body) =>
         toApi<StockRequestsPostData<'/branch/stock-requests'>>(() =>
           unwrap(api.POST('/branch/stock-requests', { body })).then((r) => r.data),
+        ),
+      invalidatesTags: (_r, error) => (error ? [] : STOCK_REQUEST_TAGS),
+    }),
+    updateStockRequest: build.mutation<
+      StockRequestsPatchData<'/branch/stock-requests/{id}'>,
+      UpdateStockRequestInput
+    >({
+      queryFn: ({ id, body }) =>
+        toApi<StockRequestsPatchData<'/branch/stock-requests/{id}'>>(() =>
+          unwrap(api.PATCH('/branch/stock-requests/{id}', { params: { path: { id } }, body })).then(
+            (r) => r.data,
+          ),
         ),
       invalidatesTags: (_r, error) => (error ? [] : STOCK_REQUEST_TAGS),
     }),
@@ -172,6 +186,7 @@ export const {
   useAskStockMutation,
   useWithdrawStockRequestMutation,
   useDecideStockRequestMutation,
+  useUpdateStockRequestMutation,
   useGetIncomingStockQuery,
   useGetIncomingTransferByNoQuery,
   useReceiveIncomingStockMutation,

@@ -62,6 +62,13 @@ export function AppAccessPanel({
           {a.status === 'active' && a.lastLoginAt ? (
             <p className="text-muted-foreground">Last sign-in {formatDateTime(a.lastLoginAt)}</p>
           ) : null}
+          {a.status !== 'not_invited' ? (
+            <p className="text-muted-foreground">
+              {a.hasPassword && a.passwordSetAt
+                ? `App password made ${formatDateTime(a.passwordSetAt)}. If the patient forgets it, create a new login code and they choose a new password with Forgot password.`
+                : 'No app password yet. The patient makes one after logging in with a code.'}
+            </p>
+          ) : null}
           {a.status === 'invited' && a.codeExpiresAt ? (
             <p className="text-muted-foreground">The code works until {formatDateTime(a.codeExpiresAt)}.</p>
           ) : null}
@@ -97,7 +104,7 @@ export function AppAccessPanel({
           <DialogHeader>
             <DialogTitle>Login code</DialogTitle>
             <DialogDescription>
-              Give this code to the patient. In the app they log in with {phone} and this code. It works once,
+              Give this code to the patient. In the app they log in with {phone} and this code (or use it under Forgot password to choose a new password). It works once,
               until {code ? formatDateTime(code.expiresAt) : ''}, and is not shown again.
             </DialogDescription>
           </DialogHeader>

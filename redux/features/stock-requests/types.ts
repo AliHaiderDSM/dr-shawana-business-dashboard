@@ -19,6 +19,14 @@ export type StockRequestsPostData<P extends keyof paths> = paths[P] extends { po
     : never
   : never;
 
+export type StockRequestsPatchData<P extends keyof paths> = paths[P] extends {
+  patch: { responses: infer R };
+}
+  ? JsonOk<R> extends { data: infer D }
+    ? D
+    : never
+  : never;
+
 export type StockRequest = Schemas['StockRequest'];
 export type StockRequestStatus = StockRequest['status'];
 export type IncomingStock = Schemas['IncomingStock'];
@@ -39,6 +47,11 @@ export interface DecideStockRequestInput {
   id: string;
   approve: boolean;
   body: Schemas['DecideStockRequest'];
+}
+
+export interface UpdateStockRequestInput {
+  id: string;
+  body: Schemas['CreateStockRequest'];
 }
 
 export interface DecideWriteOffInput {

@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Edit stock request and app password status (2026-10-18)
+
+- Stock request sheet: the branch has Edit on its pending requests; it opens the request form filled in and saves the corrected list.
+- Patient Mobile app panel shows whether the patient made an app password and when.
+
 ## Doctor voice notes and patient weight/height (2026-10-18)
 
 - Patient Messages: mic button records a voice note in the browser (M4A when the browser supports it, otherwise WebM), up to 5 minutes, with discard and send.
