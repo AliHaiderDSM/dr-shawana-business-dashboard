@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -11,10 +10,10 @@ import { Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import { api, unwrap } from '@/lib/api/client';
 import { applyServerErrors } from '@/lib/api/errors';
 import { formatDateTime } from '@/lib/format';
 import { optionalEmail, optionalText, requiredText } from '@/lib/validation';
+import { useGetCompanyInfoQuery, useSaveCompanyInfoMutation } from '@redux/features/company';
 
 const schema = z.object({
   name: requiredText(150, 'Company name').refine((v) => v.length >= 2, 'Use at least 2 characters'),
@@ -26,11 +25,7 @@ const schema = z.object({
 type Values = z.input<typeof schema>;
 
 export function CompanyPage() {
-  const queryClient = useQueryClient();
-  const company = useQuery({
-    queryKey: ['company'],
-    queryFn: () => unwrap(api.GET('/admin/company-info')).then((r) => r.data),
-  });
+  const company = useGetCompanyInfoQuery(undefined);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     values: {
@@ -40,15 +35,13 @@ export function CompanyPage() {
       address: company.data?.address ?? null,
     },
   });
-  const save = useMutation({
-    mutationFn: (body: z.output<typeof schema>) =>
-      unwrap(api.PUT('/admin/company-info', { body: { ...body, logoPath: company.data?.logoPath ?? null } })),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['company'] });
-      toast.success('Company info saved');
-    },
-    onError: (error) => applyServerErrors(form, error),
-  });
+  const [saveCompany, saveState] = useSaveCompanyInfoMutation();
+  const save = (body: z.output<typeof schema>) => {
+    void saveCompany({ ...body, logoPath: company.data?.logoPath ?? null })
+      .unwrap()
+      .then(() => toast.success('Company info saved'))
+      .catch((error) => applyServerErrors(form, error));
+  };
 
   return (
     <>
@@ -63,15 +56,15 @@ export function CompanyPage() {
         <ErrorState error={company.error} onRetry={() => void company.refetch()} />
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => save.mutate(v))} noValidate className="max-w-3xl">
+          <form onSubmit={form.handleSubmit((v) => save(v))} noValidate className="max-w-3xl">
             <Panel
               title="Organization"
               description={
                 company.data ? `Last updated ${formatDateTime(company.data.updatedAt)}` : 'Not set up yet.'
               }
               footer={
-                <Button type="submit" disabled={save.isPending || !form.formState.isDirty}>
-                  {save.isPending ? <Loader2 className="animate-spin" /> : null}
+                <Button type="submit" disabled={saveState.isLoading || !form.formState.isDirty}>
+                  {saveState.isLoading ? <Loader2 className="animate-spin" /> : null}
                   Save changes
                 </Button>
               }

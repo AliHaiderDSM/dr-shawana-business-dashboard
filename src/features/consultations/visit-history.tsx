@@ -4,7 +4,7 @@ import { Panel } from '@/components/shared/panel';
 import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@/lib/format';
-import type { ConsultationHistory } from './api';
+import type { ConsultationHistory } from '@redux/features/consultations';
 
 function PrescriptionLinks({
   title,

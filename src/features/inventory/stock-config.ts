@@ -1,4 +1,4 @@
-import type { StockKind } from './api';
+import type { StockKind } from '@redux/features/inventory';
 
 export interface StockKindConfig {
   kind: StockKind;

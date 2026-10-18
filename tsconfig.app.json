@@ -18,7 +18,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/*": ["./src/*"], "@redux/*": ["./redux/*"], "@redux": ["./redux/index.ts"] }
   },
-  "include": ["src"]
+  "include": ["src", "redux"]
 }

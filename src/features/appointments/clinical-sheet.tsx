@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { BhrtPanel } from '@/features/clinical/bhrt-panel';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { useAuth } from '@/lib/auth/auth-context';
-import type { Appointment } from './api';
+import type { Appointment } from '@redux/features/appointments';
 
 export type ClinicalView = 'bhrt' | 'records';
 

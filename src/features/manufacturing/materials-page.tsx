@@ -14,7 +14,7 @@ import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatQuantity } from '@/lib/format';
-import { materialCategoriesApi, materialsApi, type Material } from './api';
+import { materialCategoriesApi, materialsApi, type Material } from '@redux/features/manufacturing';
 import { MaterialFormSheet } from './material-form-sheet';
 
 export function MaterialLevelBadge({ material }: { material: Material }) {
@@ -32,7 +32,7 @@ export function MaterialsPage() {
   const list = useListState({ defaultSort: 'name' });
   const query = materialsApi.useList(list.query);
   const categories = materialCategoriesApi.useOptions();
-  const remove = materialsApi.useRemove();
+  const [remove] = materialsApi.useRemove();
   const [editing, setEditing] = useState<Material | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<Material | null>(null);
@@ -184,8 +184,8 @@ export function MaterialsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Material deleted'))
                 .catch(toastError)
             : undefined

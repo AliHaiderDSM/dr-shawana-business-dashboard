@@ -19,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { toastError, applyServerErrors } from '@/lib/api/errors';
 import { isoDate } from '@/lib/format';
 import { moneyString, optionalText, positiveQuantity, quantityString, requiredText } from '@/lib/validation';
-import { categoriesApi, productsApi, suppliersApi, type Product } from './api';
+import { categoriesApi, productsApi, suppliersApi, type Product } from '@redux/features/catalog';
 
 const SIZE_UNITS = ['g', 'kg', 'mg', 'ml', 'l', 'pcs', 'tablets', 'capsules', 'sachets'] as const;
 
@@ -90,8 +90,8 @@ interface ProductFormSheetProps {
 }
 
 export function ProductFormSheet({ open, onOpenChange, product, onSaved }: ProductFormSheetProps) {
-  const save = productsApi.useSave();
-  const upload = productsApi.useUploadImage();
+  const [save, saveState] = productsApi.useSave();
+  const [upload, uploadState] = productsApi.useUploadImage();
   const categories = categoriesApi.useOptions({}, open);
   const suppliers = suppliersApi.useOptions({ type: 'supplier' }, open && !product);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
@@ -125,20 +125,17 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
       ...(salePrice ? { salePrice } : {}),
       ...(!product && includePurchase ? { initialPurchase: purchase } : {}),
     };
-    save.mutate(
-      { id: product?.id, body: body as never },
-      {
-        onSuccess: async ({ data }) => {
-          if (!product && pendingImage)
-            await upload.mutateAsync({ id: data.id, file: pendingImage }).catch(toastError);
-          toast.success(product ? 'Product updated' : 'Product created');
-          setPendingImage(null);
-          onOpenChange(false);
-          onSaved?.(data);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void save({ id: product?.id, body: body as never })
+      .unwrap()
+      .then(async ({ data }) => {
+        if (!product && pendingImage)
+          await upload({ id: data.id, file: pendingImage }).unwrap().catch(toastError);
+        toast.success(product ? 'Product updated' : 'Product created');
+        setPendingImage(null);
+        onOpenChange(false);
+        onSaved?.(data);
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -149,7 +146,7 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
         title={product ? 'Edit product' : 'New product'}
         description="The sale price is taken from the latest purchase entry unless you set it here."
         onSubmit={submit}
-        submitting={save.isPending || upload.isPending}
+        submitting={saveState.isLoading || uploadState.isLoading}
         submitLabel={product ? 'Save changes' : 'Create product'}
         size="lg"
       >
@@ -216,7 +213,7 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
           {product ? (
             <ImageUpload
               value={product.imageUrl}
-              onUpload={(file) => upload.mutateAsync({ id: product.id, file })}
+              onUpload={(file) => upload({ id: product.id, file }).unwrap()}
             />
           ) : (
             <ImageUpload value={null} onUpload={async (file) => setPendingImage(file)} />

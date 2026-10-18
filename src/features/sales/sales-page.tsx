@@ -1,4 +1,4 @@
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Ban, CheckCircle2, Eye, HandCoins, Pencil, Plus, Printer, Trash2, Truck, Undo2 } from 'lucide-react';
@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { useStaffList } from '@/features/staff/api';
+import { useStaffList } from '@redux/features/staff';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -20,15 +20,8 @@ import { branchStore } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { TraceNumber } from '@/features/trace/trace-page';
 import { formatAmount, formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
-import {
-  DELIVERY_LABELS,
-  PAYMENT_STATUS_LABELS,
-  SALE_TYPE_LABELS,
-  salesApi,
-  useApprovePayments,
-  useSales,
-  type SaleListItem,
-} from './api';
+import { salesApi, useApproveSalePaymentsMutation, useSales, type SaleListItem } from '@redux/features/sales';
+import { DELIVERY_LABELS, PAYMENT_STATUS_LABELS, SALE_TYPE_LABELS } from './constants';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
 import { SalePaymentSheet } from './sale-detail-page';
 
@@ -54,7 +47,7 @@ export function SalesPage() {
   const list = useListState({ defaultSort: '-invoiceSeq' });
   const query = useSales(list.query);
   const staff = useStaffList({ pageSize: 100 }, can('staff.view'));
-  const remove = salesApi.useRemove();
+  const [remove] = salesApi.useRemove();
   const orders = useOrderActions();
   const [removing, setRemoving] = useState<SaleListItem | null>(null);
   const [paying, setPaying] = useState<SaleListItem | null>(null);
@@ -64,7 +57,7 @@ export function SalesPage() {
   const approval = list.filters.paymentStatus === 'awaiting_approval';
   const completed = list.filters.completed === 'true';
   const pending = list.filters.pending === 'true';
-  const approve = useApprovePayments();
+  const [approve] = useApproveSalePaymentsMutation();
   const byBranch = query.data?.meta.byBranch;
   const totals = query.data?.meta.totals;
 
@@ -253,8 +246,8 @@ export function SalesPage() {
                   s.deliveryStatus === 'cancelled' ||
                   !can('salePayments.update'),
                 onSelect: () =>
-                  approve
-                    .mutateAsync({ id: s.id })
+                  approve({ id: s.id })
+                    .unwrap()
                     .then(() => toast.success(`${s.invoiceNo}: payment approved`))
                     .catch(toastError),
               },
@@ -509,8 +502,8 @@ export function SalesPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Sale deleted'))
                 .catch(toastError)
             : undefined

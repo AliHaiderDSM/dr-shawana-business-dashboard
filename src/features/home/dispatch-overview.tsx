@@ -1,10 +1,10 @@
 import { CalendarClock, ClipboardList, PackageCheck, PackageX, RotateCcw, Truck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useSidebarBadges } from '@/components/layout/sidebar-badges';
+import { useSidebarBadges } from '@redux/features/layout';
 import { StatCard } from '@/components/shared/stat-card';
-import { useIncomingStock, useWriteOffs } from '@/features/inventory/requests-api';
-import { useDeliveryCalendar } from '@/features/sales/api';
+import { useIncomingStock, useWriteOffs } from '@redux/features/stock-requests';
+import { useDeliveryCalendar } from '@redux/features/sales';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCount, formatDate, isoDate } from '@/lib/format';
 

@@ -14,10 +14,14 @@ import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity, isoDate } from '@/lib/format';
 import { TraceNumber } from '@/features/trace/trace-page';
-import { useIncomingStock, useReceiveStock, type IncomingStock } from './requests-api';
+import {
+  useIncomingStock,
+  useReceiveIncomingStockMutation,
+  type IncomingStock,
+} from '@redux/features/stock-requests';
 
 function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canReceive: boolean }) {
-  const receive = useReceiveStock();
+  const [receive, receiveState] = useReceiveIncomingStockMutation();
   const [date, setDate] = useState(isoDate());
   const { isSuperAdmin, me } = useAuth();
   const overview = isSuperAdmin || me?.role === 'warehouse_keeper';
@@ -60,17 +64,17 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
               onChange={(e) => setDate(e.target.value)}
             />
             <Button
-              disabled={receive.isPending || !date}
+              disabled={receiveState.isLoading || !date}
               onClick={() =>
-                receive
-                  .mutateAsync({ transferNo: transfer.transferNo, date })
+                receive({ transferNo: transfer.transferNo, date })
+                  .unwrap()
                   .then(() =>
                     toast.success(`${transfer.transferNo} received. The stock is in your branch now.`),
                   )
                   .catch(toastError)
               }
             >
-              {receive.isPending ? <Loader2 className="animate-spin" /> : <PackageCheck />}
+              {receiveState.isLoading ? <Loader2 className="animate-spin" /> : <PackageCheck />}
               Check & receive
             </Button>
           </div>

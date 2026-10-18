@@ -1,8 +1,9 @@
 import { useParams } from 'react-router';
 import { Letterhead, PrintField, PrintPage, PrintTable } from '@/components/shared/print-document';
-import { doctorsApi } from '@/features/doctors/api';
+import { doctorsApi } from '@redux/features/doctors';
 import { formatDate, formatMoney } from '@/lib/format';
-import { appointmentsApi, METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './api';
+import { appointmentsApi } from '@redux/features/appointments';
+import { METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
 
 export function AppointmentPrint() {
   const { id = '' } = useParams();

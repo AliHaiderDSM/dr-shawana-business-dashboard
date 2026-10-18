@@ -15,11 +15,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { findItemBySerial, normalizeSerial } from '@/features/inventory/api';
+import { normalizeSerial } from '@/features/inventory/constants';
+import { findItemBySerial } from '@redux/features/inventory';
 import { toastError } from '@/lib/api/errors';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useDispatchOrder, type DeliveryOrder } from './api';
+import { useDispatchSaleOrderMutation, type DeliveryOrder } from '@redux/features/sales';
 
 interface Piece {
   serial: string;
@@ -44,7 +45,7 @@ const linesOf = (order: DeliveryOrder) => {
 
 export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[]; onClose: () => void }) {
   const navigate = useNavigate();
-  const dispatch = useDispatchOrder();
+  const [dispatchOrder] = useDispatchSaleOrderMutation();
   const [date, setDate] = useState(isoDate());
   const [pieces, setPieces] = useState<Piece[]>([]);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
@@ -100,11 +101,11 @@ export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[
     const done: string[] = [];
     for (const order of ready) {
       try {
-        await dispatch.mutateAsync({
+        await dispatchOrder({
           id: order.id,
           date,
           serials: pieces.filter((p) => p.orderId === order.id).map((p) => p.serial),
-        });
+        }).unwrap();
         done.push(order.id);
       } catch (error) {
         toastError(error);

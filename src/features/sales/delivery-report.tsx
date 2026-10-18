@@ -17,7 +17,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import logo from '@/assets/logo-hd.png';
-import { useDeliverySlips, type DeliverySlip, type DeliverySlipsQuery } from './api';
+import { useDeliverySlips, type DeliverySlip, type DeliverySlipsQuery } from '@redux/features/sales';
 
 const ALL = '__all__';
 

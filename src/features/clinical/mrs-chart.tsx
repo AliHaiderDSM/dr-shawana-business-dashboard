@@ -1,6 +1,6 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMrsHistory } from '@/features/consultations/api';
+import { useMrsHistory } from '@redux/features/consultations';
 import { formatDate } from '@/lib/format';
 
 const SERIES = [

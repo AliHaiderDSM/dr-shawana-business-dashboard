@@ -21,23 +21,23 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { ROLE_LABELS } from '@/features/staff/api';
+import { ROLE_LABELS } from '@/features/staff/constants';
 import { toastError } from '@/lib/api/errors';
 import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchKind } from '@/lib/auth/branches';
 import { formatDateTime, formatQuantity } from '@/lib/format';
 import {
-  STOCK_REQUEST_LABELS,
-  useAskStock,
-  useDecideStockRequest,
+  useAskStockMutation,
+  useDecideStockRequestMutation,
   useStockRequestCatalog,
   useStockRequestCounts,
   useStockRequests,
-  useWithdrawStockRequest,
+  useWithdrawStockRequestMutation,
   type StockRequest,
   type StockRequestStatus,
-} from './requests-api';
+} from '@redux/features/stock-requests';
+import { STOCK_REQUEST_LABELS } from './constants';
 import { StockDocumentSheet, type StockRequestPrefill } from './stock-document-sheet';
 import { TraceNumber } from '@/features/trace/trace-page';
 import { STOCK_KINDS } from './stock-config';
@@ -63,7 +63,7 @@ interface DraftLine {
 }
 
 function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const ask = useAskStock();
+  const [ask, askState] = useAskStockMutation();
   const [search, setSearch] = useState('');
   const catalog = useStockRequestCatalog(search, open);
   const [lines, setLines] = useState<DraftLine[]>([]);
@@ -88,7 +88,7 @@ function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => !ask.isPending && close(v)}>
+    <Sheet open={open} onOpenChange={(v) => !askState.isLoading && close(v)}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>Ask the Super Admin for stock</SheetTitle>
@@ -189,21 +189,21 @@ function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
           </div>
         </div>
         <SheetFooter>
-          <Button variant="outline" onClick={() => close(false)} disabled={ask.isPending}>
+          <Button variant="outline" onClick={() => close(false)} disabled={askState.isLoading}>
             Cancel
           </Button>
           <Button
-            disabled={!ready || ask.isPending}
+            disabled={!ready || askState.isLoading}
             onClick={() =>
-              ask
-                .mutateAsync({
-                  note: note.trim() || null,
-                  items: lines.map((l) => ({
-                    productId: l.productId,
-                    qty: l.qty,
-                    note: l.note.trim() || null,
-                  })),
-                })
+              ask({
+                note: note.trim() || null,
+                items: lines.map((l) => ({
+                  productId: l.productId,
+                  qty: l.qty,
+                  note: l.note.trim() || null,
+                })),
+              })
+                .unwrap()
                 .then((created) => {
                   toast.success(`${created.requestNo} sent to the Super Admin`);
                   close(false);
@@ -211,7 +211,7 @@ function NewRequestSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
                 .catch(toastError)
             }
           >
-            {ask.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+            {askState.isLoading ? <Loader2 className="animate-spin" /> : <Send />}
             Send request
           </Button>
         </SheetFooter>
@@ -231,8 +231,8 @@ function RequestSheet({
 }) {
   const { isSuperAdmin, me } = useAuth();
   const sender = me?.role === 'warehouse_keeper';
-  const decide = useDecideStockRequest();
-  const withdraw = useWithdrawStockRequest();
+  const [decide, decideState] = useDecideStockRequestMutation();
+  const [withdraw, withdrawState] = useWithdrawStockRequestMutation();
   const [approved, setApproved] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
   if (!request) return null;
@@ -246,21 +246,21 @@ function RequestSheet({
   const canSend = sender && (request.status === 'approved' || request.status === 'sent') && toSend.length > 0;
 
   const answer = (approve: boolean) =>
-    decide
-      .mutateAsync({
-        id: request.id,
-        approve,
-        body: {
-          note: note.trim() || null,
-          ...(approve
-            ? {
-                items: request.items
-                  .filter((i) => approved[i.id] !== undefined && approved[i.id] !== '')
-                  .map((i) => ({ id: i.id, approvedQty: approved[i.id]! })),
-              }
-            : {}),
-        },
-      })
+    decide({
+      id: request.id,
+      approve,
+      body: {
+        note: note.trim() || null,
+        ...(approve
+          ? {
+              items: request.items
+                .filter((i) => approved[i.id] !== undefined && approved[i.id] !== '')
+                .map((i) => ({ id: i.id, approvedQty: approved[i.id]! })),
+            }
+          : {}),
+      },
+    })
+      .unwrap()
       .then(() => {
         toast.success(`${request.requestNo} ${approve ? 'approved' : 'rejected'}`);
         onClose();
@@ -268,7 +268,7 @@ function RequestSheet({
       .catch(toastError);
 
   return (
-    <Sheet open onOpenChange={(open) => !open && !decide.isPending && onClose()}>
+    <Sheet open onOpenChange={(open) => !open && !decideState.isLoading && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-2">
@@ -399,12 +399,12 @@ function RequestSheet({
         <SheetFooter className="flex-row flex-wrap justify-end gap-2">
           {isSuperAdmin && pending ? (
             <>
-              <Button variant="outline" disabled={decide.isPending} onClick={() => void answer(false)}>
+              <Button variant="outline" disabled={decideState.isLoading} onClick={() => void answer(false)}>
                 <X />
                 Reject
               </Button>
-              <Button disabled={decide.isPending} onClick={() => void answer(true)}>
-                {decide.isPending ? <Loader2 className="animate-spin" /> : <Check />}
+              <Button disabled={decideState.isLoading} onClick={() => void answer(true)}>
+                {decideState.isLoading ? <Loader2 className="animate-spin" /> : <Check />}
                 Approve
               </Button>
             </>
@@ -428,10 +428,10 @@ function RequestSheet({
           {!isSuperAdmin && pending ? (
             <Button
               variant="outline"
-              disabled={withdraw.isPending}
+              disabled={withdrawState.isLoading}
               onClick={() =>
-                withdraw
-                  .mutateAsync(request.id)
+                withdraw(request.id)
+                  .unwrap()
                   .then(() => {
                     toast.success(`${request.requestNo} withdrawn`);
                     onClose();

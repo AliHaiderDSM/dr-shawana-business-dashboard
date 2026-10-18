@@ -31,22 +31,22 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { ROLE_LABELS } from '@/features/staff/api';
+import { ROLE_LABELS } from '@/features/staff/constants';
 import { toastError } from '@/lib/api/errors';
 import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatQuantity } from '@/lib/format';
-import { findItemBySerial, useBatches, type ProductBatch } from './api';
+import { findItemBySerial, useBatches, type ProductBatch } from '@redux/features/inventory';
 import { TraceNumber } from '@/features/trace/trace-page';
 import {
-  useDecideWriteOff,
+  useDecideWriteOffMutation,
   usePendingWriteOffCount,
-  useReportWriteOffs,
+  useReportWriteOffsMutation,
   useWriteOffs,
-  WRITE_OFF_LABELS,
   type WriteOffReason,
   type WriteOffRecord,
-} from './requests-api';
+} from '@redux/features/stock-requests';
+import { WRITE_OFF_LABELS } from './constants';
 
 const REASON_TONES: Record<WriteOffReason, Tone> = {
   expired: 'warning',
@@ -82,7 +82,7 @@ interface Line {
 
 function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { isSuperAdmin } = useAuth();
-  const report = useReportWriteOffs();
+  const [report, reportState] = useReportWriteOffsMutation();
   const [search, setSearch] = useState('');
   const batches = useBatches({ pageSize: 50, inStockOnly: 'true', ...(search ? { search } : {}) }, open);
   const [lines, setLines] = useState<Line[]>([]);
@@ -147,7 +147,7 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => !report.isPending && close(v)}>
+    <Sheet open={open} onOpenChange={(v) => !reportState.isLoading && close(v)}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle>Report expired, damaged or lost stock</SheetTitle>
@@ -247,23 +247,23 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
           )}
         </div>
         <SheetFooter>
-          <Button variant="outline" onClick={() => close(false)} disabled={report.isPending}>
+          <Button variant="outline" onClick={() => close(false)} disabled={reportState.isLoading}>
             Cancel
           </Button>
           <Button
             variant="destructive"
-            disabled={!ready || report.isPending}
+            disabled={!ready || reportState.isLoading}
             onClick={() =>
-              report
-                .mutateAsync({
-                  items: lines.map((l) => ({
-                    batchId: l.batchId,
-                    qty: l.qty,
-                    reason: l.reason,
-                    note: l.note.trim() || null,
-                    ...(l.serials.length ? { serials: l.serials } : {}),
-                  })),
-                })
+              report({
+                items: lines.map((l) => ({
+                  batchId: l.batchId,
+                  qty: l.qty,
+                  reason: l.reason,
+                  note: l.note.trim() || null,
+                  ...(l.serials.length ? { serials: l.serials } : {}),
+                })),
+              })
+                .unwrap()
                 .then((rows) => {
                   toast.success(
                     isSuperAdmin
@@ -275,7 +275,7 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
                 .catch(toastError)
             }
           >
-            {report.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+            {reportState.isLoading ? <Loader2 className="animate-spin" /> : <Send />}
             {isSuperAdmin ? 'Write off' : 'Send for approval'}
           </Button>
         </SheetFooter>
@@ -291,12 +291,12 @@ function DecideDialog({
   decision: { record: WriteOffRecord; approve: boolean } | null;
   onClose: () => void;
 }) {
-  const decide = useDecideWriteOff();
+  const [decide, decideState] = useDecideWriteOffMutation();
   const [note, setNote] = useState('');
   if (!decision) return null;
   const { record, approve } = decision;
   return (
-    <Dialog open onOpenChange={(open) => !open && !decide.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !decideState.isLoading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -319,15 +319,15 @@ function DecideDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={decide.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={decideState.isLoading}>
             Cancel
           </Button>
           <Button
             variant={approve ? 'destructive' : 'default'}
-            disabled={decide.isPending}
+            disabled={decideState.isLoading}
             onClick={() =>
-              decide
-                .mutateAsync({ id: record.id, approve, note: note.trim() || null })
+              decide({ id: record.id, approve, note: note.trim() || null })
+                .unwrap()
                 .then(() => {
                   toast.success(`${record.writeOffNo} ${approve ? 'approved' : 'rejected'}`);
                   onClose();
@@ -335,7 +335,7 @@ function DecideDialog({
                 .catch(toastError)
             }
           >
-            {decide.isPending ? <Loader2 className="animate-spin" /> : approve ? <Check /> : <X />}
+            {decideState.isLoading ? <Loader2 className="animate-spin" /> : approve ? <Check /> : <X />}
             {approve ? 'Approve' : 'Reject'}
           </Button>
         </DialogFooter>

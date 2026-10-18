@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { type ExpiryAlert, useExpiryAlerts } from './api';
+import { type ExpiryAlert, useExpiryAlerts } from '@redux/features/inventory';
 
 const LIMIT = 8;
 

@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router';
 import { Letterhead, PrintPage, PrintTable, SignatureLine } from '@/components/shared/print-document';
 import { formatDate, formatQuantity } from '@/lib/format';
-import { stockLineDetail, stockParty, useStockDocumentsByIds, type StockKind } from './api';
+import { useStockDocumentsByIds, type StockKind } from '@redux/features/inventory';
+import { stockLineDetail, stockParty } from './constants';
 import { STOCK_KINDS } from './stock-config';
 
 export function StockSlipPrint({ kind }: { kind: StockKind }) {

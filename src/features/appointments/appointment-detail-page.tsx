@@ -31,14 +31,11 @@ import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 import {
   appointmentFiles,
   appointmentsApi,
-  METHOD_LABELS,
-  MODE_LABELS,
-  timeRange,
-  useRemoveAppointmentAttachment,
-  useRemovePayment,
-  VISIT_LABELS,
+  useRemoveAppointmentAttachmentMutation,
+  useRemoveAppointmentPaymentMutation,
   type AppointmentPayment,
-} from './api';
+} from '@redux/features/appointments';
+import { METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
 import { AppointmentFormSheet } from './appointment-form-sheet';
 import { PaymentSheet } from './payment-sheet';
 import { StatusDialog, type StatusChange } from './status-dialog';
@@ -48,8 +45,8 @@ export function AppointmentDetailPage() {
   const navigate = useNavigate();
   const { can } = useAuth();
   const appointment = appointmentsApi.useDetail(id);
-  const removePayment = useRemovePayment(id);
-  const removeAttachment = useRemoveAppointmentAttachment(id);
+  const [removePayment] = useRemoveAppointmentPaymentMutation();
+  const [removeAttachment] = useRemoveAppointmentAttachmentMutation();
   const [editOpen, setEditOpen] = useState(false);
   const [statusChange, setStatusChange] = useState<StatusChange | null>(null);
   const [payment, setPayment] = useState<AppointmentPayment | null>(null);
@@ -288,7 +285,9 @@ export function AppointmentDetailPage() {
               onRemove={
                 canUpdate
                   ? (file) =>
-                      removeAttachment.mutateAsync(file.id).then(() => toast.success('Screenshot removed'))
+                      removeAttachment({ appointmentId: id, attachmentId: file.id })
+                        .unwrap()
+                        .then(() => toast.success('Screenshot removed'))
                   : undefined
               }
             />
@@ -334,8 +333,8 @@ export function AppointmentDetailPage() {
         destructive
         onConfirm={() =>
           removingPayment
-            ? removePayment
-                .mutateAsync(removingPayment.id)
+            ? removePayment({ appointmentId: id, paymentId: removingPayment.id })
+                .unwrap()
                 .then(() => toast.success('Payment deleted'))
                 .catch(toastError)
             : undefined

@@ -7,7 +7,12 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [react(), tailwindcss()],
-    resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+    resolve: {
+      alias: {
+        '@redux': fileURLToPath(new URL('./redux', import.meta.url)),
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
     server: {
       port: 3000,
       proxy: { '/api': { target: env.API_PROXY_TARGET ?? 'http://localhost:4000', changeOrigin: true } },

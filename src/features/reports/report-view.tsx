@@ -15,19 +15,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useListState, type ListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
-import { usePatientSearch } from '@/features/patients/api';
+import { usePatientSearch } from '@redux/features/patients';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, titleCase } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
-  displayValue,
   downloadReportExcel,
-  isNumeric,
   useReport,
   useSourceOptions,
   type ReportData,
   type ReportValue,
-} from './api';
+} from '@redux/features/reports';
+import { displayValue, isNumeric } from './constants';
 import { findReport, type ReportDef, type ReportFilter } from './reports-config';
 
 type Row = Record<string, ReportValue> & { __total?: boolean };

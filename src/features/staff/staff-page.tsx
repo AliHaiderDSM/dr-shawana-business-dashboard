@@ -26,14 +26,13 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
 import { formatRelative, initials, formatDate } from '@/lib/format';
 import {
-  BRANCH_ROLES,
-  ROLE_LABELS,
-  useRemoveStaff,
-  useResetPassword,
+  useRemoveStaffMutation,
+  useResetStaffPasswordMutation,
+  useSetStaffStatusMutation,
   useStaffList,
-  useStaffStatus,
-  type Staff,
-} from './api';
+} from '@redux/features/staff';
+import type { Staff } from '@redux/features/staff/types';
+import { BRANCH_ROLES, ROLE_LABELS } from './constants';
 import { StaffFormSheet } from './staff-form-sheet';
 
 interface Credentials {
@@ -51,11 +50,11 @@ function ResetPasswordDialog({
   onClose: () => void;
   onDone: (c: Credentials) => void;
 }) {
-  const reset = useResetPassword();
+  const [resetPassword, reset] = useResetStaffPasswordMutation();
   const [password, setPassword] = useState(generatePassword);
   if (!staff) return null;
   return (
-    <Dialog open onOpenChange={(o) => !o && !reset.isPending && onClose()}>
+    <Dialog open onOpenChange={(o) => !o && !reset.isLoading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Reset password</DialogTitle>
@@ -66,22 +65,19 @@ function ResetPasswordDialog({
         </DialogHeader>
         <SecretReveal value={password} onRegenerate={() => setPassword(generatePassword())} />
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={reset.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={reset.isLoading}>
             Cancel
           </Button>
           <Button
-            disabled={reset.isPending}
+            disabled={reset.isLoading}
             onClick={() =>
-              reset.mutate(
-                { id: staff.id, password, branchId: staff.branchId },
-                {
-                  onSuccess: () => onDone({ staff, password, reason: 'reset' }),
-                  onError: (error) => toastError(error),
-                },
-              )
+              void resetPassword({ id: staff.id, password, branchId: staff.branchId })
+                .unwrap()
+                .then(() => onDone({ staff, password, reason: 'reset' }))
+                .catch((error) => toastError(error))
             }
           >
-            {reset.isPending ? <Loader2 className="animate-spin" /> : <KeyRound />}
+            {reset.isLoading ? <Loader2 className="animate-spin" /> : <KeyRound />}
             Reset password
           </Button>
         </DialogFooter>
@@ -109,8 +105,8 @@ export function StaffPage() {
     (b) => b.kind === 'branch' || b.kind === 'dispatch' || b.kind === 'warehouse',
   );
   const query = useStaffList(list.query);
-  const setStatus = useStaffStatus();
-  const remove = useRemoveStaff();
+  const [setStaffStatus] = useSetStaffStatusMutation();
+  const [removeStaff] = useRemoveStaffMutation();
   const [editing, setEditing] = useState<Staff | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -404,12 +400,12 @@ export function StaffPage() {
         destructive={toggling?.status === 'active'}
         onConfirm={() =>
           toggling
-            ? setStatus
-                .mutateAsync({
-                  id: toggling.id,
-                  active: toggling.status !== 'active',
-                  branchId: toggling.branchId,
-                })
+            ? setStaffStatus({
+                id: toggling.id,
+                active: toggling.status !== 'active',
+                branchId: toggling.branchId,
+              })
+                .unwrap()
                 .then(() => toast.success('Employee status updated'))
                 .catch(toastError)
             : undefined
@@ -424,8 +420,8 @@ export function StaffPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync({ id: removing.id, branchId: removing.branchId })
+            ? removeStaff({ id: removing.id, branchId: removing.branchId })
+                .unwrap()
                 .then(() => toast.success('Employee removed'))
                 .catch(toastError)
             : undefined

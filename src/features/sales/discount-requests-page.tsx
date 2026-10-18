@@ -18,21 +18,21 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { ROLE_LABELS } from '@/features/staff/api';
+import { ROLE_LABELS } from '@/features/staff/constants';
 import { toastError } from '@/lib/api/errors';
 import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
 import { TraceNumber } from '@/features/trace/trace-page';
 import {
-  DISCOUNT_STATUS_LABELS,
-  useDecideDiscount,
+  useDecideDiscountMutation,
   useDiscountRequests,
   usePendingDiscountCount,
-  useWithdrawDiscount,
+  useWithdrawDiscountMutation,
   type DiscountRequest,
   type DiscountRequestStatus,
-} from './discount-requests-api';
+} from '@redux/features/discount-requests';
+import { DISCOUNT_STATUS_LABELS } from './discount-requests-constants';
 
 export const DISCOUNT_TONES: Record<DiscountRequestStatus, Tone> = {
   pending: 'warning',
@@ -51,12 +51,12 @@ function DecideDialog({
   decision: { request: DiscountRequest; approve: boolean } | null;
   onClose: () => void;
 }) {
-  const decide = useDecideDiscount();
+  const [decide, decideState] = useDecideDiscountMutation();
   const [note, setNote] = useState('');
   if (!decision) return null;
   const { request, approve } = decision;
   return (
-    <Dialog open onOpenChange={(open) => !open && !decide.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !decideState.isLoading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -78,15 +78,15 @@ function DecideDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={decide.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={decideState.isLoading}>
             Cancel
           </Button>
           <Button
             variant={approve ? 'default' : 'destructive'}
-            disabled={decide.isPending}
+            disabled={decideState.isLoading}
             onClick={() =>
-              decide
-                .mutateAsync({ id: request.id, approve, note: note.trim() || null })
+              decide({ id: request.id, approve, note: note.trim() || null })
+                .unwrap()
                 .then(() => {
                   toast.success(approve ? 'Discount approved' : 'Discount rejected');
                   onClose();
@@ -94,7 +94,7 @@ function DecideDialog({
                 .catch(toastError)
             }
           >
-            {decide.isPending ? <Loader2 className="animate-spin" /> : approve ? <Check /> : <X />}
+            {decideState.isLoading ? <Loader2 className="animate-spin" /> : approve ? <Check /> : <X />}
             {approve ? 'Approve' : 'Reject'}
           </Button>
         </DialogFooter>
@@ -107,7 +107,7 @@ export function DiscountRequestsPage() {
   const { isSuperAdmin } = useAuth();
   const [status, setStatus] = useState<DiscountRequestStatus | 'all'>('pending');
   const requests = useDiscountRequests(status === 'all' ? {} : { status });
-  const withdraw = useWithdrawDiscount();
+  const [withdraw, withdrawState] = useWithdrawDiscountMutation();
   const pending = usePendingDiscountCount(isSuperAdmin);
   const [decision, setDecision] = useState<{ request: DiscountRequest; approve: boolean } | null>(null);
 
@@ -263,10 +263,10 @@ export function DiscountRequestsPage() {
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={withdraw.isPending}
+                disabled={withdrawState.isLoading}
                 onClick={() =>
-                  withdraw
-                    .mutateAsync(r.id)
+                  withdraw(r.id)
+                    .unwrap()
                     .then(() => toast.success('Request withdrawn'))
                     .catch(toastError)
                 }

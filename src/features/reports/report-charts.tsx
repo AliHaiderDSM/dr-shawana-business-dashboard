@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { Panel } from '@/components/shared/panel';
 import { formatQuantity, titleCase } from '@/lib/format';
-import type { ReportData, ReportValue } from './api';
+import type { ReportData, ReportValue } from '@redux/features/reports';
 
 const TOOLTIP_STYLE = {
   background: 'var(--popover)',

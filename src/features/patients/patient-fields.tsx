@@ -7,7 +7,7 @@ import { FieldRow, TextField, TextareaField } from '@/components/shared/form-fie
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { optionalAge, optionalText, patientPhone, requiredText } from '@/lib/validation';
-import { useCities, usePhoneCheck, type Patient, type PatientInput } from './api';
+import { useCities, usePhoneCheck, type Patient, type PatientInput } from '@redux/features/patients';
 
 export const patientFieldsSchema = z.object({
   name: requiredText(150, 'Name'),

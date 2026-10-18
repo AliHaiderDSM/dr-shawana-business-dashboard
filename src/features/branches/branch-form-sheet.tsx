@@ -8,7 +8,8 @@ import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
 import { optionalEmail, optionalText, requiredText } from '@/lib/validation';
 import { useHasDispatch } from '@/lib/auth/branches';
-import { useSaveBranch, type Branch } from './api';
+import { useSaveBranchMutation } from '@redux/features/branches';
+import type { Branch } from '@redux/features/branches/types';
 
 const schema = z.object({
   name: requiredText(150, 'Name').refine((v) => v.length >= 2, 'Use at least 2 characters'),
@@ -38,7 +39,7 @@ interface BranchFormSheetProps {
 }
 
 export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetProps) {
-  const save = useSaveBranch();
+  const [saveBranch, saveState] = useSaveBranchMutation();
   const hasDispatch = useHasDispatch();
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -53,19 +54,16 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
     },
   });
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      { id: branch?.id, body: values },
-      {
-        onSuccess: () => {
-          toast.success(branch ? 'Branch updated' : 'Branch created');
-          onOpenChange(false);
-          form.reset();
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
-  );
+  const submit = form.handleSubmit((values) => {
+    void saveBranch({ id: branch?.id, body: values })
+      .unwrap()
+      .then(() => {
+        toast.success(branch ? 'Branch updated' : 'Branch created');
+        onOpenChange(false);
+        form.reset();
+      })
+      .catch((error) => applyServerErrors(form, error));
+  });
 
   return (
     <Form {...form}>
@@ -75,7 +73,7 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
         title={branch ? 'Edit branch' : 'New branch'}
         description="Branch details appear on bills, slips and reports."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={branch ? 'Save changes' : 'Create branch'}
       >
         {branch || hasDispatch ? null : (

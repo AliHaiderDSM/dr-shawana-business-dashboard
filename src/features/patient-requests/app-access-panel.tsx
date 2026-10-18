@@ -17,7 +17,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { toastError } from '@/lib/api/errors';
 import { formatDateTime } from '@/lib/format';
-import { useAppAccess, useDisableAppAccess, useIssueAppCode, type AppAccess } from './api';
+import {
+  useAppAccess,
+  useDisablePatientAppAccessMutation,
+  useIssuePatientAppCodeMutation,
+  type AppAccess,
+} from '@redux/features/patient-requests';
 
 const STATUS: Record<AppAccess['status'], { label: string; tone: Tone }> = {
   not_invited: { label: 'Not invited', tone: 'neutral' },
@@ -36,13 +41,13 @@ export function AppAccessPanel({
   canManage: boolean;
 }) {
   const access = useAppAccess(patientId);
-  const issue = useIssueAppCode(patientId);
-  const disable = useDisableAppAccess(patientId);
+  const [issueCode, issue] = useIssuePatientAppCodeMutation();
+  const [disable] = useDisablePatientAppAccessMutation();
   const [code, setCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [confirmOff, setConfirmOff] = useState(false);
   const a = access.data;
 
-  const createCode = () => issue.mutateAsync().then(setCode).catch(toastError);
+  const createCode = () => issueCode(patientId).unwrap().then(setCode).catch(toastError);
 
   return (
     <Panel title="Mobile app" className="self-start">
@@ -65,10 +70,10 @@ export function AppAccessPanel({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={issue.isPending}
+                disabled={issue.isLoading}
                 onClick={() => void createCode()}
               >
-                {issue.isPending ? <Loader2 className="animate-spin" /> : <KeyRound />}
+                {issue.isLoading ? <Loader2 className="animate-spin" /> : <KeyRound />}
                 {a.status === 'active' ? 'New login code' : 'Create login code'}
               </Button>
               {a.status === 'active' || a.status === 'invited' ? (
@@ -117,8 +122,8 @@ export function AppAccessPanel({
         confirmLabel="Turn off"
         destructive
         onConfirm={() =>
-          disable
-            .mutateAsync()
+          disable(patientId)
+            .unwrap()
             .then(() => toast.success('App access turned off'))
             .catch(toastError)
         }

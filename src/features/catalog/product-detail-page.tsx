@@ -30,10 +30,10 @@ import {
   suppliersApi,
   usePurchases,
   useProductStock,
-  useRemovePurchase,
-  useSavePurchase,
+  useRemoveProductPurchaseMutation,
+  useSaveProductPurchaseMutation,
   type PurchaseEntry,
-} from './api';
+} from '@redux/features/catalog';
 import { ProductFormSheet } from './product-form-sheet';
 
 const purchaseSchema = z.object({
@@ -57,7 +57,7 @@ function PurchaseSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const save = useSavePurchase(productId);
+  const [save, saveState] = useSaveProductPurchaseMutation();
   const suppliers = suppliersApi.useOptions({ type: 'supplier' }, open);
   const form = useForm<PurchaseValues, unknown, z.output<typeof purchaseSchema>>({
     resolver: zodResolver(purchaseSchema),
@@ -70,17 +70,15 @@ function PurchaseSheet({
     },
   });
 
-  const submit = form.handleSubmit((body) =>
-    save.mutate(
-      { entryId: entry?.id, body },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (body) =>
+      void save({ productId, entryId: entry?.id, body })
+        .unwrap()
+        .then(() => {
           toast.success(entry ? 'Purchase corrected' : 'Purchase added');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -95,7 +93,7 @@ function PurchaseSheet({
             : 'Adds stock and, as the latest entry, sets the sale price.'
         }
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={entry ? 'Save correction' : 'Add purchase'}
       >
         <FieldRow>
@@ -132,7 +130,7 @@ export function ProductDetailPage() {
   const product = productsApi.useDetail(id);
   const purchases = usePurchases(id);
   const stock = useProductStock(id, can('stock.view') || can('inventoryReport.view'));
-  const removePurchase = useRemovePurchase(id);
+  const [removePurchase] = useRemoveProductPurchaseMutation();
   const [editOpen, setEditOpen] = useState(false);
   const [entry, setEntry] = useState<PurchaseEntry | null>(null);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
@@ -332,8 +330,8 @@ export function ProductDetailPage() {
         destructive
         onConfirm={() =>
           removing
-            ? removePurchase
-                .mutateAsync(removing.id)
+            ? removePurchase({ productId: id, entryId: removing.id })
+                .unwrap()
                 .then(() => toast.success('Purchase removed'))
                 .catch(toastError)
             : undefined

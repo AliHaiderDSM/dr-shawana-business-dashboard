@@ -1,7 +1,8 @@
 import { useParams } from 'react-router';
 import { Letterhead, PrintPage, PrintTable } from '@/components/shared/print-document';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
-import { SALE_TYPE_LABELS, useBill, type BillData } from './api';
+import { useBill, type BillData } from '@redux/features/sales';
+import { SALE_TYPE_LABELS } from './constants';
 
 export function BillPrint() {
   const { id = '' } = useParams();

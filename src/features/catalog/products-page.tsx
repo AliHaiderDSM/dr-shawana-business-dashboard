@@ -15,7 +15,7 @@ import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
-import { categoriesApi, productsApi, type Product } from './api';
+import { categoriesApi, productsApi, type Product } from '@redux/features/catalog';
 import { ProductFormSheet } from './product-form-sheet';
 
 export function ProductsPage() {
@@ -24,7 +24,7 @@ export function ProductsPage() {
   const list = useListState({ defaultSort: 'name' });
   const query = productsApi.useList(list.query);
   const categories = categoriesApi.useOptions();
-  const remove = productsApi.useRemove();
+  const [remove] = productsApi.useRemove();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<Product | null>(null);
@@ -204,8 +204,8 @@ export function ProductsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Product deleted'))
                 .catch(toastError)
             : undefined

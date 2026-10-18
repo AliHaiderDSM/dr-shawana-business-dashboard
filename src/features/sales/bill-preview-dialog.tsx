@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBill } from './api';
+import { useBill } from '@redux/features/sales';
 import { BillSheet } from './bill-print';
 
 async function downloadPdf(node: HTMLElement, fileName: string) {

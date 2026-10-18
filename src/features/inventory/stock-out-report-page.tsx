@@ -1,4 +1,3 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
 import { DataTable } from '@/components/shared/data-table';
@@ -10,36 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TraceNumber } from '@/features/trace/trace-page';
-import { ROLE_LABELS } from '@/features/staff/api';
-import { api, unwrap } from '@/lib/api/client';
-import type { Role, Schemas } from '@/lib/api/types';
+import { ROLE_LABELS } from '@/features/staff/constants';
+import type { Role } from '@/lib/api/types';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
-
-type Transfer = Schemas['StockOutTransfer'];
-type Status = 'all' | 'received' | 'on_the_way';
+import {
+  useStockOutReport,
+  type StockOutReportStatus,
+  type StockOutTransfer,
+} from '@redux/features/inventory';
 
 const ALL = 'all';
 
-function useStockOutReport(query: { from?: string; to?: string; toBranchId?: string; status?: Status }) {
-  const params = {
-    ...(query.from ? { from: query.from } : {}),
-    ...(query.to ? { to: query.to } : {}),
-    ...(query.toBranchId ? { toBranchId: query.toBranchId } : {}),
-    ...(query.status && query.status !== 'all' ? { status: query.status } : {}),
-  };
-  return useQuery({
-    queryKey: ['stock-out-report', params],
-    queryFn: () =>
-      unwrap(api.GET('/branch/inventory/stock-out-report', { params: { query: params } })).then(
-        (r) => r.data,
-      ),
-    placeholderData: keepPreviousData,
-  });
-}
-
 const roleLabel = (role: string) => ROLE_LABELS[role as Role] ?? role.replace(/_/g, ' ');
 
-function TransferSheet({ transfer, onClose }: { transfer: Transfer | null; onClose: () => void }) {
+function TransferSheet({ transfer, onClose }: { transfer: StockOutTransfer | null; onClose: () => void }) {
   return (
     <Sheet open={transfer !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="flex w-full flex-col gap-0 sm:max-w-lg">
@@ -114,8 +97,8 @@ function TransferSheet({ transfer, onClose }: { transfer: Transfer | null; onClo
 export function StockOutReportPage() {
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
   const [toBranchId, setToBranchId] = useState<string>(ALL);
-  const [status, setStatus] = useState<Status>('all');
-  const [open, setOpen] = useState<Transfer | null>(null);
+  const [status, setStatus] = useState<StockOutReportStatus>('all');
+  const [open, setOpen] = useState<StockOutTransfer | null>(null);
   const report = useStockOutReport({
     ...range,
     toBranchId: toBranchId === ALL ? undefined : toBranchId,
@@ -129,7 +112,7 @@ export function StockOutReportPage() {
   const totalSerials = rows.reduce((sum, t) => sum + t.serials, 0);
   const waiting = rows.filter((t) => !t.receivedAt).length;
 
-  const columns: ColumnDef<Transfer, unknown>[] = [
+  const columns: ColumnDef<StockOutTransfer, unknown>[] = [
     {
       id: 'transferNo',
       header: 'Transfer no',
@@ -254,7 +237,7 @@ export function StockOutReportPage() {
         emptyDescription="Stock sent against approved requests shows here."
         toolbar={
           <>
-            <Tabs value={status} onValueChange={(v) => setStatus(v as Status)}>
+            <Tabs value={status} onValueChange={(v) => setStatus(v as StockOutReportStatus)}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="on_the_way">On the way</TabsTrigger>

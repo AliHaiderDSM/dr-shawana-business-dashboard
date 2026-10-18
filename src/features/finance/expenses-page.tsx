@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Banknote, FileText, Pencil, Plus, Tags, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -20,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Form, FormItem, FormLabel } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListState } from '@/hooks/use-list-state';
-import { api, jsonFormData, unwrap, uploadForm } from '@/lib/api/client';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, isoDate } from '@/lib/format';
@@ -29,9 +27,11 @@ import {
   accountSheetsApi,
   expenseCategoriesApi,
   expensesApi,
+  expenseAttachmentUrl,
+  useCreateExpenseWithAttachmentMutation,
   type Expense,
   type ExpenseCategory,
-} from './api';
+} from '@redux/features/finance';
 
 const expenseSchema = z.object({
   date: z.string().min(1, 'Choose a date'),
@@ -43,20 +43,6 @@ const expenseSchema = z.object({
 
 type ExpenseValues = z.input<typeof expenseSchema>;
 
-function useCreateExpense() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ body, file }: { body: z.output<typeof expenseSchema>; file: File | null }) =>
-      uploadForm<Expense>('/branch/expenses', jsonFormData(body, { attachment: file })),
-    onSuccess: () =>
-      Promise.all(
-        ['expenses', 'journal', 'account-sheets', 'dashboard', 'reports'].map((key) =>
-          queryClient.invalidateQueries({ queryKey: [key] }),
-        ),
-      ),
-  });
-}
-
 function ExpenseSheet({
   expense,
   open,
@@ -66,8 +52,8 @@ function ExpenseSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const create = useCreateExpense();
-  const update = expensesApi.useSave();
+  const [create, createState] = useCreateExpenseWithAttachmentMutation();
+  const [update, updateState] = expensesApi.useSave();
   const categories = expenseCategoriesApi.useOptions({}, open);
   const accounts = accountSheetsApi.useOptions({}, open);
   const [file, setFile] = useState<File | null>(null);
@@ -90,16 +76,16 @@ function ExpenseSheet({
 
   const submit = form.handleSubmit((values) => {
     if (expense) {
-      update.mutate(
-        { id: expense.id, body: values },
-        { onSuccess: () => done('Expense updated'), onError: (error) => applyServerErrors(form, error) },
-      );
+      void update({ id: expense.id, body: values })
+        .unwrap()
+        .then(() => done('Expense updated'))
+        .catch((error) => applyServerErrors(form, error));
       return;
     }
-    create.mutate(
-      { body: values, file },
-      { onSuccess: () => done('Expense recorded'), onError: (error) => applyServerErrors(form, error) },
-    );
+    void create({ body: values, file })
+      .unwrap()
+      .then(() => done('Expense recorded'))
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -110,7 +96,7 @@ function ExpenseSheet({
         title={expense ? 'Edit expense' : 'New expense'}
         description="Each expense posts a journal entry that reduces the paying account."
         onSubmit={submit}
-        submitting={create.isPending || update.isPending}
+        submitting={createState.isLoading || updateState.isLoading}
         submitLabel={expense ? 'Save changes' : 'Record expense'}
       >
         <FieldRow>
@@ -162,22 +148,20 @@ function CategorySheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const save = expenseCategoriesApi.useSave();
+  const [save, saveState] = expenseCategoriesApi.useSave();
   const form = useForm<z.input<typeof categorySchema>, unknown, z.output<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
     values: { name: category?.name ?? '' },
   });
-  const submit = form.handleSubmit((body) =>
-    save.mutate(
-      { id: category?.id, body },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (body) =>
+      void save({ id: category?.id, body })
+        .unwrap()
+        .then(() => {
           toast.success(category ? 'Category updated' : 'Category created');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
   return (
     <Form {...form}>
@@ -186,7 +170,7 @@ function CategorySheet({
         onOpenChange={onOpenChange}
         title={category ? 'Edit category' : 'New expense category'}
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={category ? 'Save changes' : 'Create category'}
       >
         <TextField control={form.control} name="name" label="Name" placeholder="Utilities" required />
@@ -201,7 +185,7 @@ function ExpensesTab() {
   const query = expensesApi.useList(list.query);
   const categories = expenseCategoriesApi.useOptions();
   const accounts = accountSheetsApi.useOptions();
-  const remove = expensesApi.useRemove();
+  const [remove] = expensesApi.useRemove();
   const [editing, setEditing] = useState<Expense | null>(null);
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -249,13 +233,7 @@ function ExpensesTab() {
             className="h-auto p-0"
             onClick={(event) => {
               event.stopPropagation();
-              void openSignedUrl(() =>
-                unwrap(
-                  api.GET('/branch/expenses/{id}/attachment-url', {
-                    params: { path: { id: row.original.id } },
-                  }),
-                ).then((r) => r.data),
-              );
+              void openSignedUrl(() => expenseAttachmentUrl(row.original.id));
             }}
           >
             <FileText />
@@ -351,8 +329,8 @@ function ExpensesTab() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Expense deleted'))
                 .catch(toastError)
             : undefined
@@ -366,7 +344,7 @@ function CategoriesTab() {
   const { can } = useAuth();
   const list = useListState({ prefix: 'c_', defaultSort: 'name' });
   const query = expenseCategoriesApi.useList(list.query);
-  const remove = expenseCategoriesApi.useRemove();
+  const [remove] = expenseCategoriesApi.useRemove();
   const [editing, setEditing] = useState<ExpenseCategory | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<ExpenseCategory | null>(null);
@@ -450,8 +428,8 @@ function CategoriesTab() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Category deleted'))
                 .catch(toastError)
             : undefined

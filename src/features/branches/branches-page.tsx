@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { formatDate } from '@/lib/format';
-import { useBranches, useSetBranchStatus, type Branch } from './api';
+import { useBranches, useSetBranchStatusMutation } from '@redux/features/branches';
+import type { Branch } from '@redux/features/branches/types';
 import { BranchAdminDialog } from './branch-admin-dialog';
 import { BranchFormSheet } from './branch-form-sheet';
 
@@ -22,7 +23,7 @@ export function BranchesPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const query = useBranches(list.query);
-  const setStatus = useSetBranchStatus();
+  const [setBranchStatus] = useSetBranchStatusMutation();
   const [editing, setEditing] = useState<Branch | null>(null);
   const [formOpen, setFormOpen] = useState(params.get('new') === '1');
   const [adminFor, setAdminFor] = useState<Branch | null>(null);
@@ -181,8 +182,8 @@ export function BranchesPage() {
         destructive={toggling?.status === 'active'}
         onConfirm={() =>
           toggling
-            ? setStatus
-                .mutateAsync({ id: toggling.id, active: toggling.status !== 'active' })
+            ? setBranchStatus({ id: toggling.id, active: toggling.status !== 'active' })
+                .unwrap()
                 .then(() => toast.success('Branch status updated'))
                 .catch(toastError)
             : undefined

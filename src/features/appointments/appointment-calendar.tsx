@@ -19,7 +19,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ListState } from '@/hooks/use-list-state';
 import { isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { timeLabel, useAppointmentCalendar, type CalendarEntry } from './api';
+import { useAppointmentCalendar, type CalendarEntry } from '@redux/features/appointments';
+import { timeLabel } from './constants';
 
 const HOUR_HEIGHT = 56;
 const ALL = '__all__';

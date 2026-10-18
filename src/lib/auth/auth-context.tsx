@@ -1,7 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api, AUTH_EXPIRED_EVENT, unwrap } from '@/lib/api/client';
+import { AUTH_EXPIRED_EVENT } from '@/lib/api/client';
 import type { Me } from '@/lib/api/types';
+import { clearApiCache, clearApiCacheKeepingMe, requestLogin, seedMe, useMe } from '@redux/features/auth';
+import { BRANCH_OPTIONS_STALE_SECONDS, useGetBranchOptionsQuery } from '@redux/features/branches';
+import { useAppDispatch } from '@redux/hooks';
 import { ALL_BRANCHES, branchStore, lastUserStore, sessionStore } from './session';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -21,8 +23,6 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-export const ME_QUERY_KEY = ['auth', 'me'] as const;
 
 const SUPER_ADMIN_MANAGES = new Set([
   'branches',
@@ -52,27 +52,19 @@ const SUPER_ADMIN_STOCK_MODULES = new Set([
 ]);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
   const [hasSession, setHasSession] = useState(() => sessionStore.get() !== null);
   const [branchId, setBranchState] = useState(() => branchStore.get());
 
-  const meQuery = useQuery({
-    queryKey: ME_QUERY_KEY,
-    queryFn: () => unwrap(api.GET('/auth/me')).then((r) => r.data),
-    enabled: hasSession,
-    staleTime: 5 * 60_000,
-    retry: false,
-  });
+  const meQuery = useMe(hasSession);
 
   const me = hasSession ? (meQuery.data ?? null) : null;
   if (me) lastUserStore.set(me.profile.id);
   const isSuperAdmin = me?.role === 'super_admin';
   branchStore.setSuperAdmin(isSuperAdmin);
-  const branchOptions = useQuery({
-    queryKey: ['branches', 'options'],
-    queryFn: () => unwrap(api.GET('/admin/branches/options')).then((r) => r.data),
-    enabled: isSuperAdmin,
-    staleTime: 5 * 60_000,
+  const branchOptions = useGetBranchOptionsQuery(undefined, {
+    skip: !isSuperAdmin,
+    refetchOnMountOrArgChange: BRANCH_OPTIONS_STALE_SECONDS,
   });
   const superAdminStock = (branchOptions.data ?? []).find((b) => b.kind === 'warehouse')?.id ?? null;
   branchStore.setWarehouse(superAdminStock);
@@ -81,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStore.clear();
     setHasSession(false);
     setBranchState(ALL_BRANCHES);
-    queryClient.clear();
-  }, [queryClient]);
+    dispatch(clearApiCache());
+  }, [dispatch]);
 
   useEffect(() => {
     window.addEventListener(AUTH_EXPIRED_EVENT, logout);
@@ -91,17 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (identifier: string, password: string) => {
-      const { data } = await unwrap(api.POST('/auth/login', { body: { identifier, password } }));
+      const { data } = await requestLogin({ identifier, password });
       sessionStore.set({
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
         expiresAt: data.expiresAt,
       });
-      queryClient.setQueryData(ME_QUERY_KEY, data.me);
+      dispatch(seedMe(data.me));
       setHasSession(true);
       return data.me;
     },
-    [queryClient],
+    [dispatch],
   );
 
   const setBranchId = useCallback(
@@ -109,9 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       branchStore.set(next);
       branchStore.setViewBranch(null);
       setBranchState(next);
-      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== ME_QUERY_KEY[0] });
+      dispatch(clearApiCacheKeepingMe());
     },
-    [queryClient],
+    [dispatch],
   );
 
   const knownBranch = (branchOptions.data ?? []).some((b) => b.id === branchId);

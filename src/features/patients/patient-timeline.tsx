@@ -15,17 +15,12 @@ import { ErrorState } from '@/components/shared/error-state';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  BHRT_STATUS_LABELS,
-  BLOOD_TEST_LABELS,
-  RECORD_TYPE_LABELS,
-  usePatientTimeline,
-  type PatientTimeline,
-} from '@/features/clinical/api';
+import { BHRT_STATUS_LABELS, BLOOD_TEST_LABELS, RECORD_TYPE_LABELS } from '@/features/clinical/constants';
+import { usePatientTimeline, type PatientTimeline } from '@redux/features/clinical';
 import { SECTIONS } from '@/features/consultations/clinical-fields';
-import { CATEGORY_LABELS } from '@/features/prescriptions/api';
+import { CATEGORY_LABELS } from '@/features/prescriptions/constants';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
-import { patientRecordFileUrl } from './api';
+import { patientRecordFileUrl } from '@redux/features/patients';
 
 interface TimelineEvent {
   id: string;

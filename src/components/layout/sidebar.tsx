@@ -7,8 +7,8 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useHasDispatch, useInDispatch, useInWarehouse } from '@/lib/auth/branches';
 import { findMenuItem, visibleMenu } from '@/lib/permissions/menu';
 import { cn } from '@/lib/utils';
-import { useDoctorChatRealtime } from '@/features/chat/realtime';
-import { useSidebarBadges } from './sidebar-badges';
+import { useDoctorChatRealtime } from '@redux/features/chat/realtime';
+import { useSidebarBadges } from '@redux/features/layout';
 
 interface SidebarProps {
   collapsed?: boolean;

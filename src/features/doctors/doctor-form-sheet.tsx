@@ -22,10 +22,10 @@ import {
   doctorsApi,
   doctorSignatureUrl,
   useDoctorStaff,
-  useUploadSignature,
+  useUploadDoctorSignatureMutation,
   type Doctor,
   type DoctorInput,
-} from './api';
+} from '@redux/features/doctors';
 
 type AccountMode = 'new' | 'existing';
 
@@ -91,8 +91,8 @@ interface DoctorFormSheetProps {
 }
 
 export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: DoctorFormSheetProps) {
-  const save = doctorsApi.useSave();
-  const uploadSignature = useUploadSignature();
+  const [saveDoctor, save] = doctorsApi.useSave();
+  const [uploadSignature] = useUploadDoctorSignatureMutation();
   const staff = useDoctorStaff(open && !doctor);
   const linked = doctorsApi.useList({ pageSize: 100 }, open && !doctor);
   const [suggested] = useState(generatePassword);
@@ -155,27 +155,24 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
               password: values.password,
             },
           };
-    save.mutate(
-      { id: doctor?.id, body },
-      {
-        onSuccess: ({ data }) => {
-          toast.success(doctor ? 'Doctor updated' : 'Doctor added');
-          onOpenChange(false);
-          if (!doctor)
-            onCreated?.(
-              data,
-              values.mode === 'new'
-                ? {
-                    name: `${values.firstName} ${values.lastName}`,
-                    username: values.username,
-                    password: values.password,
-                  }
-                : null,
-            );
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void saveDoctor({ id: doctor?.id, body })
+      .unwrap()
+      .then(({ data }) => {
+        toast.success(doctor ? 'Doctor updated' : 'Doctor added');
+        onOpenChange(false);
+        if (!doctor)
+          onCreated?.(
+            data,
+            values.mode === 'new'
+              ? {
+                  name: `${values.firstName} ${values.lastName}`,
+                  username: values.username,
+                  password: values.password,
+                }
+              : null,
+          );
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -186,7 +183,7 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
         title={doctor ? 'Edit doctor' : 'New doctor'}
         description="A doctor profile is linked to a doctor sign-in, so they see only their own appointments."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={save.isLoading}
         submitLabel={doctor ? 'Save changes' : 'Add doctor'}
         size="lg"
       >
@@ -308,7 +305,7 @@ export function DoctorFormSheet({ doctor, open, onOpenChange, onCreated }: Docto
           <FormSection title="Signature" description="Printed on prescriptions and referral letters.">
             <ImageUpload
               label="Signature"
-              onUpload={(file) => uploadSignature.mutateAsync({ id: doctor.id, file })}
+              onUpload={(file) => uploadSignature({ id: doctor.id, file }).unwrap()}
             />
             {doctor.hasSignature ? (
               <SignedFileButton name="View current signature" getUrl={() => doctorSignatureUrl(doctor.id)} />

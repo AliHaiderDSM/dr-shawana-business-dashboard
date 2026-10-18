@@ -23,7 +23,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText, requiredText } from '@/lib/validation';
-import { accountSheetsApi, journalApi, type JournalEntry } from './api';
+import { accountSheetsApi, journalApi, type JournalEntry } from '@redux/features/finance';
 
 const amount = z
   .string()
@@ -74,7 +74,7 @@ function JournalSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const save = journalApi.useSave();
+  const [save, saveState] = journalApi.useSave();
   const accounts = accountSheetsApi.useOptions({}, open);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -96,9 +96,9 @@ function JournalSheet({
   const credit = watched.reduce((sum, l) => sum + cents(l.credit), 0);
   const balanced = debit === credit && debit > 0;
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({
         id: entry?.id,
         body: {
           ...values,
@@ -109,15 +109,13 @@ function JournalSheet({
             credit: l.credit || '0',
           })),
         },
-      },
-      {
-        onSuccess: () => {
+      })
+        .unwrap()
+        .then(() => {
           toast.success(entry ? 'Entry updated' : 'Entry posted');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -128,7 +126,7 @@ function JournalSheet({
         title={entry ? `Edit ${entry.entryNo}` : 'New general entry'}
         description="Double entry: every debit needs an equal credit."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={entry ? 'Save changes' : 'Post entry'}
         size="lg"
       >
@@ -210,7 +208,7 @@ export function JournalPage() {
   const list = useListState({ defaultSort: '-date' });
   const query = journalApi.useList(list.query);
   const accounts = accountSheetsApi.useOptions();
-  const remove = journalApi.useRemove();
+  const [remove] = journalApi.useRemove();
   const [editing, setEditing] = useState<JournalEntry | null>(null);
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -369,8 +367,8 @@ export function JournalPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Entry deleted'))
                 .catch(toastError)
             : undefined

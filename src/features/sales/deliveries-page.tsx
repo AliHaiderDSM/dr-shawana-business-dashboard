@@ -36,7 +36,12 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useInDispatch } from '@/lib/auth/branches';
 import { formatCount, formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useDeliveries, useDeliveryCalendar, type DeliveryDay, type DeliveryOrder } from './api';
+import {
+  useDeliveries,
+  useDeliveryCalendar,
+  type DeliveryDay,
+  type DeliveryOrder,
+} from '@redux/features/sales';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
 import { BulkDispatchDialog } from './bulk-dispatch';
 import { slipPrintPath } from './delivery-report';

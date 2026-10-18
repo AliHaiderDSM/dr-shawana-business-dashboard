@@ -20,7 +20,7 @@ import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, isoDate } from '@/lib/format';
 import { requiredText } from '@/lib/validation';
-import { accountSheetsApi, type AccountSheet } from './api';
+import { accountSheetsApi, type AccountSheet } from '@redux/features/finance';
 
 const schema = z
   .object({
@@ -46,7 +46,7 @@ function AccountSheetSheet({
   onOpenChange: (o: boolean) => void;
   sheet: AccountSheet | null;
 }) {
-  const save = accountSheetsApi.useSave();
+  const [save, saveState] = accountSheetsApi.useSave();
   const accounts = accountSheetsApi.useOptions({}, open);
   const bankListId = useId();
   const bankNames = [...new Set((accounts.data ?? []).flatMap((a) => (a.bankName ? [a.bankName] : [])))];
@@ -62,17 +62,18 @@ function AccountSheetSheet({
   });
   const type = useWatch({ control: form.control, name: 'type' });
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      { id: sheet?.id, body: { ...values, bankName: values.type === 'bank' ? values.bankName : null } },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({
+        id: sheet?.id,
+        body: { ...values, bankName: values.type === 'bank' ? values.bankName : null },
+      })
+        .unwrap()
+        .then(() => {
           toast.success(sheet ? 'Account updated' : 'Account added');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -83,7 +84,7 @@ function AccountSheetSheet({
         title={sheet ? 'Edit account' : 'New account'}
         description="Every account is shared by all branches and shows in their sale and appointment payments. Each branch sees only its own money in it."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={sheet ? 'Save changes' : 'Add account'}
       >
         <TextField
@@ -133,7 +134,7 @@ export function AccountSheetsPage() {
   const { isSuperAdmin } = useAuth();
   const list = useListState({ defaultSort: 'accountName' });
   const query = accountSheetsApi.useList(list.query);
-  const remove = accountSheetsApi.useRemove();
+  const [remove] = accountSheetsApi.useRemove();
   const [editing, setEditing] = useState<AccountSheet | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<AccountSheet | null>(null);
@@ -272,8 +273,8 @@ export function AccountSheetsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Account deleted'))
                 .catch(toastError)
             : undefined

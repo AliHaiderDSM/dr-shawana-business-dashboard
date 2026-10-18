@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## API layer moved to Redux Toolkit + RTK Query (2026-10-18)
+
+- New root folder `dashboard/redux/`: `store.ts`, `hooks.ts`, `index.ts`, `api/baseApi.ts` (one `createApi`, `fromApi` for queries with the old retry rule, `toApi` for mutations), `api/apiConfig.ts`, `api/tagTypes.ts` (tags = the old React Query root keys), `api/crud.ts` (RTK version of the CRUD factory) and `features/<feature>/{index,types}.ts` for every API area. Alias `@redux/*`.
+- Every backend call goes through these modules; screens use the generated hooks. Same defaults as before: 30 s fresh, 5 min cache, 2 retries on 5xx, no focus refetch except where the old code had it.
+- The transport (`src/lib/api/client.ts`: tokens, refresh, Super Admin branch) is unchanged. Auth: me via `useMe`, login via `requestLogin` + `seedMe`, logout `clearApiCache`, branch switch `clearApiCacheKeepingMe`.
+- Non-API labels and helpers that lived in old `api.ts` files are in `src/features/<feature>/constants.ts`. Old `api.ts` files, `lib/api/crud.ts`, `sidebar-badges.ts` and `@tanstack/react-query` are removed.
+
 ## Educational Resources page (2026-10-16)
 
 - Super Admin menu: **Educational Resources** (`/educational-resources`). One card per resource: add PDFs or photos (up to 5 at a time, 10 MB each), open or remove them. Patients open these files in the app when their doctor marks the resource Yes.

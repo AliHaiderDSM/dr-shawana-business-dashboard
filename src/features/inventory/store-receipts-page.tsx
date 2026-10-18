@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Loader2, PackageCheck, Printer } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { useState } from 'react';
@@ -23,38 +22,15 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TraceNumber } from '@/features/trace/trace-page';
-import { api, unwrap } from '@/lib/api/client';
 import { toastError } from '@/lib/api/errors';
 import type { Schemas } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity, isoDate } from '@/lib/format';
-import { normalizeSerial } from './api';
+import { useConfirmStoreReceiptMutation, useStoreReceipts } from '@redux/features/inventory';
+import { normalizeSerial } from './constants';
 
 type Receipt = Schemas['StoreReceipt'];
 type Line = Receipt['lines'][number];
-
-function useReceipts(status?: 'pending' | 'confirmed') {
-  return useQuery({
-    queryKey: ['stock', 'receipts', status ?? null],
-    queryFn: () =>
-      unwrap(api.GET('/branch/stock-receipts', { params: { query: status ? { status } : {} } })).then(
-        (r) => r.data,
-      ),
-  });
-}
-
-function useConfirm() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ grnNo, body }: { grnNo: string; body: Schemas['ConfirmStoreReceipt'] }) =>
-      unwrap(api.POST('/branch/stock-receipts/{grnNo}/confirm', { params: { path: { grnNo } }, body })),
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['stock'] }),
-        queryClient.invalidateQueries({ queryKey: ['sidebar-badges'] }),
-      ]),
-  });
-}
 
 interface Count {
   received: string;
@@ -63,7 +39,7 @@ interface Count {
 }
 
 function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
-  const confirm = useConfirm();
+  const [confirm, confirmState] = useConfirmStoreReceiptMutation();
   const navigate = useNavigate();
   const [date, setDate] = useState(isoDate());
   const [counts, setCounts] = useState<Record<string, Count>>(() =>
@@ -82,7 +58,7 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
   });
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !confirm.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !confirmState.isLoading && onClose()}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Confirm {receipt.grnNo}</DialogTitle>
@@ -179,27 +155,27 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
           </ul>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={confirm.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={confirmState.isLoading}>
             Cancel
           </Button>
           <Button
-            disabled={invalid || confirm.isPending}
+            disabled={invalid || confirmState.isLoading}
             onClick={() =>
-              confirm
-                .mutateAsync({
-                  grnNo: receipt.grnNo,
-                  body: {
-                    date,
-                    lines: receipt.lines
-                      .filter((l) => shortOf(l) > 0)
-                      .map((l) => ({
-                        id: l.id,
-                        receivedQty: counts[l.id]!.received,
-                        note: counts[l.id]!.note.trim() || null,
-                        ...(counts[l.id]!.missing.length ? { missingSerials: counts[l.id]!.missing } : {}),
-                      })),
-                  },
-                })
+              confirm({
+                grnNo: receipt.grnNo,
+                body: {
+                  date,
+                  lines: receipt.lines
+                    .filter((l) => shortOf(l) > 0)
+                    .map((l) => ({
+                      id: l.id,
+                      receivedQty: counts[l.id]!.received,
+                      note: counts[l.id]!.note.trim() || null,
+                      ...(counts[l.id]!.missing.length ? { missingSerials: counts[l.id]!.missing } : {}),
+                    })),
+                },
+              })
+                .unwrap()
                 .then(() => {
                   toast.success(`${receipt.grnNo} confirmed. It is in the Super Admin stock now.`);
                   onClose();
@@ -208,7 +184,7 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
                 .catch(toastError)
             }
           >
-            {confirm.isPending ? <Loader2 className="animate-spin" /> : <PackageCheck />}
+            {confirmState.isLoading ? <Loader2 className="animate-spin" /> : <PackageCheck />}
             Confirm received
           </Button>
         </DialogFooter>
@@ -220,7 +196,7 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
 export function StoreReceiptsPage() {
   const { me } = useAuth();
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'all'>('pending');
-  const receipts = useReceipts(status === 'all' ? undefined : status);
+  const receipts = useStoreReceipts(status === 'all' ? undefined : status);
   const [confirming, setConfirming] = useState<Receipt | null>(null);
   const keeper = me?.role === 'warehouse_keeper';
 

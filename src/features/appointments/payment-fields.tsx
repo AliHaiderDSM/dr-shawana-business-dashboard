@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { Info, Landmark } from 'lucide-react';
 import { useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
@@ -7,10 +6,10 @@ import { ChoiceField } from '@/components/shared/choice-field';
 import { FieldRow, MoneyField, SelectField, TextField } from '@/components/shared/form-fields';
 import { FilePicker, IMAGE_TYPES } from '@/components/shared/file-upload';
 import { FormItem, FormLabel } from '@/components/ui/form';
-import { api, ApiError, unwrap } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/client';
 import { isoDate } from '@/lib/format';
 import { moneyString, optionalText } from '@/lib/validation';
-import { METHOD_LABELS } from './api';
+import { METHOD_LABELS } from './constants';
 
 export const paymentSchema = z.object({
   method: z.enum(['cash', 'online']),
@@ -57,16 +56,6 @@ export interface ReceivingAccount {
   accountCode?: string | null;
   type: string;
   bankName?: string | null;
-}
-
-export function useReceivingAccounts(enabled = true) {
-  return useQuery({
-    queryKey: ['account-sheets', 'options'],
-    queryFn: () => unwrap(api.GET('/branch/account-sheets/options')).then((r) => r.data),
-    staleTime: 60_000,
-    retry: false,
-    enabled,
-  });
 }
 
 export function ReceivingAccountsNotice({ error }: { error: unknown }) {

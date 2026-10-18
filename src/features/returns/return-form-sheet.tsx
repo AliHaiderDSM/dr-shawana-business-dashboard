@@ -21,12 +21,19 @@ import { FormSheet } from '@/components/shared/form-sheet';
 import { arrayError, InlineQuantityField, LineItems } from '@/components/shared/line-items';
 import { Form, FormItem, FormLabel } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ReceivingAccountsNotice, useReceivingAccounts } from '@/features/appointments/payment-fields';
+import { ReceivingAccountsNotice } from '@/features/appointments/payment-fields';
+import { useReceivingAccounts } from '@redux/features/appointments';
 import { applyServerErrors } from '@/lib/api/errors';
 import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
-import { REASON_LABELS, useCreateReturn, useReturnable, useSaleSearch, type ReturnReason } from './api';
+import {
+  useCreateReturnMutation,
+  useReturnable,
+  useSaleSearch,
+  type ReturnReason,
+} from '@redux/features/returns';
+import { REASON_LABELS } from './constants';
 
 const REASONS = Object.keys(REASON_LABELS) as [ReturnReason, ...ReturnReason[]];
 
@@ -123,7 +130,7 @@ export function ReturnFormSheet({
   initialSale?: { id: string; label: string };
 }) {
   const navigate = useNavigate();
-  const create = useCreateReturn();
+  const [create, createState] = useCreateReturnMutation();
   const [search, setSearch] = useState('');
   const [saleLabel, setSaleLabel] = useState<string | null>(initialSale?.label ?? null);
   const sales = useSaleSearch(search, open);
@@ -173,41 +180,38 @@ export function ReturnFormSheet({
     for (const item of tooMany)
       form.setError(`qty.${item.productId}`, { message: `At most ${Number(item.returnable)}` });
     if (tooMany.length) return;
-    create.mutate(
-      {
-        saleId: values.saleId,
-        date: values.date,
-        reason: values.reason,
-        note: values.note,
-        items: Object.entries(values.qty)
-          .filter(([, qty]) => Number(qty) > 0)
-          .map(([productId, qty]) => ({
-            productId,
-            qty,
-            ...(values.serials[productId]?.length ? { serials: values.serials[productId] } : {}),
-          })),
-        ...(values.withRefund
-          ? {
-              refund: {
-                amount: values.refundAmount,
-                method: values.refundMethod,
-                accountSheetId: values.refundAccountId,
-                date: values.refundDate,
-              },
-            }
-          : {}),
-      },
-      {
-        onSuccess: (created) => {
-          toast.success(`Return ${created.returnNo} received. Inspect the items next.`);
-          form.reset(emptyValues());
-          setSaleLabel(null);
-          onOpenChange(false);
-          void navigate(`/returns/${created.id}`);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void create({
+      saleId: values.saleId,
+      date: values.date,
+      reason: values.reason,
+      note: values.note,
+      items: Object.entries(values.qty)
+        .filter(([, qty]) => Number(qty) > 0)
+        .map(([productId, qty]) => ({
+          productId,
+          qty,
+          ...(values.serials[productId]?.length ? { serials: values.serials[productId] } : {}),
+        })),
+      ...(values.withRefund
+        ? {
+            refund: {
+              amount: values.refundAmount,
+              method: values.refundMethod,
+              accountSheetId: values.refundAccountId,
+              date: values.refundDate,
+            },
+          }
+        : {}),
+    })
+      .unwrap()
+      .then((created) => {
+        toast.success(`Return ${created.returnNo} received. Inspect the items next.`);
+        form.reset(emptyValues());
+        setSaleLabel(null);
+        onOpenChange(false);
+        void navigate(`/returns/${created.id}`);
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   const qtyError = arrayError(form.formState.errors.qty);
@@ -221,7 +225,7 @@ export function ReturnFormSheet({
         title="Receive a return"
         description="Returned goods wait in the returns section until each item is inspected."
         onSubmit={submit}
-        submitting={create.isPending}
+        submitting={createState.isLoading}
         submitLabel="Receive return"
         size="lg"
       >

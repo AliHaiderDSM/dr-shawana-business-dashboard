@@ -16,7 +16,8 @@ import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
 import { isoDate } from '@/lib/format';
 import { optionalText, quantityString, requiredText } from '@/lib/validation';
-import { MATERIAL_PLACES, materialCategoriesApi, materialsApi, type Material } from './api';
+import { materialCategoriesApi, materialsApi, type Material } from '@redux/features/manufacturing';
+import { MATERIAL_PLACES } from './constants';
 
 const schema = z
   .object({
@@ -50,7 +51,7 @@ interface MaterialFormSheetProps {
 }
 
 export function MaterialFormSheet({ material, open, onOpenChange }: MaterialFormSheetProps) {
-  const save = materialsApi.useSave();
+  const [save, saveState] = materialsApi.useSave();
   const categories = materialCategoriesApi.useOptions({}, open);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -89,16 +90,13 @@ export function MaterialFormSheet({ material, open, onOpenChange }: MaterialForm
             },
           }
         : base;
-    save.mutate(
-      { id: material?.id, body },
-      {
-        onSuccess: () => {
-          toast.success(material ? 'Material updated' : 'Material created');
-          onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void save({ id: material?.id, body })
+      .unwrap()
+      .then(() => {
+        toast.success(material ? 'Material updated' : 'Material created');
+        onOpenChange(false);
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -109,7 +107,7 @@ export function MaterialFormSheet({ material, open, onOpenChange }: MaterialForm
         title={material ? 'Edit material' : 'New material'}
         description="Alerts show when the store quantity falls to the minimum or bare-minimum level."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={material ? 'Save changes' : 'Create material'}
       >
         <TextField control={form.control} name="name" label="Material name" required />

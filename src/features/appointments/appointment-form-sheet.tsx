@@ -13,8 +13,8 @@ import { FormSheet } from '@/components/shared/form-sheet';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { doctorsApi, useMyDoctorProfile } from '@/features/doctors/api';
-import { usePatientSearch } from '@/features/patients/api';
+import { doctorsApi, useMyDoctorProfile } from '@redux/features/doctors';
+import { usePatientSearch } from '@redux/features/patients';
 import {
   patientDefaults,
   PatientFields,
@@ -29,12 +29,11 @@ import { cn } from '@/lib/utils';
 import { optionalText, timeString } from '@/lib/validation';
 import {
   appointmentsApi,
-  MODE_LABELS,
-  useBookAppointment,
-  VISIT_LABELS,
+  useBookAppointmentMutation,
   type Appointment,
   type AppointmentInput,
-} from './api';
+} from '@redux/features/appointments';
+import { MODE_LABELS, VISIT_LABELS } from './constants';
 import { DoctorSlots } from './doctor-slots';
 import {
   emptyPayment,
@@ -42,8 +41,8 @@ import {
   paymentSchema,
   ReceivingAccountsNotice,
   toPaymentBody,
-  useReceivingAccounts,
 } from './payment-fields';
+import { useReceivingAccounts } from '@redux/features/appointments';
 
 const schema = z
   .object({
@@ -113,8 +112,8 @@ export function AppointmentFormSheet({
   const { me, can } = useAuth();
   const isDoctor = me?.role === 'doctor';
   const editing = Boolean(appointment);
-  const book = useBookAppointment();
-  const update = appointmentsApi.useSave();
+  const [book, bookState] = useBookAppointmentMutation();
+  const [update, updateState] = appointmentsApi.useSave();
   const doctors = doctorsApi.useOptions({}, open);
   const myDoctor = useMyDoctorProfile(open && isDoctor);
   const canPay = can('appointmentPayments.create') && !editing;
@@ -169,16 +168,13 @@ export function AppointmentFormSheet({
       ...(values.fee ? { fee: values.fee } : {}),
     };
     if (appointment) {
-      update.mutate(
-        { id: appointment.id, body: { ...visit, patientId: values.patientId } },
-        {
-          onSuccess: () => {
-            toast.success('Appointment updated');
-            onOpenChange(false);
-          },
-          onError: (error) => applyServerErrors(form, error),
-        },
-      );
+      void update({ id: appointment.id, body: { ...visit, patientId: values.patientId } })
+        .unwrap()
+        .then(() => {
+          toast.success('Appointment updated');
+          onOpenChange(false);
+        })
+        .catch((error) => applyServerErrors(form, error));
       return;
     }
     const proofs: File[] = [];
@@ -194,20 +190,17 @@ export function AppointmentFormSheet({
         return { ...toPaymentBody(payment), ...(proofIndex === undefined ? {} : { proofIndex }) };
       }),
     };
-    book.mutate(
-      { body, medicalRecordFiles: recordFiles, paymentProofs: proofs },
-      {
-        onSuccess: (created) => {
-          toast.success(`Appointment #${created.appointmentNo} booked`, {
-            action: { label: 'Print slip', onClick: () => void navigate(`/print/appointment/${created.id}`) },
-          });
-          setRecordFiles([]);
-          form.reset();
-          onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void book({ body, medicalRecordFiles: recordFiles, paymentProofs: proofs })
+      .unwrap()
+      .then((created) => {
+        toast.success(`Appointment #${created.appointmentNo} booked`, {
+          action: { label: 'Print slip', onClick: () => void navigate(`/print/appointment/${created.id}`) },
+        });
+        setRecordFiles([]);
+        form.reset();
+        onOpenChange(false);
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -218,7 +211,7 @@ export function AppointmentFormSheet({
         title={editing ? `Edit appointment #${appointment?.appointmentNo}` : 'Book appointment'}
         description="Patient, doctor and time first, then payments, as in posSoft."
         onSubmit={submit}
-        submitting={book.isPending || update.isPending}
+        submitting={bookState.isLoading || updateState.isLoading}
         submitLabel={editing ? 'Save changes' : 'Book appointment'}
         size="lg"
       >

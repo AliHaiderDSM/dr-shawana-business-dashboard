@@ -1,5 +1,5 @@
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
-import type { ItemStatus } from './api';
+import type { ItemStatus } from '@redux/features/inventory';
 
 export const ITEM_STATUS: Record<ItemStatus, { label: string; tone: Tone }> = {
   in_stock: { label: 'In stock', tone: 'success' },

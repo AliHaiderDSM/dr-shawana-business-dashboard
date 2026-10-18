@@ -2,12 +2,12 @@ import { useParams } from 'react-router';
 import { Letterhead, PrintField, PrintPage, SignatureLine } from '@/components/shared/print-document';
 import { formatDate } from '@/lib/format';
 import {
-  NOTE_LABELS,
   usePrescriptionPrint,
   type CatalogCategory,
   type NoteKey,
   type PrescriptionPrintData,
-} from './api';
+} from '@redux/features/prescriptions';
+import { NOTE_LABELS } from './constants';
 
 const PRINT_ORDER: { title: string; categories: CatalogCategory[]; note?: NoteKey }[] = [
   { title: 'Blood work', categories: ['lab'], note: 'blood' },

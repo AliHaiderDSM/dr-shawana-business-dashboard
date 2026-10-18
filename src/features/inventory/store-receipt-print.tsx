@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import {
   Letterhead,
@@ -7,20 +6,13 @@ import {
   PrintTable,
   SignatureLine,
 } from '@/components/shared/print-document';
-import { api, unwrap } from '@/lib/api/client';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
+import { useStoreReceiptByGrn } from '@redux/features/inventory';
 
 export function StoreReceiptPrint() {
   const [params] = useSearchParams();
   const grnNo = (params.get('grn') ?? '').toUpperCase();
-  const query = useQuery({
-    queryKey: ['stock', 'receipts', 'print', grnNo],
-    queryFn: () =>
-      unwrap(api.GET('/branch/stock-receipts', { params: { query: { grnNo } } })).then(
-        (r) => r.data[0] ?? null,
-      ),
-    enabled: grnNo.length > 0,
-  });
+  const query = useStoreReceiptByGrn(grnNo);
 
   return (
     <PrintPage isLoading={query.isLoading} error={query.error} onRetry={() => void query.refetch()}>

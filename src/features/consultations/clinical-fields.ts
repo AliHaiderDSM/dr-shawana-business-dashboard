@@ -1,4 +1,4 @@
-import type { SectionKey } from './api';
+import type { SectionKey } from '@redux/features/consultations';
 
 export type FormValues = Record<string, unknown>;
 type Condition = (values: FormValues) => boolean;

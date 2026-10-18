@@ -16,7 +16,7 @@ import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, initials } from '@/lib/format';
-import { doctorsApi, type Doctor } from './api';
+import { doctorsApi, type Doctor } from '@redux/features/doctors';
 import { DoctorFormSheet } from './doctor-form-sheet';
 
 export function DoctorsPage() {
@@ -24,7 +24,7 @@ export function DoctorsPage() {
   const { can } = useAuth();
   const list = useListState({ defaultSort: 'displayName' });
   const query = doctorsApi.useList(list.query);
-  const remove = doctorsApi.useRemove();
+  const [remove] = doctorsApi.useRemove();
   const [editing, setEditing] = useState<Doctor | null>(null);
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -202,8 +202,8 @@ export function DoctorsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Doctor deleted'))
                 .catch(toastError)
             : undefined

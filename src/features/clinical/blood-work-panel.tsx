@@ -22,15 +22,14 @@ import { prepareReportFiles, REPORT_ACCEPT, ReportFileError } from './prepare-re
 import { useReportSelection } from './report-selection';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import {
-  BLOOD_TEST_LABELS,
-  BLOOD_TESTS,
-  useAddBloodWork,
+  useAddBloodWorkMutation,
   useBloodWork,
-  useReadBloodReport,
-  useRemoveBloodWork,
-  useUpdateBloodWork,
+  useReadBloodReportMutation,
+  useRemoveBloodWorkMutation,
+  useUpdateBloodWorkMutation,
   type BloodTest,
-} from './api';
+} from '@redux/features/clinical';
+import { BLOOD_TEST_LABELS, BLOOD_TESTS } from './constants';
 
 const ALL = 'all';
 
@@ -86,9 +85,9 @@ function ResultsSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const add = useAddBloodWork(patientId);
-  const update = useUpdateBloodWork(patientId);
-  const remove = useRemoveBloodWork(patientId);
+  const [add] = useAddBloodWorkMutation();
+  const [update] = useUpdateBloodWorkMutation();
+  const [remove] = useRemoveBloodWorkMutation();
   const existing = editDate ? pointsOn(data, editDate) : [];
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -115,24 +114,28 @@ function ResultsSheet({
     try {
       const toAdd = entered.filter((e) => !e.point && e.value && Number(e.value) > 0);
       if (toAdd.length) {
-        await add.mutateAsync({
-          consultationId: consultationId ?? null,
-          results: toAdd.map((e) => ({
-            test: e.test.test,
-            value: e.value,
-            unit: e.test.unit,
-            testDate: values.testDate,
-          })),
-        });
+        await add({
+          patientId,
+          body: {
+            consultationId: consultationId ?? null,
+            results: toAdd.map((e) => ({
+              test: e.test.test,
+              value: e.value,
+              unit: e.test.unit,
+              testDate: values.testDate,
+            })),
+          },
+        }).unwrap();
       }
       for (const e of entered) {
         if (!e.point) continue;
-        if (!e.value || Number(e.value) === 0) await remove.mutateAsync(e.point.id);
+        if (!e.value || Number(e.value) === 0) await remove({ patientId, resultId: e.point.id }).unwrap();
         else if (Number(e.value) !== Number(e.point.value) || values.testDate !== editDate)
-          await update.mutateAsync({
+          await update({
+            patientId,
             resultId: e.point.id,
             body: { value: e.value, testDate: values.testDate },
-          });
+          }).unwrap();
       }
       toast.success(editDate ? 'Blood work updated' : 'Blood work saved');
       onOpenChange(false);
@@ -195,8 +198,8 @@ function ResultsSheet({
 }
 
 function ResultCell({ patientId, point, canEdit }: { patientId: string; point: Point; canEdit: boolean }) {
-  const update = useUpdateBloodWork(patientId);
-  const remove = useRemoveBloodWork(patientId);
+  const [updateResult, update] = useUpdateBloodWorkMutation();
+  const [removeResult, remove] = useRemoveBloodWorkMutation();
   const [value, setValue] = useState(point.value);
   const [open, setOpen] = useState(false);
   if (!canEdit) return <span>{formatQuantity(point.value)}</span>;
@@ -220,10 +223,10 @@ function ResultCell({ patientId, point, canEdit }: { patientId: string; point: P
             variant="ghost"
             size="sm"
             className="text-destructive"
-            disabled={remove.isPending}
+            disabled={remove.isLoading}
             onClick={() =>
-              remove
-                .mutateAsync(point.id)
+              removeResult({ patientId, resultId: point.id })
+                .unwrap()
                 .then(() => {
                   toast.success('Result removed');
                   setOpen(false);
@@ -236,10 +239,10 @@ function ResultCell({ patientId, point, canEdit }: { patientId: string; point: P
           </Button>
           <Button
             size="sm"
-            disabled={update.isPending || !/^\d{1,8}(\.\d{1,3})?$/.test(value)}
+            disabled={update.isLoading || !/^\d{1,8}(\.\d{1,3})?$/.test(value)}
             onClick={() =>
-              update
-                .mutateAsync({ resultId: point.id, body: { value } })
+              updateResult({ patientId, resultId: point.id, body: { value } })
+                .unwrap()
                 .then(() => {
                   toast.success('Result updated');
                   setOpen(false);
@@ -265,14 +268,14 @@ export function BloodWorkPanel({
   canEdit: boolean;
 }) {
   const blood = useBloodWork(patientId);
-  const remove = useRemoveBloodWork(patientId);
+  const [remove] = useRemoveBloodWorkMutation();
   const [sheet, setSheet] = useState<{
     date: string | null;
     key: number;
     prefill?: Record<string, string>;
   } | null>(null);
-  const read = useReadBloodReport(patientId);
-  const add = useAddBloodWork(patientId);
+  const [read] = useReadBloodReportMutation();
+  const [add] = useAddBloodWorkMutation();
   const [reading, setReading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const selection = useReportSelection();
@@ -291,7 +294,7 @@ export function BloodWorkPanel({
         }
         throw error;
       }
-      const found = await read.mutateAsync({ files, recordFileIds });
+      const found = await read({ patientId, files, recordFileIds }).unwrap();
       if (recordFileIds.length) selection?.clear();
       if (found.results.length === 0) {
         toast.message(
@@ -308,10 +311,13 @@ export function BloodWorkPanel({
         dated.set(r.testDate, [...(dated.get(r.testDate) ?? []), r]);
       }
       for (const [testDate, results] of dated) {
-        await add.mutateAsync({
-          consultationId: consultationId ?? null,
-          results: results.map((r) => ({ test: r.test, value: r.value, unit: r.unit, testDate })),
-        });
+        await add({
+          patientId,
+          body: {
+            consultationId: consultationId ?? null,
+            results: results.map((r) => ({ test: r.test, value: r.value, unit: r.unit, testDate })),
+          },
+        }).unwrap();
       }
       setChartTest(ALL);
       const saved = found.results.length - undated.length;
@@ -601,7 +607,8 @@ export function BloodWorkPanel({
         onConfirm={async () => {
           if (!removingDate) return;
           try {
-            for (const point of pointsOn(data, removingDate)) if (point) await remove.mutateAsync(point.id);
+            for (const point of pointsOn(data, removingDate))
+              if (point) await remove({ patientId, resultId: point.id }).unwrap();
             toast.success('Results deleted');
           } catch (error) {
             toastError(error);

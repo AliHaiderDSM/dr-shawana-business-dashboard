@@ -1,5 +1,6 @@
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
-import { BHRT_LABELS, type BhrtStatus } from './api';
+import type { BhrtStatus } from '@redux/features/patients';
+import { BHRT_LABELS } from './constants';
 
 const BHRT_TONES: Record<string, Tone> = {
   on: 'success',

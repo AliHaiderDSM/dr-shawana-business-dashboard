@@ -5,16 +5,16 @@ import type { z } from 'zod';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
-import { useSavePayment, type AppointmentPayment } from './api';
+import { useSaveAppointmentPaymentMutation, type AppointmentPayment } from '@redux/features/appointments';
 import {
   emptyPayment,
   PaymentFields,
   paymentSchema,
   ReceivingAccountsNotice,
   toPaymentBody,
-  useReceivingAccounts,
   type PaymentValues,
 } from './payment-fields';
+import { useReceivingAccounts } from '@redux/features/appointments';
 
 interface PaymentSheetProps {
   appointmentId: string;
@@ -31,7 +31,7 @@ export function PaymentSheet({
   open,
   onOpenChange,
 }: PaymentSheetProps) {
-  const save = useSavePayment(appointmentId);
+  const [save, saveState] = useSaveAppointmentPaymentMutation();
   const accounts = useReceivingAccounts(open);
   const form = useForm<PaymentValues, unknown, z.output<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
@@ -49,18 +49,20 @@ export function PaymentSheet({
       : emptyPayment(suggestedAmount),
   });
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      { paymentId: payment?.id, body: toPaymentBody(values), proof: values.proofs[0] ?? null },
-      {
-        onSuccess: () => {
-          toast.success(payment ? 'Payment updated' : 'Payment recorded');
-          onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
-  );
+  const submit = form.handleSubmit((values) => {
+    void save({
+      appointmentId,
+      paymentId: payment?.id,
+      body: toPaymentBody(values),
+      proof: values.proofs[0] ?? null,
+    })
+      .unwrap()
+      .then(() => {
+        toast.success(payment ? 'Payment updated' : 'Payment recorded');
+        onOpenChange(false);
+      })
+      .catch((error) => applyServerErrors(form, error));
+  });
 
   return (
     <Form {...form}>
@@ -70,7 +72,7 @@ export function PaymentSheet({
         title={payment ? 'Edit payment' : 'Record payment'}
         description="Cash or online. Online payments can carry the sender's bank details and a screenshot."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={payment ? 'Save changes' : 'Record payment'}
       >
         <ReceivingAccountsNotice error={accounts.error} />

@@ -9,13 +9,13 @@ import { PrintButton } from '@/components/shared/print-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { categoriesApi, productsApi, suppliersApi } from '@/features/catalog/api';
+import { categoriesApi, productsApi, suppliersApi } from '@redux/features/catalog';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
 import { useListState } from '@/hooks/use-list-state';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router';
-import { useInventoryReport, type InventoryReport } from './api';
+import { useInventoryReport, type InventoryReport } from '@redux/features/inventory';
 
 type ReportRow = InventoryReport['rows'][number] & { isTotal?: boolean };
 type QuantityKey = keyof InventoryReport['totals'];

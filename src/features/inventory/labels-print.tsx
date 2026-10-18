@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import JsBarcode from 'jsbarcode';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -8,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { api, unwrap } from '@/lib/api/client';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { InventoryItem } from './api';
+import { useLabelsPrintItems, type InventoryItem } from '@redux/features/inventory';
 
 type Layout = 'roll' | 'sheet';
 
@@ -127,17 +125,6 @@ function Label({ item }: { item: InventoryItem }) {
   );
 }
 
-async function fetchAll(query: Record<string, string>) {
-  const items: InventoryItem[] = [];
-  for (let page = 1; ; page += 1) {
-    const result = await unwrap(
-      api.GET('/branch/inventory/items', { params: { query: { ...query, page, pageSize: 100 } } }),
-    );
-    items.push(...result.data);
-    if (page >= (result.meta?.totalPages ?? 1)) return items;
-  }
-}
-
 export function LabelsPrint() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -164,22 +151,7 @@ export function LabelsPrint() {
   const batchId = params.get('batchId');
   const withoutBatch = params.get('withoutBatch');
 
-  const query = useQuery({
-    queryKey: ['stock', 'labels-print', source, sourceIds, from, to, productId, batchId, withoutBatch],
-    queryFn: async () => {
-      if (source && sourceIds.length) {
-        const lists = await Promise.all(sourceIds.map((sourceId) => fetchAll({ source, sourceId })));
-        return lists.flat();
-      }
-      return fetchAll({
-        ...(from ? { from } : {}),
-        ...(to ? { to } : {}),
-        ...(batchId ? { batchId } : {}),
-        ...(productId && withoutBatch ? { productId, withoutBatch } : {}),
-        ...(productId && !withoutBatch && !batchId ? { productId, status: 'in_stock' } : {}),
-      });
-    },
-  });
+  const query = useLabelsPrintItems({ source, sourceIds, from, to, productId, batchId, withoutBatch });
 
   const items = query.data ?? [];
 

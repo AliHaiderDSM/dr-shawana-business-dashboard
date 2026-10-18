@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { Activity, CalendarDays, FileHeart, FlaskConical, FolderOpen, Loader2, Printer } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useParams } from 'react-router';
@@ -7,32 +6,16 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { STATUS_LABELS, timeRange } from '@/features/appointments/api';
-import { BHRT_STATUS_LABELS, BLOOD_TEST_LABELS, RECORD_TYPE_LABELS } from '@/features/clinical/api';
-import { CATEGORY_LABELS } from '@/features/prescriptions/api';
-import { ApiError } from '@/lib/api/client';
+import { STATUS_LABELS, timeRange } from '@/features/appointments/constants';
+import { BHRT_STATUS_LABELS, BLOOD_TEST_LABELS, RECORD_TYPE_LABELS } from '@/features/clinical/constants';
+import { CATEGORY_LABELS } from '@/features/prescriptions/constants';
 import type { Schemas } from '@/lib/api/types';
-import { env } from '@/lib/env';
+import { publicPatientFileUrl, usePublicPatientHistory } from '@redux/features/public';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
 import logo from '@/assets/logo-hd.png';
 import { Downloads, IntakeForms } from './public-intake';
 
 type History = Schemas['PublicPatientHistory'];
-
-async function publicGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${env.VITE_API_BASE_URL}${path}`);
-  const body = (await response.json().catch(() => null)) as {
-    data?: T;
-    error?: { code?: string; message?: string };
-  } | null;
-  if (!response.ok || !body?.data)
-    throw new ApiError(
-      response.status,
-      body?.error?.code ?? 'NOT_FOUND',
-      body?.error?.message ?? 'This link is invalid or has expired',
-    );
-  return body.data;
-}
 
 const label = (labels: Record<string, string>, value: string) => labels[value] ?? titleCase(value);
 
@@ -60,7 +43,7 @@ function FileButton({ token, file }: { token: string; file: { id: string; origin
   const [opening, setOpening] = useState(false);
   const open = () => {
     setOpening(true);
-    publicGet<{ url: string }>(`/public/patient-history/${token}/files/${file.id}`)
+    publicPatientFileUrl(token, file.id)
       .then(({ url }) => window.open(url, '_blank', 'noopener'))
       .catch((error: unknown) =>
         toast.error(error instanceof Error ? error.message : 'Could not open the file'),
@@ -223,11 +206,7 @@ function HistoryView({ token, data }: { token: string; data: History }) {
 
 export function PublicHistoryPage() {
   const { token = '' } = useParams();
-  const history = useQuery({
-    queryKey: ['public-history', token],
-    queryFn: () => publicGet<History>(`/public/patient-history/${encodeURIComponent(token)}`),
-    retry: false,
-  });
+  const history = usePublicPatientHistory(token);
   const data = history.data;
 
   return (

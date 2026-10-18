@@ -15,7 +15,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toastError } from '@/lib/api/errors';
-import { STATUS_LABELS, useChangeAppointmentStatus, type Appointment, type AppointmentStatus } from './api';
+import {
+  useChangeAppointmentStatusMutation,
+  type Appointment,
+  type AppointmentStatus,
+} from '@redux/features/appointments';
+import { STATUS_LABELS } from './constants';
 
 export interface StatusChange {
   appointment: Pick<Appointment, 'id' | 'appointmentNo' | 'remark'>;
@@ -61,7 +66,7 @@ export function StatusDialog({ change, onClose }: { change: StatusChange | null;
 }
 
 function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: () => void }) {
-  const mutation = useChangeAppointmentStatus(change.appointment.id);
+  const [changeStatus, mutation] = useChangeAppointmentStatusMutation();
   const [status, setStatus] = useState<AppointmentStatus>(change.status);
   const [remark, setRemark] = useState(change.appointment.remark ?? '');
   const [files, setFiles] = useState<File[]>([]);
@@ -69,23 +74,25 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
   const withFiles = change.remarks || status === 'completed';
 
   const submit = () =>
-    mutation.mutate(
-      { status, remark: remark.trim() || null, files: withFiles ? files : [] },
-      {
-        onSuccess: () => {
-          toast.success(
-            change.remarks
-              ? `Remark saved for appointment #${change.appointment.appointmentNo}`
-              : `Appointment #${change.appointment.appointmentNo} ${STATUS_LABELS[status].toLowerCase()}`,
-          );
-          onClose();
-        },
-        onError: (error) => toastError(error),
-      },
-    );
+    void changeStatus({
+      id: change.appointment.id,
+      status,
+      remark: remark.trim() || null,
+      files: withFiles ? files : [],
+    })
+      .unwrap()
+      .then(() => {
+        toast.success(
+          change.remarks
+            ? `Remark saved for appointment #${change.appointment.appointmentNo}`
+            : `Appointment #${change.appointment.appointmentNo} ${STATUS_LABELS[status].toLowerCase()}`,
+        );
+        onClose();
+      })
+      .catch((error) => toastError(error));
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !mutation.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !mutation.isLoading && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
@@ -128,15 +135,15 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
           ) : null}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={mutation.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={mutation.isLoading}>
             Close
           </Button>
           <Button
             variant={!change.remarks && status === 'cancelled' ? 'destructive' : 'default'}
             onClick={submit}
-            disabled={mutation.isPending}
+            disabled={mutation.isLoading}
           >
-            {mutation.isPending ? <Loader2 className="animate-spin" /> : null}
+            {mutation.isLoading ? <Loader2 className="animate-spin" /> : null}
             {copy.action}
           </Button>
         </DialogFooter>

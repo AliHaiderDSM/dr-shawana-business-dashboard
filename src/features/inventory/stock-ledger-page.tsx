@@ -10,9 +10,14 @@ import { Panel } from '@/components/shared/panel';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
-import { useProductLedger, useSerialSummary, type ItemStatus, type ProductLedger } from './api';
+import {
+  useProductLedger,
+  useSerialSummary,
+  type ItemStatus,
+  type ProductLedger,
+} from '@redux/features/inventory';
 import { ITEM_STATUS } from './item-status';
 import { RegisterLabelsDialog } from './labels-page';
 

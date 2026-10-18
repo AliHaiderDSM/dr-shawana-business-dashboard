@@ -8,12 +8,12 @@ import { PageHeader } from '@/components/shared/page-header';
 import { Panel } from '@/components/shared/panel';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { MrsChart } from '@/features/clinical/mrs-chart';
-import { useConsultationList, type ConsultationSummary } from '@/features/consultations/api';
-import { doctorsApi } from '@/features/doctors/api';
+import { useConsultationList, type ConsultationSummary } from '@redux/features/consultations';
+import { doctorsApi } from '@redux/features/doctors';
 import { useListState } from '@/hooks/use-list-state';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
-import { patientsApi, usePatientSearch } from './api';
+import { patientsApi, usePatientSearch } from '@redux/features/patients';
 import { PatientTimelineView } from './patient-timeline';
 
 const columns: ColumnDef<ConsultationSummary, unknown>[] = [

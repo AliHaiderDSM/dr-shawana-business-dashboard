@@ -22,7 +22,7 @@ import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCount, formatMoney } from '@/lib/format';
 import { moneyString, positiveQuantity, requiredText } from '@/lib/validation';
-import { bundlesApi, productsApi, type Bundle } from './api';
+import { bundlesApi, productsApi, type Bundle } from '@redux/features/catalog';
 
 const schema = z.object({
   name: requiredText(150, 'Name'),
@@ -52,8 +52,8 @@ function BundleSheet({
   onOpenChange: (o: boolean) => void;
   bundle: Bundle | null;
 }) {
-  const save = bundlesApi.useSave();
-  const upload = bundlesApi.useUploadImage();
+  const [save, saveState] = bundlesApi.useSave();
+  const [upload, uploadState] = bundlesApi.useUploadImage();
   const products = productsApi.useOptions({}, open);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
@@ -70,20 +70,18 @@ function BundleSheet({
   const preview = items.reduce((sum, i) => sum + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
   const productList = products.data ?? [];
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      { id: bundle?.id, body: values },
-      {
-        onSuccess: async ({ data }) => {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({ id: bundle?.id, body: values })
+        .unwrap()
+        .then(async ({ data }) => {
           if (!bundle && pendingImage)
-            await upload.mutateAsync({ id: data.id, file: pendingImage }).catch(toastError);
+            await upload({ id: data.id, file: pendingImage }).unwrap().catch(toastError);
           toast.success(bundle ? 'Bundle updated' : 'Bundle created');
           setPendingImage(null);
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -94,7 +92,7 @@ function BundleSheet({
         title={bundle ? 'Edit bundle' : 'New bundle'}
         description="A bundle sells several products together at the prices you set here."
         onSubmit={submit}
-        submitting={save.isPending || upload.isPending}
+        submitting={saveState.isLoading || uploadState.isLoading}
         submitLabel={bundle ? 'Save changes' : 'Create bundle'}
         size="lg"
       >
@@ -210,7 +208,7 @@ function BundleSheet({
           {bundle ? (
             <ImageUpload
               value={bundle.imageUrl}
-              onUpload={(file) => upload.mutateAsync({ id: bundle.id, file })}
+              onUpload={(file) => upload({ id: bundle.id, file }).unwrap()}
             />
           ) : (
             <ImageUpload value={null} onUpload={async (file) => setPendingImage(file)} />
@@ -225,7 +223,7 @@ export function BundlesPage() {
   const { can } = useAuth();
   const list = useListState({ defaultSort: 'name' });
   const query = bundlesApi.useList(list.query);
-  const remove = bundlesApi.useRemove();
+  const [remove] = bundlesApi.useRemove();
   const [editing, setEditing] = useState<Bundle | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<Bundle | null>(null);
@@ -347,8 +345,8 @@ export function BundlesPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Bundle deleted'))
                 .catch(toastError)
             : undefined

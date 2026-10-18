@@ -2,7 +2,7 @@ import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Input } from '@/components/ui/input';
-import { isSerial, normalizeSerial } from '@/features/inventory/api';
+import { isSerial, normalizeSerial } from '@/features/inventory/constants';
 
 export function LabelSearch() {
   const navigate = useNavigate();

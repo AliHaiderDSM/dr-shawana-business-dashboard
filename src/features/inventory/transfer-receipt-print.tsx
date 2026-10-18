@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import {
   Letterhead,
@@ -7,20 +6,13 @@ import {
   PrintTable,
   SignatureLine,
 } from '@/components/shared/print-document';
-import { api, unwrap } from '@/lib/api/client';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
+import { useIncomingTransferByNo } from '@redux/features/stock-requests';
 
 export function TransferReceiptPrint() {
   const [params] = useSearchParams();
   const transferNo = (params.get('transfer') ?? '').toUpperCase();
-  const query = useQuery({
-    queryKey: ['stock-requests', 'incoming', 'print', transferNo],
-    queryFn: () =>
-      unwrap(api.GET('/branch/incoming-stock', { params: { query: { transferNo } } })).then(
-        (r) => r.data[0] ?? null,
-      ),
-    enabled: transferNo.length > 0,
-  });
+  const query = useIncomingTransferByNo(transferNo);
 
   return (
     <PrintPage isLoading={query.isLoading} error={query.error} onRetry={() => void query.refetch()}>

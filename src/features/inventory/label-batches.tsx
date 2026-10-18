@@ -6,11 +6,17 @@ import { FilterSelect } from '@/components/shared/list-filters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useBatches, useItems, useLabelBatches, type ItemStatus, type LabelBatch } from './api';
+import {
+  useBatches,
+  useItems,
+  useLabelBatches,
+  type ItemStatus,
+  type LabelBatch,
+} from '@redux/features/inventory';
 import { ITEM_STATUS, ItemStatusBadge } from './item-status';
 
 const PIECES_PER_PAGE = 50;

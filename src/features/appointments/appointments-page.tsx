@@ -28,23 +28,20 @@ import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { doctorsApi } from '@/features/doctors/api';
-import { BHRT_LABELS, patientsApi } from '@/features/patients/api';
+import { doctorsApi } from '@redux/features/doctors';
+import { BHRT_LABELS } from '@/features/patients/constants';
+import { patientsApi } from '@redux/features/patients';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney } from '@/lib/format';
 import {
   appointmentsApi,
-  MODE_LABELS,
   patientLink,
-  STATUS_LABELS,
-  timeLabel,
-  timeRange,
   useAppointmentList,
-  VISIT_LABELS,
   type Appointment,
-} from './api';
+} from '@redux/features/appointments';
+import { MODE_LABELS, STATUS_LABELS, timeLabel, timeRange, VISIT_LABELS } from './constants';
 import { AppointmentCalendar } from './appointment-calendar';
 import { AppointmentFormSheet } from './appointment-form-sheet';
 import { ClinicalSheet, type ClinicalTarget } from './clinical-sheet';
@@ -65,7 +62,7 @@ export function AppointmentsPage() {
   );
   const query = useAppointmentList(listQuery);
   const doctors = doctorsApi.useOptions();
-  const remove = appointmentsApi.useRemove();
+  const [remove] = appointmentsApi.useRemove();
   const prefillPatientId = params.get('patientId') ?? undefined;
   const prefillPatient = patientsApi.useDetail(params.get('new') === '1' ? prefillPatientId : undefined);
   const [booking, setBooking] = useState(params.get('new') === '1');
@@ -432,8 +429,8 @@ export function AppointmentsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Appointment deleted'))
                 .catch(toastError)
             : undefined

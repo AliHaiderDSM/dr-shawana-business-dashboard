@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Loader2, Printer, SearchX, Tags } from 'lucide-react';
 import { useState } from 'react';
@@ -25,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { ApiError } from '@/lib/api/client';
 import { toastError } from '@/lib/api/errors';
@@ -33,16 +32,16 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
 import {
   findItemBySerial,
-  normalizeSerial,
-  isSerial,
   useBatches,
-  useRegisterLabels,
+  useRegisterLabelsMutation,
+  useItemBySerial,
   useItems,
   useSerialSummary,
   type InventoryItem,
   type InventoryItemDetail,
   type ItemStatus,
-} from './api';
+} from '@redux/features/inventory';
+import { isSerial, normalizeSerial } from './constants';
 import { ITEM_STATUS, ItemStatusBadge } from './item-status';
 import { LabelBatchesView } from './label-batches';
 
@@ -123,7 +122,7 @@ const columns: ColumnDef<InventoryItem, unknown>[] = [
 ];
 
 export function RegisterLabelsDialog({ productId, onClose }: { productId?: string; onClose: () => void }) {
-  const register = useRegisterLabels();
+  const [register, registerState] = useRegisterLabelsMutation();
   const products = productsApi.useOptions();
   const [product, setProduct] = useState(productId ?? '');
   const [batchId, setBatchId] = useState('none');
@@ -139,7 +138,7 @@ export function RegisterLabelsDialog({ productId, onClose }: { productId?: strin
     : null;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !register.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !registerState.isLoading && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Register labels on stock</DialogTitle>
@@ -215,19 +214,19 @@ export function RegisterLabelsDialog({ productId, onClose }: { productId?: strin
           ) : null}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={register.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={registerState.isLoading}>
             Cancel
           </Button>
           <Button
-            disabled={!valid || register.isPending}
+            disabled={!valid || registerState.isLoading}
             onClick={() =>
-              register
-                .mutateAsync({
-                  productId: product,
-                  batchId: batchId === 'none' ? null : batchId,
-                  firstSerial: firstSerial.trim().toUpperCase(),
-                  qty: count,
-                })
+              register({
+                productId: product,
+                batchId: batchId === 'none' ? null : batchId,
+                firstSerial: firstSerial.trim().toUpperCase(),
+                qty: count,
+              })
+                .unwrap()
                 .then((result) => {
                   toast.success(
                     `${result.count} labels registered (${result.firstSerial} to ${result.lastSerial})`,
@@ -237,7 +236,7 @@ export function RegisterLabelsDialog({ productId, onClose }: { productId?: strin
                 .catch(toastError)
             }
           >
-            {register.isPending ? <Loader2 className="animate-spin" /> : <Tags />}
+            {registerState.isLoading ? <Loader2 className="animate-spin" /> : <Tags />}
             Register
           </Button>
         </DialogFooter>
@@ -382,11 +381,7 @@ export function LabelDetailPage() {
   const { serial = '' } = useParams();
   const navigate = useNavigate();
   const { isSuperAdmin } = useAuth();
-  const query = useQuery({
-    queryKey: ['stock', 'item-serial', serial, isSuperAdmin],
-    queryFn: () => findItemBySerial(serial, { everywhere: isSuperAdmin }),
-    enabled: Boolean(serial),
-  });
+  const query = useItemBySerial(serial, isSuperAdmin);
   const item = query.data;
   if (query.isLoading) return <DetailSkeleton />;
   if (query.error instanceof ApiError && (query.error.status === 404 || query.error.status === 400))

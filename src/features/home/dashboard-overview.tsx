@@ -33,7 +33,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCompactMoney, formatCount, formatDate, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { isCustomPeriod, periodLabel, useDashboard, type DashboardData } from './api';
+import { useDashboard, type DashboardData } from '@redux/features/home';
+import { isCustomPeriod, periodLabel } from './constants';
 import { BranchComparison, PendingDeliveries, StockAlerts, TopProducts } from './dashboard-insights';
 
 const SERIES = {
@@ -514,7 +515,7 @@ export function DashboardOverview() {
         />
         <span>
           {data.scope === 'all_branches' ? 'All branches' : 'This branch'} · updated at{' '}
-          {formatDate(new Date(dashboard.dataUpdatedAt), 'h:mm a')}
+          {formatDate(new Date(dashboard.fulfilledTimeStamp ?? 0), 'h:mm a')}
         </span>
         <Button
           variant="ghost"

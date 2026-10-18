@@ -11,20 +11,18 @@ import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters'
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { Button } from '@/components/ui/button';
-import { productsApi, suppliersApi } from '@/features/catalog/api';
+import { productsApi, suppliersApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
-  STOCK_DESTINATIONS,
-  stockLineDetail,
-  stockParty,
   useRemoveStockDocument,
   useStockDocuments,
   type StockDocument,
   type StockKind,
-} from './api';
+} from '@redux/features/inventory';
+import { STOCK_DESTINATIONS, stockLineDetail, stockParty } from './constants';
 import { STOCK_KINDS } from './stock-config';
 import { StockDocumentSheet } from './stock-document-sheet';
 import { TraceNumber } from '@/features/trace/trace-page';
@@ -81,7 +79,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
   const { can } = useAuth();
   const list = useListState({ defaultSort: '-date' });
   const query = useStockDocuments(kind, list.query);
-  const remove = useRemoveStockDocument(kind);
+  const [remove] = useRemoveStockDocument(kind);
   const products = productsApi.useOptions();
   const parties = suppliersApi.useOptions({ type: config.partyType });
   const [creating, setCreating] = useState(false);
@@ -399,8 +397,8 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Entry deleted'))
                 .catch(toastError)
             : undefined

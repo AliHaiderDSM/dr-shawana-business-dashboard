@@ -11,7 +11,9 @@ import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchKind, useBranchOptions } from '@/lib/auth/branches';
 import { emailString, optionalText, requiredText, usernameString } from '@/lib/validation';
-import { BRANCH_ROLES, creatableRoles, ROLE_LABELS, useSaveStaff, type Staff } from './api';
+import { useSaveStaffMutation } from '@redux/features/staff';
+import type { Staff } from '@redux/features/staff/types';
+import { BRANCH_ROLES, creatableRoles, ROLE_LABELS } from './constants';
 
 const schema = z.object({
   firstName: requiredText(100, 'First name'),
@@ -44,7 +46,7 @@ export function StaffFormSheet({
 }: StaffFormSheetProps) {
   const { me, isSuperAdmin } = useAuth();
   const ownKind = useBranchKind();
-  const save = useSaveStaff();
+  const [saveStaff, saveState] = useSaveStaffMutation();
   const branchOptions = useBranchOptions(isSuperAdmin && open);
   const targets = (branchOptions.data ?? []).filter(
     (b) => (b.kind === 'branch' || b.kind === 'dispatch' || b.kind === 'warehouse') && b.status === 'active',
@@ -72,19 +74,16 @@ export function StaffFormSheet({
       return;
     }
     const body = staff ? rest : { ...rest, password };
-    save.mutate(
-      { id: staff?.id, body: body as never, branchId: isSuperAdmin ? branchId : undefined },
-      {
-        onSuccess: (result) => {
-          toast.success(staff ? 'Employee updated' : 'Employee created');
-          onOpenChange(false);
-          if (!staff && result && typeof result === 'object' && 'data' in result) {
-            onCreated?.((result as { data: Staff }).data, password);
-          }
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void saveStaff({ id: staff?.id, body: body as never, branchId: isSuperAdmin ? branchId : undefined })
+      .unwrap()
+      .then((result) => {
+        toast.success(staff ? 'Employee updated' : 'Employee created');
+        onOpenChange(false);
+        if (!staff && result && typeof result === 'object' && 'data' in result) {
+          onCreated?.((result as { data: Staff }).data, password);
+        }
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   const password = useWatch({ control: form.control, name: 'password' });
@@ -105,7 +104,7 @@ export function StaffFormSheet({
           staff ? 'Update details or change the role.' : 'The employee signs in with the username or email.'
         }
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={staff ? 'Save changes' : 'Create employee'}
         size="lg"
       >

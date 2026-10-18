@@ -1,15 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ArrowUpRight, PackageCheck, Truck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useStockBalances } from '@/features/inventory/api';
-import { api, unwrap } from '@/lib/api/client';
+import { useStockBalances } from '@redux/features/inventory';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCount, formatMoney, formatQuantity } from '@/lib/format';
-import type { DashboardData } from './api';
+import { useBranchCodes, type DashboardData } from '@redux/features/home';
 
 function Card({
   title,
@@ -201,13 +199,4 @@ function BranchLink({ code, onOpen }: { code: string; onOpen: (id: string) => vo
       <ArrowUpRight />
     </Button>
   );
-}
-
-function useBranchCodes() {
-  const query = useQuery({
-    queryKey: ['branches', 'options'],
-    queryFn: () => unwrap(api.GET('/admin/branches/options')).then((r) => r.data),
-    staleTime: 5 * 60_000,
-  });
-  return { branches: new Map((query.data ?? []).map((b) => [b.code, b.id])) };
 }

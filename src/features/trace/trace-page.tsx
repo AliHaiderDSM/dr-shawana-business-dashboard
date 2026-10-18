@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, History, Link2, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -10,8 +9,9 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ROLE_LABELS } from '@/features/staff/api';
-import { api, ApiError, unwrap } from '@/lib/api/client';
+import { ROLE_LABELS } from '@/features/staff/constants';
+import { ApiError } from '@/lib/api/client';
+import { useTrace } from '@redux/features/trace';
 import type { Role, Schemas } from '@/lib/api/types';
 import { formatDateTime } from '@/lib/format';
 
@@ -119,14 +119,8 @@ export function TracePage() {
   const { number = '' } = useParams();
   const navigate = useNavigate();
   const [search, setSearch] = useState(number);
-  const trace = useQuery({
-    queryKey: ['trace', number],
-    queryFn: () =>
-      unwrap(api.GET('/branch/trace/{number}', { params: { path: { number } } })).then((r) => r.data),
-    enabled: number.length >= 3,
-    retry: false,
-  });
-  const t = trace.data;
+  const trace = useTrace(number);
+  const t = trace.currentData;
 
   return (
     <>
@@ -158,7 +152,7 @@ export function TracePage() {
           aria-label="Number"
         />
       </form>
-      {trace.isLoading ? (
+      {trace.isLoading || (trace.isFetching && !trace.currentData) ? (
         <div className="space-y-4">
           <Skeleton className="h-40 rounded-xl" />
           <Skeleton className="h-60 rounded-xl" />

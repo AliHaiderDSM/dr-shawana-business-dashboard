@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { Letterhead, PrintField, PrintPage, SignatureLine } from '@/components/shared/print-document';
 import { formatDate } from '@/lib/format';
-import { useReferralLetter } from './api';
+import { useReferralLetter } from '@redux/features/consultations';
 
 interface ReferralData {
   referredTo?: string;

@@ -5,12 +5,17 @@ import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { PrintButton } from '@/components/shared/print-button';
-import { useInventoryReport, type InventoryReport } from '@/features/inventory/api';
+import { useInventoryReport, type InventoryReport } from '@redux/features/inventory';
 import { isoDate } from '@/lib/format';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { useListState } from '@/hooks/use-list-state';
 import { formatDate, formatQuantity } from '@/lib/format';
-import { materialsApi, useFinishedGoods, useMaterialReport, type MaterialReportQuery } from './api';
+import {
+  materialsApi,
+  useFinishedGoods,
+  useMaterialReport,
+  type MaterialReportQuery,
+} from '@redux/features/manufacturing';
 
 type MaterialReportRow = NonNullable<ReturnType<typeof useMaterialReport>['data']>[number];
 type FinishedGoodRow = NonNullable<ReturnType<typeof useFinishedGoods>['data']>[number];

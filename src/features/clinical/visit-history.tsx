@@ -1,6 +1,6 @@
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMrsHistory } from '@/features/consultations/api';
+import { useMrsHistory } from '@redux/features/consultations';
 import { SECTIONS } from '@/features/consultations/clinical-fields';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';

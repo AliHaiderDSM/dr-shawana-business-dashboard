@@ -18,7 +18,7 @@ import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
 import { requiredText } from '@/lib/validation';
-import { categoriesApi, type Category } from './api';
+import { categoriesApi, type Category } from '@redux/features/catalog';
 
 const schema = z.object({ name: requiredText(100, 'Name') });
 type Values = z.infer<typeof schema>;
@@ -32,20 +32,18 @@ function CategorySheet({
   onOpenChange: (open: boolean) => void;
   category: Category | null;
 }) {
-  const save = categoriesApi.useSave();
+  const [save, saveState] = categoriesApi.useSave();
   const form = useForm<Values>({ resolver: zodResolver(schema), values: { name: category?.name ?? '' } });
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      { id: category?.id, body: values },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({ id: category?.id, body: values })
+        .unwrap()
+        .then(() => {
           toast.success(category ? 'Category updated' : 'Category created');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -56,7 +54,7 @@ function CategorySheet({
         title={category ? 'Edit category' : 'New category'}
         description="Categories group products on the sale screen and in reports."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={category ? 'Save changes' : 'Create category'}
       >
         <TextField control={form.control} name="name" label="Name" placeholder="Skin care" required />
@@ -69,7 +67,7 @@ export function CategoriesPage() {
   const { can } = useAuth();
   const list = useListState({ defaultSort: 'name' });
   const query = categoriesApi.useList(list.query);
-  const remove = categoriesApi.useRemove();
+  const [remove] = categoriesApi.useRemove();
   const [editing, setEditing] = useState<Category | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<Category | null>(null);
@@ -166,8 +164,8 @@ export function CategoriesPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Category deleted'))
                 .catch(toastError)
             : undefined

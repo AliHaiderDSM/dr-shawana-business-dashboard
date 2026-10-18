@@ -13,7 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors } from '@/lib/api/errors';
 import { formatDate, isoDate } from '@/lib/format';
 import { optionalText } from '@/lib/validation';
-import { BHRT_STATUS_LABELS, useAddBhrt, useBhrtLog, type BhrtEntry } from './api';
+import { useAddBhrtMutation, useBhrtLog, type BhrtEntry } from '@redux/features/clinical';
+import { BHRT_STATUS_LABELS } from './constants';
 
 const TONES: Record<BhrtEntry['status'], Tone> = {
   on: 'success',
@@ -40,24 +41,21 @@ export function BhrtPanel({
   canEdit: boolean;
 }) {
   const log = useBhrtLog(patientId);
-  const add = useAddBhrt(patientId);
+  const [addBhrt, add] = useAddBhrtMutation();
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: { status: undefined, date: isoDate(), note: null },
   });
 
-  const submit = form.handleSubmit((values) =>
-    add.mutate(
-      { ...values, appointmentId: appointmentId ?? null },
-      {
-        onSuccess: () => {
-          toast.success('BHRT status saved');
-          form.reset({ status: undefined, date: isoDate(), note: null });
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
-  );
+  const submit = form.handleSubmit((values) => {
+    void addBhrt({ patientId, body: { ...values, appointmentId: appointmentId ?? null } })
+      .unwrap()
+      .then(() => {
+        toast.success('BHRT status saved');
+        form.reset({ status: undefined, date: isoDate(), note: null });
+      })
+      .catch((error) => applyServerErrors(form, error));
+  });
 
   return (
     <div className={canEdit ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]' : 'grid gap-6'}>
@@ -104,8 +102,8 @@ export function BhrtPanel({
               />
               <TextField control={form.control} name="date" label="Date" type="date" required />
               <TextareaField control={form.control} name="note" label="BHRT note" rows={3} />
-              <Button type="submit" className="w-full" disabled={add.isPending}>
-                {add.isPending ? <Loader2 className="animate-spin" /> : null}
+              <Button type="submit" className="w-full" disabled={add.isLoading}>
+                {add.isLoading ? <Loader2 className="animate-spin" /> : null}
                 Save status
               </Button>
             </form>

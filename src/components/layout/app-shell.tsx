@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { Building2, KeyRound, Loader2 } from 'lucide-react';
 import { Suspense, useState, type ReactNode } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router';
@@ -9,10 +8,10 @@ import { ForbiddenState } from '@/components/shared/error-state';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { api, unwrap } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { branchStore } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
+import { useBranchOptions } from '@redux/features/branches';
 import { BrandMark, Sidebar, SidebarNav } from './sidebar';
 import { Topbar } from './topbar';
 
@@ -49,11 +48,7 @@ export function RequirePermission({ anyOf, children }: { anyOf: string[]; childr
 
 export function RequireBranch({ children }: { children: ReactNode }) {
   const { isSuperAdmin, activeBranchId, setBranchId } = useAuth();
-  const branches = useQuery({
-    queryKey: ['branches', 'options'],
-    queryFn: () => unwrap(api.GET('/admin/branches/options')).then((r) => r.data),
-    enabled: isSuperAdmin && !activeBranchId,
-  });
+  const branches = useBranchOptions(isSuperAdmin && !activeBranchId);
   if (!isSuperAdmin || activeBranchId) return children;
   return (
     <div className="mx-auto max-w-2xl py-10">

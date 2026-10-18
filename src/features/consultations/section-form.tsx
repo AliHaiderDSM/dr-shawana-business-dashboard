@@ -14,7 +14,11 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { applyServerErrors } from '@/lib/api/errors';
 import { formatRelative } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useSaveSection, type Consultation, type SectionState } from './api';
+import {
+  useSaveConsultationSectionMutation,
+  type Consultation,
+  type SectionState,
+} from '@redux/features/consultations';
 import {
   MRS_LABELS,
   MRS_SCORES,
@@ -597,7 +601,7 @@ export function SectionForm({
   footer,
   onSaved,
 }: SectionFormProps) {
-  const save = useSaveSection(consultation);
+  const [saveSection, save] = useSaveConsultationSectionMutation();
   const form = useForm<FormValues>({
     resolver: sectionResolver(section),
     defaultValues: toFormValues(section, state?.data, defaults),
@@ -608,19 +612,16 @@ export function SectionForm({
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      { key: section.key, data: toApiData(section, values) },
-      {
-        onSuccess: () => {
-          form.reset(values);
-          toast.success(`${section.title} saved`);
-          onSaved?.();
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
-  );
+  const submit = form.handleSubmit((values) => {
+    void saveSection({ consultation, key: section.key, data: toApiData(section, values) })
+      .unwrap()
+      .then(() => {
+        form.reset(values);
+        toast.success(`${section.title} saved`);
+        onSaved?.();
+      })
+      .catch((error) => applyServerErrors(form, error));
+  });
 
   return (
     <Form {...form}>
@@ -642,7 +643,7 @@ export function SectionForm({
               <p className="text-sm text-muted-foreground">{section.description}</p>
             ) : null}
           </div>
-          <SaveState dirty={dirty} saving={save.isPending} updatedAt={state?.updatedAt} />
+          <SaveState dirty={dirty} saving={save.isLoading} updatedAt={state?.updatedAt} />
         </div>
         {aside}
         <fieldset disabled={readOnly} className="min-w-0">
@@ -653,8 +654,8 @@ export function SectionForm({
           <div className="flex items-center gap-2">
             {footer?.(Boolean(state))}
             {readOnly ? null : (
-              <Button type="submit" disabled={save.isPending}>
-                {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+              <Button type="submit" disabled={save.isLoading}>
+                {save.isLoading ? <Loader2 className="animate-spin" /> : <Save />}
                 {onSaved ? 'Save & next' : 'Save section'}
               </Button>
             )}

@@ -1,9 +1,9 @@
 import { Clock } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDoctorSlots } from '@/features/doctors/api';
+import { useDoctorSlots } from '@redux/features/doctors';
 import { formatDate } from '@/lib/format';
-import { timeRange } from './api';
+import { timeRange } from './constants';
 
 export function DoctorSlots({
   doctorId,

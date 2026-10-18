@@ -13,8 +13,8 @@ import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
-import { ROLE_LABELS } from '@/features/staff/api';
-import { patientsApi, type Patient } from './api';
+import { ROLE_LABELS } from '@/features/staff/constants';
+import { patientsApi, type Patient } from '@redux/features/patients';
 import { PatientFormSheet } from './patient-form-sheet';
 
 export function PatientsPage() {
@@ -23,7 +23,7 @@ export function PatientsPage() {
   const [params, setParams] = useSearchParams();
   const list = useListState({ defaultSort: '-createdAt' });
   const query = patientsApi.useList(list.query);
-  const remove = patientsApi.useRemove();
+  const [remove] = patientsApi.useRemove();
   const [editing, setEditing] = useState<Patient | null>(null);
   const [open, setOpen] = useState(params.get('new') === '1');
   const [removing, setRemoving] = useState<Patient | null>(null);
@@ -202,8 +202,8 @@ export function PatientsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Patient deleted'))
                 .catch(toastError)
             : undefined

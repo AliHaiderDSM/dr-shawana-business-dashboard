@@ -10,12 +10,12 @@ import { PrintButton } from '@/components/shared/print-button';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { categoriesApi } from '@/features/catalog/api';
+import { categoriesApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useStockBalances, type StockBalance } from './api';
+import { useStockBalances, type StockBalance } from '@redux/features/inventory';
 
 export function StockPage() {
   const navigate = useNavigate();

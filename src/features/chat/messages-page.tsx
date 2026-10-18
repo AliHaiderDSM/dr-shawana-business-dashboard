@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import {
   FileImage,
   FileText,
@@ -25,14 +24,16 @@ import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { baseApi } from '@redux/api/baseApi';
 import {
   chatFileUrl,
   useConversations,
-  useSendReply,
+  useSendDoctorChatReplyMutation,
   useThread,
   type ChatConversation,
   type ChatMessage,
-} from './api';
+} from '@redux/features/chat';
+import { useAppDispatch } from '@redux/hooks';
 
 const ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp';
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -189,9 +190,9 @@ function Bubble({ message, conversationId }: { message: ChatMessage; conversatio
 }
 
 function Thread({ conversation }: { conversation: ChatConversation }) {
-  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
   const thread = useThread(conversation.id);
-  const send = useSendReply(conversation.id);
+  const [sendReply, send] = useSendDoctorChatReplyMutation();
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -205,13 +206,13 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
   }, [lastId]);
 
   useEffect(() => {
-    void queryClient.invalidateQueries({ queryKey: ['sidebar-badges'] });
-  }, [conversation.id, queryClient]);
+    dispatch(baseApi.util.invalidateTags(['sidebar-badges']));
+  }, [conversation.id, dispatch]);
 
   const submit = () => {
-    if (send.isPending || (!text.trim() && !file)) return;
-    send
-      .mutateAsync({ body: text, file })
+    if (send.isLoading || (!text.trim() && !file)) return;
+    sendReply({ conversationId: conversation.id, body: text, file })
+      .unwrap()
       .then(() => {
         setText('');
         setFile(null);
@@ -330,8 +331,8 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
               }
             }}
           />
-          <Button aria-label="Send" disabled={send.isPending || (!text.trim() && !file)} onClick={submit}>
-            {send.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+          <Button aria-label="Send" disabled={send.isLoading || (!text.trim() && !file)} onClick={submit}>
+            {send.isLoading ? <Loader2 className="animate-spin" /> : <Send />}
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">

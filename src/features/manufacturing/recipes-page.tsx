@@ -16,13 +16,13 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { optionalText } from '@/lib/validation';
-import { materialsApi, recipesApi, type Recipe } from './api';
+import { materialsApi, recipesApi, type Recipe } from '@redux/features/manufacturing';
 
 const schema = z.object({
   productId: z.string().min(1, 'Choose a product'),
@@ -56,7 +56,7 @@ function RecipeSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const save = recipesApi.useSave();
+  const [save, saveState] = recipesApi.useSave();
   const products = productsApi.useOptions({}, open);
   const materials = materialsApi.useOptions({}, open);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
@@ -73,23 +73,21 @@ function RecipeSheet({
   const lines = useFieldArray({ control: form.control, name: 'items' });
   const materialOptions = (materials.data ?? []).map((m) => ({ value: m.id, label: m.name }));
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({
         id: recipe?.id,
         body: {
           ...values,
           items: values.items.map((i) => ({ materialId: i.materialId, ...(i.qty ? { qty: i.qty } : {}) })),
         },
-      },
-      {
-        onSuccess: () => {
+      })
+        .unwrap()
+        .then(() => {
           toast.success(recipe ? 'Recipe updated' : 'Recipe created');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -100,7 +98,7 @@ function RecipeSheet({
         title={recipe ? 'Edit recipe' : 'New product recipe'}
         description="The materials that make one batch of the product."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={recipe ? 'Save changes' : 'Create recipe'}
         size="lg"
       >
@@ -156,7 +154,7 @@ export function RecipesPage() {
   const list = useListState({ defaultSort: '-date' });
   const query = recipesApi.useList(list.query);
   const products = productsApi.useOptions();
-  const remove = recipesApi.useRemove();
+  const [remove] = recipesApi.useRemove();
   const [editing, setEditing] = useState<Recipe | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<Recipe | null>(null);
@@ -276,8 +274,8 @@ export function RecipesPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Recipe deleted'))
                 .catch(toastError)
             : undefined

@@ -26,7 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -42,7 +42,7 @@ import {
   type ProductBatch,
   type ProductBatchDetail,
   type WriteOffInput,
-} from './api';
+} from '@redux/features/inventory';
 
 const STATUS: Record<BatchStatus, { label: string; tone: Tone }> = {
   ok: { label: 'In date', tone: 'success' },
@@ -204,7 +204,7 @@ export function BatchesPage() {
 
 function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose: () => void }) {
   const { isSuperAdmin } = useAuth();
-  const writeOff = useWriteOff(batch.id);
+  const [writeOff, writeOffState] = useWriteOff(batch.id);
   const [qty, setQty] = useState(batch.quantity);
   const [reason, setReason] = useState<WriteOffInput['reason']>(
     batch.status === 'expired' ? 'expired' : 'damaged',
@@ -229,7 +229,7 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !writeOff.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !writeOffState.isLoading && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Write off stock</DialogTitle>
@@ -301,20 +301,20 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={writeOff.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={writeOffState.isLoading}>
             Cancel
           </Button>
           <Button
             variant="destructive"
-            disabled={invalid || writeOff.isPending}
+            disabled={invalid || writeOffState.isLoading}
             onClick={() =>
-              writeOff
-                .mutateAsync({
-                  qty: count,
-                  reason,
-                  note: note.trim() || null,
-                  ...(serials.length ? { serials } : {}),
-                })
+              writeOff({
+                qty: count,
+                reason,
+                note: note.trim() || null,
+                ...(serials.length ? { serials } : {}),
+              })
+                .unwrap()
                 .then(() => {
                   toast.success(
                     isSuperAdmin
@@ -326,7 +326,7 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
                 .catch(toastError)
             }
           >
-            {writeOff.isPending ? <Loader2 className="animate-spin" /> : <PackageMinus />}
+            {writeOffState.isLoading ? <Loader2 className="animate-spin" /> : <PackageMinus />}
             {isSuperAdmin ? 'Write off' : 'Ask to write off'}
           </Button>
         </DialogFooter>

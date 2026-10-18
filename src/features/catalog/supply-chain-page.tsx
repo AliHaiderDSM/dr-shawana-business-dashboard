@@ -19,7 +19,7 @@ import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
 import { optionalText, phoneString, requiredText } from '@/lib/validation';
-import { suppliersApi, type Supplier } from './api';
+import { suppliersApi, type Supplier } from '@redux/features/catalog';
 
 type PartyType = 'supplier' | 'dispatcher';
 
@@ -45,7 +45,7 @@ function PartySheet({
   party: Supplier | null;
   type: PartyType;
 }) {
-  const save = suppliersApi.useSave();
+  const [save, saveState] = suppliersApi.useSave();
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     values: {
@@ -56,17 +56,15 @@ function PartySheet({
     },
   });
 
-  const submit = form.handleSubmit((body) =>
-    save.mutate(
-      { id: party?.id, body },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (body) =>
+      void save({ id: party?.id, body })
+        .unwrap()
+        .then(() => {
           toast.success(`${LABEL[body.type]} ${party ? 'updated' : 'added'}`);
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -79,7 +77,7 @@ function PartySheet({
         }
         description="Suppliers deliver stock in; dispatchers carry stock out."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={party ? 'Save changes' : 'Add'}
       >
         <TextField control={form.control} name="name" label="Name" required />
@@ -106,7 +104,7 @@ export function SupplyChainPage() {
   const list = useListState({ defaultSort: 'name' });
   const type: PartyType = list.filters.type === 'dispatcher' ? 'dispatcher' : 'supplier';
   const query = suppliersApi.useList({ ...list.query, type });
-  const remove = suppliersApi.useRemove();
+  const [remove] = suppliersApi.useRemove();
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<Supplier | null>(null);
@@ -221,8 +219,8 @@ export function SupplyChainPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Deleted'))
                 .catch(toastError)
             : undefined

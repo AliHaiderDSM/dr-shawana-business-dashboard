@@ -20,21 +20,22 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useReceivingAccounts } from '@/features/appointments/payment-fields';
-import { productsApi } from '@/features/catalog/api';
-import { findItemBySerial, normalizeSerial } from '@/features/inventory/api';
+import { useReceivingAccounts } from '@redux/features/appointments';
+import { productsApi } from '@redux/features/catalog';
+import { normalizeSerial } from '@/features/inventory/constants';
+import { findItemBySerial } from '@redux/features/inventory';
 import { toastError } from '@/lib/api/errors';
 import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
-  DELIVERY_LABELS,
+  useCancelSaleOrderMutation,
   salesApi,
-  useCancelOrder,
-  useDispatchOrder,
+  useDispatchSaleOrderMutation,
   useDeliverySlips,
-  useSetDelivery,
+  useSetSaleDeliveryMutation,
   type DeliveryStatus,
-} from './api';
+} from '@redux/features/sales';
+import { DELIVERY_LABELS } from './constants';
 import { slipPrintPath, slipQuery } from './delivery-report';
 
 const DELIVERY_TONES: Record<DeliveryStatus, Tone> = {
@@ -66,7 +67,7 @@ const shortAddress = (address: string | null) => {
 function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => void }) {
   const sale = salesApi.useDetail(order.id);
   const products = productsApi.useOptions();
-  const dispatch = useDispatchOrder();
+  const [dispatchOrder, dispatchState] = useDispatchSaleOrderMutation();
   const slips = useDeliverySlips(slipQuery(order));
   const slip = slips.data?.slips.find((s) => s.saleId === order.id);
   const [date, setDate] = useState(isoDate());
@@ -116,7 +117,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !dispatch.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !dispatchState.isLoading && onClose()}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Dispatch {order.invoiceNo}</DialogTitle>
@@ -254,14 +255,14 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={dispatch.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={dispatchState.isLoading}>
             Cancel
           </Button>
           <Button
-            disabled={!complete || !date || dispatch.isPending || sale.isLoading || unverified > 0}
+            disabled={!complete || !date || dispatchState.isLoading || sale.isLoading || unverified > 0}
             onClick={() =>
-              dispatch
-                .mutateAsync({ id: order.id, date, serials: pieces.map((p) => p.serial) })
+              dispatchOrder({ id: order.id, date, serials: pieces.map((p) => p.serial) })
+                .unwrap()
                 .then(() => {
                   toast.success(`${order.invoiceNo} dispatched`);
                   onClose();
@@ -269,7 +270,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
                 .catch(toastError)
             }
           >
-            {dispatch.isPending ? <Loader2 className="animate-spin" /> : null}
+            {dispatchState.isLoading ? <Loader2 className="animate-spin" /> : null}
             Dispatch
           </Button>
         </DialogFooter>
@@ -310,7 +311,7 @@ function CancelOrderForm({
   waiting: number;
   onClose: () => void;
 }) {
-  const cancel = useCancelOrder();
+  const [cancelOrder, cancelState] = useCancelSaleOrderMutation();
   const accounts = useReceivingAccounts(received > 0);
   const [refund, setRefund] = useState(received > 0);
   const [amount, setAmount] = useState(received > 0 ? String(received) : '');
@@ -320,7 +321,7 @@ function CancelOrderForm({
   const validRefund = /^\d{1,10}(\.\d{1,2})?$/.test(amount) && Number(amount) > 0 && Boolean(accountId);
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !cancel.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !cancelState.isLoading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Cancel {order.invoiceNo}?</DialogTitle>
@@ -398,18 +399,18 @@ function CancelOrderForm({
           </div>
         ) : null}
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={cancel.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={cancelState.isLoading}>
             Keep order
           </Button>
           <Button
             variant="destructive"
-            disabled={cancel.isPending || (refund && received > 0 && !validRefund)}
+            disabled={cancelState.isLoading || (refund && received > 0 && !validRefund)}
             onClick={() =>
-              cancel
-                .mutateAsync({
-                  id: order.id,
-                  refund: refund && received > 0 ? { amount, method, accountSheetId: accountId, date } : null,
-                })
+              cancelOrder({
+                id: order.id,
+                refund: refund && received > 0 ? { amount, method, accountSheetId: accountId, date } : null,
+              })
+                .unwrap()
                 .then(() => {
                   toast.success(`${order.invoiceNo} cancelled`);
                   onClose();
@@ -417,7 +418,7 @@ function CancelOrderForm({
                 .catch(toastError)
             }
           >
-            {cancel.isPending ? <Loader2 className="animate-spin" /> : null}
+            {cancelState.isLoading ? <Loader2 className="animate-spin" /> : null}
             Cancel order
           </Button>
         </DialogFooter>
@@ -430,7 +431,7 @@ type Pending =
   { kind: 'dispatch' | 'cancel'; order: OrderRef } | { kind: 'delivered' | 'returned'; order: OrderRef };
 
 export function useOrderActions() {
-  const setDelivery = useSetDelivery();
+  const [setDelivery] = useSetSaleDeliveryMutation();
   const [pending, setPending] = useState<Pending | null>(null);
   const close = () => setPending(null);
   const confirm = pending && (pending.kind === 'delivered' || pending.kind === 'returned') ? pending : null;
@@ -456,8 +457,8 @@ export function useOrderActions() {
         destructive={confirm?.kind === 'returned'}
         onConfirm={() =>
           confirm
-            ? setDelivery
-                .mutateAsync({ id: confirm.order.id, status: confirm.kind })
+            ? setDelivery({ id: confirm.order.id, status: confirm.kind })
+                .unwrap()
                 .then(() =>
                   toast.success(`${confirm.order.invoiceNo}: ${DELIVERY_LABELS[confirm.kind].toLowerCase()}`),
                 )

@@ -9,10 +9,11 @@ import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useListState } from '@/hooks/use-list-state';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
-import { DISPOSITION_LABELS, REASON_LABELS, useReturns, type SaleReturn } from './api';
+import { useReturns, type SaleReturn } from '@redux/features/returns';
+import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
 import { ReturnFormSheet } from './return-form-sheet';
 
 export function ReturnStatusBadge({ record }: { record: Pick<SaleReturn, 'status' | 'items'> }) {

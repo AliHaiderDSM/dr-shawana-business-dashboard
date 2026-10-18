@@ -5,15 +5,14 @@ import { Thumb } from '@/components/shared/thumb';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { bundlesApi, categoriesApi, findProductByBarcode, productsApi } from '@/features/catalog/api';
-import { useStockBalances } from '@/features/inventory/api';
-import { useOnlineCatalog } from '@/features/sales/api';
+import { bundlesApi, categoriesApi, findProductByBarcode, productsApi } from '@redux/features/catalog';
+import { useStockBalances } from '@redux/features/inventory';
+import { fetchOnlineCatalog, useOnlineCatalog } from '@redux/features/sales';
 import { useHasDispatch } from '@/lib/auth/branches';
-import { api, unwrap } from '@/lib/api/client';
 import { toastError } from '@/lib/api/errors';
 import { formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { isSerial } from '@/features/inventory/api';
+import { isSerial } from '@/features/inventory/constants';
 import { toast } from 'sonner';
 
 export interface CatalogPick {
@@ -185,10 +184,8 @@ export function PosCatalog({
           : bundles.isLoading;
   const dispatchItems = dispatchCatalog.data?.items ?? [];
   const queryDispatch = async (code: string) => {
-    const result = await unwrap(
-      api.GET('/branch/sales/online-catalog', { params: { query: { search: code } } }),
-    );
-    const items = result.data.items;
+    const result = await fetchOnlineCatalog({ search: code });
+    const items = result.items;
     return items.length === 1 ? items[0] : null;
   };
 

@@ -16,24 +16,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useConsultation } from '@/features/consultations/api';
-import { doctorsApi, useMyDoctorProfile } from '@/features/doctors/api';
-import { patientsApi, usePatientSearch } from '@/features/patients/api';
+import { useConsultation } from '@redux/features/consultations';
+import { doctorsApi, useMyDoctorProfile } from '@redux/features/doctors';
+import { patientsApi, usePatientSearch } from '@redux/features/patients';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText, requiredText } from '@/lib/validation';
 import {
-  BUILDER_SECTIONS,
-  NOTE_LABELS,
   prescriptionsApi,
   usePrescriptionCatalog,
   type CatalogItem,
   type NoteKey,
   type Prescription,
   type PrescriptionInput,
-} from './api';
+} from '@redux/features/prescriptions';
+import { BUILDER_SECTIONS, NOTE_LABELS } from './constants';
 
 interface ItemState {
   selected: boolean;
@@ -157,7 +156,7 @@ function Builder({
   const navigate = useNavigate();
   const { me } = useAuth();
   const isDoctor = me?.role === 'doctor';
-  const save = prescriptionsApi.useSave();
+  const [savePrescription, save] = prescriptionsApi.useSave();
   const consultation = useConsultation(consultationId ?? prescription?.consultationId);
   const doctors = doctorsApi.useOptions();
   const myDoctor = useMyDoctorProfile(isDoctor);
@@ -230,25 +229,19 @@ function Builder({
           doctorId: values.doctorId,
           ...(consultationId ? { consultationId } : {}),
         };
-    save.mutate(
-      { id: prescription?.id, body },
-      {
-        onSuccess: ({ data }) => {
-          toast.success(
-            prescription ? 'Prescription updated' : `Prescription #${data.prescriptionNo} saved`,
-            {
-              action: { label: 'Print', onClick: () => void navigate(`/print/prescription/${data.id}`) },
-            },
+    void savePrescription({ id: prescription?.id, body })
+      .unwrap()
+      .then(({ data }) => {
+        toast.success(prescription ? 'Prescription updated' : `Prescription #${data.prescriptionNo} saved`, {
+          action: { label: 'Print', onClick: () => void navigate(`/print/prescription/${data.id}`) },
+        });
+        if (consultation.data)
+          void navigate(
+            `/appointments/${consultation.data.appointmentId}/consultation?section=prescriptions`,
           );
-          if (consultation.data)
-            void navigate(
-              `/appointments/${consultation.data.appointmentId}/consultation?section=prescriptions`,
-            );
-          else void navigate('/prescriptions');
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+        else void navigate('/prescriptions');
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   const lockedParties = Boolean(prescription || consultationId);
@@ -379,8 +372,8 @@ function Builder({
 
         <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <span className="text-sm text-muted-foreground">{selectedCount} items selected</span>
-          <Button type="submit" disabled={save.isPending}>
-            {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+          <Button type="submit" disabled={save.isLoading}>
+            {save.isLoading ? <Loader2 className="animate-spin" /> : <Save />}
             {prescription ? 'Save changes' : 'Save prescription'}
           </Button>
         </div>

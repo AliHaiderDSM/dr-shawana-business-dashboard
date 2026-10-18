@@ -15,19 +15,19 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Form, FormItem, FormLabel } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { patientRecordFileUrl } from '@/features/patients/api';
+import { patientRecordFileUrl } from '@redux/features/patients';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { formatDate, isoDate } from '@/lib/format';
 import { optionalText } from '@/lib/validation';
 import {
-  RECORD_TYPE_LABELS,
-  useAddRecordFiles,
-  useCreateMedicalRecord,
+  useAddMedicalRecordFilesMutation,
+  useCreateMedicalRecordMutation,
   useMedicalRecords,
-  useRemoveMedicalRecord,
-  useRemoveRecordFile,
+  useRemoveMedicalRecordFileMutation,
+  useRemoveMedicalRecordMutation,
   type MedicalRecord,
-} from './api';
+} from '@redux/features/clinical';
+import { RECORD_TYPE_LABELS } from './constants';
 import { READABLE_RECORD_TYPES, useReportSelection } from './report-selection';
 
 const schema = z.object({
@@ -49,7 +49,7 @@ function RecordSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const create = useCreateMedicalRecord(patientId);
+  const [createRecord, create] = useCreateMedicalRecordMutation();
   const [files, setFiles] = useState<File[]>([]);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -61,18 +61,15 @@ function RecordSheet({
       toast.error('Add at least one file or a note');
       return;
     }
-    create.mutate(
-      { body: { ...values, appointmentId: appointmentId ?? null }, files },
-      {
-        onSuccess: () => {
-          toast.success('Record saved');
-          setFiles([]);
-          form.reset();
-          onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void createRecord({ patientId, body: { ...values, appointmentId: appointmentId ?? null }, files })
+      .unwrap()
+      .then(() => {
+        toast.success('Record saved');
+        setFiles([]);
+        form.reset();
+        onOpenChange(false);
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -83,7 +80,7 @@ function RecordSheet({
         title="Upload medical record"
         description="Reports and scans are private. They open through a short-lived link."
         onSubmit={submit}
-        submitting={create.isPending}
+        submitting={create.isLoading}
         submitLabel="Save record"
       >
         <ChoiceField
@@ -115,8 +112,8 @@ function RecordCard({
   record: MedicalRecord;
   canEdit: boolean;
 }) {
-  const addFiles = useAddRecordFiles(patientId);
-  const removeFile = useRemoveRecordFile(patientId);
+  const [addRecordFiles, addFiles] = useAddMedicalRecordFilesMutation();
+  const [removeFile] = useRemoveMedicalRecordFileMutation();
   const [files, setFiles] = useState<File[]>([]);
   const [adding, setAdding] = useState(false);
   const selection = useReportSelection();
@@ -149,10 +146,12 @@ function RecordCard({
         onRemove={
           canEdit
             ? (file) =>
-                removeFile.mutateAsync({ recordId: record.id, fileId: file.id }).then(() => {
-                  selection?.toggle(file.id, false);
-                  toast.success('File removed');
-                })
+                removeFile({ patientId, recordId: record.id, fileId: file.id })
+                  .unwrap()
+                  .then(() => {
+                    selection?.toggle(file.id, false);
+                    toast.success('File removed');
+                  })
             : undefined
         }
       />
@@ -163,10 +162,10 @@ function RecordCard({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                disabled={files.length === 0 || addFiles.isPending}
+                disabled={files.length === 0 || addFiles.isLoading}
                 onClick={() =>
-                  addFiles
-                    .mutateAsync({ recordId: record.id, files })
+                  addRecordFiles({ patientId, recordId: record.id, files })
+                    .unwrap()
                     .then(() => {
                       toast.success('Files added');
                       setFiles([]);
@@ -204,7 +203,7 @@ export function MedicalRecordsPanel({
   canEdit: boolean;
 }) {
   const records = useMedicalRecords(patientId);
-  const remove = useRemoveMedicalRecord(patientId);
+  const [remove] = useRemoveMedicalRecordMutation();
   const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<MedicalRecord | null>(null);
   const selection = useReportSelection();
@@ -272,8 +271,8 @@ export function MedicalRecordsPanel({
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove({ patientId, recordId: removing.id })
+                .unwrap()
                 .then(() => toast.success('Record deleted'))
                 .catch(toastError)
             : undefined

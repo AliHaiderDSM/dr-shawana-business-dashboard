@@ -17,14 +17,13 @@ import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDateTime } from '@/lib/format';
 import {
-  REQUEST_CATEGORY_LABELS,
-  REQUEST_STATUS_LABELS,
   usePatientRequest,
   usePatientRequests,
-  useUpdatePatientRequest,
+  useUpdatePatientRequestMutation,
   type PatientRequest,
   type PatientRequestStatus,
-} from './api';
+} from '@redux/features/patient-requests';
+import { REQUEST_CATEGORY_LABELS, REQUEST_STATUS_LABELS } from './constants';
 
 export const REQUEST_TONES: Record<PatientRequestStatus, Tone> = {
   submitted: 'warning',
@@ -37,7 +36,7 @@ export const REQUEST_TONES: Record<PatientRequestStatus, Tone> = {
 const STATUSES = Object.keys(REQUEST_STATUS_LABELS) as PatientRequestStatus[];
 
 function RequestEditor({ request: r }: { request: PatientRequest }) {
-  const update = useUpdatePatientRequest();
+  const [updateRequest, update] = useUpdatePatientRequestMutation();
   const [status, setStatus] = useState<PatientRequestStatus>(r.status);
   const [reply, setReply] = useState(r.reply ?? '');
   const changed = status !== r.status || reply.trim() !== (r.reply ?? '');
@@ -46,8 +45,8 @@ function RequestEditor({ request: r }: { request: PatientRequest }) {
     const body: { status?: PatientRequestStatus; reply?: string | null } = {};
     if (status !== r.status) body.status = status;
     if (reply.trim() !== (r.reply ?? '')) body.reply = reply.trim() || null;
-    update
-      .mutateAsync({ id: r.id, body })
+    updateRequest({ id: r.id, body })
+      .unwrap()
       .then(() => toast.success('Request updated'))
       .catch(toastError);
   };
@@ -86,8 +85,8 @@ function RequestEditor({ request: r }: { request: PatientRequest }) {
           </p>
         ) : null}
       </div>
-      <Button className="w-full" disabled={!changed || update.isPending} onClick={save}>
-        {update.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+      <Button className="w-full" disabled={!changed || update.isLoading} onClick={save}>
+        {update.isLoading ? <Loader2 className="animate-spin" /> : <Save />}
         Save
       </Button>
     </section>

@@ -36,26 +36,26 @@ import {
   paymentSchema,
   ReceivingAccountsNotice,
   toPaymentBody,
-  useReceivingAccounts,
   type PaymentValues,
 } from '@/features/appointments/payment-fields';
-import { useReturns, type SaleReturn } from '@/features/returns/api';
+import { useReceivingAccounts } from '@redux/features/appointments';
+import { useReturns, type SaleReturn } from '@redux/features/returns';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useInDispatch } from '@/lib/auth/branches';
 import { formatDate, formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
-  SALE_TYPE_LABELS,
   salePaymentProofUrl,
   salesApi,
-  useApprovePayments,
-  useRemoveSalePayment,
-  useRemoveSalePaymentProof,
-  useSaveSalePayment,
+  useApproveSalePaymentsMutation,
+  useRemoveSalePaymentMutation,
+  useRemoveSalePaymentProofMutation,
+  useSaveSalePaymentMutation,
   type Sale,
   type SalePayment,
-} from './api';
+} from '@redux/features/sales';
+import { SALE_TYPE_LABELS } from './constants';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
 import { useCanChangeSale } from './sales-page';
 
@@ -225,7 +225,7 @@ export function SalePaymentSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const save = useSaveSalePayment(saleId);
+  const [save, saveState] = useSaveSalePaymentMutation();
   const accounts = useReceivingAccounts(open);
   const form = useForm<PaymentValues, unknown, z.output<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
@@ -243,21 +243,20 @@ export function SalePaymentSheet({
       : emptyPayment(suggested),
   });
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({
+        saleId,
         paymentId: payment?.id,
         body: toPaymentBody(values),
         proofs: values.method === 'online' ? values.proofs : [],
-      },
-      {
-        onSuccess: () => {
+      })
+        .unwrap()
+        .then(() => {
           toast.success(payment ? 'Payment updated' : 'Payment added');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -268,7 +267,7 @@ export function SalePaymentSheet({
         title={payment ? 'Edit payment' : 'Add payment'}
         description="Received and remaining are recalculated by the server."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={payment ? 'Save changes' : 'Add payment'}
       >
         <ReceivingAccountsNotice error={accounts.error} />
@@ -337,10 +336,10 @@ export function SaleDetailPage() {
   const canChange = useCanChangeSale();
   const sale = salesApi.useDetail(id);
   const returns = useReturns({ saleId: id, pageSize: 50 });
-  const removePayment = useRemoveSalePayment(id);
-  const removeProof = useRemoveSalePaymentProof(id);
+  const [removePayment] = useRemoveSalePaymentMutation();
+  const [removeProof, removeProofState] = useRemoveSalePaymentProofMutation();
   const orders = useOrderActions();
-  const approve = useApprovePayments();
+  const [approve, approveState] = useApproveSalePaymentsMutation();
   const [payment, setPayment] = useState<SalePayment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentKey, setPaymentKey] = useState(0);
@@ -419,15 +418,12 @@ export function SaleDetailPage() {
                     size="icon"
                     className="size-6 text-muted-foreground hover:text-destructive"
                     aria-label={`Remove screenshot ${i + 1}`}
-                    disabled={removeProof.isPending}
+                    disabled={removeProofState.isLoading}
                     onClick={() =>
-                      removeProof.mutate(
-                        { paymentId: row.original.id, proofId: proof.id },
-                        {
-                          onSuccess: () => toast.success('Screenshot removed'),
-                          onError: (error) => toastError(error),
-                        },
-                      )
+                      void removeProof({ saleId: id, paymentId: row.original.id, proofId: proof.id })
+                        .unwrap()
+                        .then(() => toast.success('Screenshot removed'))
+                        .catch((error) => toastError(error))
                     }
                   >
                     <X className="size-3.5" />
@@ -463,10 +459,10 @@ export function SaleDetailPage() {
           <Button
             size="sm"
             variant="outline"
-            disabled={approve.isPending}
+            disabled={approveState.isLoading}
             onClick={() =>
-              approve
-                .mutateAsync({ id: s.id, paymentIds: [row.original.id] })
+              approve({ id: s.id, paymentIds: [row.original.id] })
+                .unwrap()
                 .then(() => toast.success('Payment approved'))
                 .catch(toastError)
             }
@@ -575,10 +571,10 @@ export function SaleDetailPage() {
                 {canApprove && waiting.length > 1 ? (
                   <Button
                     size="sm"
-                    disabled={approve.isPending}
+                    disabled={approveState.isLoading}
                     onClick={() =>
-                      approve
-                        .mutateAsync({ id: s.id })
+                      approve({ id: s.id })
+                        .unwrap()
                         .then(() => toast.success(`${waiting.length} payments approved`))
                         .catch(toastError)
                     }
@@ -676,8 +672,8 @@ export function SaleDetailPage() {
         destructive
         onConfirm={() =>
           removing
-            ? removePayment
-                .mutateAsync(removing.id)
+            ? removePayment({ saleId: id, paymentId: removing.id })
+                .unwrap()
                 .then(() => toast.success('Payment deleted'))
                 .catch(toastError)
             : undefined

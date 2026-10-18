@@ -1,14 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { api, unwrap } from '@/lib/api/client';
+import { useBranchOptions } from '@redux/features/branches';
 import { useAuth } from './auth-context';
 
-export function useBranchOptions(enabled = true) {
-  return useQuery({
-    queryKey: ['branches', 'options'],
-    queryFn: () => unwrap(api.GET('/admin/branches/options')).then((r) => r.data),
-    enabled,
-  });
-}
+export { useBranchOptions };
 
 export function useCurrentBranch() {
   const { branchId, isSuperAdmin } = useAuth();

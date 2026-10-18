@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowUpRight, Pencil, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
@@ -9,27 +8,12 @@ import { DetailSkeleton } from '@/components/shared/skeletons';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { api, unwrap } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCount, formatDate, initials } from '@/lib/format';
-import { useBranch } from './api';
+import { useBranch } from '@redux/features/branches';
+import { useBranchStaff } from '@redux/features/staff';
 import { BranchAdminDialog } from './branch-admin-dialog';
 import { BranchFormSheet } from './branch-form-sheet';
-
-function useBranchStaff(branchId: string) {
-  return useQuery({
-    queryKey: ['staff', 'branch-summary', branchId],
-    queryFn: async () => {
-      const [all, admins] = await Promise.all([
-        unwrap(api.GET('/branch/staff', { params: { query: { branchId, pageSize: 1 } } })),
-        unwrap(
-          api.GET('/branch/staff', { params: { query: { branchId, role: 'branch_admin', pageSize: 10 } } }),
-        ),
-      ]);
-      return { total: all.meta.total, admins: admins.data };
-    },
-  });
-}
 
 export function BranchDetailPage() {
   const { id = '' } = useParams();

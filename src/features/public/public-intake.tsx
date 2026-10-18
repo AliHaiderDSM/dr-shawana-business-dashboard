@@ -10,10 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { SECTIONS, type FormValues, type SectionDef } from '@/features/consultations/clinical-fields';
 import { sectionResolver, toApiData, toFormValues } from '@/features/consultations/clinical-form';
 import { VisibleFields } from '@/features/consultations/section-form';
-import { ApiError } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
-import { env } from '@/lib/env';
 import { formatDate } from '@/lib/format';
+import {
+  useSavePublicIntakeSectionMutation,
+  useUploadPublicMedicalRecordsMutation,
+} from '@redux/features/public';
 
 type History = Schemas['PublicPatientHistory'];
 
@@ -30,22 +32,6 @@ const PUBLIC_SECTIONS: { key: 'basic_info' | 'medical_history' | 'additional_sym
   { key: 'medical_history', title: 'Have you ever been diagnosed with?' },
   { key: 'additional_symptoms', title: 'Other symptoms you are experiencing' },
 ];
-
-async function send<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(`${env.VITE_API_BASE_URL}${path}`, init);
-  const body = (await response.json().catch(() => null)) as {
-    data?: T;
-    error?: { code?: string; message?: string; details?: unknown };
-  } | null;
-  if (!response.ok || !body?.data)
-    throw new ApiError(
-      response.status,
-      body?.error?.code ?? 'ERROR',
-      body?.error?.message ?? 'Something went wrong',
-      body?.error?.details,
-    );
-  return body.data;
-}
 
 function Card({
   title,
@@ -82,6 +68,7 @@ function IntakeSection({
   defaults?: FormValues;
   onSaved: () => void;
 }) {
+  const [saveSection] = useSavePublicIntakeSectionMutation();
   const [saving, setSaving] = useState(false);
   const form = useForm<FormValues>({
     resolver: sectionResolver(section),
@@ -90,11 +77,7 @@ function IntakeSection({
   const submit = form.handleSubmit(async (values) => {
     setSaving(true);
     try {
-      await send(`/public/patient-history/${encodeURIComponent(token)}/sections/${section.key}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toApiData(section, values)),
-      });
+      await saveSection({ token, key: section.key, data: toApiData(section, values) }).unwrap();
       form.reset(values);
       toast.success(`${title} saved`);
       onSaved();
@@ -132,6 +115,7 @@ function UploadBlock({
   label: string;
   onUploaded: () => void;
 }) {
+  const [uploadRecords] = useUploadPublicMedicalRecordsMutation();
   const [files, setFiles] = useState<File[]>([]);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -139,13 +123,7 @@ function UploadBlock({
   const upload = async () => {
     setBusy(true);
     try {
-      const body = new FormData();
-      body.append('data', JSON.stringify({ type, note: note.trim() || null }));
-      for (const file of files) body.append('files', file);
-      await send(`/public/patient-history/${encodeURIComponent(token)}/medical-records`, {
-        method: 'POST',
-        body,
-      });
+      await uploadRecords({ token, type, note, files }).unwrap();
       toast.success(`${label} uploaded`);
       setFiles([]);
       setNote('');

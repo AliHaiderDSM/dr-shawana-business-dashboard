@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { toastError } from '@/lib/api/errors';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { patientRecordFileUrl } from '@/features/patients/api';
+import { patientRecordFileUrl } from '@redux/features/patients';
 import {
   reportSummaryFileUrl,
-  useRemoveReportSummary,
+  useRemoveReportSummaryMutation,
   useReportSummaries,
   type LabReportSummary,
-} from './api';
+} from '@redux/features/clinical';
 
 const DISCLAIMER = 'AI-generated summary; clinician verification required.';
 
@@ -182,7 +182,7 @@ function SummaryFiles({ patientId, item }: { patientId: string; item: LabReportS
 
 export function ReportSummaries({ patientId, canEdit }: { patientId: string; canEdit: boolean }) {
   const summaries = useReportSummaries(patientId);
-  const remove = useRemoveReportSummary(patientId);
+  const [remove] = useRemoveReportSummaryMutation();
   const [openId, setOpenId] = useState<string | null>(null);
   const [removing, setRemoving] = useState<LabReportSummary | null>(null);
   const items = summaries.data ?? [];
@@ -281,7 +281,7 @@ export function ReportSummaries({ patientId, canEdit }: { patientId: string; can
         onConfirm={async () => {
           if (!removing) return;
           try {
-            await remove.mutateAsync(removing.id);
+            await remove({ patientId, summaryId: removing.id }).unwrap();
             toast.success('Summary deleted');
           } catch (error) {
             toastError(error);

@@ -23,13 +23,13 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { optionalText, positiveQuantity } from '@/lib/validation';
 import {
-  MATERIAL_PLACES,
   materialsApi,
   useMaterialReceipts,
-  useRemoveReceipt,
-  useSaveReceipt,
+  useRemoveMaterialReceiptMutation,
+  useSaveMaterialReceiptMutation,
   type MaterialReceipt,
-} from './api';
+} from '@redux/features/manufacturing';
+import { MATERIAL_PLACES } from './constants';
 import { MaterialFormSheet } from './material-form-sheet';
 import { MaterialLevelBadge } from './materials-page';
 
@@ -55,7 +55,7 @@ function ReceiptSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const save = useSaveReceipt(materialId);
+  const [save, saveState] = useSaveMaterialReceiptMutation();
   const form = useForm<ReceiptValues, unknown, z.output<typeof receiptSchema>>({
     resolver: zodResolver(receiptSchema),
     values: {
@@ -66,17 +66,15 @@ function ReceiptSheet({
     },
   });
 
-  const submit = form.handleSubmit((body) =>
-    save.mutate(
-      { receiptId: receipt?.id, body },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (body) =>
+      void save({ materialId, receiptId: receipt?.id, body })
+        .unwrap()
+        .then(() => {
           toast.success(receipt ? 'Receipt corrected' : 'Receipt added');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -91,7 +89,7 @@ function ReceiptSheet({
             : 'Material received into the store.'
         }
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel={receipt ? 'Save correction' : 'Add receipt'}
       >
         <FieldRow>
@@ -117,7 +115,7 @@ export function MaterialDetailPage() {
   const { can } = useAuth();
   const material = materialsApi.useDetail(id);
   const receipts = useMaterialReceipts(id);
-  const removeReceipt = useRemoveReceipt(id);
+  const [removeReceipt] = useRemoveMaterialReceiptMutation();
   const [editOpen, setEditOpen] = useState(false);
   const [receipt, setReceipt] = useState<MaterialReceipt | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -251,8 +249,8 @@ export function MaterialDetailPage() {
         destructive
         onConfirm={() =>
           removing
-            ? removeReceipt
-                .mutateAsync(removing.id)
+            ? removeReceipt({ materialId: id, receiptId: removing.id })
+                .unwrap()
                 .then(() => toast.success('Receipt removed'))
                 .catch(toastError)
             : undefined

@@ -17,7 +17,8 @@ import {
 import { Form, FormLabel } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
 import { emailString, optionalText, passwordString, requiredText, usernameString } from '@/lib/validation';
-import { useCreateBranchAdmin, type Branch } from './api';
+import { useCreateBranchAdminMutation } from '@redux/features/branches';
+import type { Branch } from '@redux/features/branches/types';
 
 const schema = z.object({
   firstName: requiredText(100, 'First name'),
@@ -46,7 +47,7 @@ export function BranchAdminDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const create = useCreateBranchAdmin();
+  const [createBranchAdmin, create] = useCreateBranchAdminMutation();
   const [created, setCreated] = useState<Created | null>(null);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -61,7 +62,7 @@ export function BranchAdminDialog({
   });
 
   function close(next: boolean) {
-    if (create.isPending) return;
+    if (create.isLoading) return;
     onOpenChange(next);
     if (!next) {
       setCreated(null);
@@ -78,19 +79,17 @@ export function BranchAdminDialog({
 
   const submit = form.handleSubmit((values) => {
     if (!branch) return;
-    create.mutate(
-      { id: branch.id, body: values },
-      {
-        onSuccess: (staff) =>
-          setCreated({
-            name: `${staff.firstName} ${staff.lastName}`,
-            username: staff.username,
-            email: staff.email,
-            password: values.password,
-          }),
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void createBranchAdmin({ id: branch.id, body: values })
+      .unwrap()
+      .then((staff) =>
+        setCreated({
+          name: `${staff.firstName} ${staff.lastName}`,
+          username: staff.username,
+          email: staff.email,
+          password: values.password,
+        }),
+      )
+      .catch((error) => applyServerErrors(form, error));
   });
 
   const password = useWatch({ control: form.control, name: 'password' });
@@ -166,12 +165,12 @@ export function BranchAdminDialog({
                   type="button"
                   variant="outline"
                   onClick={() => close(false)}
-                  disabled={create.isPending}
+                  disabled={create.isLoading}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? <Loader2 className="animate-spin" /> : null}
+                <Button type="submit" disabled={create.isLoading}>
+                  {create.isLoading ? <Loader2 className="animate-spin" /> : null}
                   Create admin
                 </Button>
               </DialogFooter>

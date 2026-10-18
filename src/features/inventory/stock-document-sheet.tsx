@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { findProductByBarcode, productsApi, suppliersApi } from '@/features/catalog/api';
+import { findProductByBarcode, productsApi, suppliersApi } from '@redux/features/catalog';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions, useInWarehouse } from '@/lib/auth/branches';
@@ -31,12 +31,11 @@ import { cn } from '@/lib/utils';
 import { optionalText, positiveQuantity } from '@/lib/validation';
 import {
   findItemBySerial,
-  isSerial,
-  STOCK_DESTINATIONS,
   useBatches,
   useCreateStockDocument,
   useStockBalances,
-} from './api';
+} from '@redux/features/inventory';
+import { isSerial, STOCK_DESTINATIONS } from './constants';
 import type { StockKindConfig } from './stock-config';
 
 const lineSchema = z.object({
@@ -300,7 +299,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
   const { isSuperAdmin } = useAuth();
   const branchOptions = useBranchOptions(isSuperAdmin && config.kind === 'out');
   const navigate = useNavigate();
-  const create = useCreateStockDocument(config.kind);
+  const [create, createState] = useCreateStockDocument(config.kind);
   const products = productsApi.useOptions({}, open);
   const parties = suppliersApi.useOptions({ type: config.partyType }, open);
   const [files, setFiles] = useState<File[]>([]);
@@ -466,35 +465,32 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
             : {}),
       })),
     };
-    create.mutate(
-      { body: body as never, files },
-      {
-        onSuccess: (rows) => {
-          const labelled = rows.filter((r) => r.labels);
-          const slip = () => void navigate(`${config.printPath}?ids=${rows.map((r) => r.id).join(',')}`);
-          const count = labelled.reduce((sum, r) => sum + (r.labels?.count ?? 0), 0);
-          if (config.batched && labelled.length > 0) {
-            toast.success(`${config.title} saved · ${count} labelled pieces created`, {
-              duration: 15000,
-              action: {
-                label: 'Print labels',
-                onClick: () =>
-                  void navigate(
-                    `/print/labels?source=stock_in&sourceIds=${labelled.map((r) => r.id).join(',')}`,
-                  ),
-              },
-              cancel: { label: 'Print slip', onClick: slip },
-            });
-          } else {
-            toast.success(`${config.title} saved`, { action: { label: 'Print slip', onClick: slip } });
-          }
-          setFiles([]);
-          form.reset();
-          onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    );
+    void create({ body: body as never, files })
+      .unwrap()
+      .then((rows) => {
+        const labelled = rows.filter((r) => r.labels);
+        const slip = () => void navigate(`${config.printPath}?ids=${rows.map((r) => r.id).join(',')}`);
+        const count = labelled.reduce((sum, r) => sum + (r.labels?.count ?? 0), 0);
+        if (config.batched && labelled.length > 0) {
+          toast.success(`${config.title} saved · ${count} labelled pieces created`, {
+            duration: 15000,
+            action: {
+              label: 'Print labels',
+              onClick: () =>
+                void navigate(
+                  `/print/labels?source=stock_in&sourceIds=${labelled.map((r) => r.id).join(',')}`,
+                ),
+            },
+            cancel: { label: 'Print slip', onClick: slip },
+          });
+        } else {
+          toast.success(`${config.title} saved`, { action: { label: 'Print slip', onClick: slip } });
+        }
+        setFiles([]);
+        form.reset();
+        onOpenChange(false);
+      })
+      .catch((error) => applyServerErrors(form, error));
   });
 
   return (
@@ -505,7 +501,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
         title={`New ${config.title.toLowerCase()}`}
         description="Each product line is saved as its own entry, as in posSoft."
         onSubmit={submit}
-        submitting={create.isPending}
+        submitting={createState.isLoading}
         submitLabel="Save entries"
         size={config.batched ? 'xl' : 'lg'}
       >

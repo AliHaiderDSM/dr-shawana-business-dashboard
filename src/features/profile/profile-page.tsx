@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router';
@@ -11,10 +10,10 @@ import { DetailList, Panel } from '@/components/shared/panel';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { api, unwrap } from '@/lib/api/client';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDateTime, titleCase } from '@/lib/format';
+import { useChangeMyPasswordMutation, useUpdateMyProfileMutation } from '@redux/features/profile';
 
 const GENDER_OPTIONS = [
   { value: 'female', label: 'Female' },
@@ -57,29 +56,26 @@ function ProfileForm() {
       designation: profile?.designation ?? null,
     },
   });
-  const save = useMutation({
-    mutationFn: (body: z.infer<typeof profileSchema>) =>
-      unwrap(
-        api.PATCH('/auth/me', {
-          body: { ...body, phone: body.phone || null, designation: body.designation || null },
-        }),
-      ),
-    onSuccess: async () => {
-      await refreshMe();
-      toast.success('Profile updated');
-    },
-    onError: (error) => applyServerErrors(form, error),
-  });
+  const [updateProfile, state] = useUpdateMyProfileMutation();
+  const save = (v: z.infer<typeof profileSchema>) => {
+    void updateProfile(v)
+      .unwrap()
+      .then(async () => {
+        await refreshMe();
+        toast.success('Profile updated');
+      })
+      .catch((error) => applyServerErrors(form, error));
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => save.mutate(v))} noValidate>
+      <form onSubmit={form.handleSubmit((v) => save(v))} noValidate>
         <Panel
           title="Personal details"
           description="Your name and contact details as other staff see them."
           footer={
-            <Button type="submit" disabled={save.isPending || !form.formState.isDirty}>
-              {save.isPending ? <Loader2 className="animate-spin" /> : null}
+            <Button type="submit" disabled={state.isLoading || !form.formState.isDirty}>
+              {state.isLoading ? <Loader2 className="animate-spin" /> : null}
               Save changes
             </Button>
           }
@@ -113,30 +109,27 @@ function PasswordForm() {
     resolver: zodResolver(passwordSchema),
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   });
-  const save = useMutation({
-    mutationFn: (v: z.infer<typeof passwordSchema>) =>
-      unwrap(
-        api.POST('/auth/change-password', {
-          body: { currentPassword: v.currentPassword, newPassword: v.newPassword },
-        }),
-      ),
-    onSuccess: async () => {
-      form.reset();
-      await refreshMe();
-      toast.success('Password changed');
-    },
-    onError: (error) => applyServerErrors(form, error),
-  });
+  const [changePassword, state] = useChangeMyPasswordMutation();
+  const save = (v: z.infer<typeof passwordSchema>) => {
+    void changePassword(v)
+      .unwrap()
+      .then(async () => {
+        form.reset();
+        await refreshMe();
+        toast.success('Password changed');
+      })
+      .catch((error) => applyServerErrors(form, error));
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => save.mutate(v))} noValidate>
+      <form onSubmit={form.handleSubmit((v) => save(v))} noValidate>
         <Panel
           title="Change password"
           description="Use at least 8 characters. You stay signed in on this device."
           footer={
-            <Button type="submit" disabled={save.isPending}>
-              {save.isPending ? <Loader2 className="animate-spin" /> : null}
+            <Button type="submit" disabled={state.isLoading}>
+              {state.isLoading ? <Loader2 className="animate-spin" /> : null}
               Update password
             </Button>
           }

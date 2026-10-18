@@ -19,19 +19,18 @@ import { FormSheet } from '@/components/shared/form-sheet';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { productsApi, suppliersApi } from '@/features/catalog/api';
+import { productsApi, suppliersApi } from '@redux/features/catalog';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { optionalText, positiveQuantity } from '@/lib/validation';
 import {
-  STOCK_DESTINATIONS,
   stockAttachmentUrl,
-  stockLineDetail,
   useAddStockAttachments,
   useRemoveStockAttachment,
   useUpdateStockDocument,
   type StockDocument,
-} from './api';
+} from '@redux/features/inventory';
+import { STOCK_DESTINATIONS, stockLineDetail } from './constants';
 import type { StockKindConfig } from './stock-config';
 
 const schema = z.object({
@@ -66,9 +65,9 @@ interface StockEntrySheetProps {
 export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntrySheetProps) {
   const { can } = useAuth();
   const listId = useId();
-  const update = useUpdateStockDocument(config.kind);
-  const addFiles = useAddStockAttachments(config.kind);
-  const removeFile = useRemoveStockAttachment(config.kind);
+  const [update, updateState] = useUpdateStockDocument(config.kind);
+  const [addFiles, addFilesState] = useAddStockAttachments(config.kind);
+  const [removeFile] = useRemoveStockAttachment(config.kind);
   const products = productsApi.useOptions({}, open);
   const parties = suppliersApi.useOptions({ type: config.partyType }, open);
   const [files, setFiles] = useState<File[]>([]);
@@ -96,9 +95,9 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
 
   if (!entry) return null;
 
-  const submit = form.handleSubmit((values) =>
-    update.mutate(
-      {
+  const submit = form.handleSubmit(
+    (values) =>
+      void update({
         id: entry.id,
         body: {
           [config.partyField]: values.partyId,
@@ -115,15 +114,13 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
               }
             : {}),
         },
-      },
-      {
-        onSuccess: () => {
+      })
+        .unwrap()
+        .then(() => {
           toast.success('Entry updated');
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -134,7 +131,7 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
         title={`Edit ${config.singular}`}
         description="The old movement is reversed and posted again with the new values."
         onSubmit={submit}
-        submitting={update.isPending}
+        submitting={updateState.isLoading}
         submitLabel="Save changes"
       >
         <ComboboxField
@@ -214,10 +211,12 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
             onRemove={
               can('stock.update')
                 ? (file) =>
-                    removeFile.mutateAsync({ id: entry.id, attachmentId: file.id }).then(() => {
-                      setAttachments((list) => list.filter((a) => a.id !== file.id));
-                      toast.success('Attachment removed');
-                    })
+                    removeFile({ id: entry.id, attachmentId: file.id })
+                      .unwrap()
+                      .then(() => {
+                        setAttachments((list) => list.filter((a) => a.id !== file.id));
+                        toast.success('Attachment removed');
+                      })
                 : undefined
             }
           />
@@ -229,10 +228,10 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={addFiles.isPending}
+                  disabled={addFilesState.isLoading}
                   onClick={() =>
-                    addFiles
-                      .mutateAsync({ id: entry.id, files })
+                    addFiles({ id: entry.id, files })
+                      .unwrap()
                       .then((updated) => {
                         setAttachments(updated.attachments);
                         setFiles([]);

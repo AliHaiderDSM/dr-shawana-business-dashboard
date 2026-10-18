@@ -10,12 +10,12 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { doctorsApi } from '@/features/doctors/api';
+import { doctorsApi } from '@redux/features/doctors';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
-import { prescriptionsApi, type Prescription } from './api';
+import { prescriptionsApi, type Prescription } from '@redux/features/prescriptions';
 
 export function PrescriptionsPage() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export function PrescriptionsPage() {
   const list = useListState({ defaultSort: '-date' });
   const query = prescriptionsApi.useList(list.query);
   const doctors = doctorsApi.useOptions();
-  const remove = prescriptionsApi.useRemove();
+  const [remove] = prescriptionsApi.useRemove();
   const [removing, setRemoving] = useState<Prescription | null>(null);
 
   const columns: ColumnDef<Prescription, unknown>[] = [
@@ -181,8 +181,8 @@ export function PrescriptionsPage() {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Prescription deleted'))
                 .catch(toastError)
             : undefined

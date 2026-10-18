@@ -18,13 +18,20 @@ import { RowActions } from '@/components/shared/row-actions';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { productsApi } from '@/features/catalog/api';
+import { productsApi } from '@redux/features/catalog';
 import { useListState } from '@/hooks/use-list-state';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { optionalText, positiveQuantity, requiredText } from '@/lib/validation';
-import { fetchLabTransfer, labTransfersApi, materialsApi, productionsApi, type LabTransfer } from './api';
+import {
+  fetchLabTransfer,
+  labTransfersApi,
+  materialsApi,
+  productionsApi,
+  type LabTransfer,
+  type LabTransferDetail,
+} from '@redux/features/manufacturing';
 
 type Batch = LabTransfer;
 
@@ -96,25 +103,23 @@ const labTransferSchema = z.object({
 type LabTransferValues = z.input<typeof labTransferSchema>;
 
 function LabTransferSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const save = labTransfersApi.useSave();
+  const [save, saveState] = labTransfersApi.useSave();
   const form = useForm<LabTransferValues, unknown, z.output<typeof labTransferSchema>>({
     resolver: zodResolver(labTransferSchema),
     defaultValues: { batchNo: '', date: isoDate(), note: null, items: [{ materialId: '', qty: '' }] },
   });
   const lines = useFieldArray({ control: form.control, name: 'items' });
 
-  const submit = form.handleSubmit((body) =>
-    save.mutate(
-      { body },
-      {
-        onSuccess: () => {
+  const submit = form.handleSubmit(
+    (body) =>
+      void save({ body })
+        .unwrap()
+        .then(() => {
           toast.success('Materials sent to the pharmacy lab');
           form.reset();
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -125,7 +130,7 @@ function LabTransferSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
         title="Material out to pharmacy lab"
         description="Moves materials from the store to the lab under one batch number."
         onSubmit={submit}
-        submitting={save.isPending}
+        submitting={saveState.isLoading}
         submitLabel="Send to lab"
         size="lg"
       >
@@ -164,7 +169,7 @@ const productionSchema = z
 type ProductionValues = z.input<typeof productionSchema>;
 
 function ProductionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const save = productionsApi.useSave();
+  const [save, saveState] = productionsApi.useSave();
   const batches = labTransfersApi.useOptions({}, open);
   const products = productsApi.useOptions({}, open);
   const [loadingBatch, setLoadingBatch] = useState(false);
@@ -186,7 +191,7 @@ function ProductionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
     if (!id) return;
     setLoadingBatch(true);
     try {
-      const batch = await fetchLabTransfer(id);
+      const batch: LabTransferDetail = await fetchLabTransfer(id);
       lines.replace(batch.items.map((i) => ({ materialId: i.materialId, qty: i.qty })));
     } catch (error) {
       toastError(error);
@@ -195,9 +200,9 @@ function ProductionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
     }
   };
 
-  const submit = form.handleSubmit((values) =>
-    save.mutate(
-      {
+  const submit = form.handleSubmit(
+    (values) =>
+      void save({
         body: {
           labBatchId: values.labBatchId,
           date: values.date,
@@ -206,16 +211,14 @@ function ProductionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
           productId: values.productId,
           ...(values.productId ? { producedQty: values.producedQty } : {}),
         },
-      },
-      {
-        onSuccess: () => {
+      })
+        .unwrap()
+        .then(() => {
           toast.success('Production saved');
           form.reset();
           onOpenChange(false);
-        },
-        onError: (error) => applyServerErrors(form, error),
-      },
-    ),
+        })
+        .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -226,7 +229,7 @@ function ProductionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
         title="Material out to finished product"
         description="Uses lab materials from a batch. The produced quantity is added to the product's stock."
         onSubmit={submit}
-        submitting={save.isPending || loadingBatch}
+        submitting={saveState.isLoading || loadingBatch}
         submitLabel="Save production"
         size="lg"
       >
@@ -354,7 +357,7 @@ function BatchesPage({ stage }: BatchesPageProps) {
   const permission = isLab ? 'labTransfers' : 'production';
   const list = useListState({ defaultSort: '-date' });
   const query = resource.useList(list.query);
-  const remove = resource.useRemove();
+  const [remove] = resource.useRemove();
   const [creating, setCreating] = useState(false);
   const [viewing, setViewing] = useState<Batch | null>(null);
   const [removing, setRemoving] = useState<Batch | null>(null);
@@ -472,8 +475,8 @@ function BatchesPage({ stage }: BatchesPageProps) {
         destructive
         onConfirm={() =>
           removing
-            ? remove
-                .mutateAsync(removing.id)
+            ? remove(removing.id)
+                .unwrap()
                 .then(() => toast.success('Batch deleted'))
                 .catch(toastError)
             : undefined

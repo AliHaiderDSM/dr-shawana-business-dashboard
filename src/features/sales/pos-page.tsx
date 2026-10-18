@@ -33,10 +33,10 @@ import {
   paymentSchema,
   ReceivingAccountsNotice,
   toPaymentBody,
-  useReceivingAccounts,
 } from '@/features/appointments/payment-fields';
-import { bundlesApi, type Bundle } from '@/features/catalog/api';
-import { patientsApi, usePatientSearch } from '@/features/patients/api';
+import { useReceivingAccounts } from '@redux/features/appointments';
+import { bundlesApi, type Bundle } from '@redux/features/catalog';
+import { patientsApi, usePatientSearch } from '@redux/features/patients';
 import {
   patientDefaults,
   PatientFields,
@@ -50,11 +50,15 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText } from '@/lib/validation';
-import { salesApi, useCreateSale, type Sale, type SaleInput } from './api';
+import { salesApi, useCreateSaleMutation, type Sale, type SaleInput } from '@redux/features/sales';
 import { PosCatalog, type CatalogPick } from './pos-catalog';
 import { BillPreviewDialog } from './bill-preview-dialog';
-import { useAskDiscount, useDiscountRequests, type DiscountRequest } from './discount-requests-api';
-import { findItemBySerial } from '@/features/inventory/api';
+import {
+  useAskDiscountMutation,
+  useDiscountRequests,
+  type DiscountRequest,
+} from '@redux/features/discount-requests';
+import { findItemBySerial } from '@redux/features/inventory';
 
 const lineSchema = z.object({
   kind: z.enum(['product', 'bundle']),
@@ -279,11 +283,11 @@ function DiscountApproval({
 function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const navigate = useNavigate();
   const { can, isSuperAdmin } = useAuth();
-  const askDiscount = useAskDiscount();
+  const [askDiscount, askDiscountState] = useAskDiscountMutation();
   const [saved, setSaved] = useState<{ id: string; invoiceNo: string } | null>(null);
   const editing = Boolean(sale);
-  const create = useCreateSale();
-  const update = salesApi.useSave();
+  const [create, createState] = useCreateSaleMutation();
+  const [update, updateState] = salesApi.useSave();
   const accounts = useReceivingAccounts(!editing);
   const [patientSearch, setPatientSearch] = useState('');
   const patients = usePatientSearch(patientSearch);
@@ -291,7 +295,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     sale?.patient ? `${sale.patient.name} · ${sale.patient.phone}` : null,
   );
   const [shortages, setShortages] = useState<Shortage[]>([]);
-  const savePatient = patientsApi.useSave();
+  const [savePatient, savePatientState] = patientsApi.useSave();
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: fromSale(sale, bundles),
@@ -334,7 +338,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     return () => sub.unsubscribe();
   }, [form, sale, hasDispatch, replaceLines]);
   const patientMode = values.patientMode;
-  const saving = create.isPending || update.isPending;
+  const saving = createState.isLoading || updateState.isLoading;
   const shortProducts = new Set(shortages.map((s) => s.productId));
 
   const withinStock = (line: { name: string; available?: string }, qty: number) => {
@@ -479,28 +483,25 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       return;
     }
     if (sale) {
-      update.mutate(
-        {
-          id: sale.id,
-          body: {
-            patientId: v.patientId,
-            date: v.date,
-            saleType: v.saleType,
-            ...(v.city ? { city: v.city } : {}),
-            note: v.note,
-            items,
-            serials,
-            discountPercent: v.discountPercent || '0',
-          },
+      void update({
+        id: sale.id,
+        body: {
+          patientId: v.patientId,
+          date: v.date,
+          saleType: v.saleType,
+          ...(v.city ? { city: v.city } : {}),
+          note: v.note,
+          items,
+          serials,
+          discountPercent: v.discountPercent || '0',
         },
-        {
-          onSuccess: () => {
-            toast.success(`${sale.invoiceNo} updated`);
-            void navigate(`/sales/${sale.id}`);
-          },
-          onError: handleError,
-        },
-      );
+      })
+        .unwrap()
+        .then(() => {
+          toast.success(`${sale.invoiceNo} updated`);
+          void navigate(`/sales/${sale.id}`);
+        })
+        .catch(handleError);
       return;
     }
     const proofs: File[] = [];
@@ -521,20 +522,17 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
         return { ...toPaymentBody(p), ...(proofIndexes.length ? { proofIndexes } : {}) };
       }),
     };
-    create.mutate(
-      { body, proofs },
-      {
-        onSuccess: (created) => {
-          toast.success(
-            created.saleType === 'online'
-              ? `Order ${created.invoiceNo} booked · awaiting dispatch`
-              : `Sale ${created.invoiceNo} saved`,
-          );
-          setSaved({ id: created.id, invoiceNo: created.invoiceNo });
-        },
-        onError: handleError,
-      },
-    );
+    void create({ body, proofs })
+      .unwrap()
+      .then((created) => {
+        toast.success(
+          created.saleType === 'online'
+            ? `Order ${created.invoiceNo} booked · awaiting dispatch`
+            : `Sale ${created.invoiceNo} saved`,
+        );
+        setSaved({ id: created.id, invoiceNo: created.invoiceNo });
+      })
+      .catch(handleError);
   }, toastInvalid);
 
   const itemsError = form.formState.errors.items?.root?.message ?? form.formState.errors.items?.message;
@@ -640,7 +638,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                   <Button
                     type="button"
                     size="sm"
-                    disabled={savePatient.isPending}
+                    disabled={savePatientState.isLoading}
                     onClick={() => {
                       const parsed = patientFieldsSchema.safeParse(form.getValues('patient'));
                       if (!parsed.success) {
@@ -652,23 +650,20 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                         toast.error('Fill in the customer details first');
                         return;
                       }
-                      savePatient.mutate(
-                        { body: toPatientInput(parsed.data) },
-                        {
-                          onSuccess: ({ data }) => {
-                            form.setValue('patientMode', 'existing');
-                            form.setValue('patientId', data.id, { shouldValidate: true });
-                            form.setValue('patient', patientDefaults());
-                            setPatientLabel(`${data.name} · ${data.phone}`);
-                            if (data.city && !cityEdited.current) form.setValue('city', data.city);
-                            toast.success(`${data.name} saved as a customer`);
-                          },
-                          onError: (error) => toastError(error),
-                        },
-                      );
+                      void savePatient({ body: toPatientInput(parsed.data) })
+                        .unwrap()
+                        .then(({ data }) => {
+                          form.setValue('patientMode', 'existing');
+                          form.setValue('patientId', data.id, { shouldValidate: true });
+                          form.setValue('patient', patientDefaults());
+                          setPatientLabel(`${data.name} · ${data.phone}`);
+                          if (data.city && !cityEdited.current) form.setValue('city', data.city);
+                          toast.success(`${data.name} saved as a customer`);
+                        })
+                        .catch((error) => toastError(error));
                     }}
                   >
-                    {savePatient.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+                    {savePatientState.isLoading ? <Loader2 className="animate-spin" /> : <Save />}
                     Save customer
                   </Button>
                 </div>
@@ -756,18 +751,18 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                         </div>
                         <DiscountApproval
                           approval={approvalOf(line)}
-                          asking={askDiscount.isPending}
+                          asking={askDiscountState.isLoading}
                           onAsk={() => {
                             if (!line) return;
-                            askDiscount
-                              .mutateAsync({
-                                ...(line.kind === 'product'
-                                  ? { productId: line.refId }
-                                  : { bundleId: line.refId }),
-                                qty: line.qty,
-                                discountPercent: line.discount ?? '0',
-                                ...customerOf(),
-                              })
+                            askDiscount({
+                              ...(line.kind === 'product'
+                                ? { productId: line.refId }
+                                : { bundleId: line.refId }),
+                              qty: line.qty,
+                              discountPercent: line.discount ?? '0',
+                              ...customerOf(),
+                            })
+                              .unwrap()
                               .then((request) => {
                                 form.setValue(`items.${index}.discountRequestId`, request.id);
                                 toast.success('Sent to the Super Admin');

@@ -47,22 +47,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useReceivingAccounts } from '@/features/appointments/payment-fields';
+import { useReceivingAccounts } from '@redux/features/appointments';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import {
-  DISPOSITION_LABELS,
-  REASON_LABELS,
-  useRemoveReturn,
-  useDecideReturnItem,
-  useResolveItem,
+  useRemoveReturnMutation,
+  useDecideReturnItemMutation,
+  useResolveReturnItemMutation,
   useReturn,
-  useSetRefund,
+  useSetReturnRefundMutation,
+  type RefundInput,
   type ReturnDisposition,
   type ReturnItem,
   type SaleReturn,
-} from './api';
+} from '@redux/features/returns';
+import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
 import { ReturnStatusBadge } from './returns-page';
 
 type Outcome = Exclude<ReturnDisposition, 'pending'>;
@@ -120,14 +120,14 @@ function InspectDialog({
   outcome: Outcome;
   onClose: () => void;
 }) {
-  const resolve = useResolveItem(record.id);
+  const [resolve, resolveState] = useResolveReturnItemMutation();
   const { isSuperAdmin, me } = useAuth();
   const [note, setNote] = useState('');
   const choice = OUTCOMES.find((o) => o.value === outcome);
   const sellerAdmin = me?.role === 'branch_admin' && me.branch?.id === record.branchId;
   const proposing = record.sale?.saleType === 'online' && !isSuperAdmin && !sellerAdmin;
   return (
-    <Dialog open onOpenChange={(open) => !open && !resolve.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !resolveState.isLoading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -144,15 +144,20 @@ function InspectDialog({
           <Textarea id="inspect-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={resolve.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={resolveState.isLoading}>
             Cancel
           </Button>
           <Button
             variant={outcome === 'damaged' ? 'destructive' : 'default'}
-            disabled={resolve.isPending}
+            disabled={resolveState.isLoading}
             onClick={() =>
-              resolve
-                .mutateAsync({ itemId: item.id, disposition: outcome, note: note.trim() || null })
+              resolve({
+                returnId: record.id,
+                itemId: item.id,
+                disposition: outcome,
+                note: note.trim() || null,
+              })
+                .unwrap()
                 .then(() => {
                   toast.success(
                     proposing
@@ -164,7 +169,7 @@ function InspectDialog({
                 .catch(toastError)
             }
           >
-            {resolve.isPending ? <Loader2 className="animate-spin" /> : null}
+            {resolveState.isLoading ? <Loader2 className="animate-spin" /> : null}
             {proposing ? 'Send for approval' : 'Confirm'}
           </Button>
         </DialogFooter>
@@ -174,7 +179,7 @@ function InspectDialog({
 }
 
 function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => void }) {
-  const setRefund = useSetRefund(record.id);
+  const [setRefund, setRefundState] = useSetReturnRefundMutation();
   const accounts = useReceivingAccounts();
   const [amount, setAmount] = useState(Number(record.refundAmount) > 0 ? record.refundAmount : '');
   const [method, setMethod] = useState<'cash' | 'online'>(record.refundMethod ?? 'cash');
@@ -182,9 +187,9 @@ function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => 
   const [date, setDate] = useState(record.refundDate ?? isoDate());
   const valid = /^\d{1,10}(\.\d{1,2})?$/.test(amount) && Number(amount) > 0 && accountId;
 
-  const save = (refund: Parameters<typeof setRefund.mutateAsync>[0]) =>
-    setRefund
-      .mutateAsync(refund)
+  const save = (refund: RefundInput | null) =>
+    setRefund({ returnId: record.id, refund })
+      .unwrap()
       .then(() => {
         toast.success(refund ? 'Refund saved' : 'Refund removed');
         onClose();
@@ -192,7 +197,7 @@ function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => 
       .catch(toastError);
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !setRefund.isPending && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !setRefundState.isLoading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Refund for {record.returnNo}</DialogTitle>
@@ -249,7 +254,7 @@ function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => 
             <Button
               variant="ghost"
               className="text-destructive"
-              disabled={setRefund.isPending}
+              disabled={setRefundState.isLoading}
               onClick={() => void save(null)}
             >
               Remove refund
@@ -258,14 +263,14 @@ function RefundDialog({ record, onClose }: { record: SaleReturn; onClose: () => 
             <span />
           )}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={setRefund.isPending}>
+            <Button variant="outline" onClick={onClose} disabled={setRefundState.isLoading}>
               Cancel
             </Button>
             <Button
-              disabled={!valid || setRefund.isPending}
+              disabled={!valid || setRefundState.isLoading}
               onClick={() => void save({ amount, method, accountSheetId: accountId, date })}
             >
-              {setRefund.isPending ? <Loader2 className="animate-spin" /> : null}
+              {setRefundState.isLoading ? <Loader2 className="animate-spin" /> : null}
               Save refund
             </Button>
           </div>
@@ -280,8 +285,8 @@ export function ReturnDetailPage() {
   const navigate = useNavigate();
   const { can, isSuperAdmin, me } = useAuth();
   const query = useReturn(id);
-  const decide = useDecideReturnItem(id);
-  const remove = useRemoveReturn();
+  const [decide, decideState] = useDecideReturnItemMutation();
+  const [remove] = useRemoveReturnMutation();
   const [inspecting, setInspecting] = useState<{ item: ReturnItem; outcome: Outcome } | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -442,10 +447,15 @@ export function ReturnDetailPage() {
                         <div className="flex justify-end gap-1.5">
                           <Button
                             size="sm"
-                            disabled={decide.isPending}
+                            disabled={decideState.isLoading}
                             onClick={() =>
-                              decide
-                                .mutateAsync({ itemId: item.id, approve: true, asSuperAdmin: isSuperAdmin })
+                              decide({
+                                returnId: id,
+                                itemId: item.id,
+                                approve: true,
+                                asSuperAdmin: isSuperAdmin,
+                              })
+                                .unwrap()
                                 .then(() => toast.success(`${item.product?.name ?? 'Item'} approved`))
                                 .catch(toastError)
                             }
@@ -456,10 +466,15 @@ export function ReturnDetailPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={decide.isPending}
+                            disabled={decideState.isLoading}
                             onClick={() =>
-                              decide
-                                .mutateAsync({ itemId: item.id, approve: false, asSuperAdmin: isSuperAdmin })
+                              decide({
+                                returnId: id,
+                                itemId: item.id,
+                                approve: false,
+                                asSuperAdmin: isSuperAdmin,
+                              })
+                                .unwrap()
                                 .then(() => toast.success('Sent back to be checked again'))
                                 .catch(toastError)
                             }
@@ -596,8 +611,8 @@ export function ReturnDetailPage() {
         confirmLabel="Delete"
         destructive
         onConfirm={() =>
-          remove
-            .mutateAsync(r.id)
+          remove(r.id)
+            .unwrap()
             .then(() => {
               toast.success('Return deleted');
               void navigate('/returns');

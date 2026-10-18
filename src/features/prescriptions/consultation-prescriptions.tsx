@@ -4,10 +4,11 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { Panel } from '@/components/shared/panel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Consultation } from '@/features/consultations/api';
+import type { Consultation } from '@redux/features/consultations';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
-import { CATEGORY_LABELS, prescriptionsApi } from './api';
+import { prescriptionsApi } from '@redux/features/prescriptions';
+import { CATEGORY_LABELS } from './constants';
 
 export function ConsultationPrescriptions({ consultation }: { consultation: Consultation }) {
   const { can } = useAuth();

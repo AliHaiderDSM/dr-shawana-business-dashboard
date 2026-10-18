@@ -11,7 +11,6 @@ import {
   RotateCcw,
   Stethoscope,
 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -22,20 +21,15 @@ import { Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import {
-  appointmentsApi,
-  MODE_LABELS,
-  timeRange,
-  VISIT_LABELS,
-  type AppointmentDetail,
-} from '@/features/appointments/api';
+import { appointmentsApi, type AppointmentDetail } from '@redux/features/appointments';
+import { MODE_LABELS, timeRange, VISIT_LABELS } from '@/features/appointments/constants';
 import { StatusDialog, type StatusChange } from '@/features/appointments/status-dialog';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
 import { MrsSymptomsHistory } from '@/features/clinical/visit-history';
-import { patientsApi, usePatientSummary } from '@/features/patients/api';
+import { patientsApi, usePatientSummary } from '@redux/features/patients';
 import { BhrtBadge } from '@/features/patients/bhrt-badge';
 import { ConsultationPrescriptions } from '@/features/prescriptions/consultation-prescriptions';
 import { PreviousSymptomsContext } from './symptoms-field';
@@ -45,14 +39,14 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
-  consultationKeys,
+  readAppointmentConsultation,
   useAppointmentConsultation,
   useConsultationHistory,
-  useConsultationStatus,
-  useStartConsultation,
+  useSetConsultationStatusMutation,
+  useStartConsultationMutation,
   type Consultation,
   type SectionKey,
-} from './api';
+} from '@redux/features/consultations';
 import { SECTIONS, type FormValues } from './clinical-fields';
 import { SectionForm } from './section-form';
 
@@ -111,7 +105,7 @@ function PatientHeader({
 }) {
   const { can } = useAuth();
   const headerRef = useHeaderHeight();
-  const status = useConsultationStatus(consultation);
+  const [setStatus, status] = useSetConsultationStatusMutation();
   const patient = consultation.patient;
   const completed = consultation.status === 'completed';
   return (
@@ -153,15 +147,15 @@ function PatientHeader({
         {can('consultations.update') ? (
           <Button
             variant={completed ? 'outline' : 'default'}
-            disabled={status.isPending}
+            disabled={status.isLoading}
             onClick={() =>
-              status
-                .mutateAsync(completed ? 'open' : 'completed')
+              setStatus({ consultation, status: completed ? 'open' : 'completed' })
+                .unwrap()
                 .then(() => toast.success(completed ? 'Consultation reopened' : 'Consultation completed'))
                 .catch(toastError)
             }
           >
-            {status.isPending ? (
+            {status.isLoading ? (
               <Loader2 className="animate-spin" />
             ) : completed ? (
               <RotateCcw />
@@ -263,7 +257,6 @@ function Workspace({
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState<PanelKey | null>(null);
   const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
-  const queryClient = useQueryClient();
 
   const go = (key: PanelKey) => {
     setDirty(false);
@@ -278,10 +271,7 @@ function Workspace({
   };
 
   const advance = (from: PanelKey) => {
-    const fresh =
-      queryClient.getQueryData<Consultation | null>(
-        consultationKeys.byAppointment(consultation.appointmentId),
-      ) ?? consultation;
+    const fresh = readAppointmentConsultation(consultation.appointmentId) ?? consultation;
     const list = navItems(fresh, canPrescribe);
     const next = list[list.findIndex((i) => i.key === from) + 1];
     if (next) go(next.key);
@@ -511,7 +501,7 @@ export function ConsultationPage() {
   const { can } = useAuth();
   const appointment = appointmentsApi.useDetail(id);
   const consultation = useAppointmentConsultation(id);
-  const start = useStartConsultation(id);
+  const [startConsultation, start] = useStartConsultationMutation();
 
   if (consultation.isLoading) return <DetailSkeleton />;
   if (consultation.error)
@@ -538,15 +528,15 @@ export function ConsultationPage() {
             action={
               can('consultations.create') ? (
                 <Button
-                  disabled={start.isPending}
+                  disabled={start.isLoading}
                   onClick={() =>
-                    start
-                      .mutateAsync()
+                    startConsultation(id)
+                      .unwrap()
                       .then(() => toast.success('Consultation started'))
                       .catch(toastError)
                   }
                 >
-                  {start.isPending ? <Loader2 className="animate-spin" /> : <Stethoscope />}
+                  {start.isLoading ? <Loader2 className="animate-spin" /> : <Stethoscope />}
                   Start consultation
                 </Button>
               ) : null

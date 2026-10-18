@@ -1,42 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
 import logo from '@/assets/logo-hd.png';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PrintLayout } from '@/components/shared/print-layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CATEGORY_LABELS } from '@/features/prescriptions/api';
-import { ApiError } from '@/lib/api/client';
+import { CATEGORY_LABELS } from '@/features/prescriptions/constants';
 import type { Schemas } from '@/lib/api/types';
-import { env } from '@/lib/env';
 import { formatDate, titleCase } from '@/lib/format';
+import { usePublicPatientHistory } from '@redux/features/public';
 
 type History = Schemas['PublicPatientHistory'];
 
-async function loadHistory(token: string) {
-  const response = await fetch(
-    `${env.VITE_API_BASE_URL}/public/patient-history/${encodeURIComponent(token)}`,
-  );
-  const body = (await response.json().catch(() => null)) as {
-    data?: History;
-    error?: { code?: string; message?: string };
-  } | null;
-  if (!response.ok || !body?.data)
-    throw new ApiError(
-      response.status,
-      body?.error?.code ?? 'NOT_FOUND',
-      body?.error?.message ?? 'This link is invalid or has expired',
-    );
-  return body.data;
-}
-
 export function PublicPrescriptionPage() {
   const { token = '', id = '' } = useParams();
-  const history = useQuery({
-    queryKey: ['public-history', token],
-    queryFn: () => loadHistory(token),
-    retry: false,
-  });
+  const history = usePublicPatientHistory(token);
   const rx = history.data?.prescriptions.find((p) => p.id === id);
 
   useEffect(() => {
