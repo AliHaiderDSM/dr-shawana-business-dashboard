@@ -14188,7 +14188,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** The patient edits name, city, country, age or date of birth (not the phone). Marks the patient as updated from the app. */
+        /** The patient edits name, city, country, age, date of birth, weight (kg) or height (cm) (not the phone). Marks the patient as updated from the app. */
         patch: {
             parameters: {
                 query?: never;
@@ -16584,7 +16584,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Doctor only: reply to the patient, who gets a push notification. Send text in "body" and/or one PDF or photo (JPG, PNG, WebP, 10 MB) in "file" (multipart). */
+        /** Doctor only: reply to the patient, who gets a push notification. Send text in "body" and/or one PDF, photo (JPG, PNG, WebP) or voice note (M4A, AAC, MP3, WebM, OGG) up to 10 MB in "file" (multipart). */
         post: {
             parameters: {
                 query?: never;
@@ -29735,6 +29735,10 @@ export interface components {
             dateOfBirth: string | null;
             country: string | null;
             address: string | null;
+            /** @description Weight in kg, entered by the patient in the app */
+            weightKg: string | null;
+            /** @description Height in cm, entered by the patient in the app */
+            heightCm: string | null;
             /**
              * Format: date-time
              * @description Last time the patient edited the profile in the mobile app
@@ -30378,6 +30382,8 @@ export interface components {
             age?: number | null;
             /** Format: date */
             dateOfBirth?: string | null;
+            weightKg?: number | null;
+            heightCm?: number | null;
         };
         CreatePatientRequest: {
             /** @enum {string} */

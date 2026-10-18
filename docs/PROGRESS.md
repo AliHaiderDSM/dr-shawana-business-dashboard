@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Doctor voice notes and patient weight/height (2026-10-18)
+
+- Patient Messages: mic button records a voice note in the browser (M4A when the browser supports it, otherwise WebM), up to 5 minutes, with discard and send.
+- Patient profile shows weight and height entered from the app.
+
 ## Web Push (2026-10-18)
 
 - `public/sw.js` shows the system notification when no dashboard tab is focused, and opens the right page on click.

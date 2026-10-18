@@ -10,7 +10,7 @@ import {
   Send,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { openSignedUrl } from '@/components/shared/attachment-list';
@@ -34,9 +34,14 @@ import {
   type ChatMessage,
 } from '@redux/features/chat';
 import { useAppDispatch } from '@redux/hooks';
+import { MAX_VOICE_SECONDS, useVoiceRecorder, voiceSupported } from './use-voice-recorder';
 
 const ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp';
 const MAX_BYTES = 10 * 1024 * 1024;
+
+function clock(total: number) {
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
 
 function time(value: string) {
   const date = new Date(value);
@@ -197,6 +202,8 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
   const [file, setFile] = useState<File | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const voice = useVoiceRecorder();
+  const canRecord = voiceSupported();
   const pages = thread.data?.pages ?? [];
   const messages = [...pages].reverse().flatMap((p) => p.items);
   const lastId = messages.at(-1)?.id;
@@ -219,6 +226,33 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
       })
       .catch(toastError);
   };
+
+  const startVoice = () => {
+    voice.start().catch((error: unknown) => {
+      const denied = error instanceof DOMException && error.name === 'NotAllowedError';
+      toast.error(
+        denied
+          ? 'Allow the microphone for this site to record a voice note.'
+          : error instanceof Error
+            ? error.message
+            : 'The microphone could not be opened.',
+      );
+    });
+  };
+
+  const sendVoice = useCallback(async () => {
+    const recorded = await voice.stop();
+    if (!recorded) return;
+    if (recorded.size > MAX_BYTES) {
+      toast.error('The voice note is larger than 10 MB.');
+      return;
+    }
+    sendReply({ conversationId: conversation.id, body: '', file: recorded }).unwrap().catch(toastError);
+  }, [voice, sendReply, conversation.id]);
+
+  useEffect(() => {
+    if (voice.recording && voice.seconds >= MAX_VOICE_SECONDS) void sendVoice();
+  }, [voice.recording, voice.seconds, sendVoice]);
 
   let lastDay = '';
   return (
@@ -292,51 +326,82 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
             </Button>
           </div>
         ) : null}
-        <div className="flex items-end gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            accept={ACCEPT}
-            className="hidden"
-            onChange={(e) => {
-              const picked = e.target.files?.[0] ?? null;
-              e.target.value = '';
-              if (!picked) return;
-              if (picked.size > MAX_BYTES) {
-                toast.error('The file is larger than 10 MB.');
-                return;
-              }
-              setFile(picked);
-            }}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Attach a PDF or photo"
-            onClick={() => fileInput.current?.click()}
-          >
-            <Paperclip />
-          </Button>
-          <Textarea
-            rows={1}
-            value={text}
-            maxLength={4000}
-            placeholder="Write a reply…"
-            className="max-h-40 min-h-10 flex-1 resize-none"
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                submit();
-              }
-            }}
-          />
-          <Button aria-label="Send" disabled={send.isLoading || (!text.trim() && !file)} onClick={submit}>
-            {send.isLoading ? <Loader2 className="animate-spin" /> : <Send />}
-          </Button>
-        </div>
+        {voice.recording ? (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" aria-label="Discard voice note" onClick={voice.cancel}>
+              <X />
+            </Button>
+            <div className="flex h-10 flex-1 items-center gap-2 rounded-md border bg-destructive/5 px-3 text-sm">
+              <span className="size-2.5 animate-pulse rounded-full bg-destructive" />
+              <span className="font-medium">Recording</span>
+              <span className="text-muted-foreground tabular-nums">{clock(voice.seconds)}</span>
+              <span className="ml-auto text-xs text-muted-foreground">Up to {clock(MAX_VOICE_SECONDS)}</span>
+            </div>
+            <Button aria-label="Send voice note" onClick={() => void sendVoice()}>
+              <Send />
+              Send
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-end gap-2">
+            <input
+              ref={fileInput}
+              type="file"
+              accept={ACCEPT}
+              className="hidden"
+              onChange={(e) => {
+                const picked = e.target.files?.[0] ?? null;
+                e.target.value = '';
+                if (!picked) return;
+                if (picked.size > MAX_BYTES) {
+                  toast.error('The file is larger than 10 MB.');
+                  return;
+                }
+                setFile(picked);
+              }}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Attach a PDF or photo"
+              onClick={() => fileInput.current?.click()}
+            >
+              <Paperclip />
+            </Button>
+            <Textarea
+              rows={1}
+              value={text}
+              maxLength={4000}
+              placeholder="Write a reply…"
+              className="max-h-40 min-h-10 flex-1 resize-none"
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+            />
+            {canRecord && !text.trim() && !file ? (
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Record a voice note"
+                disabled={send.isLoading}
+                onClick={startVoice}
+              >
+                {send.isLoading ? <Loader2 className="animate-spin" /> : <Mic />}
+              </Button>
+            ) : (
+              <Button aria-label="Send" disabled={send.isLoading || (!text.trim() && !file)} onClick={submit}>
+                {send.isLoading ? <Loader2 className="animate-spin" /> : <Send />}
+              </Button>
+            )}
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground">
-          Enter sends, Shift + Enter adds a line. The patient gets a notification on the app.
+          Enter sends, Shift + Enter adds a line. Tap the mic for a voice note. The patient gets a
+          notification on the app.
         </p>
       </div>
     </div>

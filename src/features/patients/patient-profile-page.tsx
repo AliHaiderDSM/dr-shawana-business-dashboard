@@ -261,6 +261,8 @@ export function PatientProfilePage() {
                 { label: 'Country', value: p.country },
                 { label: 'Age', value: p.age },
                 { label: 'Date of birth', value: p.dateOfBirth ? formatDate(p.dateOfBirth) : null },
+                { label: 'Weight', value: p.weightKg ? `${Number(p.weightKg)} kg` : null },
+                { label: 'Height', value: p.heightCm ? `${Number(p.heightCm)} cm` : null },
                 { label: 'Patient since', value: formatDate(p.createdAt) },
               ]}
             />
