@@ -85,7 +85,7 @@ export const {
 } = patientRequestsApi;
 
 export function usePatientRequests(status: PatientRequestFilter) {
-  return useGetPatientRequestsQuery(status, { pollingInterval: 30_000 });
+  return useGetPatientRequestsQuery(status);
 }
 
 export function usePatientRequest(id: string | null) {

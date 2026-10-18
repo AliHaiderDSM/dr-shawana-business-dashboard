@@ -17,8 +17,6 @@ export * from './types';
 
 const STOCK_REQUEST_TAGS: TagType[] = ['stock-requests', 'incoming-stock', 'stock', 'sidebar-badges'];
 
-const COUNTS_POLL_MS = 60_000;
-
 function requestReceiveIncomingStock({ transferNo, date }: { transferNo: string; date: string }) {
   return unwrap(
     api.POST('/branch/incoming-stock/{transferNo}/receive', {
@@ -192,7 +190,7 @@ export function useStockRequestCatalog(search: string, enabled: boolean) {
 }
 
 export function useStockRequestCounts(enabled: boolean) {
-  return useGetStockRequestCountsQuery(undefined, { skip: !enabled, pollingInterval: COUNTS_POLL_MS });
+  return useGetStockRequestCountsQuery(undefined, { skip: !enabled });
 }
 
 export function useIncomingStock(status?: IncomingStockStatus) {
@@ -208,5 +206,5 @@ export function useWriteOffs(query: WriteOffsQuery) {
 }
 
 export function usePendingWriteOffCount(enabled: boolean) {
-  return useGetPendingWriteOffCountQuery(undefined, { skip: !enabled, pollingInterval: COUNTS_POLL_MS });
+  return useGetPendingWriteOffCountQuery(undefined, { skip: !enabled });
 }

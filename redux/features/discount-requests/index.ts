@@ -78,18 +78,14 @@ export const {
   useDecideDiscountMutation,
 } = discountRequestsApi;
 
-const PENDING_POLL_MS = 8_000;
-
 export function useDiscountRequests(query: DiscountRequestsQuery, enabled = true) {
   const arg: DiscountRequestsArg = {
     status: query.status ?? null,
     ids: query.ids?.length ? query.ids.join(',') : null,
   };
-  const { data } = discountRequestsApi.endpoints.getDiscountRequests.useQueryState(arg);
-  const pollingInterval = (data ?? []).some((r) => r.status === 'pending') ? PENDING_POLL_MS : 0;
-  return useGetDiscountRequestsQuery(arg, { skip: !enabled, pollingInterval });
+  return useGetDiscountRequestsQuery(arg, { skip: !enabled });
 }
 
 export function usePendingDiscountCount(enabled: boolean) {
-  return useGetPendingDiscountCountQuery(undefined, { skip: !enabled, pollingInterval: 30_000 });
+  return useGetPendingDiscountCountQuery(undefined, { skip: !enabled });
 }

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AUTH_EXPIRED_EVENT } from '@/lib/api/client';
+import { unsubscribeBrowser } from '@/lib/web-push';
 import type { Me } from '@/lib/api/types';
 import { clearApiCache, clearApiCacheKeepingMe, requestLogin, seedMe, useMe } from '@redux/features/auth';
 import { BRANCH_OPTIONS_STALE_SECONDS, useGetBranchOptionsQuery } from '@redux/features/branches';
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   branchStore.setWarehouse(superAdminStock);
 
   const logout = useCallback(() => {
+    void unsubscribeBrowser().catch(() => undefined);
     sessionStore.clear();
     setHasSession(false);
     setBranchState(ALL_BRANCHES);

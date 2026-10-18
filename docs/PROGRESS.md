@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Web Push (2026-10-18)
+
+- `public/sw.js` shows the system notification when no dashboard tab is focused, and opens the right page on click.
+- `src/lib/web-push.ts` registers the worker and the browser subscription; `StaffNotifications` saves it after the person allows notifications. Logout drops the browser subscription.
+- In-page toasts stay for the open tab; the old in-page Notification fallback runs only when the server has no push keys.
+
+## Desktop notifications (2026-10-18)
+
+- `components/layout/staff-notifications.tsx` (mounted once in AppShell) listens to the staff realtime channel, refreshes the sidebar badges and the request lists on each ping, and when a badge the user can see goes up it shows a toast and, if the tab is in the background and permission is granted, a desktop notification ("<menu label>: N waiting"); clicking opens that page. A one-time toast asks to turn desktop alerts on.
+- Polling removed for sidebar badges, discount requests, stock request/write-off counts and patient requests (the ping refreshes them). Doctor chat realtime now runs once here instead of inside the sidebar.
+
 ## API layer moved to Redux Toolkit + RTK Query (2026-10-18)
 
 - New root folder `dashboard/redux/`: `store.ts`, `hooks.ts`, `index.ts`, `api/baseApi.ts` (one `createApi`, `fromApi` for queries with the old retry rule, `toApi` for mutations), `api/apiConfig.ts`, `api/tagTypes.ts` (tags = the old React Query root keys), `api/crud.ts` (RTK version of the CRUD factory) and `features/<feature>/{index,types}.ts` for every API area. Alias `@redux/*`.

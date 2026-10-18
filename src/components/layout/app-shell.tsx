@@ -13,6 +13,7 @@ import { branchStore } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { useBranchOptions } from '@redux/features/branches';
 import { BrandMark, Sidebar, SidebarNav } from './sidebar';
+import { StaffNotifications } from './staff-notifications';
 import { Topbar } from './topbar';
 
 const COLLAPSE_KEY = 'dsm.sidebar.collapsed';
@@ -121,6 +122,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-background">
+      <StaffNotifications />
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-sidebar bg-sidebar p-0">

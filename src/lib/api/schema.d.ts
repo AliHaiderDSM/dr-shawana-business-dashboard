@@ -16749,6 +16749,438 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/stock-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock In entries of the Super Admin stock by GRN number. A Lab Officer entry waits until the Warehouse Keeper counts and confirms it; a Super Admin entry is stock at once. */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "pending" | "confirmed";
+                    grnNo?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Receipts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StoreReceipt"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/stock-receipts/{grnNo}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Warehouse Keeper confirms what arrived. Short lines keep the received quantity and a note; missing labels are written off. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    grnNo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmStoreReceipt"];
+                };
+            };
+            responses: {
+                /** @description Confirmed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StoreReceipt"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/push/public-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** VAPID public key for browser push subscriptions; null when web push is not configured */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Key */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                publicKey: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/push/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save this browser for push notifications. The signed-in staff member then gets a notification when one of their sidebar badges (requests, approvals, returns, patient messages) goes up, even with the dashboard closed. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["StaffPushSubscription"];
+                };
+            };
+            responses: {
+                /** @description Saved */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/push/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop push notifications for this browser */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        endpoint: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/appointments/{id}/consultation": {
         parameters: {
             query?: never;
@@ -24040,35 +24472,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/branch/stock-receipts": {
+    "/branch/badges": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Stock In entries of the Super Admin stock by GRN number. A Lab Officer entry waits until the Warehouse Keeper counts and confirms it; a Super Admin entry is stock at once. */
+        /** Counts for the red sidebar badges. Super Admin: requests waiting for a decision or to send, transfers not received yet, write-offs and discounts to approve, returns to inspect. Branch: approved or on-the-way stock requests, transfers to receive, write-offs and discounts waiting or ready, returns to inspect. */
         get: {
             parameters: {
-                query?: {
-                    status?: "pending" | "confirmed";
-                    grnNo?: string;
-                    branchId?: string;
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Receipts */
+                /** @description Counts */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["StoreReceipt"][];
+                            data: components["schemas"]["SidebarBadges"];
                         };
                     };
                 };
@@ -24127,105 +24555,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/branch/stock-receipts/{grnNo}/confirm": {
+    "/branch/realtime/staff": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /** Warehouse Keeper confirms what arrived. Short lines keep the received quantity and a note; missing labels are written off. */
-        post: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    grnNo: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ConfirmStoreReceipt"];
-                };
-            };
-            responses: {
-                /** @description Confirmed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["StoreReceipt"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/badges": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Counts for the red sidebar badges. Super Admin: requests waiting for a decision or to send, transfers not received yet, write-offs and discounts to approve, returns to inspect. Branch: approved or on-the-way stock requests, transfers to receive, write-offs and discounts waiting or ready, returns to inspect. */
+        /** Supabase Realtime channel that pings signed-in staff when a request, approval, return or patient message changes the sidebar badges (no data in the ping). Null when realtime is off. */
         get: {
             parameters: {
                 query?: never;
@@ -24235,14 +24572,18 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Counts */
+                /** @description Realtime channel */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["SidebarBadges"];
+                            data: {
+                                url: string;
+                                key: string;
+                                topic: string;
+                            } | null;
                         };
                     };
                 };
@@ -30136,6 +30477,69 @@ export interface components {
             key: string;
             topic: string;
         } | null;
+        ConfirmStoreReceipt: {
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+            /** @description Lines that did not arrive in full. Lines left out arrived in full. */
+            lines?: {
+                /** Format: uuid */
+                id: string;
+                /** @example 10.000 */
+                receivedQty: string;
+                note?: string | null;
+                /** @description Scanned piece labels. Required for products tracked by label. */
+                missingSerials?: string[];
+            }[];
+        };
+        StoreReceipt: {
+            grnNo: string;
+            /** Format: date */
+            date: string;
+            createdAt: string;
+            /** @enum {string} */
+            status: "pending" | "confirmed";
+            supplier: string | null;
+            note: string | null;
+            enteredBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+            } | null;
+            confirmedBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+            } | null;
+            confirmedAt: string | null;
+            lines: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                productId: string;
+                productName: string;
+                unit: string;
+                qty: string;
+                receivedQty: string | null;
+                batch: string | null;
+                expiryDate: string | null;
+                labels: number;
+                receiptNote: string | null;
+            }[];
+        };
+        StaffPushSubscription: {
+            /** Format: uri */
+            endpoint: string;
+            keys: {
+                p256dh: string;
+                auth: string;
+            };
+        };
         ConsultationStatusChange: {
             /** @enum {string} */
             status: "open" | "completed";
@@ -32239,61 +32643,6 @@ export interface components {
                 qty: string;
                 received: boolean;
                 labels: number;
-            }[];
-        };
-        ConfirmStoreReceipt: {
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            note?: string | null;
-            /** @description Lines that did not arrive in full. Lines left out arrived in full. */
-            lines?: {
-                /** Format: uuid */
-                id: string;
-                /** @example 10.000 */
-                receivedQty: string;
-                note?: string | null;
-                /** @description Scanned piece labels. Required for products tracked by label. */
-                missingSerials?: string[];
-            }[];
-        };
-        StoreReceipt: {
-            grnNo: string;
-            /** Format: date */
-            date: string;
-            createdAt: string;
-            /** @enum {string} */
-            status: "pending" | "confirmed";
-            supplier: string | null;
-            note: string | null;
-            enteredBy: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                role: string;
-            } | null;
-            confirmedBy: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                role: string;
-            } | null;
-            confirmedAt: string | null;
-            lines: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                productId: string;
-                productName: string;
-                unit: string;
-                qty: string;
-                receivedQty: string | null;
-                batch: string | null;
-                expiryDate: string | null;
-                labels: number;
-                receiptNote: string | null;
             }[];
         };
         SidebarBadges: {
