@@ -17689,6 +17689,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/consultations/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Patient history report (posSoft): each visit with BMI, menopause status, MRS items and scores, FSH, estradiol, total testosterone and the BHRT treatments of its prescription */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    sort?: "date" | "-date" | "createdAt" | "-createdAt";
+                    patientId?: string;
+                    doctorId?: string;
+                    status?: "open" | "completed";
+                    from?: string;
+                    to?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ConsultationReportRow"][];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/consultations": {
         parameters: {
             query?: never;
@@ -31975,6 +32070,79 @@ export interface components {
              * @enum {string|null}
              */
             hairCareRoutine: "yes" | "no" | null;
+        };
+        ConsultationReportRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            branchId: string;
+            /** @enum {string} */
+            status: "open" | "completed";
+            /** Format: uuid */
+            appointmentId: string;
+            appointment: {
+                /** Format: uuid */
+                id: string;
+                appointmentNo: number;
+                /** Format: date */
+                date: string;
+                timeFrom: string;
+                visitType: string;
+                mode: string;
+                status: string;
+            } | null;
+            /** Format: uuid */
+            patientId: string;
+            patient: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                phone: string;
+                age: number | null;
+                city: string;
+                bhrtStatus: string;
+            } | null;
+            /** Format: uuid */
+            doctorId: string;
+            doctor: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            report: {
+                age: number | null;
+                city: string | null;
+                country: string | null;
+                bmi: number | null;
+                bmiCategory: string | null;
+                menopauseStage: string[];
+                menopauseType: string[];
+                ageAtMenopause: string | null;
+                mrs: {
+                    [key: string]: number | null;
+                } | null;
+                mrsScores: {
+                    somatic: number;
+                    psychological: number;
+                    urogenital: number;
+                    total: number;
+                    percentage: number;
+                    severity: string;
+                } | null;
+                fsh: string | null;
+                estradiol: string | null;
+                totalTestosterone: string | null;
+                progesterone: string[];
+                estradiolTreatment: string[];
+                vaginal: string[];
+                testosterone: string[];
+                /** @enum {string|null} */
+                stillOnTreatment: "yes" | "no" | null;
+            };
         };
         ConsultationHistory: {
             visits: {

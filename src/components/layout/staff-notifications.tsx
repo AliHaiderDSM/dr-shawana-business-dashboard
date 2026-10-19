@@ -62,12 +62,16 @@ export function StaffNotifications() {
   const staffId = me?.profile.id ?? '';
   const scope = `${staffId}:${branchId}`;
   const seen = useRef<{ scope: string; counts: SidebarBadges } | null>(null);
+  const pushActive = useRef(false);
 
   const enablePush = useCallback(async () => {
     if (!pushKey || !pushSupported()) return;
     try {
       const subscription = await subscribeBrowser(pushKey);
-      if (subscription) await savePush(subscription).unwrap();
+      if (subscription) {
+        await savePush(subscription).unwrap();
+        pushActive.current = true;
+      }
     } catch (err) {
       console.warn('Desktop alerts could not be turned on', err);
     }
@@ -105,7 +109,7 @@ export function StaffNotifications() {
     if (!counts) return;
     const before = seen.current;
     seen.current = { scope, counts };
-    if (!before || before.scope !== scope) return;
+    if (!before || before.scope !== scope || pushActive.current) return;
     const items = new Map<BadgeKey, MenuItem>();
     for (const group of visibleMenu(can, isSuperAdmin, role, inWarehouse, { inDispatch, hasDispatch })) {
       for (const item of group.items) if (item.badge) items.set(item.badge, item);

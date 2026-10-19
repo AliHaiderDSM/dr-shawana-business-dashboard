@@ -25,6 +25,8 @@ export type ConsultationHistory = Schemas['ConsultationHistory'];
 
 export type AppointmentConsultation = ClinicGetResponse<'/branch/appointments/{id}/consultation'>['data'];
 export type ConsultationListPage = ClinicGetResponse<'/branch/consultations'>;
+export type ConsultationReportPage = ClinicGetResponse<'/branch/consultations/report'>;
+export type ConsultationReportRow = Schemas['ConsultationReportRow'];
 export type ConsultationDetail = ClinicGetResponse<'/branch/consultations/{id}'>['data'];
 export type MrsHistory = ClinicGetResponse<'/branch/patients/{id}/mrs-history'>['data'];
 export type ReferralLetter = ClinicGetResponse<'/branch/consultations/{id}/referral-letter'>['data'];

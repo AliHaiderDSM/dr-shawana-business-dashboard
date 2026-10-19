@@ -11,8 +11,6 @@ self.addEventListener('push', (event) => {
   }
   event.waitUntil(
     (async () => {
-      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      if (windows.some((client) => client.visibilityState === 'visible' && client.focused)) return;
       await self.registration.showNotification(data.title || 'DSM Clinic', {
         body: data.body || '',
         tag: data.tag,

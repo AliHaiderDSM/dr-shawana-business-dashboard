@@ -7,6 +7,7 @@ import type {
   ChangedConsultationStatus,
   ConsultationDetail,
   ConsultationHistoryResponse,
+  ConsultationReportPage,
   ConsultationPreviousResponse,
   ConsultationListPage,
   MrsHistory,
@@ -129,6 +130,13 @@ export const consultationsApi = baseApi.injectEndpoints({
         fromApi<ConsultationListPage>(() => unwrap(api.GET('/branch/consultations', { params: { query } }))),
       providesTags: ['consultations', LIST_TAG],
     }),
+    getConsultationReport: build.query<ConsultationReportPage, Record<string, unknown>>({
+      queryFn: (query) =>
+        fromApi<ConsultationReportPage>(() =>
+          unwrap(api.GET('/branch/consultations/report', { params: { query } })),
+        ),
+      providesTags: ['consultations', LIST_TAG],
+    }),
     getMrsHistory: build.query<MrsHistory, string>({
       queryFn: (patientId) =>
         fromApi<MrsHistory>(() =>
@@ -190,6 +198,7 @@ export const {
   useGetMrsHistoryQuery,
   useGetReferralLetterQuery,
   useGetConsultationHistoryQuery,
+  useGetConsultationReportQuery,
   useGetConsultationPreviousQuery,
 } = consultationsApi;
 
@@ -203,6 +212,10 @@ export function useConsultation(id: string | null | undefined) {
 
 export function useConsultationList(query: Record<string, unknown>, enabled = true) {
   return useGetConsultationListQuery(query, { skip: !enabled });
+}
+
+export function useConsultationReport(query: Record<string, unknown>, enabled = true) {
+  return useGetConsultationReportQuery(query, { skip: !enabled });
 }
 
 export function useMrsHistory(patientId: string) {

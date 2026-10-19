@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient history report and push-only alerts (2026-10-19)
+
+- Patient history list shows the posSoft report columns (MRS items and scores, blood results, treatments) and exports them.
+- When web push is on, the in-page toasts stop and the service worker shows every alert, focused tab or not.
+
 ## Visits start from the last visit, field history (2026-10-19)
 
 - A tab not saved yet in this visit opens filled from the last earlier visit (banner shows which); clinical remarks start empty. Weight/height/BMI and Major complaint have a History button listing every earlier visit.
