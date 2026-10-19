@@ -17520,1252 +17520,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/branch/appointments/{id}/consultation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The consultation of an appointment */
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Consultation */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Consultation"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /** Open the consultation (posSoft "Remarks") of an appointment; returns the existing one if already open */
-        post: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Existing */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Consultation"];
-                        };
-                    };
-                };
-                /** @description Opened */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Consultation"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Patient history report (posSoft): each visit with BMI, menopause status, MRS items and scores, FSH, estradiol, total testosterone and the BHRT treatments of its prescription */
-        get: {
-            parameters: {
-                query?: {
-                    page?: number;
-                    pageSize?: number;
-                    search?: string;
-                    sort?: "date" | "-date" | "createdAt" | "-createdAt";
-                    patientId?: string;
-                    doctorId?: string;
-                    status?: "open" | "completed";
-                    from?: string;
-                    to?: string;
-                    branchId?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Page */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ConsultationReportRow"][];
-                            meta: components["schemas"]["PageMeta"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List consultations (doctors see only their own) */
-        get: {
-            parameters: {
-                query?: {
-                    page?: number;
-                    pageSize?: number;
-                    search?: string;
-                    sort?: "date" | "-date" | "createdAt" | "-createdAt";
-                    patientId?: string;
-                    doctorId?: string;
-                    status?: "open" | "completed";
-                    from?: string;
-                    to?: string;
-                    branchId?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Page */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                /** Format: uuid */
-                                id: string;
-                                /** Format: uuid */
-                                branchId: string;
-                                /** @enum {string} */
-                                status: "open" | "completed";
-                                /** Format: uuid */
-                                appointmentId: string;
-                                appointment: {
-                                    /** Format: uuid */
-                                    id: string;
-                                    appointmentNo: number;
-                                    /** Format: date */
-                                    date: string;
-                                    timeFrom: string;
-                                    visitType: string;
-                                    mode: string;
-                                    status: string;
-                                } | null;
-                                /** Format: uuid */
-                                patientId: string;
-                                patient: {
-                                    /** Format: uuid */
-                                    id: string;
-                                    name: string;
-                                    phone: string;
-                                    age: number | null;
-                                    city: string;
-                                    bhrtStatus: string;
-                                } | null;
-                                /** Format: uuid */
-                                doctorId: string;
-                                doctor: {
-                                    /** Format: uuid */
-                                    id: string;
-                                    name: string;
-                                } | null;
-                                /** Format: date-time */
-                                createdAt: string;
-                                /** Format: date-time */
-                                updatedAt: string;
-                            }[];
-                            meta: components["schemas"]["PageMeta"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Consultation with every section; availableSections lists the tabs to show */
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Consultation */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Consultation"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        /** Remove a consultation and its sections (soft delete) */
-        delete: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Removed */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/{id}/sections/{key}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Save one section (replaces it). The body is the section schema Section_<key> in docs/CLINICAL_FIELDS.md. basic_info also updates the patient name, age, city and country; referral updates the date of birth. */
-        put: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                    key: "basic_info" | "follow_up" | "medical_history" | "mrs_scale" | "additional_symptoms" | "imaging_results" | "clinical_assessment" | "referral" | "plans";
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            responses: {
-                /** @description Saved */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                /** @enum {string} */
-                                key: "basic_info" | "follow_up" | "medical_history" | "mrs_scale" | "additional_symptoms" | "imaging_results" | "clinical_assessment" | "referral" | "plans";
-                                section: {
-                                    data: {
-                                        [key: string]: unknown;
-                                    };
-                                    scores?: {
-                                        somatic: number;
-                                        psychological: number;
-                                        urogenital: number;
-                                        total: number;
-                                        percentage: number;
-                                        /** @enum {string} */
-                                        severity: "none" | "mild" | "moderate" | "severe";
-                                    };
-                                    /** Format: uuid */
-                                    updatedBy: string | null;
-                                    /** Format: date-time */
-                                    updatedAt: string;
-                                } | null;
-                                availableSections: ("basic_info" | "follow_up" | "medical_history" | "mrs_scale" | "additional_symptoms" | "imaging_results" | "clinical_assessment" | "referral" | "plans")[];
-                            };
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Section not available for this consultation */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/{id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark a consultation open or completed */
-        post: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ConsultationStatusChange"];
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Consultation"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/{id}/referral-letter": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Data for the "Referred to Specialist" letter */
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Letter data */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                company: {
-                                    name: string;
-                                    phone: string | null;
-                                    email: string | null;
-                                    logoPath: string | null;
-                                } | null;
-                                referral: {
-                                    [key: string]: unknown;
-                                };
-                                patient: {
-                                    name: string;
-                                    phone: string;
-                                    /** Format: date */
-                                    dateOfBirth: string | null;
-                                };
-                                doctor: {
-                                    /** Format: uuid */
-                                    id: string;
-                                    name: string;
-                                } | null;
-                            };
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/patients/{id}/mrs-history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Each visit of the patient with its MRS scores and the additional symptoms of the same visit (this branch) */
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description History */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                /** Format: uuid */
-                                consultationId: string;
-                                /**
-                                 * Format: date
-                                 * @description MRS date of the visit, or the appointment date
-                                 */
-                                date: string;
-                                scores: {
-                                    somatic: number;
-                                    psychological: number;
-                                    urogenital: number;
-                                    total: number;
-                                    percentage: number;
-                                    /** @enum {string} */
-                                    severity: "none" | "mild" | "moderate" | "severe";
-                                } | null;
-                                symptoms: {
-                                    key: string;
-                                    severity: number | null;
-                                }[];
-                                otherSymptoms: string | null;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/{id}/previous": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Saved sections of the patient’s earlier visits (up to this visit date), newest first, per section key. Used to start a new visit from the last values and to show each field’s history. */
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Earlier sections */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                sections: {
-                                    basic_info?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    follow_up?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    medical_history?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    mrs_scale?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    additional_symptoms?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    imaging_results?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    clinical_assessment?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    referral?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                    plans?: {
-                                        /** Format: uuid */
-                                        consultationId: string;
-                                        appointmentNo: number;
-                                        date: string;
-                                        data: {
-                                            [key: string]: unknown;
-                                        };
-                                    }[];
-                                };
-                            };
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/branch/consultations/{id}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The patient’s other appointments with the plan from their clinical remarks, every prescription (previous or new), and the additional symptoms of the last earlier visit */
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description History */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ConsultationHistory"];
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/branch/patients/{id}/blood-work": {
         parameters: {
             query?: never;
@@ -20140,6 +18894,1933 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Doctor app home: counts, upcoming schedule and latest chats (every branch) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Home */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/patients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every patient seen by or chatting with this doctor in any branch, unread first */
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Patients */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/patients/{patientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Patient file for the doctor: appointments, prescriptions with medicines, clinical remarks and medical records, newest first. Only the doctor’s own patients. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    patientId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Patient file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/patients/{patientId}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open (or start) the chat with one of the doctor’s patients; returns the conversation id */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    patientId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Conversation */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/patients/{patientId}/files/{fileId}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ten-minute link to a medical record file of the doctor’s patient */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    patientId: string;
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Signed URL */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/consultations/{consultationId}/remarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Write the clinical remarks of the doctor’s own consultation (other clinical fields stay) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consultationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DoctorRemarks"];
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/push-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save the Expo push token of the doctor’s phone (patient messages notify it) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DoctorPushToken"];
+                };
+            };
+            responses: {
+                /** @description Saved */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/push-token/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Forget a push token when the doctor logs out on that phone */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/appointments/{id}/consultation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The consultation of an appointment */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Consultation */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Consultation"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Open the consultation (posSoft "Remarks") of an appointment; returns the existing one if already open */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Existing */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Consultation"];
+                        };
+                    };
+                };
+                /** @description Opened */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Consultation"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Patient history report (posSoft): each visit with BMI, menopause status, MRS items and scores, FSH, estradiol, total testosterone and the BHRT treatments of its prescription */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    sort?: "date" | "-date" | "createdAt" | "-createdAt";
+                    patientId?: string;
+                    doctorId?: string;
+                    status?: "open" | "completed";
+                    from?: string;
+                    to?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ConsultationReportRow"][];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List consultations (doctors see only their own) */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    sort?: "date" | "-date" | "createdAt" | "-createdAt";
+                    patientId?: string;
+                    doctorId?: string;
+                    status?: "open" | "completed";
+                    from?: string;
+                    to?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                /** Format: uuid */
+                                branchId: string;
+                                /** @enum {string} */
+                                status: "open" | "completed";
+                                /** Format: uuid */
+                                appointmentId: string;
+                                appointment: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    appointmentNo: number;
+                                    /** Format: date */
+                                    date: string;
+                                    timeFrom: string;
+                                    visitType: string;
+                                    mode: string;
+                                    status: string;
+                                } | null;
+                                /** Format: uuid */
+                                patientId: string;
+                                patient: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    name: string;
+                                    phone: string;
+                                    age: number | null;
+                                    city: string;
+                                    bhrtStatus: string;
+                                } | null;
+                                /** Format: uuid */
+                                doctorId: string;
+                                doctor: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    name: string;
+                                } | null;
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                updatedAt: string;
+                            }[];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultation with every section; availableSections lists the tabs to show */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Consultation */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Consultation"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Remove a consultation and its sections (soft delete) */
+        delete: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/{id}/sections/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save one section (replaces it). The body is the section schema Section_<key> in docs/CLINICAL_FIELDS.md. basic_info also updates the patient name, age, city and country; referral updates the date of birth. */
+        put: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    key: "basic_info" | "follow_up" | "medical_history" | "mrs_scale" | "additional_symptoms" | "imaging_results" | "clinical_assessment" | "referral" | "plans";
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** @enum {string} */
+                                key: "basic_info" | "follow_up" | "medical_history" | "mrs_scale" | "additional_symptoms" | "imaging_results" | "clinical_assessment" | "referral" | "plans";
+                                section: {
+                                    data: {
+                                        [key: string]: unknown;
+                                    };
+                                    scores?: {
+                                        somatic: number;
+                                        psychological: number;
+                                        urogenital: number;
+                                        total: number;
+                                        percentage: number;
+                                        /** @enum {string} */
+                                        severity: "none" | "mild" | "moderate" | "severe";
+                                    };
+                                    /** Format: uuid */
+                                    updatedBy: string | null;
+                                    /** Format: date-time */
+                                    updatedAt: string;
+                                } | null;
+                                availableSections: ("basic_info" | "follow_up" | "medical_history" | "mrs_scale" | "additional_symptoms" | "imaging_results" | "clinical_assessment" | "referral" | "plans")[];
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Section not available for this consultation */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a consultation open or completed */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConsultationStatusChange"];
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Consultation"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/{id}/referral-letter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Data for the "Referred to Specialist" letter */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Letter data */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                company: {
+                                    name: string;
+                                    phone: string | null;
+                                    email: string | null;
+                                    logoPath: string | null;
+                                } | null;
+                                referral: {
+                                    [key: string]: unknown;
+                                };
+                                patient: {
+                                    name: string;
+                                    phone: string;
+                                    /** Format: date */
+                                    dateOfBirth: string | null;
+                                };
+                                doctor: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    name: string;
+                                } | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/patients/{id}/mrs-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Each visit of the patient with its MRS scores and the additional symptoms of the same visit (this branch) */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description History */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                consultationId: string;
+                                /**
+                                 * Format: date
+                                 * @description MRS date of the visit, or the appointment date
+                                 */
+                                date: string;
+                                scores: {
+                                    somatic: number;
+                                    psychological: number;
+                                    urogenital: number;
+                                    total: number;
+                                    percentage: number;
+                                    /** @enum {string} */
+                                    severity: "none" | "mild" | "moderate" | "severe";
+                                } | null;
+                                symptoms: {
+                                    key: string;
+                                    severity: number | null;
+                                }[];
+                                otherSymptoms: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/{id}/previous": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved sections of the patient’s earlier visits (up to this visit date), newest first, per section key. Used to start a new visit from the last values and to show each field’s history. */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Earlier sections */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                sections: {
+                                    basic_info?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    follow_up?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    medical_history?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    mrs_scale?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    additional_symptoms?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    imaging_results?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    clinical_assessment?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    referral?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    plans?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                };
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/consultations/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The patient’s other appointments with the plan from their clinical remarks, every prescription (previous or new), and the additional symptoms of the last earlier visit */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description History */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ConsultationHistory"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -31288,6 +31969,221 @@ export interface components {
                 auth: string;
             };
         };
+        AddBloodWork: {
+            /** Format: uuid */
+            consultationId?: string | null;
+            results: {
+                /** @enum {string} */
+                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
+                /** @example 10.000 */
+                value: string;
+                /**
+                 * Format: date
+                 * @example 2026-09-30
+                 */
+                testDate: string;
+                unit?: string;
+            }[];
+        };
+        UpdateBloodWork: {
+            /** @example 10.000 */
+            value?: string;
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            testDate?: string;
+            unit?: string;
+        };
+        AddBhrtStatus: {
+            /** @enum {string} */
+            status: "on" | "off" | "recommended" | "other";
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+            /** Format: uuid */
+            appointmentId?: string | null;
+        };
+        CreateMedicalRecord: {
+            /**
+             * @default medical_record
+             * @enum {string}
+             */
+            type: "medical_record" | "imaging";
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+            /** Format: uuid */
+            appointmentId?: string | null;
+        };
+        UpdateMedicalRecord: {
+            /** @enum {string} */
+            type?: "medical_record" | "imaging";
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            note?: string | null;
+        };
+        BloodWork: {
+            results: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                patientId: string;
+                /** Format: uuid */
+                consultationId: string | null;
+                /** @enum {string} */
+                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
+                /** @example 10.000 */
+                value: string;
+                unit: string;
+                /** Format: date */
+                testDate: string;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            dates: string[];
+            tests: {
+                /** @enum {string} */
+                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
+                unit: string;
+                points: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: date */
+                    date: string;
+                    /** @example 10.000 */
+                    value: string;
+                }[];
+            }[];
+        };
+        BhrtStatusEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            appointmentId: string | null;
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            status: "on" | "off" | "recommended" | "other";
+            note: string | null;
+            /** Format: uuid */
+            createdBy: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MedicalRecord: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            appointmentId: string | null;
+            /** @enum {string} */
+            type: "medical_record" | "imaging";
+            /** Format: date */
+            date: string;
+            note: string | null;
+            uploadedByPatient: boolean;
+            files: {
+                /** Format: uuid */
+                id: string;
+                originalName: string;
+                contentType: string;
+                sizeBytes: number;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            /** Format: uuid */
+            createdBy: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        LabReportSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            testDate: string | null;
+            fileName: string | null;
+            /** @description Reports read for this summary. A saved record file opens by recordFileId; an uploaded one through the summary file link when stored. */
+            files: {
+                index: number;
+                name: string;
+                contentType: string;
+                sizeBytes: number;
+                /** Format: uuid */
+                recordFileId: string | null;
+                stored: boolean;
+            }[];
+            valuesFound: number;
+            model: string | null;
+            createdAt: string;
+            createdBy: string | null;
+            summary: {
+                patient: {
+                    label: string;
+                    value: string;
+                }[];
+                abnormal: {
+                    test: string;
+                    value: string;
+                    unit: string;
+                    range: string;
+                    flag: string;
+                }[];
+                normal: {
+                    category: string;
+                    tests: string;
+                }[];
+                overview: string;
+                reviewPoints: string[];
+                unreadable: string[];
+                /** @description What each uploaded document holds */
+                documents?: {
+                    name: string;
+                    /** Format: date */
+                    date: string | null;
+                    detail: string;
+                }[];
+            };
+        };
+        ReadBloodReport: {
+            /** Format: date */
+            testDate: string | null;
+            results: {
+                /** @enum {string} */
+                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
+                value: string;
+                unit: string;
+                /**
+                 * Format: date
+                 * @description Date of the document the value came from
+                 */
+                testDate: string | null;
+            }[];
+            summary: components["schemas"]["LabReportSummary"] & (Record<string, never> | null);
+        };
+        DoctorRemarks: {
+            /** @description Clinical remarks as HTML (bold, italic, lists), the same as the dashboard */
+            remarks: string | null;
+        };
+        DoctorPushToken: {
+            token: string;
+            /** @enum {string|null} */
+            platform?: "ios" | "android" | "web" | null;
+        };
         ConsultationStatusChange: {
             /** @enum {string} */
             status: "open" | "completed";
@@ -32180,212 +33076,6 @@ export interface components {
                     [key: string]: number;
                 };
             } | null;
-        };
-        AddBloodWork: {
-            /** Format: uuid */
-            consultationId?: string | null;
-            results: {
-                /** @enum {string} */
-                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
-                /** @example 10.000 */
-                value: string;
-                /**
-                 * Format: date
-                 * @example 2026-09-30
-                 */
-                testDate: string;
-                unit?: string;
-            }[];
-        };
-        UpdateBloodWork: {
-            /** @example 10.000 */
-            value?: string;
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            testDate?: string;
-            unit?: string;
-        };
-        AddBhrtStatus: {
-            /** @enum {string} */
-            status: "on" | "off" | "recommended" | "other";
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            note?: string | null;
-            /** Format: uuid */
-            appointmentId?: string | null;
-        };
-        CreateMedicalRecord: {
-            /**
-             * @default medical_record
-             * @enum {string}
-             */
-            type: "medical_record" | "imaging";
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            note?: string | null;
-            /** Format: uuid */
-            appointmentId?: string | null;
-        };
-        UpdateMedicalRecord: {
-            /** @enum {string} */
-            type?: "medical_record" | "imaging";
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            date?: string;
-            note?: string | null;
-        };
-        BloodWork: {
-            results: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                patientId: string;
-                /** Format: uuid */
-                consultationId: string | null;
-                /** @enum {string} */
-                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
-                /** @example 10.000 */
-                value: string;
-                unit: string;
-                /** Format: date */
-                testDate: string;
-                /** Format: uuid */
-                createdBy: string | null;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-            dates: string[];
-            tests: {
-                /** @enum {string} */
-                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
-                unit: string;
-                points: {
-                    /** Format: uuid */
-                    id: string;
-                    /** Format: date */
-                    date: string;
-                    /** @example 10.000 */
-                    value: string;
-                }[];
-            }[];
-        };
-        BhrtStatusEntry: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            appointmentId: string | null;
-            /** Format: date */
-            date: string;
-            /** @enum {string} */
-            status: "on" | "off" | "recommended" | "other";
-            note: string | null;
-            /** Format: uuid */
-            createdBy: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        MedicalRecord: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            appointmentId: string | null;
-            /** @enum {string} */
-            type: "medical_record" | "imaging";
-            /** Format: date */
-            date: string;
-            note: string | null;
-            uploadedByPatient: boolean;
-            files: {
-                /** Format: uuid */
-                id: string;
-                originalName: string;
-                contentType: string;
-                sizeBytes: number;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-            /** Format: uuid */
-            createdBy: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        LabReportSummary: {
-            /** Format: uuid */
-            id: string;
-            /** Format: date */
-            testDate: string | null;
-            fileName: string | null;
-            /** @description Reports read for this summary. A saved record file opens by recordFileId; an uploaded one through the summary file link when stored. */
-            files: {
-                index: number;
-                name: string;
-                contentType: string;
-                sizeBytes: number;
-                /** Format: uuid */
-                recordFileId: string | null;
-                stored: boolean;
-            }[];
-            valuesFound: number;
-            model: string | null;
-            createdAt: string;
-            createdBy: string | null;
-            summary: {
-                patient: {
-                    label: string;
-                    value: string;
-                }[];
-                abnormal: {
-                    test: string;
-                    value: string;
-                    unit: string;
-                    range: string;
-                    flag: string;
-                }[];
-                normal: {
-                    category: string;
-                    tests: string;
-                }[];
-                overview: string;
-                reviewPoints: string[];
-                unreadable: string[];
-                /** @description What each uploaded document holds */
-                documents?: {
-                    name: string;
-                    /** Format: date */
-                    date: string | null;
-                    detail: string;
-                }[];
-            };
-        };
-        ReadBloodReport: {
-            /** Format: date */
-            testDate: string | null;
-            results: {
-                /** @enum {string} */
-                test: "fsh" | "estradiol" | "testosterone_free" | "testosterone_total" | "dhea_s" | "vit_d3" | "tsh" | "ferritin" | "b12";
-                value: string;
-                unit: string;
-                /**
-                 * Format: date
-                 * @description Date of the document the value came from
-                 */
-                testDate: string | null;
-            }[];
-            summary: components["schemas"]["LabReportSummary"] & (Record<string, never> | null);
         };
         CreatePrescriptionCatalogItem: {
             /** @enum {string} */

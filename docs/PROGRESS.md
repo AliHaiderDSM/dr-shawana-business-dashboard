@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Book appointment payments (2026-10-19)
+
+- The Payments section with Add payment stays on booking. The read-only Fee / Received / Remaining box now shows only when editing an appointment.
+
 ## Frontend API audit (2026-10-19)
 
 - Combobox server search waits 300 ms after typing (was one request per key, 8+ pickers).

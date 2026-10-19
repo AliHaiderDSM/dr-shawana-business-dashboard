@@ -454,27 +454,29 @@ export function AppointmentFormSheet({
                 <PaymentFields prefix={`payments.${index}.`} accounts={accounts.data ?? []} />
               </div>
             ))}
-            <div className="grid grid-cols-3 gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
-              <div>
-                <div className="text-xs text-muted-foreground">Fee</div>
-                <div className="font-semibold tabular-nums">{formatMoney(totalFee)}</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">{editing ? 'Received' : 'Received now'}</div>
-                <div className="font-semibold tabular-nums">{formatMoney(paidNow)}</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Remaining</div>
-                <div
-                  className={cn(
-                    'font-semibold tabular-nums',
-                    totalFee - paidNow > 0 ? 'text-destructive' : 'text-success',
-                  )}
-                >
-                  {formatMoney(Math.max(totalFee - paidNow, 0))}
+            {editing ? (
+              <div className="grid grid-cols-3 gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+                <div>
+                  <div className="text-xs text-muted-foreground">Fee</div>
+                  <div className="font-semibold tabular-nums">{formatMoney(totalFee)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Received</div>
+                  <div className="font-semibold tabular-nums">{formatMoney(paidNow)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Remaining</div>
+                  <div
+                    className={cn(
+                      'font-semibold tabular-nums',
+                      totalFee - paidNow > 0 ? 'text-destructive' : 'text-success',
+                    )}
+                  >
+                    {formatMoney(Math.max(totalFee - paidNow, 0))}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : null}
             {accounts.data ? (
               <Button
                 type="button"
