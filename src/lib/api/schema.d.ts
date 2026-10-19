@@ -1319,6 +1319,7 @@ export interface paths {
                                  * @enum {string}
                                  */
                                 kind: "branch" | "warehouse" | "dispatch";
+                                onlineSales: boolean;
                             }[];
                         };
                     };
@@ -21393,6 +21394,8 @@ export interface paths {
                                 dispatchedOn: string | null;
                                 /** Format: date */
                                 deliveredOn: string | null;
+                                /** @description Goods Dispatch Note number, given when the Dispatch Department sends the order */
+                                gdnNo: string | null;
                                 paymentMethods: ("cash" | "online")[];
                                 note: string | null;
                                 /** Format: uuid */
@@ -21418,6 +21421,27 @@ export interface paths {
                                 }[];
                                 /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
                                 batches?: components["schemas"]["AllocatedBatch"][];
+                                /** @description Goods Dispatch Note details of a dispatched online order (detail only) */
+                                gdn?: {
+                                    gdnNo: string;
+                                    /** Format: date */
+                                    dispatchedOn: string | null;
+                                    dispatchedBy: string | null;
+                                    from: {
+                                        name: string;
+                                        code: string;
+                                    } | null;
+                                    bookedAt: {
+                                        name: string;
+                                        code: string;
+                                    } | null;
+                                    customer: {
+                                        name: string;
+                                        phone: string;
+                                        city: string;
+                                        address: string | null;
+                                    } | null;
+                                } | null;
                                 /** @description Products on the sale; a bundle shows once by its name without a qty */
                                 products: {
                                     name: string;
@@ -28768,6 +28792,7 @@ export interface components {
                 city: string;
                 /** @enum {string} */
                 kind: "branch" | "warehouse" | "dispatch";
+                onlineSales: boolean;
             } | null;
             permissions: string[];
             /**
@@ -28797,6 +28822,8 @@ export interface components {
              */
             email?: string | null;
             logoPath?: string | null;
+            /** @description The branch may book online orders (shipped by the Dispatch Department) */
+            onlineSales?: boolean;
             /**
              * @description dispatch: the single Dispatch Department that ships every online order from its own stock
              * @default branch
@@ -28816,6 +28843,8 @@ export interface components {
              */
             email?: string | null;
             logoPath?: string | null;
+            /** @description The branch may book online orders (shipped by the Dispatch Department) */
+            onlineSales?: boolean;
         };
         Branch: {
             /** Format: uuid */
@@ -28834,6 +28863,7 @@ export interface components {
             kind: "branch" | "warehouse" | "dispatch";
             /** @enum {string} */
             status: "active" | "inactive";
+            onlineSales: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -31396,55 +31426,116 @@ export interface components {
         };
         Section_additional_symptoms: {
             /** @default [] */
-            symptoms: ("hair_loss" | "increased_facial_hair" | "skin_issues" | "dry_skin" | "skin_itching" | "crawling_sensation" | "nail_changes" | "body_odor_change" | "weight_gain" | "weight_loss" | "belly_fat" | "food_sugar_cravings" | "decreased_strength" | "decreased_stamina" | "low_backache" | "frozen_shoulder" | "heel_pain" | "clicking_jaw_tmj" | "brain_fog" | "headaches" | "migraines" | "dizziness_vertigo" | "tinnitus" | "burning_soles" | "taste_changes" | "increased_smell" | "hearing_changes" | "dry_eyes" | "vision_changes" | "bloating" | "gas" | "constipation" | "diarrhea" | "heartburn" | "recurrent_utis" | "stress_incontinence" | "vaginal_itching" | "social_withdrawal" | "accomplishing_less" | "marital_conflicts" | "avoiding_intimacy" | "personal_life_dissatisfaction" | "voice_changes")[];
+            symptoms: ("difficulty_concentrating" | "word_finding_difficulty" | "brain_fog" | "reduced_multitasking" | "mood_swings" | "feeling_anxious" | "feeling_tense" | "feeling_depressed" | "low_motivation" | "feeling_hopeless" | "not_feeling_yourself" | "self_harm_thoughts" | "addictive_behaviour" | "irritability" | "panic_attacks" | "crying_spells" | "flat_mood" | "low_self_worth" | "feeling_bad_about_yourself" | "loss_of_interest" | "unhealthy_food_behaviour" | "social_withdrawal" | "accomplishing_less" | "fatigue" | "low_libido" | "migraines" | "pins_and_needles" | "night_sweats" | "dizziness_vertigo" | "restless_legs" | "difficulty_sleeping" | "headaches" | "tinnitus" | "hot_flushes" | "crawling_sensation" | "internal_tremors" | "burning_soles" | "taste_changes" | "hearing_changes" | "dry_skin" | "dry_hair" | "nail_changes" | "skin_itching" | "hair_loss" | "increased_facial_hair" | "skin_issues" | "body_odor_change" | "weight_gain" | "constipation" | "abdominal_pain" | "diarrhea" | "bloating" | "gas" | "heartburn" | "weight_loss" | "belly_fat" | "food_sugar_cravings" | "heavier_periods" | "longer_periods" | "longer_cycle" | "irregular_periods" | "vaginal_itching" | "frequent_urination" | "nocturia" | "painful_urination" | "lighter_periods" | "shorter_periods" | "shorter_cycle" | "vaginal_dryness" | "painful_sex" | "stress_incontinence" | "recurrent_utis" | "joint_pains" | "joint_stiffness" | "foot_pain" | "muscle_pains" | "frozen_shoulder" | "heel_pain" | "low_backache" | "decreased_strength" | "decreased_stamina" | "clicking_jaw_tmj" | "breast_pain" | "difficulty_breathing" | "hay_fever" | "reduced_alcohol_tolerance" | "dry_mouth" | "increased_smell" | "worsening_physical_condition" | "palpitations" | "chest_pain" | "food_intolerances" | "dry_eyes" | "burning_mouth" | "worsening_mental_condition" | "vision_changes" | "voice_changes" | "impact_work" | "impact_family" | "impact_activity" | "marital_conflicts" | "impact_social" | "avoiding_intimacy" | "personal_life_dissatisfaction")[];
             /**
              * @description Severity 0–3 of each ticked symptom
              * @default {}
              */
             severity: {
+                difficulty_concentrating?: number | null;
+                word_finding_difficulty?: number | null;
+                brain_fog?: number | null;
+                reduced_multitasking?: number | null;
+                mood_swings?: number | null;
+                feeling_anxious?: number | null;
+                feeling_tense?: number | null;
+                feeling_depressed?: number | null;
+                low_motivation?: number | null;
+                feeling_hopeless?: number | null;
+                not_feeling_yourself?: number | null;
+                self_harm_thoughts?: number | null;
+                addictive_behaviour?: number | null;
+                irritability?: number | null;
+                panic_attacks?: number | null;
+                crying_spells?: number | null;
+                flat_mood?: number | null;
+                low_self_worth?: number | null;
+                feeling_bad_about_yourself?: number | null;
+                loss_of_interest?: number | null;
+                unhealthy_food_behaviour?: number | null;
+                social_withdrawal?: number | null;
+                accomplishing_less?: number | null;
+                fatigue?: number | null;
+                low_libido?: number | null;
+                migraines?: number | null;
+                pins_and_needles?: number | null;
+                night_sweats?: number | null;
+                dizziness_vertigo?: number | null;
+                restless_legs?: number | null;
+                difficulty_sleeping?: number | null;
+                headaches?: number | null;
+                tinnitus?: number | null;
+                hot_flushes?: number | null;
+                crawling_sensation?: number | null;
+                internal_tremors?: number | null;
+                burning_soles?: number | null;
+                taste_changes?: number | null;
+                hearing_changes?: number | null;
+                dry_skin?: number | null;
+                dry_hair?: number | null;
+                nail_changes?: number | null;
+                skin_itching?: number | null;
                 hair_loss?: number | null;
                 increased_facial_hair?: number | null;
                 skin_issues?: number | null;
-                dry_skin?: number | null;
-                skin_itching?: number | null;
-                crawling_sensation?: number | null;
-                nail_changes?: number | null;
                 body_odor_change?: number | null;
                 weight_gain?: number | null;
+                constipation?: number | null;
+                abdominal_pain?: number | null;
+                diarrhea?: number | null;
+                bloating?: number | null;
+                gas?: number | null;
+                heartburn?: number | null;
                 weight_loss?: number | null;
                 belly_fat?: number | null;
                 food_sugar_cravings?: number | null;
-                decreased_strength?: number | null;
-                decreased_stamina?: number | null;
-                low_backache?: number | null;
+                heavier_periods?: number | null;
+                longer_periods?: number | null;
+                longer_cycle?: number | null;
+                irregular_periods?: number | null;
+                vaginal_itching?: number | null;
+                frequent_urination?: number | null;
+                nocturia?: number | null;
+                painful_urination?: number | null;
+                lighter_periods?: number | null;
+                shorter_periods?: number | null;
+                shorter_cycle?: number | null;
+                vaginal_dryness?: number | null;
+                painful_sex?: number | null;
+                stress_incontinence?: number | null;
+                recurrent_utis?: number | null;
+                joint_pains?: number | null;
+                joint_stiffness?: number | null;
+                foot_pain?: number | null;
+                muscle_pains?: number | null;
                 frozen_shoulder?: number | null;
                 heel_pain?: number | null;
+                low_backache?: number | null;
+                decreased_strength?: number | null;
+                decreased_stamina?: number | null;
                 clicking_jaw_tmj?: number | null;
-                brain_fog?: number | null;
-                headaches?: number | null;
-                migraines?: number | null;
-                dizziness_vertigo?: number | null;
-                tinnitus?: number | null;
-                burning_soles?: number | null;
-                taste_changes?: number | null;
+                breast_pain?: number | null;
+                difficulty_breathing?: number | null;
+                hay_fever?: number | null;
+                reduced_alcohol_tolerance?: number | null;
+                dry_mouth?: number | null;
                 increased_smell?: number | null;
-                hearing_changes?: number | null;
+                worsening_physical_condition?: number | null;
+                palpitations?: number | null;
+                chest_pain?: number | null;
+                food_intolerances?: number | null;
                 dry_eyes?: number | null;
+                burning_mouth?: number | null;
+                worsening_mental_condition?: number | null;
                 vision_changes?: number | null;
-                bloating?: number | null;
-                gas?: number | null;
-                constipation?: number | null;
-                diarrhea?: number | null;
-                heartburn?: number | null;
-                recurrent_utis?: number | null;
-                stress_incontinence?: number | null;
-                vaginal_itching?: number | null;
-                social_withdrawal?: number | null;
-                accomplishing_less?: number | null;
+                voice_changes?: number | null;
+                impact_work?: number | null;
+                impact_family?: number | null;
+                impact_activity?: number | null;
                 marital_conflicts?: number | null;
+                impact_social?: number | null;
                 avoiding_intimacy?: number | null;
                 personal_life_dissatisfaction?: number | null;
-                voice_changes?: number | null;
             };
             /** @default null */
             other: string | null;
@@ -32289,8 +32380,11 @@ export interface components {
              * @example 2026-09-30
              */
             date?: string;
-            /** @enum {string} */
-            reason: "damaged" | "expired" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
+            /**
+             * @description Why the customer returned it. Damaged or expired stock is never sold, so it is not a reason.
+             * @enum {string}
+             */
+            reason: "wrong_item" | "customer_refused" | "not_delivered" | "other";
             note?: string | null;
             items: {
                 /** Format: uuid */
@@ -32660,6 +32754,8 @@ export interface components {
             dispatchedOn: string | null;
             /** Format: date */
             deliveredOn: string | null;
+            /** @description Goods Dispatch Note number, given when the Dispatch Department sends the order */
+            gdnNo: string | null;
             paymentMethods: ("cash" | "online")[];
             note: string | null;
             items: {
@@ -32713,6 +32809,27 @@ export interface components {
             }[];
             /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
             batches?: components["schemas"]["AllocatedBatch"][];
+            /** @description Goods Dispatch Note details of a dispatched online order (detail only) */
+            gdn?: {
+                gdnNo: string;
+                /** Format: date */
+                dispatchedOn: string | null;
+                dispatchedBy: string | null;
+                from: {
+                    name: string;
+                    code: string;
+                } | null;
+                bookedAt: {
+                    name: string;
+                    code: string;
+                } | null;
+                customer: {
+                    name: string;
+                    phone: string;
+                    city: string;
+                    address: string | null;
+                } | null;
+            } | null;
         };
         DeliveryCalendar: {
             month: string;
@@ -32744,6 +32861,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             invoiceNo: string;
+            gdnNo: string | null;
             /** Format: date */
             date: string;
             /** @enum {string|null} */

@@ -178,6 +178,9 @@ export function DeliveriesPage() {
         <div>
           <div className="font-medium">{row.original.invoiceNo}</div>
           <div className="text-xs text-muted-foreground">booked {formatDate(row.original.date)}</div>
+          {row.original.gdnNo ? (
+            <div className="text-xs font-medium text-primary">{row.original.gdnNo}</div>
+          ) : null}
         </div>
       ),
     },
@@ -287,6 +290,12 @@ export function DeliveriesPage() {
                   icon: Printer,
                   hidden: o.deliveryStatus === 'pending',
                   onSelect: () => void navigate(slipPrintPath(o)),
+                },
+                {
+                  label: 'Print GDN',
+                  icon: Printer,
+                  hidden: !o.gdnNo,
+                  onSelect: () => void navigate(`/print/gdn/${o.id}`),
                 },
                 {
                   label: 'Mark returned',

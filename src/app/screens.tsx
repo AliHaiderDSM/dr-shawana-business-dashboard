@@ -457,6 +457,12 @@ export const printRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'gdn/:id',
+    element: page(() => import('@/features/sales/gdn-print'), 'GdnPrint'),
+    anyOf: ['sales.view'],
+    scope: 'branch',
+  },
+  {
     path: 'delivery-slips',
     element: page(() => import('@/features/sales/delivery-report'), 'DeliverySlipsPrint'),
     anyOf: ['deliveryReport.view'],

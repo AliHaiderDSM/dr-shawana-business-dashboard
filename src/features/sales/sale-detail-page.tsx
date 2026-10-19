@@ -511,13 +511,19 @@ export function SaleDetailPage() {
             {s.deliveryStatus ? <DeliveryBadge status={s.deliveryStatus} /> : null}
           </span>
         }
-        description={`${SALE_TYPE_LABELS[s.saleType]} · ${s.city} · ${formatDate(s.date)}`}
+        description={`${SALE_TYPE_LABELS[s.saleType]} · ${s.city} · ${formatDate(s.date)}${s.gdnNo ? ` · ${s.gdnNo}` : ''}`}
         actions={
           <>
             <Button variant="outline" onClick={() => void navigate(`/print/bill/${s.id}`)}>
               <Printer />
               Print bill
             </Button>
+            {s.gdnNo ? (
+              <Button variant="outline" onClick={() => void navigate(`/print/gdn/${s.id}`)}>
+                <Printer />
+                Print GDN
+              </Button>
+            ) : null}
             {online && s.deliveryStatus === 'pending' && editable ? (
               <Button variant="outline" onClick={() => orders.cancel(s)}>
                 <Ban />

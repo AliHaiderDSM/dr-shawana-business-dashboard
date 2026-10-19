@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Online sales, GDN, appointment payments on edit, symptoms (2026-10-19)
+
+- Branch form: Online sales switch. POS shows Online sale only where the branch allows it.
+- Return form offers no Damaged / Expired reason.
+- Appointment edit lists the payments with Edit and can add new payments (bank or cash) for the remaining fee.
+- Additional symptoms follow the symptom sheet groups.
+- GDN print (`/print/gdn/:id`), Print GDN on the sale page and in Deliveries; the GDN number shows under the order.
+
 ## Edit stock request and app password status (2026-10-18)
 
 - Stock request sheet: the branch has Edit on its pending requests; it opens the request form filled in and saves the corrected list.

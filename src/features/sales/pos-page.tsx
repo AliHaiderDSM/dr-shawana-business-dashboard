@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { useHasDispatch } from '@/lib/auth/branches';
+import { useHasDispatch, useOnlineSalesAllowed } from '@/lib/auth/branches';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -329,6 +329,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     return { needed: true as const, request: fits ? request : undefined };
   };
   const hasDispatch = useHasDispatch();
+  const onlineAllowed = useOnlineSalesAllowed();
   const { replace: replaceLines } = lines;
   useEffect(() => {
     if (sale || !hasDispatch) return;
@@ -682,18 +683,24 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                 name="saleType"
                 label="Sale type"
                 description={
-                  values.saleType === 'online'
-                    ? hasDispatch
-                      ? 'Pick from the Dispatch Department stock. It ships the order; the sale and payments stay with this branch.'
-                      : 'The stock is booked now and leaves the inventory when the order is dispatched and scanned.'
-                    : hasDispatch
-                      ? 'Switching the sale type clears the cart: online orders use the Dispatch Department stock.'
-                      : undefined
+                  !onlineAllowed
+                    ? 'This branch takes office sales only. The Super Admin turns on online sales per branch.'
+                    : values.saleType === 'online'
+                      ? hasDispatch
+                        ? 'Pick from the Dispatch Department stock. It ships the order; the sale and payments stay with this branch.'
+                        : 'The stock is booked now and leaves the inventory when the order is dispatched and scanned.'
+                      : hasDispatch
+                        ? 'Switching the sale type clears the cart: online orders use the Dispatch Department stock.'
+                        : undefined
                 }
-                options={[
-                  { value: 'office', label: 'Office sale' },
-                  { value: 'online', label: 'Online sale' },
-                ]}
+                options={
+                  onlineAllowed
+                    ? [
+                        { value: 'office', label: 'Office sale' },
+                        { value: 'online', label: 'Online sale' },
+                      ]
+                    : [{ value: 'office', label: 'Office sale' }]
+                }
               />
             )}
             <TextField control={form.control} name="date" label="Date" type="date" required />

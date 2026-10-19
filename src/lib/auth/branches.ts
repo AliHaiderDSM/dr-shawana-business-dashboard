@@ -15,6 +15,12 @@ export function useBranchKind() {
   return isSuperAdmin ? (current?.kind ?? null) : (me?.branch?.kind ?? null);
 }
 
+export function useOnlineSalesAllowed() {
+  const { me, isSuperAdmin } = useAuth();
+  const current = useCurrentBranch();
+  return Boolean(isSuperAdmin ? current?.onlineSales : me?.branch?.onlineSales);
+}
+
 export function useInWarehouse() {
   return useBranchKind() === 'warehouse';
 }

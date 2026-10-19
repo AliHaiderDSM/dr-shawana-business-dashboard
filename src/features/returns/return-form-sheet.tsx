@@ -35,7 +35,12 @@ import {
 } from '@redux/features/returns';
 import { REASON_LABELS } from './constants';
 
-const REASONS = Object.keys(REASON_LABELS) as [ReturnReason, ...ReturnReason[]];
+const REASONS = [
+  'wrong_item',
+  'customer_refused',
+  'not_delivered',
+  'other',
+] as const satisfies readonly ReturnReason[];
 
 const schema = z
   .object({
@@ -73,7 +78,7 @@ function emptyValues(saleId = ''): Values {
   return {
     saleId,
     date: isoDate(),
-    reason: undefined as unknown as ReturnReason,
+    reason: undefined as unknown as Values['reason'],
     note: null,
     qty: {},
     serials: {},

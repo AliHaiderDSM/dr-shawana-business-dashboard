@@ -2,7 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { FieldRow, SelectField, TextField, TextareaField } from '@/components/shared/form-fields';
+import {
+  FieldRow,
+  SelectField,
+  SwitchField,
+  TextField,
+  TextareaField,
+} from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { Form } from '@/components/ui/form';
 import { applyServerErrors } from '@/lib/api/errors';
@@ -28,6 +34,7 @@ const schema = z.object({
   phone: optionalText(30),
   email: optionalEmail,
   kind: z.enum(['branch', 'dispatch']),
+  onlineSales: z.boolean(),
 });
 
 type Values = z.input<typeof schema>;
@@ -51,11 +58,13 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
       phone: branch?.phone ?? null,
       email: branch?.email ?? null,
       kind: branch?.kind === 'dispatch' ? 'dispatch' : 'branch',
+      onlineSales: branch?.onlineSales ?? false,
     },
   });
 
   const submit = form.handleSubmit((values) => {
-    void saveBranch({ id: branch?.id, body: values })
+    const { onlineSales, ...rest } = values;
+    void saveBranch({ id: branch?.id, body: { ...rest, onlineSales: rest.kind === 'branch' && onlineSales } })
       .unwrap()
       .then(() => {
         toast.success(branch ? 'Branch updated' : 'Branch created');
@@ -111,6 +120,14 @@ export function BranchFormSheet({ open, onOpenChange, branch }: BranchFormSheetP
           <TextField control={form.control} name="email" label="Email" type="email" />
         </FieldRow>
         <TextareaField control={form.control} name="address" label="Address" rows={2} />
+        {form.watch('kind') === 'branch' && branch?.kind !== 'warehouse' ? (
+          <SwitchField
+            control={form.control}
+            name="onlineSales"
+            label="Online sales"
+            description="This branch may book online orders. The Dispatch Department ships them."
+          />
+        ) : null}
       </FormSheet>
     </Form>
   );

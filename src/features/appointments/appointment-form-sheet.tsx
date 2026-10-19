@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, UserPlus, X } from 'lucide-react';
+import { Pencil, Plus, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -24,17 +24,20 @@ import {
 } from '@/features/patients/patient-fields';
 import { applyServerErrors } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatMoney, isoDate } from '@/lib/format';
+import { formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { optionalText, timeString } from '@/lib/validation';
 import {
   appointmentsApi,
   useBookAppointmentMutation,
+  useSaveAppointmentPaymentMutation,
   type Appointment,
+  type AppointmentPayment,
   type AppointmentInput,
 } from '@redux/features/appointments';
-import { MODE_LABELS, VISIT_LABELS } from './constants';
+import { METHOD_LABELS, MODE_LABELS, VISIT_LABELS } from './constants';
 import { DoctorSlots } from './doctor-slots';
+import { PaymentSheet } from './payment-sheet';
 import {
   emptyPayment,
   PaymentFields,
@@ -116,7 +119,13 @@ export function AppointmentFormSheet({
   const [update, updateState] = appointmentsApi.useSave();
   const doctors = doctorsApi.useOptions({}, open);
   const myDoctor = useMyDoctorProfile(open && isDoctor);
-  const canPay = can('appointmentPayments.create') && !editing;
+  const canPay = can('appointmentPayments.create');
+  const canEditPayment = can('appointmentPayments.update');
+  const [savePayment, savePaymentState] = useSaveAppointmentPaymentMutation();
+  const detail = appointmentsApi.useDetail(open && editing ? appointment?.id : undefined);
+  const existingPayments = detail.data?.payments ?? [];
+  const alreadyPaid = existingPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const [editingPayment, setEditingPayment] = useState<AppointmentPayment | null>(null);
   const accounts = useReceivingAccounts(open && canPay);
   const [patientSearch, setPatientSearch] = useState('');
   const patients = usePatientSearch(patientSearch, open);
@@ -154,7 +163,7 @@ export function AppointmentFormSheet({
   const doctorFee = doctors.data?.find((d) => d.id === doctorId)?.consultationFee ?? '';
   const [feeValue, paymentValues] = useWatch({ control: form.control, name: ['fee', 'payments'] });
   const totalFee = Number(feeValue || doctorFee || 0);
-  const paidNow = (paymentValues ?? []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const paidNow = alreadyPaid + (paymentValues ?? []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
   const submit = form.handleSubmit((values) => {
     const visit = {
@@ -170,8 +179,21 @@ export function AppointmentFormSheet({
     if (appointment) {
       void update({ id: appointment.id, body: { ...visit, patientId: values.patientId } })
         .unwrap()
-        .then(() => {
-          toast.success('Appointment updated');
+        .then(async () => {
+          for (const [index, payment] of values.payments.entries()) {
+            try {
+              await savePayment({
+                appointmentId: appointment.id,
+                body: toPaymentBody(payment),
+                proof: payment.proofs[0] ?? null,
+              }).unwrap();
+            } catch (error) {
+              payments.remove(Array.from({ length: index }, (_, i) => i));
+              throw error;
+            }
+          }
+          toast.success(values.payments.length ? 'Appointment and payments saved' : 'Appointment updated');
+          payments.replace([]);
           onOpenChange(false);
         })
         .catch((error) => applyServerErrors(form, error));
@@ -211,7 +233,7 @@ export function AppointmentFormSheet({
         title={editing ? `Edit appointment #${appointment?.appointmentNo}` : 'Book appointment'}
         description="Patient, doctor and time first, then payments, as in posSoft."
         onSubmit={submit}
-        submitting={bookState.isLoading || updateState.isLoading}
+        submitting={bookState.isLoading || updateState.isLoading || savePaymentState.isLoading}
         submitLabel={editing ? 'Save changes' : 'Book appointment'}
         size="lg"
       >
@@ -389,10 +411,35 @@ export function AppointmentFormSheet({
         {canPay ? (
           <FormSection title="Payments" description="Add one line per payment received.">
             <ReceivingAccountsNotice error={accounts.error} />
+            {existingPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-2.5 text-sm"
+              >
+                <div className="min-w-0">
+                  <div className="font-medium tabular-nums">
+                    {formatMoney(payment.amount)} · {METHOD_LABELS[payment.method]}
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {formatDate(payment.date)}
+                    {payment.accountSheet ? ` · ${payment.accountSheet.accountName}` : ''}
+                    {payment.senderBank ? ` · ${payment.senderBank}` : ''}
+                  </div>
+                </div>
+                {canEditPayment ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setEditingPayment(payment)}>
+                    <Pencil />
+                    Edit
+                  </Button>
+                ) : null}
+              </div>
+            ))}
             {payments.fields.map((field, index) => (
               <div key={field.id} className="space-y-3 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Payment {index + 1}</span>
+                  <span className="text-sm font-medium">
+                    {editing ? 'New payment' : 'Payment'} {index + 1}
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -413,7 +460,7 @@ export function AppointmentFormSheet({
                 <div className="font-semibold tabular-nums">{formatMoney(totalFee)}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Received now</div>
+                <div className="text-xs text-muted-foreground">{editing ? 'Received' : 'Received now'}</div>
                 <div className="font-semibold tabular-nums">{formatMoney(paidNow)}</div>
               </div>
               <div>
@@ -435,7 +482,13 @@ export function AppointmentFormSheet({
                 size="sm"
                 disabled={payments.fields.length >= 10}
                 onClick={() =>
-                  payments.append(emptyPayment(payments.fields.length === 0 ? feeValue || doctorFee : ''))
+                  payments.append(
+                    emptyPayment(
+                      payments.fields.length === 0
+                        ? String(Math.max(totalFee - paidNow, 0) || (editing ? '' : feeValue || doctorFee))
+                        : '',
+                    ),
+                  )
                 }
               >
                 <Plus />
@@ -445,6 +498,14 @@ export function AppointmentFormSheet({
           </FormSection>
         ) : null}
       </FormSheet>
+      {appointment && editingPayment ? (
+        <PaymentSheet
+          appointmentId={appointment.id}
+          payment={editingPayment}
+          open
+          onOpenChange={(value) => !value && setEditingPayment(null)}
+        />
+      ) : null}
     </Form>
   );
 }
