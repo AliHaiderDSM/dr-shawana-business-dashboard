@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  CalendarCheck,
   CheckCircle2,
   Circle,
   ClipboardCheck,
@@ -23,7 +22,6 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { appointmentsApi, type AppointmentDetail } from '@redux/features/appointments';
 import { MODE_LABELS, timeRange, VISIT_LABELS } from '@/features/appointments/constants';
-import { StatusDialog, type StatusChange } from '@/features/appointments/status-dialog';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
@@ -63,7 +61,6 @@ function navItems(consultation: Consultation, canPrescribe: boolean): NavItem[] 
   const saved = (key: SectionKey) => Boolean(consultation.sections[key]);
   const items: (NavItem | false)[] = [
     { key: 'basic_info', label: 'Basic information', done: saved('basic_info') },
-    has('follow_up') && { key: 'follow_up', label: 'Follow up form', done: saved('follow_up') },
     { key: 'medical_history', label: 'Medical history', done: saved('medical_history') },
     { key: 'mrs_scale', label: 'MRS scale', done: saved('mrs_scale') },
     { key: 'additional_symptoms', label: 'Additional symptoms', done: saved('additional_symptoms') },
@@ -172,67 +169,24 @@ function PatientHeader({
 
 function ClinicalRemarks({
   consultation,
-  appointment,
   readOnly,
   onDirtyChange,
   onSaved,
 }: {
   consultation: Consultation;
-  appointment: AppointmentDetail | undefined;
   readOnly: boolean;
   onDirtyChange: (dirty: boolean) => void;
   onSaved: () => void;
 }) {
-  const { can } = useAuth();
-  const [change, setChange] = useState<StatusChange | null>(null);
   return (
-    <div className="space-y-6">
-      {appointment ? (
-        <Panel
-          title="Appointment status and remark"
-          actions={
-            can('appointments.update') ? (
-              <>
-                {appointment.status === 'booked' ? (
-                  <Button size="sm" onClick={() => setChange({ appointment, status: 'completed' })}>
-                    <CalendarCheck />
-                    Complete with remark
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setChange({ appointment, status: appointment.status })}
-                  >
-                    Edit remark
-                  </Button>
-                )}
-              </>
-            ) : null
-          }
-        >
-          <div className="flex items-center gap-3 text-sm">
-            <StatusBadge status={appointment.status} />
-            <span className="text-muted-foreground">
-              {appointment.attachments.length} remark screenshot
-              {appointment.attachments.length === 1 ? '' : 's'}
-            </span>
-          </div>
-          <p className="mt-3 text-sm whitespace-pre-wrap">
-            {appointment.remark ?? <span className="text-muted-foreground">No remark yet.</span>}
-          </p>
-        </Panel>
-      ) : null}
-      <SectionForm
-        consultation={consultation}
-        section={SECTIONS.clinical_assessment}
-        state={consultation.sections.clinical_assessment}
-        readOnly={readOnly}
-        onDirtyChange={onDirtyChange}
-        onSaved={onSaved}
-      />
-      <StatusDialog change={change} onClose={() => setChange(null)} />
-    </div>
+    <SectionForm
+      consultation={consultation}
+      section={SECTIONS.clinical_assessment}
+      state={consultation.sections.clinical_assessment}
+      readOnly={readOnly}
+      onDirtyChange={onDirtyChange}
+      onSaved={onSaved}
+    />
   );
 }
 
@@ -373,7 +327,6 @@ function Workspace({
         return (
           <ClinicalRemarks
             consultation={consultation}
-            appointment={appointment}
             readOnly={readOnly}
             onDirtyChange={onDirtyChange}
             onSaved={() => advance('clinical')}

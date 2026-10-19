@@ -67,6 +67,28 @@ export function toFormValues(
         if (field.extraKey) values[field.extraKey] = text(source[field.extraKey]);
         break;
       }
+      case 'family': {
+        const saved = Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+        const legacyConditions = Array.isArray(source.familyConditions)
+          ? (source.familyConditions as string[])
+          : [];
+        values[field.key] = saved.length
+          ? saved.map((e) => ({
+              relative: String(e.relative),
+              who: text(e.who),
+              conditions: Array.isArray(e.conditions) ? (e.conditions as string[]) : [],
+              other: text(e.other),
+            }))
+          : (Array.isArray(source.familyRelatives) ? (source.familyRelatives as string[]) : []).map(
+              (relative) => ({
+                relative,
+                who: '',
+                conditions: legacyConditions,
+                other: legacyConditions.includes('other') ? text(source.familyOther) : '',
+              }),
+            );
+        break;
+      }
       case 'surgeries':
         values[field.key] = Array.isArray(raw)
           ? (raw as { type: string; date: string | null; year?: number | null }[]).map((s) => ({
@@ -119,6 +141,16 @@ export function toApiData(section: SectionDef, values: FormValues) {
         if (field.extraKey) data[field.extraKey] = nullable(values[field.extraKey]);
         break;
       }
+      case 'family':
+        data[field.key] = (
+          raw as { relative: string; who: string; conditions: string[]; other: string }[]
+        ).map((e) => ({
+          relative: e.relative,
+          who: e.relative === 'close_family' ? nullable(e.who) : null,
+          conditions: e.conditions,
+          other: e.conditions.includes('other') ? nullable(e.other) : null,
+        }));
+        break;
       case 'surgeries':
         data[field.key] = (raw as SurgeryValue[]).map((s) => ({
           type: s.type,

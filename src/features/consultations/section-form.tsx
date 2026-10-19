@@ -30,8 +30,9 @@ import {
 } from './clinical-fields';
 import { isVisible, sectionResolver, toApiData, toFormValues } from './clinical-form';
 import { SymptomsField } from './symptoms-field';
+import { FamilyField } from './family-field';
 
-type FieldControl = Control<FormValues>;
+export type FieldControl = Control<FormValues>;
 
 const YES_NO: Choice[] = [
   ['yes', 'Yes'],
@@ -567,6 +568,8 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
       return <ScanField control={control} field={field} disabled={disabled} />;
     case 'surgeries':
       return <SurgeriesField control={control} field={field} disabled={disabled} />;
+    case 'family':
+      return <FamilyField control={control} field={field} disabled={disabled} />;
   }
 }
 
