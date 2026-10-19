@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +40,8 @@ export interface ComboboxProps {
   'aria-label'?: string;
 }
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function Combobox({
   value,
   onChange,
@@ -61,13 +63,29 @@ export function Combobox({
   const selected = options.find((o) => o.value === value);
   const label = selected?.label ?? (value ? selectedLabel : null);
   const serverSearch = Boolean(onSearchChange);
+  const searchTimer = useRef<number | null>(null);
+  const cancelSearch = () => {
+    if (searchTimer.current !== null) window.clearTimeout(searchTimer.current);
+    searchTimer.current = null;
+  };
+  const typeSearch = (next: string) => {
+    cancelSearch();
+    searchTimer.current = window.setTimeout(() => {
+      searchTimer.current = null;
+      onSearchChange?.(next);
+    }, SEARCH_DEBOUNCE_MS);
+  };
+  useEffect(() => cancelSearch, []);
 
   return (
     <Popover
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) onSearchChange?.('');
+        if (!next) {
+          cancelSearch();
+          onSearchChange?.('');
+        }
       }}
     >
       <PopoverTrigger asChild>
@@ -90,7 +108,10 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) min-w-64 p-0" align="start">
         <Command shouldFilter={!serverSearch}>
-          <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} />
+          <CommandInput
+            placeholder={searchPlaceholder}
+            onValueChange={serverSearch ? typeSearch : undefined}
+          />
           <CommandList className={listClassName}>
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">

@@ -29,7 +29,7 @@ export const { useGetDashboardQuery } = homeApi;
 export function useDashboard(year: number, period: DashboardPeriod = {}) {
   return useGetDashboardQuery(
     { year, from: period.from ?? null, to: period.to ?? null },
-    { pollingInterval: 60_000, refetchOnFocus: true },
+    { pollingInterval: 60_000, skipPollingIfUnfocused: true, refetchOnFocus: true },
   );
 }
 

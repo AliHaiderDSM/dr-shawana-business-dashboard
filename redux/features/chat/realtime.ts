@@ -21,6 +21,7 @@ export function useDoctorChatRealtime(enabled: boolean) {
           'sidebar-badges',
         ]),
       );
+    let joined = false;
     const client = new RealtimeClient(`${config.url}/realtime/v1`, {
       params: { apikey: config.key, eventsPerSecond: 5 },
     });
@@ -28,7 +29,9 @@ export function useDoctorChatRealtime(enabled: boolean) {
       .channel(config.topic)
       .on('broadcast', { event: 'message' }, () => void refresh())
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') void refresh();
+        if (status !== 'SUBSCRIBED') return;
+        if (joined) void refresh();
+        joined = true;
       });
     return () => {
       void client.removeChannel(channel);

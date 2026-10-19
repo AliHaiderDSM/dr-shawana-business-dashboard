@@ -12,6 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Frontend API audit (2026-10-19)
+
+- Combobox server search waits 300 ms after typing (was one request per key, 8+ pickers).
+- Staff and doctor-chat realtime refresh only on a reconnect, not on the first connect (badges were fetched up to three times on load).
+- Opening a chat refreshes the unread list and badges after the thread loads (the thread marks it read), not in parallel.
+- Home dashboard polling pauses while the window is unfocused; focus refetches.
+- Query retries wait 400 ms, then 800 ms (were immediate). Mutations still never retry.
+- Ctrl+S in consultation forms does nothing while a save is running.
+- Mobile app: chat realtime refreshes only on reconnect, not on first connect.
+- Sidebar badges refetch on focus only while staff realtime is not connected (`redux/features/layout/live.ts`).
+- Mobile app: a new message for the chat that is open refreshes only that thread; the list and unread follow from markChatsSeen (was fetched twice). refetchOnReconnect now works: a request that cannot reach the server marks the app offline and the next one that does fires RTK onOnline (`src/redux/api/network.ts`, no native module).
+
 ## Patient history report and push-only alerts (2026-10-19)
 
 - Patient history list shows the posSoft report columns (MRS items and scores, blood results, treatments) and exports them.

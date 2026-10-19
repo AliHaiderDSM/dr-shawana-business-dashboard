@@ -2,6 +2,7 @@ import { baseApi, toApi } from '@redux/api/baseApi';
 import { api, unwrap } from '@/lib/api/client';
 import type { TagType } from '@redux/api/tagTypes';
 import type { BrowserSubscription } from '@/lib/web-push';
+import { useStaffRealtimeLive } from './live';
 import type { SidebarBadges, StaffRealtime } from './types';
 
 export const STAFF_PING_TAGS: TagType[] = [
@@ -52,5 +53,6 @@ export const {
 } = layoutApi;
 
 export function useSidebarBadges(enabled: boolean) {
-  return useGetSidebarBadgesQuery(undefined, { skip: !enabled, refetchOnFocus: true });
+  const live = useStaffRealtimeLive();
+  return useGetSidebarBadgesQuery(undefined, { skip: !enabled, refetchOnFocus: !live });
 }

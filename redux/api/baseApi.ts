@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
-import { CACHE_SECONDS, MAX_QUERY_RETRIES, shouldRetry, STALE_SECONDS } from './apiConfig';
+import { CACHE_SECONDS, MAX_QUERY_RETRIES, RETRY_DELAY_MS, shouldRetry, STALE_SECONDS } from './apiConfig';
 import { TAG_TYPES } from './tagTypes';
 
 export const baseApi = createApi({
@@ -23,6 +23,7 @@ export async function fromApi<T>(request: () => Promise<T>): Promise<Outcome<T>>
       return { data: await request() };
     } catch (error) {
       if (attempt >= MAX_QUERY_RETRIES || !shouldRetry(error)) return { error };
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * 2 ** attempt));
     }
   }
 }

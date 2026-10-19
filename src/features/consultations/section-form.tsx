@@ -695,7 +695,7 @@ export function SectionForm({
         onKeyDown={(event) => {
           if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
             event.preventDefault();
-            void submit();
+            if (!save.isLoading && !readOnly) void submit();
           }
         }}
         className="space-y-6"

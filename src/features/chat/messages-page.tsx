@@ -268,9 +268,11 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
     bottom.current?.scrollIntoView({ block: 'end' });
   }, [lastId]);
 
+  const newestPage = thread.data?.pages[0];
   useEffect(() => {
-    dispatch(baseApi.util.invalidateTags(['sidebar-badges']));
-  }, [conversation.id, dispatch]);
+    if (!newestPage) return;
+    dispatch(baseApi.util.invalidateTags([{ type: 'doctor-chats', id: 'list' }, 'sidebar-badges']));
+  }, [newestPage, dispatch]);
 
   const submit = () => {
     if (send.isLoading || (!text.trim() && !file)) return;
