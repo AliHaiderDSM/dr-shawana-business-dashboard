@@ -11,7 +11,7 @@ interface ScanValue {
 
 interface SurgeryValue {
   type: string;
-  date: string;
+  year: string;
 }
 
 const isInput = (field: FieldDef): field is InputField => field.kind !== 'heading' && field.kind !== 'bmi';
@@ -69,9 +69,9 @@ export function toFormValues(
       }
       case 'surgeries':
         values[field.key] = Array.isArray(raw)
-          ? (raw as { type: string; date: string | null }[]).map((s) => ({
+          ? (raw as { type: string; date: string | null; year?: number | null }[]).map((s) => ({
               type: s.type,
-              date: text(s.date),
+              year: s.year ? String(s.year) : (s.date ?? '').slice(0, 4),
             }))
           : [];
         break;
@@ -120,7 +120,11 @@ export function toApiData(section: SectionDef, values: FormValues) {
         break;
       }
       case 'surgeries':
-        data[field.key] = (raw as SurgeryValue[]).map((s) => ({ type: s.type, date: nullable(s.date) }));
+        data[field.key] = (raw as SurgeryValue[]).map((s) => ({
+          type: s.type,
+          date: null,
+          year: s.year ? Number(s.year) : null,
+        }));
         break;
       default:
         data[field.key] = visible ? nullable(raw) : null;

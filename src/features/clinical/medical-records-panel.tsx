@@ -38,6 +38,21 @@ const schema = z.object({
 
 type Values = z.input<typeof schema>;
 
+const RECORD_GROUPS = [
+  {
+    type: 'medical_record',
+    title: 'Medical records (lab / blood reports)',
+    hint: 'Blood test values from these reports go to the Blood work table and chart.',
+    empty: 'No lab or medical reports yet.',
+  },
+  {
+    type: 'imaging',
+    title: 'Imaging',
+    hint: 'Scans are kept here only; they do not feed the blood work chart.',
+    empty: 'No imaging yet.',
+  },
+] as const;
+
 function RecordSheet({
   patientId,
   appointmentId,
@@ -88,8 +103,8 @@ function RecordSheet({
           name="type"
           label="Record type"
           options={[
-            { value: 'medical_record', label: 'Medical records' },
-            { value: 'imaging', label: 'Imaging records' },
+            { value: 'medical_record', label: 'Medical record (lab / blood report)' },
+            { value: 'imaging', label: 'Imaging (scan)' },
           ]}
         />
         <TextField control={form.control} name="date" label="Date" type="date" required />
@@ -237,26 +252,43 @@ export function MedicalRecordsPanel({
       ) : null}
       {records.isLoading ? (
         <Skeleton className="h-24 w-full" />
-      ) : !records.data?.length ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">No records uploaded yet.</p>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {records.data.map((record) => (
-            <div key={record.id} className="relative">
-              <RecordCard patientId={patientId} record={record} canEdit={canEdit} />
-              {canEdit ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 size-8 text-muted-foreground hover:text-destructive"
-                  aria-label="Delete record"
-                  onClick={() => setRemoving(record)}
-                >
-                  <Trash2 />
-                </Button>
-              ) : null}
-            </div>
-          ))}
+        <div className="space-y-6">
+          {RECORD_GROUPS.map((group) => {
+            const items = (records.data ?? []).filter((r) => r.type === group.type);
+            return (
+              <section key={group.type} className="space-y-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2">
+                  <h4 className="text-sm font-semibold">
+                    {group.title} <span className="font-normal text-muted-foreground">({items.length})</span>
+                  </h4>
+                  <p className="text-xs text-muted-foreground">{group.hint}</p>
+                </div>
+                {items.length === 0 ? (
+                  <p className="py-2 text-sm text-muted-foreground">{group.empty}</p>
+                ) : (
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {items.map((record) => (
+                      <div key={record.id} className="relative">
+                        <RecordCard patientId={patientId} record={record} canEdit={canEdit} />
+                        {canEdit ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 size-8 text-muted-foreground hover:text-destructive"
+                            aria-label="Delete record"
+                            onClick={() => setRemoving(record)}
+                          >
+                            <Trash2 />
+                          </Button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
       {canEdit ? (

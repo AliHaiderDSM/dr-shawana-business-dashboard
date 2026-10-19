@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Medical history form and records split (2026-10-19)
+
+- Medical history: first topics question and the five medication yes/no questions removed; labels bold; condition group titles bold with a None option per group (None clears the group, any condition clears None); surgeries take a year only.
+- Additional symptoms cards use columns so short groups leave no gap.
+- Blood work no longer shows the AI report summary.
+- Medical and imaging records are listed in two separate groups; only lab / medical reports can feed the blood work reader.
+
 ## Plan of treatment editor and clinical layout (2026-10-19)
 
 - Prescription Plan of treatment uses the rich text editor (taller), with the follow-up date inside it; print, public pages and the app PDF show plan and follow-up together.

@@ -131,12 +131,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
           'very_much_worse:Very much worse',
         ),
       },
-      {
-        kind: 'textarea',
-        key: 'discussTopics',
-        label: 'What are the top 3 things you would like to discuss in your consultation?',
-        wide: true,
-      },
       { kind: 'textarea', key: 'majorComplaint', label: 'Major complaint', wide: true },
       { kind: 'textarea', key: 'currentMedications', label: 'Current medications', wide: true },
       {
@@ -303,6 +297,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'brca:BRCA 1 / BRCA 2',
               'lynch_syndrome:Lynch Syndrome',
               'other_cancer:Any Other Cancer',
+              'no_cancer:None',
             ),
           },
           {
@@ -313,6 +308,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'endometriosis:Endometriosis',
               'pms:Premenstrual Syndrome (PMS)',
               'pcos:Polycystic Ovary Syndrome (PCOS)',
+              'no_hormonal:None',
             ),
           },
           {
@@ -322,6 +318,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'insulin_resistance:Insulin Resistance',
               'dyslipidemia:Dyslipidemia',
               'nafld:NAFLD',
+              'no_metabolic:None',
             ),
           },
           {
@@ -332,6 +329,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'osteoarthritis:Osteoarthritis',
               'rheumatoid_arthritis:Rheumatoid Arthritis',
               'gout:Gout',
+              'no_musculoskeletal:None',
             ),
           },
           {
@@ -342,6 +340,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'dvt:Deep Vein Thrombosis (DVT)',
               'pulmonary_embolism:Pulmonary Embolism',
               'tia:TIA',
+              'no_cardiac:None',
             ),
           },
           {
@@ -352,6 +351,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'chronic_fatigue_me:Chronic Fatigue/ME (+Fibromyalgia)',
               'pnd:Post-natal Depression (PND)',
               'pmdd:Premenstrual Dysphoric Disorder (PMDD)',
+              'no_mental:None',
             ),
           },
           {
@@ -362,9 +362,13 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'multiple_sclerosis:Multiple Sclerosis',
               'memory_issues:Memory Issues',
               'stroke:Stroke',
+              'no_neurological:None',
             ),
           },
-          { title: 'Autoimmune', options: choices('lupus_sle:Lupus / SLE', 'skin_disease:Any Skin Disease') },
+          {
+            title: 'Autoimmune',
+            options: choices('lupus_sle:Lupus / SLE', 'skin_disease:Any Skin Disease', 'no_autoimmune:None'),
+          },
           {
             title: 'Liver / GI',
             options: choices(
@@ -373,6 +377,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'celiac_disease:Celiac Disease',
               'ibs:IBS',
               'h_pylori:H - Pylori',
+              'no_liver_gi:None',
             ),
           },
           {
@@ -381,6 +386,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'recurrent_uti:Recurrent UTI',
               'vaginal_infections:Vaginal Infections',
               'std:STD',
+              'no_genitourinary:None',
             ),
           },
         ],
@@ -457,23 +463,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
       { kind: 'text', key: 'familyOther', label: 'Other family history', wide: true },
       heading('h-medications', 'Medications, allergies and lifestyle'),
       { kind: 'textarea', key: 'currentMedications', label: 'Current medications', wide: true },
-      yesNo('utiAntibiotics12m', 'Needed antibiotics for a UTI in the last 12 months?'),
-      yesNo(
-        'painMedication',
-        'Taking medication for pain, nerve pain or migraines (paracetamol, ibuprofen, tramadol, gabapentin, amitriptyline)?',
-      ),
-      yesNo(
-        'moodMedication',
-        'Taking or ever prescribed medication for mood, anxiety, depression or other mental health conditions?',
-      ),
-      yesNo(
-        'sleepMedication',
-        'Taking medications or supplements for sleep (zopiclone, zolpidem, melatonin, magnesium, antihistamines)?',
-      ),
-      yesNo(
-        'weightLossMedication',
-        'Taking weight-loss medication (semaglutide/Wegovy, tirzepatide/Mounjaro)?',
-      ),
       yesNo('hasAllergies', 'Any allergies to medications, foods or other substances?'),
       {
         kind: 'textarea',

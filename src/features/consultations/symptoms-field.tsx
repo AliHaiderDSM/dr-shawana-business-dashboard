@@ -84,13 +84,13 @@ export function SymptomsField({
           ) : null}
         </div>
       </div>
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="gap-4 lg:columns-2">
         {field.groups.map((group, index) => {
           const picked = group.options.filter(([value]) => selected.has(value)).length;
           return (
             <section
               key={group.title ?? index}
-              className="overflow-hidden rounded-xl border bg-card shadow-xs"
+              className="mb-4 break-inside-avoid overflow-hidden rounded-xl border bg-card shadow-xs"
             >
               <header className="flex items-center justify-between border-b bg-muted/40 px-4 py-2.5">
                 <h4 className="text-sm font-semibold">{group.title}</h4>

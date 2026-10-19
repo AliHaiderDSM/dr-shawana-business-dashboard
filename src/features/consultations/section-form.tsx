@@ -40,6 +40,10 @@ const YES_NO: Choice[] = [
 
 const toOptions = (choices: readonly Choice[]) => choices.map(([value, label]) => ({ value, label }));
 
+const SURGERY_YEARS = Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) =>
+  String(new Date().getFullYear() - i),
+);
+
 function CheckGroupField({
   control,
   field,
@@ -55,10 +59,14 @@ function CheckGroupField({
       name={field.key}
       render={({ field: f }) => {
         const selected = new Set((f.value as string[] | undefined) ?? []);
-        const toggle = (value: string, checked: boolean) => {
+        const toggle = (value: string, checked: boolean, groupValues: string[]) => {
           const next = new Set(selected);
-          if (checked) next.add(value);
-          else next.delete(value);
+          if (checked) {
+            const none = groupValues.find((v) => v.startsWith('no_'));
+            if (value === none) for (const v of groupValues) next.delete(v);
+            else if (none) next.delete(none);
+            next.add(value);
+          } else next.delete(value);
           f.onChange([...next]);
         };
         return (
@@ -70,11 +78,7 @@ function CheckGroupField({
             <div className="space-y-4">
               {field.groups.map((group, index) => (
                 <div key={group.title ?? index} className="space-y-2">
-                  {group.title ? (
-                    <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      {group.title}
-                    </div>
-                  ) : null}
+                  {group.title ? <div className="text-sm font-semibold">{group.title}</div> : null}
                   <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
                     {group.options.map(([value, label]) => (
                       <label
@@ -88,7 +92,13 @@ function CheckGroupField({
                         <Checkbox
                           checked={selected.has(value)}
                           disabled={disabled}
-                          onCheckedChange={(checked) => toggle(value, checked === true)}
+                          onCheckedChange={(checked) =>
+                            toggle(
+                              value,
+                              checked === true,
+                              group.options.map(([v]) => v),
+                            )
+                          }
                           className="mt-0.5"
                         />
                         <span>{label}</span>
@@ -214,7 +224,7 @@ function SurgeriesField({
       control={control}
       name={field.key}
       render={({ field: f }) => {
-        const list = (f.value as { type: string; date: string }[] | undefined) ?? [];
+        const list = (f.value as { type: string; year: string }[] | undefined) ?? [];
         const find = (type: string) => list.find((s) => s.type === type);
         return (
           <FormItem>
@@ -237,7 +247,7 @@ function SurgeriesField({
                         onCheckedChange={(checked) =>
                           f.onChange(
                             checked === true
-                              ? [...list, { type: value, date: '' }]
+                              ? [...list, { type: value, year: '' }]
                               : list.filter((s) => s.type !== value),
                           )
                         }
@@ -245,16 +255,22 @@ function SurgeriesField({
                       <span className="truncate">{label}</span>
                     </label>
                     {entry ? (
-                      <Input
-                        type="date"
-                        aria-label={`${label} date`}
-                        className="h-8 w-36"
+                      <select
+                        aria-label={`${label} year`}
+                        className="h-8 w-28 rounded-md border bg-background px-2 text-sm"
                         disabled={disabled}
-                        value={entry.date}
+                        value={entry.year}
                         onChange={(e) =>
-                          f.onChange(list.map((s) => (s.type === value ? { ...s, date: e.target.value } : s)))
+                          f.onChange(list.map((s) => (s.type === value ? { ...s, year: e.target.value } : s)))
                         }
-                      />
+                      >
+                        <option value="">Year</option>
+                        {SURGERY_YEARS.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
                     ) : null}
                   </div>
                 );
@@ -646,7 +662,13 @@ export function SectionForm({
           <SaveState dirty={dirty} saving={save.isLoading} updatedAt={state?.updatedAt} />
         </div>
         {aside}
-        <fieldset disabled={readOnly} className="min-w-0">
+        <fieldset
+          disabled={readOnly}
+          className={cn(
+            'min-w-0',
+            section.key === 'medical_history' && '[&_[data-slot=form-label]]:font-semibold',
+          )}
+        >
           <VisibleFields section={section} disabled={readOnly} />
         </fieldset>
         <div className="sticky bottom-0 -mx-6 flex items-center justify-between gap-3 border-t bg-card/95 px-6 py-3 backdrop-blur">

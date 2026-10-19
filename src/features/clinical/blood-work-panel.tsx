@@ -17,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
-import { ReportSummaries } from './report-summaries';
 import { prepareReportFiles, REPORT_ACCEPT, ReportFileError } from './prepare-report-files';
 import { useReportSelection } from './report-selection';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
@@ -30,6 +29,7 @@ import {
   type BloodTest,
 } from '@redux/features/clinical';
 import { BLOOD_TEST_LABELS, BLOOD_TESTS } from './constants';
+import { ReportSummaries } from './report-summaries';
 
 const ALL = 'all';
 
@@ -298,9 +298,7 @@ export function BloodWorkPanel({
       if (recordFileIds.length) selection?.clear();
       if (found.results.length === 0) {
         toast.message(
-          found.summary
-            ? 'None of the 9 blood work tests is on these reports, so no value was added. The report summary is below.'
-            : 'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found.',
+          'No FSH, estradiol, testosterone, DHEA-S, vitamin D, TSH, ferritin or B12 value was found on these reports.',
         );
         return true;
       }
@@ -323,7 +321,7 @@ export function BloodWorkPanel({
       const saved = found.results.length - undated.length;
       if (saved > 0) {
         toast.success(
-          `${saved} value${saved === 1 ? '' : 's'} saved for ${[...dated.keys()].map((d) => formatDate(d)).join(', ')}; tests not on the reports show —.${found.summary ? ' One summary of all reports is below.' : ''} ✏️ corrects any mistake.`,
+          `${saved} value${saved === 1 ? '' : 's'} saved for ${[...dated.keys()].map((d) => formatDate(d)).join(', ')}; tests not on the reports show —. ✏️ corrects any mistake.`,
         );
       }
       if (undated.length) {
@@ -384,8 +382,8 @@ export function BloodWorkPanel({
               disabled={reading}
               title={
                 chosen.length
-                  ? 'Read the reports ticked under Medical and imaging records. AI reads the values and writes one summary.'
-                  : 'Tick saved reports under Medical and imaging records first, or click to upload up to 5 lab reports from this device (PDF, JPG, PNG, WebP or HEIC; 4.3 MB in total). AI reads the values and writes one summary.'
+                  ? 'Read the reports ticked under Medical and imaging records. AI reads the values into the table and chart.'
+                  : 'Tick saved reports under Medical and imaging records first, or click to upload up to 5 lab reports from this device (PDF, JPG, PNG, WebP or HEIC; 4.3 MB in total). AI reads the values into the table and chart.'
               }
               onClick={() => (chosen.length ? void readReport([], chosen) : fileInput.current?.click())}
             >
