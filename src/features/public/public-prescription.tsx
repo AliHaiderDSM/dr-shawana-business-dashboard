@@ -1,3 +1,4 @@
+import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
 import logo from '@/assets/logo-hd.png';
@@ -112,10 +113,10 @@ export function PublicPrescriptionPage() {
             </ol>
           </div>
         ))}
-        {rx.planTreatment ? (
+        {!richTextIsEmpty(rx.planTreatment) ? (
           <div className="break-inside-avoid">
-            <div className="mb-1 text-xs font-semibold tracking-wide uppercase">Plan</div>
-            <p className="whitespace-pre-wrap">{rx.planTreatment}</p>
+            <div className="mb-1 text-xs font-semibold tracking-wide uppercase">Plan of treatment</div>
+            <RichTextView value={rx.planTreatment} />
           </div>
         ) : null}
         {rx.followupDate ? (

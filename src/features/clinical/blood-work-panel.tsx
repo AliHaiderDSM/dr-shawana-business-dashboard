@@ -494,7 +494,7 @@ export function BloodWorkPanel({
                       return (
                         <Line
                           key={t.test}
-                          type="monotone"
+                          type="natural"
                           dataKey={t.test}
                           name={t.test}
                           stroke={style?.stroke}
@@ -517,8 +517,8 @@ export function BloodWorkPanel({
                 <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
                   <th className="sticky left-0 bg-muted px-4 py-2 text-left font-medium">Blood test</th>
                   {dates.map((date) => (
-                    <th key={date} className="px-3 py-2 text-right font-medium whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1">
+                    <th key={date} className="px-3 py-2 text-center font-medium whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1">
                         <span className="text-foreground">{formatDate(date, 'dd-MM-yyyy')}</span>
                         {canEdit ? (
                           <>
@@ -567,7 +567,7 @@ export function BloodWorkPanel({
                       {dates.map((date) => {
                         const point = row?.points.find((p) => p.date === date);
                         return (
-                          <td key={date} className="px-3 py-2 text-right tabular-nums">
+                          <td key={date} className="px-3 py-2 text-center tabular-nums">
                             {point ? (
                               <ResultCell patientId={patientId} point={point} canEdit={canEdit} />
                             ) : (

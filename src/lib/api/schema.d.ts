@@ -14928,7 +14928,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Upload up to 5 reports (multipart "files": PDF, JPG, PNG or WebP, 10 MB each) with an optional "title". They are added to the medical records as uploaded by the patient. */
+        /** Upload up to 5 reports (multipart "files": PDF, JPG, PNG or WebP, 10 MB each) with an optional "title" and "type" (medical_record for lab reports, imaging for scans). They are added to the medical records as uploaded by the patient. */
         post: {
             parameters: {
                 query?: never;
@@ -15406,6 +15406,87 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patient/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a report the patient uploaded (reports from the clinic cannot be deleted here) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -30842,6 +30923,20 @@ export interface components {
                 name: string;
                 type: string;
                 size: number;
+                /** @description Voice note length, when known */
+                durationMs: number | null;
+            } | null;
+            /** @description The quoted message when this one is a reply */
+            replyTo: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                sender: "patient" | "doctor";
+                body: string | null;
+                file: {
+                    name: string;
+                    type: string;
+                } | null;
             } | null;
             createdAt: string;
         };

@@ -9,6 +9,7 @@ import { Combobox } from '@/components/shared/combobox';
 import { ErrorState } from '@/components/shared/error-state';
 import { FieldRow, SelectField, TextField, TextareaField } from '@/components/shared/form-fields';
 import { PageHeader } from '@/components/shared/page-header';
+import { RichTextEditor } from '@/components/shared/rich-text';
 import { Panel } from '@/components/shared/panel';
 import { DetailSkeleton } from '@/components/shared/skeletons';
 import { Button } from '@/components/ui/button';
@@ -306,10 +307,7 @@ function Builder({
                 options={(doctors.data ?? []).map((d) => ({ value: d.id, label: d.name }))}
               />
             </FieldRow>
-            <FieldRow>
-              <TextField control={form.control} name="date" label="Date" type="date" required />
-              <TextField control={form.control} name="followupDate" label="Follow up date" type="date" />
-            </FieldRow>
+            <TextField control={form.control} name="date" label="Date" type="date" required />
             <TextareaField control={form.control} name="diagnosis" label="Diagnosis" required rows={2} />
           </div>
         </Panel>
@@ -367,7 +365,30 @@ function Builder({
         ) : null}
 
         <Panel title="Plan of treatment">
-          <TextareaField control={form.control} name="planTreatment" label="Plan" rows={5} />
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="planTreatment"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Plan</FormLabel>
+                  <FormControl>
+                    <RichTextEditor
+                      value={field.value ?? ''}
+                      onChange={(html) => field.onChange(html)}
+                      onBlur={field.onBlur}
+                      invalid={Boolean(fieldState.error)}
+                      minHeightClass="min-h-64"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="max-w-xs">
+              <TextField control={form.control} name="followupDate" label="Follow up date" type="date" />
+            </div>
+          </div>
         </Panel>
 
         <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">

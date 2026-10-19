@@ -589,8 +589,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'feeling_bad_about_yourself:Feeling bad about yourself',
               'loss_of_interest:Loss of interest in most things',
               'unhealthy_food_behaviour:Unhealthy food-related thoughts or behaviours (e.g. over- or under-eating, excessively tracking calories or weight)',
-              'social_withdrawal:Wanting to be alone / social withdrawal',
-              'accomplishing_less:Accomplishing less than previously',
             ),
           },
           {
@@ -609,9 +607,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'hot_flushes:Hot flushes',
               'crawling_sensation:Formication (sensation of insects crawling over the skin)',
               'internal_tremors:Internal tremors',
-              'burning_soles:Burning soles / feet',
-              'taste_changes:Taste changes',
-              'hearing_changes:Hearing changes',
             ),
           },
           {
@@ -622,9 +617,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'nail_changes:Brittle nails / nail changes',
               'skin_itching:Itchy skin',
               'hair_loss:Hair loss',
-              'increased_facial_hair:Increased facial hair',
-              'skin_issues:Skin issues',
-              'body_odor_change:Change in body odor',
             ),
           },
           {
@@ -637,9 +629,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'bloating:Bloating',
               'gas:Wind / flatulence',
               'heartburn:Heartburn',
-              'weight_loss:Weight loss',
-              'belly_fat:Belly fat',
-              'food_sugar_cravings:Food or sugar cravings',
             ),
           },
           {
@@ -670,11 +659,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'foot_pain:Foot pain',
               'muscle_pains:Muscle pains',
               'frozen_shoulder:Frozen shoulder',
-              'heel_pain:Heel pain',
-              'low_backache:Low backache',
-              'decreased_strength:Decreased physical strength',
-              'decreased_stamina:Decreased stamina',
-              'clicking_jaw_tmj:Clicking jaw / TMJ symptoms',
             ),
           },
           {
@@ -693,8 +677,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'dry_eyes:Dry eyes',
               'burning_mouth:Burning mouth',
               'worsening_mental_condition:Worsening of a long-term or pre-existing mental health condition (e.g. depression, anxiety, eating disorder, addiction, ADHD, OCD)',
-              'vision_changes:Eyesight / vision changes',
-              'voice_changes:Voice changes',
             ),
           },
           {
@@ -705,8 +687,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'impact_activity:Impact on your ability to remain active and/or exercise',
               'marital_conflicts:Impact on your relationship with your spouse / partner (marital conflicts)',
               'impact_social:Impact on your social life',
-              'avoiding_intimacy:Avoiding intimacy',
-              'personal_life_dissatisfaction:Dissatisfaction with personal life',
             ),
           },
         ],
@@ -735,6 +715,13 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
     key: 'clinical_assessment',
     title: 'Clinical assessment',
     fields: [
+      {
+        kind: 'richtext',
+        key: 'plan',
+        label: 'Remarks',
+        description: 'Bold, italic and lists are kept. These remarks show in the patient history.',
+        wide: true,
+      },
       {
         kind: 'checks',
         key: 'menopauseStage',
@@ -797,6 +784,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
             options: choices(
               'vasomotor:Vasomotor symptoms',
               'gsm:Genitourinary syndrome of menopause (GSM)',
+              'musculoskeletal_disorder:Musculoskeletal disorder',
               'hsdd:HSDD',
               'mood:Mood symptoms',
               'sleep_disorder:Sleep disorder',
@@ -844,13 +832,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
             ),
           },
         ],
-      },
-      {
-        kind: 'richtext',
-        key: 'plan',
-        label: 'Remarks',
-        description: 'Bold, italic and lists are kept. These remarks show in the patient history.',
-        wide: true,
       },
     ],
   },

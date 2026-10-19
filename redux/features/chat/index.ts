@@ -38,11 +38,13 @@ export const chatApi = baseApi.injectEndpoints({
       providesTags: ['doctor-chats', { type: 'doctor-chats', id: 'thread' }],
     }),
     sendDoctorChatReply: build.mutation<ChatMessage, SendDoctorChatReplyArg>({
-      queryFn: ({ conversationId, body, file }) =>
+      queryFn: ({ conversationId, body, file, replyToId, durationMs }) =>
         toApi<ChatMessage>(() => {
           const form = new FormData();
           if (body.trim()) form.append('body', body.trim());
           if (file) form.append('file', file);
+          if (replyToId) form.append('replyToId', replyToId);
+          if (durationMs) form.append('durationMs', String(Math.round(durationMs)));
           return uploadForm<ChatMessage>(`/branch/chats/${conversationId}/messages`, form);
         }),
       invalidatesTags: (_r, error) => (error ? [] : ['doctor-chats', 'sidebar-badges']),

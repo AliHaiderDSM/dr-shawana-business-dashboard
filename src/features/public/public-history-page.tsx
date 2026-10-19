@@ -1,3 +1,4 @@
+import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { Activity, CalendarDays, FileHeart, FlaskConical, FolderOpen, Loader2, Printer } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useParams } from 'react-router';
@@ -132,8 +133,8 @@ function HistoryView({ token, data }: { token: string; data: History }) {
                   </ul>
                 </div>
               ))}
-              {p.planTreatment ? (
-                <p className="text-sm whitespace-pre-wrap text-muted-foreground">{p.planTreatment}</p>
+              {!richTextIsEmpty(p.planTreatment) ? (
+                <RichTextView value={p.planTreatment} className="text-sm text-muted-foreground" />
               ) : null}
             </div>
           </Section>

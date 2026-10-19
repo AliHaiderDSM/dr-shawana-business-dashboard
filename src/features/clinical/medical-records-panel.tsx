@@ -117,7 +117,7 @@ function RecordCard({
   const [files, setFiles] = useState<File[]>([]);
   const [adding, setAdding] = useState(false);
   const selection = useReportSelection();
-  const selectable = canEdit && selection;
+  const selectable = canEdit && record.type !== 'imaging' && selection;
   return (
     <div className="space-y-3 rounded-lg border p-4">
       <div className="flex flex-wrap items-center gap-2 text-sm">

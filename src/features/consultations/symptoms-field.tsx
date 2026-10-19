@@ -84,7 +84,7 @@ export function SymptomsField({
           ) : null}
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         {field.groups.map((group, index) => {
           const picked = group.options.filter(([value]) => selected.has(value)).length;
           return (

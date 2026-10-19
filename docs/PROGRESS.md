@@ -12,6 +12,18 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Plan of treatment editor and clinical layout (2026-10-19)
+
+- Prescription Plan of treatment uses the rich text editor (taller), with the follow-up date inside it; print, public pages and the app PDF show plan and follow-up together.
+- Clinical remarks: Remarks is the first field.
+- Blood work table values are centred; the chart lines use a natural curve.
+- Additional symptoms cards take their own height. The symptom list was trimmed in clinical-fields.ts; the backend still accepts the removed keys so older visits save.
+
+## Chat replies and imaging records (2026-10-19)
+
+- Patient Messages: Reply on hover (or double-click a bubble) quotes the message; quoted replies show in the thread. Voice notes send their recorded length.
+- Imaging records cannot be ticked for the AI blood-work reader; only lab / medical reports feed the results.
+
 ## Online sales, GDN, appointment payments on edit, symptoms (2026-10-19)
 
 - Branch form: Online sales switch. POS shows Online sale only where the branch allows it.

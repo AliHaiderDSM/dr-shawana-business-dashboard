@@ -27,6 +27,7 @@ interface Session {
   stream: MediaStream;
   chunks: Blob[];
   format: (typeof FORMATS)[number];
+  startedAt: number;
 }
 
 export function useVoiceRecorder() {
@@ -50,7 +51,7 @@ export function useVoiceRecorder() {
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunks.push(e.data);
     };
-    session.current = { recorder, stream, chunks, format };
+    session.current = { recorder, stream, chunks, format, startedAt: Date.now() };
     recorder.start(250);
     setSeconds(0);
     setRecording(true);
@@ -58,7 +59,7 @@ export function useVoiceRecorder() {
 
   const stop = useCallback(
     () =>
-      new Promise<File | null>((resolve) => {
+      new Promise<{ file: File; durationMs: number } | null>((resolve) => {
         const current = session.current;
         if (!current || current.recorder.state === 'inactive') {
           release();
@@ -67,10 +68,16 @@ export function useVoiceRecorder() {
         }
         current.recorder.onstop = () => {
           const blob = new Blob(current.chunks, { type: current.format.type });
+          const durationMs = Date.now() - current.startedAt;
           release();
           resolve(
             blob.size
-              ? new File([blob], `voice-${Date.now()}.${current.format.ext}`, { type: current.format.type })
+              ? {
+                  file: new File([blob], `voice-${Date.now()}.${current.format.ext}`, {
+                    type: current.format.type,
+                  }),
+                  durationMs,
+                }
               : null,
           );
         };

@@ -171,6 +171,7 @@ export function RichTextEditor({
   placeholder,
   invalid,
   id,
+  minHeightClass = 'min-h-28',
 }: {
   value: string | null | undefined;
   onChange: (html: string | null) => void;
@@ -179,6 +180,7 @@ export function RichTextEditor({
   placeholder?: string;
   invalid?: boolean;
   id?: string;
+  minHeightClass?: string;
 }) {
   const editor = useEditor({
     extensions: [
@@ -200,7 +202,7 @@ export function RichTextEditor({
         'aria-multiline': 'true',
         'aria-invalid': invalid ? 'true' : 'false',
         ...(placeholder ? { 'aria-placeholder': placeholder } : {}),
-        class: cn(RICH_TEXT_CLASSES, 'min-h-28 px-3 py-2 outline-none'),
+        class: cn(RICH_TEXT_CLASSES, minHeightClass, 'px-3 py-2 outline-none'),
       },
     },
     onUpdate: ({ editor: e }) => onChange(e.isEmpty ? null : e.getHTML()),

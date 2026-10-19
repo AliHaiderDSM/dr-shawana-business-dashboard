@@ -14,6 +14,8 @@ export interface SendDoctorChatReplyArg {
   conversationId: string | null;
   body: string;
   file: File | null;
+  replyToId?: string | null;
+  durationMs?: number | null;
 }
 
 export interface DoctorChatFileArg {

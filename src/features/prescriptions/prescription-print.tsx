@@ -1,3 +1,4 @@
+import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { useParams } from 'react-router';
 import { Letterhead, PrintField, PrintPage, SignatureLine } from '@/components/shared/print-document';
 import { formatDate } from '@/lib/format';
@@ -108,21 +109,22 @@ export function PrescriptionPrint() {
               );
             })}
 
-            {rx.planTreatment ? (
+            {!richTextIsEmpty(rx.planTreatment) || rx.followupDate ? (
               <section className="break-inside-avoid space-y-2">
                 <h3 className="border-b pb-1 text-sm font-semibold tracking-wide text-primary uppercase">
                   Plan of treatment
                 </h3>
-                <p className="whitespace-pre-wrap">{rx.planTreatment}</p>
+                {!richTextIsEmpty(rx.planTreatment) ? <RichTextView value={rx.planTreatment} /> : null}
+                {rx.followupDate ? (
+                  <p className="text-sm">
+                    <span className="font-semibold">Follow up date: </span>
+                    {formatDate(rx.followupDate, 'dd-MM-yyyy')}
+                  </p>
+                ) : null}
               </section>
             ) : null}
 
-            <div className="flex items-end justify-between gap-6 pt-8">
-              <PrintField
-                label="Follow up date"
-                value={rx.followupDate ? formatDate(rx.followupDate, 'dd-MM-yyyy') : null}
-                className="w-64"
-              />
+            <div className="flex items-end justify-end gap-6 pt-8">
               <SignatureLine label={data.doctor.name} imageUrl={data.doctor.signatureUrl} />
             </div>
           </div>

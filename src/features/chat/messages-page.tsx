@@ -7,6 +7,7 @@ import {
   Mic,
   Paperclip,
   Play,
+  Reply,
   Send,
   X,
 } from 'lucide-react';
@@ -154,17 +155,59 @@ function VoiceMessage({
   );
 }
 
-function Bubble({ message, conversationId }: { message: ChatMessage; conversationId: string }) {
+type Quoted = NonNullable<ChatMessage['replyTo']>;
+
+const quoteText = (m: Pick<Quoted, 'body' | 'file'>) =>
+  m.body?.trim() || (m.file?.type.startsWith('audio/') ? 'Voice message' : (m.file?.name ?? 'Message'));
+
+function Quote({ message, mine }: { message: Quoted; mine: boolean }) {
+  return (
+    <div
+      className={cn(
+        'rounded-md border-l-4 px-2 py-1 text-xs',
+        mine ? 'border-primary-foreground/70 bg-primary-foreground/15' : 'border-primary bg-muted',
+      )}
+    >
+      <div className="font-semibold">{message.sender === 'doctor' ? 'You' : 'Patient'}</div>
+      <div className={cn('line-clamp-2', mine ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+        {quoteText(message)}
+      </div>
+    </div>
+  );
+}
+
+function Bubble({
+  message,
+  conversationId,
+  onReply,
+}: {
+  message: ChatMessage;
+  conversationId: string;
+  onReply: (message: ChatMessage) => void;
+}) {
   const mine = message.sender === 'doctor';
   const Icon = message.file?.type.startsWith('image/') ? FileImage : FileText;
   return (
-    <div className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
+    <div className={cn('group flex items-center gap-1', mine ? 'justify-end' : 'justify-start')}>
+      {mine ? (
+        <button
+          type="button"
+          aria-label="Reply"
+          title="Reply"
+          onClick={() => onReply(message)}
+          className="rounded-full p-1.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted focus-visible:opacity-100"
+        >
+          <Reply className="size-4" />
+        </button>
+      ) : null}
       <div
+        onDoubleClick={() => onReply(message)}
         className={cn(
           'max-w-[80%] space-y-1.5 rounded-2xl px-3 py-2 text-sm shadow-xs',
           mine ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border bg-card',
         )}
       >
+        {message.replyTo ? <Quote message={message.replyTo} mine={mine} /> : null}
         {message.file?.type.startsWith('audio/') ? (
           <VoiceMessage message={message} conversationId={conversationId} mine={mine} />
         ) : message.file ? (
@@ -190,6 +233,17 @@ function Bubble({ message, conversationId }: { message: ChatMessage; conversatio
           {time(message.createdAt)}
         </div>
       </div>
+      {mine ? null : (
+        <button
+          type="button"
+          aria-label="Reply"
+          title="Reply"
+          onClick={() => onReply(message)}
+          className="rounded-full p-1.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted focus-visible:opacity-100"
+        >
+          <Reply className="size-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -200,6 +254,8 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
   const [sendReply, send] = useSendDoctorChatReplyMutation();
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const composer = useRef<HTMLTextAreaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const voice = useVoiceRecorder();
@@ -218,11 +274,12 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
 
   const submit = () => {
     if (send.isLoading || (!text.trim() && !file)) return;
-    sendReply({ conversationId: conversation.id, body: text, file })
+    sendReply({ conversationId: conversation.id, body: text, file, replyToId: replyTo?.id ?? null })
       .unwrap()
       .then(() => {
         setText('');
         setFile(null);
+        setReplyTo(null);
       })
       .catch(toastError);
   };
@@ -243,12 +300,21 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
   const sendVoice = useCallback(async () => {
     const recorded = await voice.stop();
     if (!recorded) return;
-    if (recorded.size > MAX_BYTES) {
+    if (recorded.file.size > MAX_BYTES) {
       toast.error('The voice note is larger than 10 MB.');
       return;
     }
-    sendReply({ conversationId: conversation.id, body: '', file: recorded }).unwrap().catch(toastError);
-  }, [voice, sendReply, conversation.id]);
+    sendReply({
+      conversationId: conversation.id,
+      body: '',
+      file: recorded.file,
+      durationMs: recorded.durationMs,
+      replyToId: replyTo?.id ?? null,
+    })
+      .unwrap()
+      .then(() => setReplyTo(null))
+      .catch(toastError);
+  }, [voice, sendReply, conversation.id, replyTo]);
 
   useEffect(() => {
     if (voice.recording && voice.seconds >= MAX_VOICE_SECONDS) void sendVoice();
@@ -303,7 +369,14 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
                     </span>
                   </div>
                 ) : null}
-                <Bubble message={m} conversationId={conversation.id} />
+                <Bubble
+                  message={m}
+                  conversationId={conversation.id}
+                  onReply={(value) => {
+                    setReplyTo(value);
+                    composer.current?.focus();
+                  }}
+                />
               </div>
             );
           })
@@ -311,6 +384,25 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
         <div ref={bottom} />
       </div>
       <div className="space-y-2 border-t p-3">
+        {replyTo ? (
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <Quote
+                message={{ id: replyTo.id, sender: replyTo.sender, body: replyTo.body, file: replyTo.file }}
+                mine={false}
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label="Cancel the reply"
+              onClick={() => setReplyTo(null)}
+            >
+              <X />
+            </Button>
+          </div>
+        ) : null}
         {file ? (
           <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5 text-sm">
             <Paperclip className="size-4 text-muted-foreground" />
@@ -369,6 +461,7 @@ function Thread({ conversation }: { conversation: ChatConversation }) {
               <Paperclip />
             </Button>
             <Textarea
+              ref={composer}
               rows={1}
               value={text}
               maxLength={4000}
