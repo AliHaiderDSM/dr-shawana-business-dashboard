@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Loader2, Save } from 'lucide-react';
+import { CheckCircle2, Circle, History, Loader2, Save } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { useForm, useFormContext, useWatch, type Control } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { applyServerErrors } from '@/lib/api/errors';
-import { formatRelative } from '@/lib/format';
+import { formatDate, formatRelative } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   useSaveConsultationSectionMutation,
@@ -31,6 +31,7 @@ import {
 import { isVisible, sectionResolver, toApiData, toFormValues } from './clinical-form';
 import { SymptomsField } from './symptoms-field';
 import { FamilyField } from './family-field';
+import { FieldHistoryButton, PreviousVisitsProvider, type PreviousEntry } from './field-history';
 
 export type FieldControl = Control<FormValues>;
 
@@ -451,7 +452,28 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
         </div>
       );
     case 'textarea':
-      return (
+      return field.key === 'majorComplaint' ? (
+        <div className="space-y-2">
+          <TextareaField
+            control={control}
+            name={field.key}
+            label={field.label}
+            required={required}
+            description={description}
+            disabled={disabled}
+            rows={3}
+          />
+          <div className="flex justify-end">
+            <FieldHistoryButton
+              title="Major complaint history"
+              columns={[
+                { key: 'majorComplaint', label: 'Major complaint' },
+                { key: 'currentMedications', label: 'Current medications' },
+              ]}
+            />
+          </div>
+        </div>
+      ) : (
         <TextareaField
           control={control}
           name={field.key}
@@ -518,7 +540,26 @@ function FieldRenderer({ field, disabled }: { field: FieldDef; disabled?: boolea
         />
       );
     case 'bmi':
-      return <BmiReadout />;
+      return (
+        <div className="space-y-2">
+          <BmiReadout />
+          <div className="flex justify-end">
+            <FieldHistoryButton
+              title="Weight, height and BMI history"
+              columns={[
+                { key: 'weightKg', label: 'Weight (kg)' },
+                { key: 'heightFeet', label: 'Height (ft)' },
+                { key: 'bmi', label: 'BMI' },
+                {
+                  key: 'bmiCategory',
+                  label: 'Category',
+                  format: (v) => (v ? String(v).replace(/_/g, ' ') : '—'),
+                },
+              ]}
+            />
+          </div>
+        </div>
+      );
     case 'date':
     case 'text':
       return (
@@ -602,6 +643,8 @@ interface SectionFormProps {
   section: SectionDef;
   state: SectionState | null | undefined;
   defaults?: FormValues;
+  previous?: PreviousEntry[];
+  prefilledFrom?: PreviousEntry | null;
   readOnly?: boolean;
   onDirtyChange?: (dirty: boolean) => void;
   aside?: ReactNode;
@@ -614,6 +657,8 @@ export function SectionForm({
   section,
   state,
   defaults,
+  previous = [],
+  prefilledFrom = null,
   readOnly,
   onDirtyChange,
   aside,
@@ -665,15 +710,26 @@ export function SectionForm({
           <SaveState dirty={dirty} saving={save.isLoading} updatedAt={state?.updatedAt} />
         </div>
         {aside}
-        <fieldset
-          disabled={readOnly}
-          className={cn(
-            'min-w-0',
-            section.key === 'medical_history' && '[&_[data-slot=form-label]]:font-semibold',
-          )}
-        >
-          <VisibleFields section={section} disabled={readOnly} />
-        </fieldset>
+        {prefilledFrom && !state ? (
+          <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary-soft/40 px-3 py-2 text-sm">
+            <History className="mt-0.5 size-4 shrink-0 text-primary" />
+            <span>
+              Filled in from the last visit, #{prefilledFrom.appointmentNo} on{' '}
+              {formatDate(prefilledFrom.date)}. Change what is different today, then save.
+            </span>
+          </div>
+        ) : null}
+        <PreviousVisitsProvider entries={previous}>
+          <fieldset
+            disabled={readOnly}
+            className={cn(
+              'min-w-0',
+              section.key === 'medical_history' && '[&_[data-slot=form-label]]:font-semibold',
+            )}
+          >
+            <VisibleFields section={section} disabled={readOnly} />
+          </fieldset>
+        </PreviousVisitsProvider>
         <div className="sticky bottom-0 -mx-6 flex items-center justify-between gap-3 border-t bg-card/95 px-6 py-3 backdrop-blur">
           <span className="text-xs text-muted-foreground">Ctrl + S saves this section.</span>
           <div className="flex items-center gap-2">

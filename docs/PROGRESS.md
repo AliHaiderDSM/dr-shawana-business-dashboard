@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Visits start from the last visit, field history (2026-10-19)
+
+- A tab not saved yet in this visit opens filled from the last earlier visit (banner shows which); clinical remarks start empty. Weight/height/BMI and Major complaint have a History button listing every earlier visit.
+- Family history is a condition x family member table; close family asks who.
+
 ## Family history per relative, Newson symptom order (2026-10-19)
 
 - Medical history: topics heading and first question removed; family history picks family members, each with its own green-linked card of conditions (close family asks who it is). Older visits open with their relatives and conditions filled in.

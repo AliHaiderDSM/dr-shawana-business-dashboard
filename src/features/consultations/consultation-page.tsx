@@ -40,12 +40,14 @@ import {
   readAppointmentConsultation,
   useAppointmentConsultation,
   useConsultationHistory,
+  useConsultationPrevious,
   useSetConsultationStatusMutation,
   useStartConsultationMutation,
   type Consultation,
   type SectionKey,
 } from '@redux/features/consultations';
 import { SECTIONS, type FormValues } from './clinical-fields';
+import { type PreviousEntry } from './field-history';
 import { SectionForm } from './section-form';
 
 type PanelKey = SectionKey | 'records' | 'clinical' | 'prescriptions';
@@ -167,22 +169,40 @@ function PatientHeader({
   );
 }
 
+const NOT_CARRIED: Partial<Record<SectionKey, string[]>> = { clinical_assessment: ['plan'] };
+
+function startFrom(key: SectionKey, saved: unknown, earlier: PreviousEntry[]) {
+  const last = saved ? null : (earlier[0] ?? null);
+  if (!last) return { from: null, data: {} as FormValues };
+  const skip = new Set(NOT_CARRIED[key] ?? []);
+  return {
+    from: last,
+    data: Object.fromEntries(Object.entries(last.data).filter(([k]) => !skip.has(k))) as FormValues,
+  };
+}
+
 function ClinicalRemarks({
   consultation,
+  earlier,
   readOnly,
   onDirtyChange,
   onSaved,
 }: {
   consultation: Consultation;
+  earlier: PreviousEntry[];
   readOnly: boolean;
   onDirtyChange: (dirty: boolean) => void;
   onSaved: () => void;
 }) {
+  const start = startFrom('clinical_assessment', consultation.sections.clinical_assessment, earlier);
   return (
     <SectionForm
       consultation={consultation}
       section={SECTIONS.clinical_assessment}
       state={consultation.sections.clinical_assessment}
+      defaults={start.data}
+      previous={earlier}
+      prefilledFrom={start.from}
       readOnly={readOnly}
       onDirtyChange={onDirtyChange}
       onSaved={onSaved}
@@ -202,6 +222,8 @@ function Workspace({
   const [params, setParams] = useSearchParams();
   const summary = usePatientSummary(consultation.patientId);
   const history = useConsultationHistory(consultation.id);
+  const previous = useConsultationPrevious(consultation.id);
+  const earlier = (key: SectionKey) => (previous.data?.sections[key] ?? []) as PreviousEntry[];
   const patient = patientsApi.useDetail(consultation.patientId);
   const canPrescribe = can('prescriptions.view');
   const items = navItems(consultation, canPrescribe);
@@ -255,53 +277,58 @@ function Workspace({
     },
   };
 
-  const sectionPanel = (key: SectionKey) => (
-    <SectionForm
-      key={`${key}-${patient.isSuccess}`}
-      consultation={consultation}
-      section={SECTIONS[key]}
-      state={consultation.sections[key]}
-      defaults={defaults[key]}
-      readOnly={readOnly}
-      onDirtyChange={onDirtyChange}
-      onSaved={() => advance(key === 'imaging_results' ? 'records' : key)}
-      aside={
-        key === 'mrs_scale' || key === 'additional_symptoms' ? (
-          <Panel
-            title="Visit history: MRS and additional symptoms"
-            description={
-              key === 'mrs_scale'
-                ? 'The MRS scale and the additional symptoms are one record of this visit. Save the MRS, then the additional symptoms open.'
-                : `Saved with the MRS scale of this visit${
-                    consultation.sections.mrs_scale?.data?.date
-                      ? ` (${formatDate(String(consultation.sections.mrs_scale.data.date))})`
-                      : ''
-                  }.`
-            }
-          >
-            {key === 'mrs_scale' ? <MrsScores consultation={consultation} /> : null}
-            {key === 'mrs_scale' ? <MrsChart patientId={consultation.patientId} /> : null}
-            <MrsSymptomsHistory patientId={consultation.patientId} currentId={consultation.id} />
-          </Panel>
-        ) : undefined
-      }
-      footer={
-        key === 'referral'
-          ? (saved) =>
-              saved ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void navigate(`/print/referral/${consultation.id}`)}
-                >
-                  <Printer />
-                  Print letter
-                </Button>
-              ) : null
-          : undefined
-      }
-    />
-  );
+  const sectionPanel = (key: SectionKey) => {
+    const start = startFrom(key, consultation.sections[key], earlier(key));
+    return (
+      <SectionForm
+        key={`${key}-${patient.isSuccess}-${previous.isSuccess}`}
+        consultation={consultation}
+        section={SECTIONS[key]}
+        state={consultation.sections[key]}
+        defaults={{ ...start.data, ...defaults[key] }}
+        previous={earlier(key)}
+        prefilledFrom={start.from}
+        readOnly={readOnly}
+        onDirtyChange={onDirtyChange}
+        onSaved={() => advance(key === 'imaging_results' ? 'records' : key)}
+        aside={
+          key === 'mrs_scale' || key === 'additional_symptoms' ? (
+            <Panel
+              title="Visit history: MRS and additional symptoms"
+              description={
+                key === 'mrs_scale'
+                  ? 'The MRS scale and the additional symptoms are one record of this visit. Save the MRS, then the additional symptoms open.'
+                  : `Saved with the MRS scale of this visit${
+                      consultation.sections.mrs_scale?.data?.date
+                        ? ` (${formatDate(String(consultation.sections.mrs_scale.data.date))})`
+                        : ''
+                    }.`
+              }
+            >
+              {key === 'mrs_scale' ? <MrsScores consultation={consultation} /> : null}
+              {key === 'mrs_scale' ? <MrsChart patientId={consultation.patientId} /> : null}
+              <MrsSymptomsHistory patientId={consultation.patientId} currentId={consultation.id} />
+            </Panel>
+          ) : undefined
+        }
+        footer={
+          key === 'referral'
+            ? (saved) =>
+                saved ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void navigate(`/print/referral/${consultation.id}`)}
+                  >
+                    <Printer />
+                    Print letter
+                  </Button>
+                ) : null
+            : undefined
+        }
+      />
+    );
+  };
 
   const content = (() => {
     switch (active) {
@@ -326,7 +353,9 @@ function Workspace({
       case 'clinical':
         return (
           <ClinicalRemarks
+            key={`clinical-${previous.isSuccess}`}
             consultation={consultation}
+            earlier={earlier('clinical_assessment')}
             readOnly={readOnly}
             onDirtyChange={onDirtyChange}
             onSaved={() => advance('clinical')}

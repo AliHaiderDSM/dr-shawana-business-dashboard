@@ -29,6 +29,7 @@ export type ConsultationDetail = ClinicGetResponse<'/branch/consultations/{id}'>
 export type MrsHistory = ClinicGetResponse<'/branch/patients/{id}/mrs-history'>['data'];
 export type ReferralLetter = ClinicGetResponse<'/branch/consultations/{id}/referral-letter'>['data'];
 export type ConsultationHistoryResponse = ClinicGetResponse<'/branch/consultations/{id}/history'>['data'];
+export type ConsultationPreviousResponse = ClinicGetResponse<'/branch/consultations/{id}/previous'>['data'];
 
 export interface SaveConsultationSectionArg {
   consultation: Pick<Consultation, 'id' | 'appointmentId' | 'patientId'>;

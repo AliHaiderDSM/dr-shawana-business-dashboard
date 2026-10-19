@@ -18413,6 +18413,177 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/consultations/{id}/previous": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved sections of the patient’s earlier visits (up to this visit date), newest first, per section key. Used to start a new visit from the last values and to show each field’s history. */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Earlier sections */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                sections: {
+                                    basic_info?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    follow_up?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    medical_history?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    mrs_scale?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    additional_symptoms?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    imaging_results?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    clinical_assessment?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    referral?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                    plans?: {
+                                        /** Format: uuid */
+                                        consultationId: string;
+                                        appointmentNo: number;
+                                        date: string;
+                                        data: {
+                                            [key: string]: unknown;
+                                        };
+                                    }[];
+                                };
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/consultations/{id}/history": {
         parameters: {
             query?: never;
@@ -31409,7 +31580,7 @@ export interface components {
             /** @default null */
             menopauseDiagnosedAge: string | null;
             /** @default [] */
-            conditions: ("breast_cancer" | "endometrial_cancer" | "ovarian_cancer" | "brca" | "lynch_syndrome" | "other_cancer" | "hyperthyroidism" | "hypothyroidism" | "endometriosis" | "pms" | "pcos" | "diabetes" | "insulin_resistance" | "dyslipidemia" | "nafld" | "osteopenia" | "osteoporosis" | "osteoarthritis" | "rheumatoid_arthritis" | "gout" | "heart_disease" | "hypertension" | "dvt" | "pulmonary_embolism" | "tia" | "anxiety" | "depression" | "chronic_fatigue_me" | "pnd" | "pmdd" | "migraine" | "epilepsy" | "multiple_sclerosis" | "memory_issues" | "stroke" | "lupus_sle" | "skin_disease" | "liver_disease" | "chronic_reflux" | "celiac_disease" | "ibs" | "h_pylori" | "recurrent_uti" | "vaginal_infections" | "std")[];
+            conditions: ("breast_cancer" | "endometrial_cancer" | "ovarian_cancer" | "brca" | "lynch_syndrome" | "other_cancer" | "hyperthyroidism" | "hypothyroidism" | "endometriosis" | "pms" | "pcos" | "diabetes" | "insulin_resistance" | "dyslipidemia" | "nafld" | "osteopenia" | "osteoporosis" | "osteoarthritis" | "rheumatoid_arthritis" | "gout" | "heart_disease" | "hypertension" | "dvt" | "pulmonary_embolism" | "tia" | "anxiety" | "depression" | "chronic_fatigue_me" | "pnd" | "pmdd" | "migraine" | "epilepsy" | "multiple_sclerosis" | "memory_issues" | "stroke" | "lupus_sle" | "skin_disease" | "liver_disease" | "chronic_reflux" | "celiac_disease" | "ibs" | "h_pylori" | "recurrent_uti" | "vaginal_infections" | "std" | "no_cancer" | "no_hormonal" | "no_metabolic" | "no_musculoskeletal" | "no_cardiac" | "no_mental" | "no_neurological" | "no_autoimmune" | "no_liver_gi" | "no_genitourinary")[];
             /** @default null */
             otherConditions: string | null;
             /** @default [] */
@@ -31422,6 +31593,8 @@ export interface components {
                  * @example 2026-09-30
                  */
                 date: string | null;
+                /** @default null */
+                year: number | null;
             }[];
             /** @default null */
             otherSurgery: string | null;
@@ -31431,6 +31604,20 @@ export interface components {
             familyConditions: ("breast_cancer" | "ovarian_cancer" | "endometrial_cancer" | "osteoporosis" | "hip_fracture" | "heart_disease" | "diabetes" | "early_menopause" | "dementia" | "other")[];
             /** @default null */
             familyOther: string | null;
+            /**
+             * @description Conditions per family member; close_family carries who it is
+             * @default []
+             */
+            familyHistory: {
+                /** @enum {string} */
+                relative: "mother" | "father" | "sister" | "close_family";
+                /** @default null */
+                who: string | null;
+                /** @default [] */
+                conditions: ("breast_cancer" | "ovarian_cancer" | "endometrial_cancer" | "osteoporosis" | "hip_fracture" | "heart_disease" | "diabetes" | "early_menopause" | "dementia" | "other")[];
+                /** @default null */
+                other: string | null;
+            }[];
             /**
              * @default null
              * @enum {string|null}
