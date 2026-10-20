@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Blood work chart as posSoft (2026-10-20)
+
+- The blood work chart follows the posSoft Chart.js chart: the Chart.js curve (tension 0.4, `src/lib/chartjs-curve.ts`), solid 2px lines in the posSoft colours (`--blood-1`…`--blood-9`, lighter in dark mode), hollow points, Y from 0, legend on top. Clicking a test in the legend shows only that test; clicking it again shows all. The test dropdown is gone.
+
 ## MRS tab off and imaging year (2026-10-20)
 
 - The MRS scale tab in the consultation is commented out, as posSoft has it off. The additional symptoms visit history no longer shows the MRS column. Nothing else changes: additional symptoms never depended on the MRS.

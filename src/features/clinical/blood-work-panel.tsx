@@ -14,9 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
+import { CHARTJS_CURVE } from '@/lib/chartjs-curve';
 import { prepareReportFiles, REPORT_ACCEPT, ReportFileError } from './prepare-report-files';
 import { useReportSelection } from './report-selection';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
@@ -29,21 +29,17 @@ import {
   type BloodTest,
 } from '@redux/features/clinical';
 import { BLOOD_TEST_LABELS, BLOOD_TESTS } from './constants';
-import { ReportSummaries } from './report-summaries';
+// import { ReportSummaries } from './report-summaries';
 
 const ALL = 'all';
 
-const SERIES_STYLE = [
-  { stroke: 'var(--chart-1)' },
-  { stroke: 'var(--chart-4)' },
-  { stroke: 'var(--chart-2)' },
-  { stroke: 'var(--chart-3)' },
-  { stroke: 'var(--chart-5)' },
-  { stroke: 'var(--chart-1)', dash: '6 4' },
-  { stroke: 'var(--chart-4)', dash: '6 4' },
-  { stroke: 'var(--chart-2)', dash: '6 4' },
-  { stroke: 'var(--chart-3)', dash: '6 4' },
-];
+const colorOf = (test: BloodTest) =>
+  `var(--blood-${
+    Math.max(
+      0,
+      BLOOD_TESTS.findIndex((b) => b.test === test),
+    ) + 1
+  })`;
 
 const schema = z.object({
   testDate: z.string().min(1, 'Choose the test date'),
@@ -350,7 +346,7 @@ export function BloodWorkPanel({
   const shown = chartTest === ALL ? testsWithData : testsWithData.filter((t) => t.test === chartTest);
   const chartRows = dates.map((date) => {
     const row: Record<string, string | number | null> = { date: formatDate(date, 'dd-MM-yyyy') };
-    for (const t of shown) {
+    for (const t of testsWithData) {
       const point = data?.tests.find((r) => r.test === t.test)?.points.find((p) => p.date === date);
       row[t.test] = point ? Number(point.value) : null;
     }
@@ -415,19 +411,9 @@ export function BloodWorkPanel({
               <h3 className="text-sm font-semibold">
                 {chartTest === ALL ? 'All results over time' : `${BLOOD_TEST_LABELS[chartTest]} over time`}
               </h3>
-              <Select value={chartTest} onValueChange={(v) => setChartTest(v as BloodTest | typeof ALL)}>
-                <SelectTrigger size="sm" className="w-56" aria-label="Test">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>All tests</SelectItem>
-                  {testsWithData.map((t) => (
-                    <SelectItem key={t.test} value={t.test}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <span className="text-xs text-muted-foreground">
+                Click a test in the legend to show only that test; click it again to show all.
+              </span>
             </div>
             {dates.length < 2 ? (
               <div className="space-y-3">
@@ -454,17 +440,19 @@ export function BloodWorkPanel({
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartRows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-                    <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="var(--chart-grid)" />
                     <XAxis
                       dataKey="date"
                       tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
-                      axisLine={false}
+                      axisLine={{ stroke: 'var(--chart-grid)' }}
                     />
                     <YAxis
+                      domain={[0, 'auto']}
+                      allowDecimals={false}
                       tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
-                      axisLine={false}
+                      axisLine={{ stroke: 'var(--chart-grid)' }}
                       width={48}
                     />
                     <Tooltip
@@ -480,30 +468,42 @@ export function BloodWorkPanel({
                         return [`${String(value)} ${test?.unit ?? ''}`, test?.label ?? String(name)];
                       }}
                     />
-                    {shown.length > 1 ? (
-                      <Legend
-                        formatter={(value: string) => BLOOD_TEST_LABELS[value as BloodTest] ?? value}
-                        wrapperStyle={{ fontSize: 12, color: 'var(--muted-foreground)' }}
+                    <Legend
+                      verticalAlign="top"
+                      height={32}
+                      iconType="plainline"
+                      wrapperStyle={{ fontSize: 12, cursor: 'pointer' }}
+                      onClick={(entry) => {
+                        const key = String(entry.dataKey) as BloodTest;
+                        setChartTest((current) => (current === key ? ALL : key));
+                      }}
+                      formatter={(value: string) => (
+                        <span
+                          className={
+                            chartTest !== ALL && chartTest !== value
+                              ? 'text-muted-foreground line-through'
+                              : 'text-foreground'
+                          }
+                        >
+                          {BLOOD_TEST_LABELS[value as BloodTest] ?? value}
+                        </span>
+                      )}
+                    />
+                    {testsWithData.map((t) => (
+                      <Line
+                        key={t.test}
+                        type={CHARTJS_CURVE}
+                        dataKey={t.test}
+                        name={t.test}
+                        hide={chartTest !== ALL && chartTest !== t.test}
+                        stroke={colorOf(t.test)}
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: 'var(--card)', stroke: colorOf(t.test), strokeWidth: 1 }}
+                        activeDot={{ r: 4, fill: colorOf(t.test) }}
+                        connectNulls
+                        isAnimationActive={false}
                       />
-                    ) : null}
-                    {shown.map((t) => {
-                      const style =
-                        SERIES_STYLE[BLOOD_TESTS.findIndex((b) => b.test === t.test)] ?? SERIES_STYLE[0];
-                      return (
-                        <Line
-                          key={t.test}
-                          type="natural"
-                          dataKey={t.test}
-                          name={t.test}
-                          stroke={style?.stroke}
-                          strokeDasharray={style?.dash}
-                          strokeWidth={2}
-                          dot={{ r: 4, fill: style?.stroke, strokeWidth: 2, stroke: 'var(--card)' }}
-                          activeDot={{ r: 6 }}
-                          connectNulls
-                        />
-                      );
-                    })}
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -582,7 +582,7 @@ export function BloodWorkPanel({
           </div>
         </>
       )}
-      <ReportSummaries patientId={patientId} canEdit={canEdit} />
+      {/* <ReportSummaries patientId={patientId} canEdit={canEdit} /> */}
       {canEdit && sheet ? (
         <ResultsSheet
           key={sheet.key}

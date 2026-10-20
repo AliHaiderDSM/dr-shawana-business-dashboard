@@ -70,6 +70,15 @@
   --chart-4: oklch(0.6 0.15 320);
   --chart-5: oklch(0.62 0.13 155);
   --chart-grid: oklch(0.93 0.006 var(--brand-hue));
+  --blood-1: #3461ff;
+  --blood-2: #cf4393;
+  --blood-3: #2ecc71;
+  --blood-4: #000000;
+  --blood-5: #f39c12;
+  --blood-6: #1abc9c;
+  --blood-7: #34495e;
+  --blood-8: #e67e22;
+  --blood-9: #16a085;
 
   --sidebar: oklch(0.992 0.002 var(--brand-hue));
   --sidebar-foreground: oklch(0.36 0.02 var(--brand-hue));
@@ -153,6 +162,15 @@
   --chart-4: oklch(0.6 0.15 320);
   --chart-5: oklch(0.64 0.13 155);
   --chart-grid: oklch(0.27 0.012 var(--brand-hue));
+  --blood-1: #6b8cff;
+  --blood-2: #e06aaa;
+  --blood-3: #4ade80;
+  --blood-4: #d4d4d8;
+  --blood-5: #f5b041;
+  --blood-6: #48d1b5;
+  --blood-7: #8fa3b8;
+  --blood-8: #f0a35e;
+  --blood-9: #3cc0a4;
 
   --sidebar: oklch(0.18 0.013 var(--brand-hue));
   --sidebar-foreground: oklch(0.82 0.01 var(--brand-hue));
