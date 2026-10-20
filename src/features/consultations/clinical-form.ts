@@ -5,7 +5,7 @@ type InputField = Exclude<FieldDef, { kind: 'heading' | 'bmi' }>;
 
 interface ScanValue {
   status: string | null;
-  date: string;
+  year: string;
   abnormalDetails: string;
 }
 
@@ -58,10 +58,10 @@ export function toFormValues(
         values[field.key] = raw === null || raw === undefined ? null : String(raw);
         break;
       case 'scan': {
-        const scan = (raw ?? {}) as Partial<Record<keyof ScanValue, string | null>>;
+        const scan = (raw ?? {}) as Partial<Record<keyof ScanValue | 'date', string | null>>;
         values[field.key] = {
           status: scan.status ?? null,
-          date: text(scan.date),
+          year: scan.year ? String(scan.year) : text(scan.date).slice(0, 4),
           abnormalDetails: text(scan.abnormalDetails),
         } satisfies ScanValue;
         if (field.extraKey) values[field.extraKey] = text(source[field.extraKey]);
@@ -135,7 +135,8 @@ export function toApiData(section: SectionDef, values: FormValues) {
         const scan = raw as ScanValue;
         data[field.key] = {
           status: scan.status,
-          date: nullable(scan.date),
+          year: scan.year ? Number(scan.year) : null,
+          date: null,
           abnormalDetails: scan.status === 'abnormal' ? nullable(scan.abnormalDetails) : null,
         };
         if (field.extraKey) data[field.extraKey] = nullable(values[field.extraKey]);

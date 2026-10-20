@@ -33163,6 +33163,7 @@ export interface components {
             /**
              * @default {
              *       "status": null,
+             *       "year": null,
              *       "date": null,
              *       "abnormalDetails": null
              *     }
@@ -33173,6 +33174,11 @@ export interface components {
                  * @enum {string|null}
                  */
                 status: "normal" | "abnormal" | "not_done" | null;
+                /**
+                 * @description Year the scan was done
+                 * @default null
+                 */
+                year: number | null;
                 /**
                  * Format: date
                  * @default null
@@ -33187,6 +33193,7 @@ export interface components {
             /**
              * @default {
              *       "status": null,
+             *       "year": null,
              *       "date": null,
              *       "abnormalDetails": null
              *     }
@@ -33198,6 +33205,11 @@ export interface components {
                  */
                 status: "normal" | "abnormal" | "not_done" | null;
                 /**
+                 * @description Year the scan was done
+                 * @default null
+                 */
+                year: number | null;
+                /**
                  * Format: date
                  * @default null
                  * @example 2026-09-30
@@ -33209,6 +33221,7 @@ export interface components {
             /**
              * @default {
              *       "status": null,
+             *       "year": null,
              *       "date": null,
              *       "abnormalDetails": null
              *     }
@@ -33220,6 +33233,11 @@ export interface components {
                  */
                 status: "normal" | "abnormal" | "not_done" | null;
                 /**
+                 * @description Year the scan was done
+                 * @default null
+                 */
+                year: number | null;
+                /**
                  * Format: date
                  * @default null
                  * @example 2026-09-30
@@ -33231,6 +33249,7 @@ export interface components {
             /**
              * @default {
              *       "status": null,
+             *       "year": null,
              *       "date": null,
              *       "abnormalDetails": null
              *     }
@@ -33241,6 +33260,11 @@ export interface components {
                  * @enum {string|null}
                  */
                 status: "normal" | "abnormal" | "not_done" | null;
+                /**
+                 * @description Year the scan was done
+                 * @default null
+                 */
+                year: number | null;
                 /**
                  * Format: date
                  * @default null

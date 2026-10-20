@@ -64,7 +64,7 @@ function navItems(consultation: Consultation, canPrescribe: boolean): NavItem[] 
   const items: (NavItem | false)[] = [
     { key: 'basic_info', label: 'Basic information', done: saved('basic_info') },
     { key: 'medical_history', label: 'Medical history', done: saved('medical_history') },
-    { key: 'mrs_scale', label: 'MRS scale', done: saved('mrs_scale') },
+    // { key: 'mrs_scale', label: 'MRS scale', done: saved('mrs_scale') },
     { key: 'additional_symptoms', label: 'Additional symptoms', done: saved('additional_symptoms') },
     { key: 'records', label: 'Medical records', done: saved('imaging_results') },
     { key: 'clinical', label: 'Clinical remarks', done: saved('clinical_assessment') },
@@ -294,20 +294,24 @@ function Workspace({
         aside={
           key === 'mrs_scale' || key === 'additional_symptoms' ? (
             <Panel
-              title="Visit history: MRS and additional symptoms"
+              title={
+                key === 'mrs_scale'
+                  ? 'Visit history: MRS and additional symptoms'
+                  : 'Visit history: additional symptoms'
+              }
               description={
                 key === 'mrs_scale'
                   ? 'The MRS scale and the additional symptoms are one record of this visit. Save the MRS, then the additional symptoms open.'
-                  : `Saved with the MRS scale of this visit${
-                      consultation.sections.mrs_scale?.data?.date
-                        ? ` (${formatDate(String(consultation.sections.mrs_scale.data.date))})`
-                        : ''
-                    }.`
+                  : 'The symptoms ticked at each visit, with their severity.'
               }
             >
               {key === 'mrs_scale' ? <MrsScores consultation={consultation} /> : null}
               {key === 'mrs_scale' ? <MrsChart patientId={consultation.patientId} /> : null}
-              <MrsSymptomsHistory patientId={consultation.patientId} currentId={consultation.id} />
+              <MrsSymptomsHistory
+                patientId={consultation.patientId}
+                currentId={consultation.id}
+                showMrs={key === 'mrs_scale'}
+              />
             </Panel>
           ) : undefined
         }

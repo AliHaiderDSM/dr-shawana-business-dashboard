@@ -182,12 +182,30 @@ function ScanField({
           options={toOptions(SCAN_STATUSES)}
           allowClear
         />
-        <TextField
+        <FormField
           control={control}
-          name={`${field.key}.date`}
-          label="Date"
-          type="date"
-          disabled={disabled}
+          name={`${field.key}.year`}
+          render={({ field: f }) => (
+            <FormItem>
+              <FormLabel>Year</FormLabel>
+              <FormControl>
+                <select
+                  className="h-9 w-full rounded-md border bg-background px-3 text-sm shadow-xs"
+                  disabled={disabled}
+                  value={typeof f.value === 'string' ? f.value : ''}
+                  onChange={(e) => f.onChange(e.target.value)}
+                >
+                  <option value="">Choose year</option>
+                  {SURGERY_YEARS.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
       </div>
       {status === 'abnormal' ? (

@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## MRS tab off and imaging year (2026-10-20)
+
+- The MRS scale tab in the consultation is commented out, as posSoft has it off. The additional symptoms visit history no longer shows the MRS column. Nothing else changes: additional symptoms never depended on the MRS.
+- Imaging results (pelvic scan, DEXA, mammogram, breast ultrasound) take a year instead of a full date. Older scans with a date show its year.
+
 ## Patient link form and history as posSoft (2026-10-20)
 
 - Copy link form now follows the posSoft link: Basic information, About this visit (major complaint, current medication, top 3 things, anything else), Have you ever been diagnosed with (no family history), and the 13 Other symptoms you are experiencing. The patient's past history is no longer shown on the link.

@@ -1,8 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, CalendarPlus, FilePlus2, Pencil, Receipt } from 'lucide-react';
+import { CalendarPlus, FilePlus2, Pencil, Receipt } from 'lucide-react';
 import { AppAccessPanel } from '@/features/patient-requests/app-access-panel';
 import { useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
@@ -193,12 +193,7 @@ export function PatientProfilePage() {
 
   return (
     <>
-      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground">
-        <Link to="/patients">
-          <ArrowLeft />
-          Customers
-        </Link>
-      </Button>
+     
       <PageHeader
         title={
           <span className="flex items-center gap-3">

@@ -30,12 +30,26 @@ function symptomLabels() {
 
 const LABELS = symptomLabels();
 
-export function MrsSymptomsHistory({ patientId, currentId }: { patientId: string; currentId?: string }) {
+export function MrsSymptomsHistory({
+  patientId,
+  currentId,
+  showMrs = true,
+}: {
+  patientId: string;
+  currentId?: string;
+  showMrs?: boolean;
+}) {
   const history = useMrsHistory(patientId);
   if (history.isLoading) return <Skeleton className="h-32 w-full" />;
-  const visits = [...(history.data ?? [])].reverse();
+  const visits = [...(history.data ?? [])]
+    .reverse()
+    .filter((v) => showMrs || v.symptoms.length > 0 || v.otherSymptoms || v.consultationId === currentId);
   if (visits.length === 0) {
-    return <p className="py-4 text-center text-sm text-muted-foreground">No MRS or symptoms saved yet.</p>;
+    return (
+      <p className="py-4 text-center text-sm text-muted-foreground">
+        {showMrs ? 'No MRS or symptoms saved yet.' : 'No symptoms saved yet.'}
+      </p>
+    );
   }
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -43,7 +57,7 @@ export function MrsSymptomsHistory({ patientId, currentId }: { patientId: string
         <thead className="bg-muted/40 text-xs text-muted-foreground">
           <tr>
             <th className="px-3 py-2 text-left font-medium">Visit</th>
-            <th className="px-3 py-2 text-left font-medium">MRS</th>
+            {showMrs ? <th className="px-3 py-2 text-left font-medium">MRS</th> : null}
             <th className="px-3 py-2 text-left font-medium">Additional symptoms</th>
           </tr>
         </thead>
@@ -59,23 +73,25 @@ export function MrsSymptomsHistory({ patientId, currentId }: { patientId: string
                   <div className="text-xs text-primary">This visit</div>
                 ) : null}
               </td>
-              <td className="px-3 py-2 whitespace-nowrap">
-                {visit.scores ? (
-                  <div className="space-y-1">
-                    <div className="font-semibold tabular-nums">
-                      {visit.scores.total} / 44
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        ({Math.round(visit.scores.percentage)}%)
-                      </span>
+              {showMrs ? (
+                <td className="px-3 py-2 whitespace-nowrap">
+                  {visit.scores ? (
+                    <div className="space-y-1">
+                      <div className="font-semibold tabular-nums">
+                        {visit.scores.total} / 44
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">
+                          ({Math.round(visit.scores.percentage)}%)
+                        </span>
+                      </div>
+                      <StatusBadge tone={MRS_TONES[visit.scores.severity] ?? 'success'}>
+                        {visit.scores.severity}
+                      </StatusBadge>
                     </div>
-                    <StatusBadge tone={MRS_TONES[visit.scores.severity] ?? 'success'}>
-                      {visit.scores.severity}
-                    </StatusBadge>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">Not filled</span>
-                )}
-              </td>
+                  ) : (
+                    <span className="text-muted-foreground">Not filled</span>
+                  )}
+                </td>
+              ) : null}
               <td className="px-3 py-2">
                 {visit.symptoms.length ? (
                   <div className="flex flex-wrap gap-1">
