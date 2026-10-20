@@ -12,6 +12,14 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Patient link form and history as posSoft (2026-10-20)
+
+- Copy link form now follows the posSoft link: Basic information, About this visit (major complaint, current medication, top 3 things, anything else), Have you ever been diagnosed with (no family history), and the 13 Other symptoms you are experiencing. The patient's past history is no longer shown on the link.
+- Consultation medical history and follow up show "top 3 things"; medical history also shows "anything else". Additional symptoms gain Lack of tolerance / Rage, Skin issues, Weight loss and Belly fat.
+- Patient history: every additional symptom is a column with its severity (✓ when ticked without a rating). Picking a patient filters the same table to that patient, with the timeline and MRS trend below.
+- Patient history columns now match posSoft `viewPatientsHistoryModel.php`: Sr No., name/phone, age, city, country, date, BMI, menopause status, age at menopause, the four MRS scores, the four treatments and the 84 posSoft symptoms. The 4 symptoms posSoft lacks come last. Removed: MRS items, FSH, estradiol, total testosterone, doctor, still on treatment, appointment, status. posSoft PatID is left out, as patients have no number.
+- Link "Have you ever been diagnosed with?" has the two menopause questions, the conditions checklist (STD hidden, as on the posSoft link) and "Any other". Symptom cells in patient history show 0 when not ticked, as in posSoft. The file pickers show an upload icon on the right.
+
 ## Book appointment payments (2026-10-19)
 
 - The Payments section with Add payment stays on booking. The read-only Fee / Received / Remaining box now shows only when editing an appointment.

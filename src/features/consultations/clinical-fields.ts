@@ -136,6 +136,12 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
       { kind: 'textarea', key: 'currentMedications', label: 'Current medications', wide: true },
       {
         kind: 'textarea',
+        key: 'discussTopics',
+        label: 'What are the top 3 things you would like to discuss in your consultation?',
+        wide: true,
+      },
+      {
+        kind: 'textarea',
         key: 'beforeVisitNote',
         label: "Anything else you would like your doctor to know before today's visit?",
         wide: true,
@@ -216,6 +222,18 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
     title: 'Medical history',
     fields: [
       { kind: 'textarea', key: 'majorComplaint', label: 'Major complaint', wide: true },
+      {
+        kind: 'textarea',
+        key: 'discussTopics',
+        label: 'What are the top 3 things you would like to discuss in your consultation?',
+        wide: true,
+      },
+      {
+        kind: 'textarea',
+        key: 'beforeVisitNote',
+        label: "Anything else you would like your doctor to know before today's visit?",
+        wide: true,
+      },
       heading('h-hormones', 'Hormones, contraception and periods'),
       {
         kind: 'choice',
@@ -542,6 +560,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
             options: choices(
               'mood_swings:Mood swings',
               'irritability:Irritability',
+              'lack_of_tolerance:Lack of tolerance / Rage',
               'feeling_anxious:Feeling anxious',
               'panic_attacks:Panic attacks',
               'feeling_tense:Feeling tense / nervous',
@@ -584,6 +603,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
               'skin_itching:Itchy skin',
               'dry_hair:Dry hair',
               'hair_loss:Hair loss',
+              'skin_issues:Skin issues',
               'nail_changes:Brittle nails',
             ),
           },
@@ -591,6 +611,8 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
             title: 'Symptoms affecting your digestive system',
             options: choices(
               'weight_gain:Weight gain',
+              'weight_loss:Weight loss',
+              'belly_fat:Belly fat',
               'bloating:Bloating',
               'constipation:Constipation',
               'gas:Wind/flatulence',

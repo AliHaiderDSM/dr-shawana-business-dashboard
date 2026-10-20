@@ -15492,6 +15492,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patient/documents/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete one file of a report the patient uploaded. When it was the last file, the report goes too. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patient/documents/files/{fileId}/url": {
         parameters: {
             query?: never;
@@ -19527,6 +19608,252 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doctor/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own doctor profile: the name patients see, details, phone and login */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Profile */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        /** Update own name, details and phone. The phone is also the app login phone. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DoctorOwnProfile"];
+                };
+            };
+            responses: {
+                /** @description Profile */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/app/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** One login for the mobile app. A phone number logs in the patient with that password, or a doctor with that phone. An email or username logs in a doctor. The answer says which side to open (role). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AppLogin"];
+                };
+            };
+            responses: {
+                /** @description Session */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** @enum {string} */
+                                role: "patient" | "doctor";
+                                accessToken: string;
+                                refreshToken: string;
+                            };
+                        };
+                    };
                 };
                 /** @description Validation error */
                 400: {
@@ -32184,6 +32511,22 @@ export interface components {
             /** @enum {string|null} */
             platform?: "ios" | "android" | "web" | null;
         };
+        DoctorOwnProfile: {
+            /** @description Name patients see, e.g. Dr. Shawana */
+            displayName?: string;
+            /** @description Qualification and speciality */
+            details?: string | null;
+            /** @description Also used to log in to the app */
+            phone?: string | null;
+            firstName?: string;
+            lastName?: string;
+        };
+        AppLogin: {
+            /** @description Patient phone number, or a doctor’s phone, email or username */
+            identifier: string;
+            password: string;
+            device?: string | null;
+        };
         ConsultationStatusChange: {
             /** @enum {string} */
             status: "open" | "completed";
@@ -32524,6 +32867,8 @@ export interface components {
             majorComplaint: string | null;
             /** @default null */
             currentMedications: string | null;
+            /** @default null */
+            beforeVisitNote: string | null;
             /**
              * @default null
              * @enum {string|null}
@@ -32699,7 +33044,7 @@ export interface components {
         };
         Section_additional_symptoms: {
             /** @default [] */
-            symptoms: ("difficulty_concentrating" | "word_finding_difficulty" | "brain_fog" | "reduced_multitasking" | "mood_swings" | "feeling_anxious" | "feeling_tense" | "feeling_depressed" | "low_motivation" | "feeling_hopeless" | "not_feeling_yourself" | "self_harm_thoughts" | "addictive_behaviour" | "irritability" | "panic_attacks" | "crying_spells" | "flat_mood" | "low_self_worth" | "feeling_bad_about_yourself" | "loss_of_interest" | "unhealthy_food_behaviour" | "social_withdrawal" | "accomplishing_less" | "fatigue" | "low_libido" | "migraines" | "pins_and_needles" | "night_sweats" | "dizziness_vertigo" | "restless_legs" | "difficulty_sleeping" | "headaches" | "tinnitus" | "hot_flushes" | "crawling_sensation" | "internal_tremors" | "burning_soles" | "taste_changes" | "hearing_changes" | "dry_skin" | "dry_hair" | "nail_changes" | "skin_itching" | "hair_loss" | "increased_facial_hair" | "skin_issues" | "body_odor_change" | "weight_gain" | "constipation" | "abdominal_pain" | "diarrhea" | "bloating" | "gas" | "heartburn" | "weight_loss" | "belly_fat" | "food_sugar_cravings" | "heavier_periods" | "longer_periods" | "longer_cycle" | "irregular_periods" | "vaginal_itching" | "frequent_urination" | "nocturia" | "painful_urination" | "lighter_periods" | "shorter_periods" | "shorter_cycle" | "vaginal_dryness" | "painful_sex" | "stress_incontinence" | "recurrent_utis" | "joint_pains" | "joint_stiffness" | "foot_pain" | "muscle_pains" | "frozen_shoulder" | "heel_pain" | "low_backache" | "decreased_strength" | "decreased_stamina" | "clicking_jaw_tmj" | "breast_pain" | "difficulty_breathing" | "hay_fever" | "reduced_alcohol_tolerance" | "dry_mouth" | "increased_smell" | "worsening_physical_condition" | "palpitations" | "chest_pain" | "food_intolerances" | "dry_eyes" | "burning_mouth" | "worsening_mental_condition" | "vision_changes" | "voice_changes" | "impact_work" | "impact_family" | "impact_activity" | "marital_conflicts" | "impact_social" | "avoiding_intimacy" | "personal_life_dissatisfaction")[];
+            symptoms: ("difficulty_concentrating" | "word_finding_difficulty" | "brain_fog" | "reduced_multitasking" | "mood_swings" | "feeling_anxious" | "feeling_tense" | "feeling_depressed" | "low_motivation" | "feeling_hopeless" | "not_feeling_yourself" | "self_harm_thoughts" | "addictive_behaviour" | "irritability" | "panic_attacks" | "crying_spells" | "flat_mood" | "low_self_worth" | "feeling_bad_about_yourself" | "loss_of_interest" | "unhealthy_food_behaviour" | "lack_of_tolerance" | "social_withdrawal" | "accomplishing_less" | "fatigue" | "low_libido" | "migraines" | "pins_and_needles" | "night_sweats" | "dizziness_vertigo" | "restless_legs" | "difficulty_sleeping" | "headaches" | "tinnitus" | "hot_flushes" | "crawling_sensation" | "internal_tremors" | "burning_soles" | "taste_changes" | "hearing_changes" | "dry_skin" | "dry_hair" | "nail_changes" | "skin_itching" | "hair_loss" | "increased_facial_hair" | "skin_issues" | "body_odor_change" | "weight_gain" | "constipation" | "abdominal_pain" | "diarrhea" | "bloating" | "gas" | "heartburn" | "weight_loss" | "belly_fat" | "food_sugar_cravings" | "heavier_periods" | "longer_periods" | "longer_cycle" | "irregular_periods" | "vaginal_itching" | "frequent_urination" | "nocturia" | "painful_urination" | "lighter_periods" | "shorter_periods" | "shorter_cycle" | "vaginal_dryness" | "painful_sex" | "stress_incontinence" | "recurrent_utis" | "joint_pains" | "joint_stiffness" | "foot_pain" | "muscle_pains" | "frozen_shoulder" | "heel_pain" | "low_backache" | "decreased_strength" | "decreased_stamina" | "clicking_jaw_tmj" | "breast_pain" | "difficulty_breathing" | "hay_fever" | "reduced_alcohol_tolerance" | "dry_mouth" | "increased_smell" | "worsening_physical_condition" | "palpitations" | "chest_pain" | "food_intolerances" | "dry_eyes" | "burning_mouth" | "worsening_mental_condition" | "vision_changes" | "voice_changes" | "impact_work" | "impact_family" | "impact_activity" | "marital_conflicts" | "impact_social" | "avoiding_intimacy" | "personal_life_dissatisfaction")[];
             /**
              * @description Severity 0–3 of each ticked symptom
              * @default {}
@@ -32726,6 +33071,7 @@ export interface components {
                 feeling_bad_about_yourself?: number | null;
                 loss_of_interest?: number | null;
                 unhealthy_food_behaviour?: number | null;
+                lack_of_tolerance?: number | null;
                 social_withdrawal?: number | null;
                 accomplishing_less?: number | null;
                 fatigue?: number | null;
@@ -33036,6 +33382,10 @@ export interface components {
                 estradiolTreatment: string[];
                 vaginal: string[];
                 testosterone: string[];
+                /** @description Ticked additional symptoms with their severity 0–3 (null when not rated) */
+                symptoms: {
+                    [key: string]: number | null;
+                };
                 /** @enum {string|null} */
                 stillOnTreatment: "yes" | "no" | null;
             };

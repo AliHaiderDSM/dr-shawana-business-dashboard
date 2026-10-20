@@ -27,10 +27,79 @@ export const RESOURCES: Record<string, { label: string; file: string }> = {
   hairCareRoutine: { label: 'Hair Care Routine', file: '/resources/hair-care-routine.jpeg' },
 };
 
-const PUBLIC_SECTIONS: { key: 'basic_info' | 'medical_history' | 'additional_symptoms'; title: string }[] = [
-  { key: 'basic_info', title: 'Basic information' },
-  { key: 'medical_history', title: 'Have you ever been diagnosed with?' },
-  { key: 'additional_symptoms', title: 'Other symptoms you are experiencing' },
+type PublicKey = 'basic_info' | 'medical_history' | 'additional_symptoms';
+
+const VISIT_KEYS = ['majorComplaint', 'currentMedications', 'discussTopics', 'beforeVisitNote'];
+const LINK_ONLY_HIDDEN = ['std'];
+
+const DIAGNOSED: SectionDef = {
+  ...SECTIONS.medical_history,
+  fields: SECTIONS.medical_history.fields.flatMap((f) => {
+    if (['menopauseDiagnosed', 'menopauseDiagnosedAge', 'otherConditions'].includes(f.key)) return [f];
+    if (f.key !== 'conditions' || f.kind !== 'checks') return [];
+    return [
+      {
+        ...f,
+        groups: f.groups.map((g) => ({
+          ...g,
+          options: g.options.filter(([value]) => !LINK_ONLY_HIDDEN.includes(value)),
+        })),
+      },
+    ];
+  }),
+};
+
+const pick = (keys: string[]): SectionDef => ({
+  ...SECTIONS.medical_history,
+  fields: keys.flatMap((key) => SECTIONS.medical_history.fields.filter((f) => f.key === key)),
+});
+
+const PUBLIC_SYMPTOMS: SectionDef = {
+  ...SECTIONS.additional_symptoms,
+  fields: [
+    {
+      kind: 'checks',
+      key: 'symptoms',
+      label: 'Tick every symptom you have',
+      wide: true,
+      groups: [
+        {
+          options: [
+            ['hair_loss', 'Hair Loss'],
+            ['tinnitus', 'Ear Ringing'],
+            ['weight_gain', 'Weight Gain'],
+            ['belly_fat', 'Belly Fat'],
+            ['weight_loss', 'Weight Loss'],
+            ['frozen_shoulder', 'Frozen Shoulder'],
+            ['marital_conflicts', 'Marital Conflicts'],
+            ['vaginal_itching', 'Vaginal Itching'],
+            ['recurrent_utis', 'Recurrent UTIs'],
+            ['skin_issues', 'Skin issues'],
+            ['headaches', 'Headaches'],
+            ['dizziness_vertigo', 'Dizziness / Vertigo'],
+            ['lack_of_tolerance', 'Lack of tolerance / Rage'],
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+const PUBLIC_SECTIONS: { id: string; key: PublicKey; title: string; section: SectionDef }[] = [
+  { id: 'basic', key: 'basic_info', title: 'Basic information', section: SECTIONS.basic_info },
+  { id: 'visit', key: 'medical_history', title: 'About this visit', section: pick(VISIT_KEYS) },
+  {
+    id: 'diagnosed',
+    key: 'medical_history',
+    title: 'Have you ever been diagnosed with?',
+    section: DIAGNOSED,
+  },
+  {
+    id: 'symptoms',
+    key: 'additional_symptoms',
+    title: 'Other symptoms you are experiencing',
+    section: PUBLIC_SYMPTOMS,
+  },
 ];
 
 function Card({
@@ -141,14 +210,21 @@ function UploadBlock({
         <Label htmlFor={`files-${type}`}>
           {label} <span className="text-xs text-muted-foreground">(you can choose several files)</span>
         </Label>
-        <Input
-          key={inputKey}
-          id={`files-${type}`}
-          type="file"
-          multiple
-          accept="image/*,application/pdf"
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-        />
+        <div className="relative">
+          <Input
+            key={inputKey}
+            id={`files-${type}`}
+            type="file"
+            multiple
+            accept="image/*,application/pdf"
+            className="cursor-pointer pr-10"
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          />
+          <Upload
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+        </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor={`note-${type}`}>Any note</Label>
@@ -211,11 +287,11 @@ export function IntakeForms({
   if (!form) return null;
   return (
     <div className="space-y-6">
-      {PUBLIC_SECTIONS.map(({ key, title }) => (
+      {PUBLIC_SECTIONS.map(({ id, key, title, section }) => (
         <IntakeSection
-          key={key}
+          key={id}
           token={token}
-          section={SECTIONS[key]}
+          section={section}
           title={title}
           data={form.sections[key] ?? null}
           defaults={key === 'basic_info' ? (form.defaults as FormValues) : undefined}

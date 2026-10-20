@@ -6,8 +6,8 @@ import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { Panel } from '@/components/shared/panel';
-import { StatusBadge } from '@/components/shared/status-badge';
 import { MrsChart } from '@/features/clinical/mrs-chart';
+import { SECTIONS } from '@/features/consultations/clinical-fields';
 import { useConsultationReport, type ConsultationReportRow } from '@redux/features/consultations';
 import { doctorsApi } from '@redux/features/doctors';
 import { useListState } from '@/hooks/use-list-state';
@@ -30,30 +30,28 @@ const STAGES: Record<string, string> = {
   poi: 'POI',
 };
 
-const MRS_COLUMNS: [string, string][] = [
-  ['hotFlushes', 'Hot flushes'],
-  ['heartDiscomfort', 'Heart discomfort'],
-  ['sleepProblems', 'Sleep problems'],
-  ['jointMuscleDiscomfort', 'Joint and muscle discomfort'],
-  ['depressiveMood', 'Depressive mood'],
-  ['irritability', 'Irritability'],
-  ['anxiety', 'Anxiety'],
-  ['exhaustion', 'Physical and mental exhaustion'],
-  ['sexualProblems', 'Sexual problems'],
-  ['bladderProblems', 'Bladder problems'],
-  ['vaginalDryness', 'Vaginal dryness'],
+const NOT_IN_POSSOFT = ['lack_of_tolerance', 'skin_issues', 'weight_loss', 'belly_fat'];
+
+const ALL_SYMPTOMS: [string, string][] = SECTIONS.additional_symptoms.fields.flatMap((f) =>
+  f.kind === 'checks'
+    ? f.groups.flatMap((g) => g.options.map(([key, label]) => [key, label] as [string, string]))
+    : [],
+);
+
+const SYMPTOM_COLUMNS = [
+  ...ALL_SYMPTOMS.filter(([key]) => !NOT_IN_POSSOFT.includes(key)),
+  ...ALL_SYMPTOMS.filter(([key]) => NOT_IN_POSSOFT.includes(key)),
 ];
+
+const symptomValue = (r: Row, key: string) => {
+  const symptoms = r.report.symptoms;
+  const severity = symptoms[key];
+  return severity === null || severity === undefined ? '0' : String(severity);
+};
 
 const dash = (value: unknown) =>
   value === null || value === undefined || value === '' ? '—' : String(value);
 const list = (values: string[]) => (values.length ? values.join('; ') : '—');
-
-const mrsItem = (key: string, label: string): ColumnDef<Row, unknown> => ({
-  id: key,
-  header: label,
-  accessorFn: (r) => r.report.mrs?.[key] ?? '',
-  cell: ({ row }) => <span className="tabular-nums">{dash(row.original.report.mrs?.[key])}</span>,
-});
 
 const score = (
   key: 'somatic' | 'psychological' | 'urogenital' | 'total',
@@ -79,7 +77,16 @@ const treatment = (
   ),
 });
 
-const columns: ColumnDef<Row, unknown>[] = [
+const historyColumns = (page: number, pageSize: number): ColumnDef<Row, unknown>[] => [
+  {
+    id: 'sr',
+    header: 'Sr No.',
+    accessorFn: (_r, index) => (page - 1) * pageSize + index + 1,
+    meta: { hideable: false },
+    cell: ({ row }) => (
+      <span className="text-muted-foreground tabular-nums">{(page - 1) * pageSize + row.index + 1}</span>
+    ),
+  },
   {
     id: 'patient',
     header: 'Name / Phone',
@@ -109,7 +116,6 @@ const columns: ColumnDef<Row, unknown>[] = [
       <span className="whitespace-nowrap">{formatDate(row.original.appointment?.date)}</span>
     ),
   },
-  { id: 'doctor', header: 'Doctor', accessorFn: (c) => c.doctor?.name ?? '' },
   {
     id: 'bmi',
     header: 'BMI',
@@ -137,59 +143,22 @@ const columns: ColumnDef<Row, unknown>[] = [
     accessorFn: (r) => r.report.ageAtMenopause ?? '',
     cell: ({ row }) => dash(row.original.report.ageAtMenopause),
   },
-  ...MRS_COLUMNS.slice(0, 4).map(([key, label]) => mrsItem(key, label)),
   score('somatic', 'Somatic MRS'),
-  ...MRS_COLUMNS.slice(4, 8).map(([key, label]) => mrsItem(key, label)),
   score('psychological', 'Psychological MRS'),
-  ...MRS_COLUMNS.slice(8).map(([key, label]) => mrsItem(key, label)),
   score('urogenital', 'Urogenital MRS'),
   score('total', 'Total MRS'),
-  {
-    id: 'fsh',
-    header: 'FSH',
-    accessorFn: (r) => r.report.fsh ?? '',
-    cell: ({ row }) => dash(row.original.report.fsh),
-  },
-  {
-    id: 'estradiol',
-    header: 'Estradiol',
-    accessorFn: (r) => r.report.estradiol ?? '',
-    cell: ({ row }) => dash(row.original.report.estradiol),
-  },
-  {
-    id: 'totalTestosterone',
-    header: 'Total testosterone',
-    accessorFn: (r) => r.report.totalTestosterone ?? '',
-    cell: ({ row }) => dash(row.original.report.totalTestosterone),
-  },
   treatment('progesterone', 'Progesterone treatment'),
   treatment('estradiolTreatment', 'Estradiol treatment'),
   treatment('vaginal', 'Vaginal treatment'),
   treatment('testosterone', 'Testosterone treatment'),
-  {
-    id: 'stillOnTreatment',
-    header: 'Still on treatment',
-    accessorFn: (r) =>
-      r.report.stillOnTreatment === 'yes' ? 'Yes' : r.report.stillOnTreatment === 'no' ? 'No' : '',
-    cell: ({ row }) =>
-      row.original.report.stillOnTreatment === 'yes'
-        ? 'Yes'
-        : row.original.report.stillOnTreatment === 'no'
-          ? 'No'
-          : '—',
-  },
-  {
-    id: 'appointment',
-    header: 'Appointment',
-    accessorFn: (c) => c.appointment?.appointmentNo ?? '',
-    cell: ({ row }) => `#${row.original.appointment?.appointmentNo ?? ''}`,
-  },
-  {
-    id: 'status',
-    header: 'Status',
-    accessorKey: 'status',
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
-  },
+  ...SYMPTOM_COLUMNS.map(([key, label]): ColumnDef<Row, unknown> => ({
+    id: `symptom-${key}`,
+    header: label,
+    accessorFn: (r) => symptomValue(r, key),
+    cell: ({ row }) => (
+      <span className="block min-w-24 text-center tabular-nums">{symptomValue(row.original, key)}</span>
+    ),
+  })),
 ];
 
 export function PatientHistoryPage() {
@@ -200,8 +169,11 @@ export function PatientHistoryPage() {
   const [search, setSearch] = useState('');
   const patients = usePatientSearch(search);
   const list = useListState({ defaultSort: '-date' });
-  const listQuery = Object.fromEntries(Object.entries(list.query).filter(([key]) => key !== 'patientId'));
-  const consultations = useConsultationReport(listQuery, !patientId);
+  const listQuery = {
+    ...Object.fromEntries(Object.entries(list.query).filter(([key]) => key !== 'patientId')),
+    ...(patientId ? { patientId } : {}),
+  };
+  const consultations = useConsultationReport(listQuery);
   const doctors = doctorsApi.useOptions();
 
   const choose = (value: string | null) =>
@@ -219,7 +191,7 @@ export function PatientHistoryPage() {
     <>
       <PageHeader
         title="Patient history"
-        description="Every visit with BMI, menopause status, MRS, blood results and BHRT treatment, as in posSoft. Pick a patient for the full timeline."
+        description="Every visit with BMI, menopause status, MRS, blood results, BHRT treatment and the severity (0–3) of each symptom, as in posSoft. Pick a patient to see only their visits and the full timeline."
         actions={
           <Combobox
             className="w-72"
@@ -234,16 +206,9 @@ export function PatientHistoryPage() {
           />
         }
       />
-      {patientId ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-          <PatientTimelineView patientId={patientId} />
-          <Panel title="MRS trend" className="self-start">
-            <MrsChart patientId={patientId} />
-          </Panel>
-        </div>
-      ) : (
+      <div className="space-y-6">
         <DataTable
-          columns={columns}
+          columns={historyColumns(list.page, list.pageSize)}
           data={consultations.data?.data as Row[] | undefined}
           meta={consultations.data?.meta}
           list={list}
@@ -280,7 +245,15 @@ export function PatientHistoryPage() {
             </>
           }
         />
-      )}
+        {patientId ? (
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+            <PatientTimelineView patientId={patientId} />
+            <Panel title="MRS trend" className="self-start">
+              <MrsChart patientId={patientId} />
+            </Panel>
+          </div>
+        ) : null}
+      </div>
     </>
   );
 }
