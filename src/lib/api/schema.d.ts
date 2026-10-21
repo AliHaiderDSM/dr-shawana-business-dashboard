@@ -32862,13 +32862,9 @@ export interface components {
         };
         Section_medical_history: {
             /** @default null */
-            discussTopics: string | null;
-            /** @default null */
             majorComplaint: string | null;
             /** @default null */
             currentMedications: string | null;
-            /** @default null */
-            beforeVisitNote: string | null;
             /**
              * @default null
              * @enum {string|null}

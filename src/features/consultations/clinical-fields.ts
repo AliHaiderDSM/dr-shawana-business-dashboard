@@ -222,18 +222,6 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
     title: 'Medical history',
     fields: [
       { kind: 'textarea', key: 'majorComplaint', label: 'Major complaint', wide: true },
-      {
-        kind: 'textarea',
-        key: 'discussTopics',
-        label: 'What are the top 3 things you would like to discuss in your consultation?',
-        wide: true,
-      },
-      {
-        kind: 'textarea',
-        key: 'beforeVisitNote',
-        label: "Anything else you would like your doctor to know before today's visit?",
-        wide: true,
-      },
       heading('h-hormones', 'Hormones, contraception and periods'),
       {
         kind: 'choice',

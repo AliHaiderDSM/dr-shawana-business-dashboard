@@ -29,7 +29,7 @@ export const RESOURCES: Record<string, { label: string; file: string }> = {
 
 type PublicKey = 'basic_info' | 'medical_history' | 'additional_symptoms';
 
-const VISIT_KEYS = ['majorComplaint', 'currentMedications', 'discussTopics', 'beforeVisitNote'];
+const VISIT_KEYS = ['majorComplaint', 'currentMedications'];
 const LINK_ONLY_HIDDEN = ['std'];
 
 const DIAGNOSED: SectionDef = {

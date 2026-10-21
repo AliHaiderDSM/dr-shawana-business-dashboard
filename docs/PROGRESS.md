@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Medical history topics trimmed (2026-10-21)
+
+- "What are the top 3 things…" and "Anything else…" are gone from the consultation Medical history tab and from the copy link form. They stay on the follow up form.
+
 ## Blood work chart as posSoft (2026-10-20)
 
 - The blood work chart follows the posSoft Chart.js chart: the Chart.js curve (tension 0.4, `src/lib/chartjs-curve.ts`), solid 2px lines in the posSoft colours (`--blood-1`…`--blood-9`, lighter in dark mode), hollow points, Y from 0, legend on top. Clicking a test in the legend shows only that test; clicking it again shows all. The test dropdown is gone.
