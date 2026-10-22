@@ -15,6 +15,7 @@
 ## GDN report simplified (2026-10-22)
 
 - One table instead of four. Every booking day has a fixed colour (`--booked-1`…`--booked-8`, picked from the date, so 20 Oct is always the same colour on every day's report). Each row carries its booking-day colour on the left and a booked chip, so an old order dispatched today shows the colour of the day it was booked.
+- Print: A4 landscape, only a one-line letterhead (logo, branch, date, the day's counts), the full-width table with every column and the signature lines. The page title, cards and booking-day strip stay on screen only; booking-day colours print; the order count prints once at the end.
 - Four KPI cards: waiting from earlier days, booked today, dispatched today (earlier vs today), still waiting tonight (with cancelled). An "Orders by booking day" strip shows each day's colour with sent / waiting / cancelled; clicking one filters the table. Tabs: All, Dispatched today, Still waiting, Cancelled.
 
 ## GDN report branch for the Super Admin (2026-10-22)

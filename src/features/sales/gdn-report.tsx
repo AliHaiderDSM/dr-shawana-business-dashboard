@@ -182,8 +182,10 @@ export function GdnReportPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 [-webkit-print-color-adjust:exact] [print-color-adjust:exact] print:space-y-3">
+      <style>{'@media print { @page { size: A4 landscape; margin: 10mm; } }'}</style>
       <PageHeader
+        className="print:hidden"
         title="GDN report"
         description="One view of the day: every online order that was waiting or booked, what went out and what is still waiting. Each booking day has its own colour, so an old order dispatched today shows the colour of the day it was booked."
         actions={
@@ -257,11 +259,14 @@ export function GdnReportPage() {
         </div>
       ) : (
         <>
-          <div className="hidden items-center justify-between border-b pb-3 print:flex">
-            <img src={logo} alt="Dr Shawana DSM" className="h-10 w-auto" />
+          <div className="hidden items-center justify-between border-b pb-2 print:flex">
+            <img src={logo} alt="Dr Shawana DSM" className="h-9 w-auto" />
             <div className="text-right">
-              <div className="text-lg font-semibold">GDN day-end report · {data.branch.name}</div>
-              <div className="text-sm">{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</div>
+              <div className="text-base font-semibold">GDN day-end report · {data.branch.name}</div>
+              <div className="text-xs">
+                {formatDate(data.date, 'EEEE, dd MMMM yyyy')} · {s.opening} from earlier days + {s.newOrders}{' '}
+                booked · {s.dispatched} dispatched · {s.closing} still waiting
+              </div>
             </div>
           </div>
           <div className="text-sm text-muted-foreground print:hidden">
@@ -269,7 +274,7 @@ export function GdnReportPage() {
             {formatDate(data.date, 'EEEE, dd MMMM yyyy')}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:hidden">
             <Kpi
               label="Waiting from earlier days"
               value={s.opening}
@@ -326,8 +331,8 @@ export function GdnReportPage() {
               />
             </div>
           ) : (
-            <section className="overflow-hidden rounded-xl border bg-card shadow-xs print:shadow-none">
-              <div className="space-y-3 border-b p-4">
+            <section className="overflow-hidden rounded-xl border bg-card shadow-xs print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
+              <div className="space-y-3 border-b p-4 print:hidden">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-sm font-semibold">Orders by booking day</h2>
                   <span className="text-xs text-muted-foreground print:hidden">
@@ -404,8 +409,8 @@ export function GdnReportPage() {
                 ) : null}
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto print:overflow-visible">
+                <table className="w-full text-sm print:text-[11px]">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
                       <th className="py-2 pr-3 pl-5 font-medium">Booked</th>
@@ -462,7 +467,7 @@ export function GdnReportPage() {
                             </div>
                           </td>
                           <td className="px-3 py-2.5">
-                            <ul className="min-w-40 space-y-0.5 text-xs">
+                            <ul className="min-w-40 space-y-0.5 text-xs print:min-w-0 print:text-[10px]">
                               {o.items.map((item, i) => (
                                 <li key={i}>
                                   {item.name} <span className="text-muted-foreground">× {item.qty}</span>
@@ -483,7 +488,7 @@ export function GdnReportPage() {
                       );
                     })}
                   </tbody>
-                  <tfoot>
+                  <tfoot className="print:table-row-group">
                     <tr className="border-t bg-muted/30 text-sm font-semibold">
                       <td className="py-2 pr-3 pl-5" colSpan={5}>
                         {rows.length} order{rows.length === 1 ? '' : 's'}
