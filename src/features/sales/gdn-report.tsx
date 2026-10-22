@@ -32,6 +32,8 @@ type View = 'all' | GdnOrderStatus;
 
 const PALETTE = 8;
 
+const ALL_PRODUCTS = '__all__';
+
 const PAYMENT: Record<string, { label: string; tone: Tone }> = {
   paid: { label: 'Paid', tone: 'success' },
   partial: { label: 'Partly paid', tone: 'warning' },
@@ -135,6 +137,7 @@ export function GdnReportPage() {
   const data = report.data;
   const [view, setView] = useState<View>('all');
   const [day, setDay] = useState<string | null>(null);
+  const product = params.get('product');
 
   const setParam = (key: string, value: string | null) =>
     setParams(
@@ -152,12 +155,17 @@ export function GdnReportPage() {
     setParam('date', next === today ? null : next);
   };
 
-  const orders = [...(data?.orders ?? [])].sort(
-    (a, b) =>
-      a.date.localeCompare(b.date) ||
-      STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
-      a.invoiceNo.localeCompare(b.invoiceNo),
+  const products = [...new Set((data?.orders ?? []).flatMap((o) => o.items.map((i) => i.name)))].sort(
+    (a, b) => a.localeCompare(b),
   );
+  const orders = [...(data?.orders ?? [])]
+    .filter((o) => !product || o.items.some((i) => i.name === product))
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
+        a.invoiceNo.localeCompare(b.invoiceNo),
+    );
   const days = [...new Set(orders.map((o) => o.date))];
   const byDay = days.map((d) => {
     const mine = orders.filter((o) => o.date === d);
@@ -172,7 +180,26 @@ export function GdnReportPage() {
   const rows = orders.filter((o) => (view === 'all' || o.status === view) && (!day || o.date === day));
   const total = rows.reduce((sum, o) => sum + Number(o.total), 0);
   const next = formatDate(shift(date, 1), 'dd MMM');
-  const s = data?.summary;
+  const amount = (list: GdnOrder[]) => list.reduce((sum, o) => sum + Number(o.total), 0);
+  const earlier = orders.filter((o) => o.fromBefore);
+  const fresh = orders.filter((o) => !o.fromBefore);
+  const sent = orders.filter((o) => o.status === 'dispatched');
+  const left = orders.filter((o) => o.status === 'pending');
+  const s = data
+    ? {
+        opening: earlier.length,
+        openingAmount: amount(earlier),
+        newOrders: fresh.length,
+        newAmount: amount(fresh),
+        dispatched: sent.length,
+        dispatchedFromOpening: sent.filter((o) => o.fromBefore).length,
+        dispatchedFromNew: sent.filter((o) => !o.fromBefore).length,
+        cancelled: orders.filter((o) => o.status === 'cancelled').length,
+        closing: left.length,
+      }
+    : null;
+  const units = (o: GdnOrder) =>
+    o.items.filter((i) => i.name === product).reduce((sum, i) => sum + Number(i.qty), 0);
 
   const tabs: { key: View; label: string }[] = [
     { key: 'all', label: 'All orders' },
@@ -190,6 +217,24 @@ export function GdnReportPage() {
         description="One view of the day: every online order that was waiting or booked, what went out and what is still waiting. Each booking day has its own colour, so an old order dispatched today shows the colour of the day it was booked."
         actions={
           <>
+            {products.length ? (
+              <Select
+                value={product ?? ALL_PRODUCTS}
+                onValueChange={(v) => setParam('product', v === ALL_PRODUCTS ? null : v)}
+              >
+                <SelectTrigger className="w-48" aria-label="Product">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_PRODUCTS}>All products</SelectItem>
+                  {products.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
             {isSuperAdmin && choices.length ? (
               <Select value={picked ?? ''} onValueChange={(id) => setParam('branch', id)}>
                 <SelectTrigger className="w-48" aria-label="Branch">
@@ -264,14 +309,29 @@ export function GdnReportPage() {
             <div className="text-right">
               <div className="text-base font-semibold">GDN day-end report · {data.branch.name}</div>
               <div className="text-xs">
-                {formatDate(data.date, 'EEEE, dd MMMM yyyy')} · {s.opening} from earlier days + {s.newOrders}{' '}
-                booked · {s.dispatched} dispatched · {s.closing} still waiting
+                {formatDate(data.date, 'EEEE, dd MMMM yyyy')}
+                {product ? ` · ${product}` : ''} · {s.opening} from earlier days + {s.newOrders} booked ·{' '}
+                {s.dispatched} dispatched · {s.closing} still waiting
               </div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground print:hidden">
-            <span className="font-medium text-foreground">{data.branch.name}</span> ·{' '}
-            {formatDate(data.date, 'EEEE, dd MMMM yyyy')}
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground print:hidden">
+            <span className="font-medium text-foreground">{data.branch.name}</span>
+            <span>·</span>
+            <span>{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</span>
+            {product ? (
+              <>
+                <span>·</span>
+                <StatusBadge tone="info">Orders with {product}</StatusBadge>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={() => setParam('product', null)}
+                >
+                  Show all products
+                </button>
+              </>
+            ) : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:hidden">
@@ -322,7 +382,7 @@ export function GdnReportPage() {
           {orders.length === 0 ? (
             <div className="rounded-xl border bg-card">
               <EmptyState
-                title="No online orders on this day"
+                title={product ? `No order with ${product} on this day` : 'No online orders on this day'}
                 description={
                   data.branch.dispatch || !dispatchBranch
                     ? `Nothing was waiting, booked or sent at ${data.branch.name}.`
@@ -469,7 +529,10 @@ export function GdnReportPage() {
                           <td className="px-3 py-2.5">
                             <ul className="min-w-40 space-y-0.5 text-xs print:min-w-0 print:text-[10px]">
                               {o.items.map((item, i) => (
-                                <li key={i}>
+                                <li
+                                  key={i}
+                                  className={cn(product && item.name === product && 'font-semibold')}
+                                >
                                   {item.name} <span className="text-muted-foreground">× {item.qty}</span>
                                 </li>
                               ))}
@@ -492,6 +555,9 @@ export function GdnReportPage() {
                     <tr className="border-t bg-muted/30 text-sm font-semibold">
                       <td className="py-2 pr-3 pl-5" colSpan={5}>
                         {rows.length} order{rows.length === 1 ? '' : 's'}
+                        {product
+                          ? ` · ${formatCount(rows.reduce((sum, o) => sum + units(o), 0))} × ${product}`
+                          : ''}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">{formatMoney(total)}</td>
                       <td />

@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report: product filter, dispatch and Super Admin only (2026-10-22)
+
+- Product filter (in the URL as `product`): the table, the booking-day strip, the tabs and the four cards count only orders with that product; the footer adds the units of it. "Dispatched today" is always the orders whose GDN date is the chosen day.
+- GDN Report shows in the menu only in a Dispatch Department, for dispatchers and for the Super Admin (`dispatchOrSuperAdmin`); it left the Reports list.
+
 ## GDN report simplified (2026-10-22)
 
 - One table instead of four. Every booking day has a fixed colour (`--booked-1`…`--booked-8`, picked from the date, so 20 Oct is always the same colour on every day's report). Each row carries its booking-day colour on the left and a booked chip, so an old order dispatched today shows the colour of the day it was booked.

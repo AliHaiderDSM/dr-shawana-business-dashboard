@@ -57,6 +57,7 @@ export interface MenuItem {
   warehouseOnly?: boolean;
   showInWarehouse?: boolean;
   dispatchOnly?: boolean;
+  dispatchOrSuperAdmin?: boolean;
   notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
   badge?:
@@ -273,6 +274,7 @@ export const MENU: MenuGroup[] = [
         icon: ClipboardCheck,
         anyOf: ['deliveryReport.view'],
         scope: 'branch',
+        dispatchOrSuperAdmin: true,
       },
       {
         key: 'returns',
@@ -573,6 +575,7 @@ export function visibleMenu(
           (!dispatcherOnly || DISPATCHER_KEYS.has(item.key)) &&
           !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
+          (!item.dispatchOrSuperAdmin || isSuperAdmin || dispatch.inDispatch || role === 'dispatcher') &&
           (!item.superAdminOnly || isSuperAdmin) &&
           (!item.doctorOnly || role === 'doctor') &&
           (!item.warehouseOnly || inWarehouse) &&
