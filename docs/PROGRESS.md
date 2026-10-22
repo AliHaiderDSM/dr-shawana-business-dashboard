@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report simplified (2026-10-22)
+
+- One table instead of four. Every booking day has a fixed colour (`--booked-1`…`--booked-8`, picked from the date, so 20 Oct is always the same colour on every day's report). Each row carries its booking-day colour on the left and a booked chip, so an old order dispatched today shows the colour of the day it was booked.
+- Four KPI cards: waiting from earlier days, booked today, dispatched today (earlier vs today), still waiting tonight (with cancelled). An "Orders by booking day" strip shows each day's colour with sent / waiting / cancelled; clicking one filters the table. Tabs: All, Dispatched today, Still waiting, Cancelled.
+
 ## GDN report branch for the Super Admin (2026-10-22)
 
 - The GDN report follows the branch in the switcher, so a Super Admin on another branch (e.g. Super Admin Stock) saw it empty while the Delivery Report shows every branch. The page now has its own branch picker for the Super Admin, opening on the Dispatch Department (Leading Pharma). An empty day says which branch it is and points to the dispatch branch.

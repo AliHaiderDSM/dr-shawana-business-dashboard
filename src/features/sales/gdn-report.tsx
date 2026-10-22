@@ -1,9 +1,10 @@
 import { addDays, parseISO } from 'date-fns';
 import {
-  ArrowRight,
   CalendarClock,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Clock,
   History,
   PackagePlus,
   Printer,
@@ -11,22 +12,25 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
-import { Panel } from '@/components/shared/panel';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
-import { Skeleton } from '@/components/ui/skeleton';
 import { formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo-hd.png';
-import { useGdnReport, type GdnOrder, type GdnReport } from '@redux/features/sales';
+import { useGdnReport, type GdnOrder, type GdnOrderStatus } from '@redux/features/sales';
+
+type View = 'all' | GdnOrderStatus;
+
+const PALETTE = 8;
 
 const PAYMENT: Record<string, { label: string; tone: Tone }> = {
   paid: { label: 'Paid', tone: 'success' },
@@ -34,210 +38,83 @@ const PAYMENT: Record<string, { label: string; tone: Tone }> = {
   unpaid: { label: 'Unpaid', tone: 'danger' },
 };
 
+const STATUS_ORDER: Record<GdnOrderStatus, number> = { dispatched: 0, pending: 1, cancelled: 2 };
+
 const shift = (date: string, days: number) => isoDate(addDays(parseISO(date), days));
 
-const waited = (days: number) => (days === 0 ? 'Same day' : days === 1 ? '1 day' : `${days} days`);
+const dayColor = (date: string) => {
+  const day = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
+  return `var(--booked-${(((day % PALETTE) + PALETTE) % PALETTE) + 1})`;
+};
 
-function FlowCard({
+const tint = (date: string, percent: number): CSSProperties => ({
+  backgroundColor: `color-mix(in oklch, ${dayColor(date)} ${percent}%, transparent)`,
+});
+
+const ago = (days: number) => (days === 0 ? 'Booked today' : days === 1 ? '1 day ago' : `${days} days ago`);
+
+function Kpi({
   label,
   value,
   hint,
   icon: Icon,
-  tone,
-  strong,
+  accent,
 }: {
   label: string;
   value: number;
   hint: ReactNode;
   icon: LucideIcon;
-  tone: 'neutral' | 'info' | 'success' | 'danger' | 'warning';
-  strong?: boolean;
+  accent: string;
 }) {
-  const tones = {
-    neutral: 'bg-neutral-soft text-neutral-soft-foreground',
-    info: 'bg-info-soft text-info-soft-foreground',
-    success: 'bg-success-soft text-success-soft-foreground',
-    danger: 'bg-destructive-soft text-destructive-soft-foreground',
-    warning: 'bg-warning-soft text-warning-soft-foreground',
-  };
   return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-1 flex-col gap-2 rounded-xl border bg-card p-4 shadow-xs print:shadow-none',
-        strong && 'ring-2 ring-primary/30',
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <span className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg', tones[tone])}>
+    <div className="rounded-xl border bg-card p-4 shadow-xs print:shadow-none">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className={cn('flex size-7 items-center justify-center rounded-lg', accent)}>
           <Icon className="size-4" />
         </span>
-        <span className="text-sm leading-tight font-medium text-muted-foreground">{label}</span>
+        {label}
       </div>
-      <div className="text-3xl font-semibold tracking-tight tabular-nums">{formatCount(value)}</div>
-      <div className="text-xs text-muted-foreground">{hint}</div>
+      <div className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">{formatCount(value)}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
     </div>
   );
 }
 
-function Flow({ report }: { report: GdnReport }) {
-  const s = report.summary;
-  const next = formatDate(shift(report.date, 1));
+function BookedChip({ date, reportDate }: { date: string; reportDate: string }) {
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col items-stretch gap-2 lg:flex-row lg:items-center">
-        <FlowCard
-          label="Pending from earlier days"
-          value={s.opening}
-          hint={s.opening ? `Worth ${formatMoney(s.openingAmount)}` : 'Nothing was waiting'}
-          icon={History}
-          tone="warning"
-        />
-        <span className="hidden text-lg text-muted-foreground lg:block">+</span>
-        <FlowCard
-          label="New orders today"
-          value={s.newOrders}
-          hint={s.newOrders ? `Worth ${formatMoney(s.newAmount)}` : 'No order booked'}
-          icon={PackagePlus}
-          tone="info"
-        />
-        <ArrowRight className="hidden size-5 shrink-0 text-muted-foreground lg:block" />
-        <FlowCard
-          label="Dispatched today"
-          value={s.dispatched}
-          hint={
-            s.dispatched ? (
-              <>
-                <span className="font-medium text-foreground">{s.dispatchedFromOpening}</span> from earlier
-                days · <span className="font-medium text-foreground">{s.dispatchedFromNew}</span> of today
-              </>
-            ) : (
-              'Nothing sent'
-            )
-          }
-          icon={Truck}
-          tone="success"
-          strong
-        />
-        <FlowCard
-          label="Cancelled today"
-          value={s.cancelled}
-          hint={s.cancelled ? 'Taken off the list' : 'None'}
-          icon={XCircle}
-          tone="danger"
-        />
-        <ArrowRight className="hidden size-5 shrink-0 text-muted-foreground lg:block" />
-        <FlowCard
-          label={`Carried to ${next}`}
-          value={s.closing}
-          hint={
-            s.closing
-              ? `${s.closingFromOpening} still from earlier days${s.oldestPending ? ` · oldest ${formatDate(s.oldestPending)}` : ''}`
-              : 'All cleared'
-          }
-          icon={CalendarClock}
-          tone={s.closing ? 'warning' : 'neutral'}
-        />
-      </div>
-      <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-2 text-center text-sm text-muted-foreground tabular-nums">
-        {s.opening} earlier + {s.newOrders} new − {s.dispatched} dispatched − {s.cancelled} cancelled ={' '}
-        <span className="font-semibold text-foreground">{s.closing} carried to the next day</span>
-      </p>
-    </div>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-foreground"
+      style={tint(date, 18)}
+    >
+      <span className="size-2 rounded-full" style={{ backgroundColor: dayColor(date) }} />
+      {date === reportDate ? 'Today' : formatDate(date, 'EEE dd MMM')}
+    </span>
   );
 }
 
-function OrdersTable({
-  orders,
-  showGdn,
-  showFrom,
-}: {
-  orders: GdnOrder[];
-  showGdn?: boolean;
-  showFrom?: boolean;
-}) {
-  if (orders.length === 0)
-    return <p className="px-5 py-6 text-center text-sm text-muted-foreground">None.</p>;
-  const total = orders.reduce((sum, o) => sum + Number(o.total), 0);
+function Status({ order }: { order: GdnOrder }) {
+  if (order.status === 'dispatched')
+    return (
+      <div className="space-y-0.5">
+        <span className="inline-flex items-center gap-1 text-sm font-semibold text-success">
+          <CheckCircle2 className="size-4" />
+          Dispatched
+        </span>
+        <div className="text-xs text-muted-foreground tabular-nums">{order.gdnNo ?? '—'}</div>
+      </div>
+    );
+  if (order.status === 'cancelled')
+    return (
+      <span className="inline-flex items-center gap-1 text-sm font-semibold text-destructive">
+        <XCircle className="size-4" />
+        Cancelled
+      </span>
+    );
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50 text-left text-xs text-muted-foreground">
-            <th className="px-3 py-2 font-medium">#</th>
-            {showGdn ? <th className="px-3 py-2 font-medium">GDN no.</th> : null}
-            <th className="px-3 py-2 font-medium">Order no.</th>
-            <th className="px-3 py-2 font-medium">Booked on</th>
-            <th className="px-3 py-2 font-medium">{showGdn ? 'Waited' : 'Waiting'}</th>
-            <th className="px-3 py-2 font-medium">Customer</th>
-            <th className="px-3 py-2 font-medium">City</th>
-            <th className="px-3 py-2 font-medium">Booked at</th>
-            <th className="px-3 py-2 font-medium">Items</th>
-            <th className="px-3 py-2 text-right font-medium">Amount</th>
-            <th className="px-3 py-2 font-medium print:hidden">Payment</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((o, index) => {
-            const pay = PAYMENT[o.paymentStatus] ?? { label: o.paymentStatus, tone: 'neutral' as Tone };
-            return (
-              <tr key={o.id} className="border-b align-top last:border-b-0 print:break-inside-avoid">
-                <td className="px-3 py-2 text-muted-foreground tabular-nums">{index + 1}</td>
-                {showGdn ? (
-                  <td className="px-3 py-2 font-medium whitespace-nowrap">{o.gdnNo ?? '—'}</td>
-                ) : null}
-                <td className="px-3 py-2 whitespace-nowrap">
-                  <div className="font-medium">{o.invoiceNo}</div>
-                  {showFrom ? (
-                    <StatusBadge tone={o.fromBefore ? 'warning' : 'info'}>
-                      {o.fromBefore ? 'Earlier day' : 'New today'}
-                    </StatusBadge>
-                  ) : null}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">{formatDate(o.date, 'dd-MM-yyyy')}</td>
-                <td
-                  className={cn(
-                    'px-3 py-2 whitespace-nowrap tabular-nums',
-                    o.waitingDays >= 2 && 'font-semibold text-destructive',
-                  )}
-                >
-                  {waited(o.waitingDays)}
-                </td>
-                <td className="px-3 py-2">
-                  <div className="font-medium">{o.customer.name ?? '—'}</div>
-                  <div className="text-xs text-muted-foreground tabular-nums">{o.customer.phone}</div>
-                </td>
-                <td className="px-3 py-2">{o.city ?? '—'}</td>
-                <td className="px-3 py-2 whitespace-nowrap">{o.bookedAt?.name ?? o.bookedAt?.code ?? '—'}</td>
-                <td className="px-3 py-2">
-                  <ul className="min-w-44 space-y-0.5 text-xs">
-                    {o.items.map((item, i) => (
-                      <li key={i}>
-                        {item.name} <span className="text-muted-foreground">× {item.qty}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </td>
-                <td className="px-3 py-2 text-right font-medium whitespace-nowrap tabular-nums">
-                  {formatMoney(o.total)}
-                </td>
-                <td className="px-3 py-2 print:hidden">
-                  <StatusBadge tone={pay.tone}>{pay.label}</StatusBadge>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-        <tfoot>
-          <tr className="border-t bg-muted/30 text-sm font-semibold">
-            <td className="px-3 py-2" colSpan={showGdn ? 9 : 8}>
-              {orders.length} order{orders.length === 1 ? '' : 's'}
-            </td>
-            <td className="px-3 py-2 text-right tabular-nums">{formatMoney(total)}</td>
-            <td className="print:hidden" />
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+    <span className="inline-flex items-center gap-1 text-sm font-semibold text-warning-soft-foreground">
+      <Clock className="size-4" />
+      Waiting
+    </span>
   );
 }
 
@@ -256,44 +133,63 @@ export function GdnReportPage() {
     : undefined;
   const report = useGdnReport(date, picked, !isSuperAdmin || Boolean(picked));
   const data = report.data;
+  const [view, setView] = useState<View>('all');
+  const [day, setDay] = useState<string | null>(null);
 
-  const pickBranch = (id: string) =>
+  const setParam = (key: string, value: string | null) =>
     setParams(
       (current) => {
         const copy = new URLSearchParams(current);
-        copy.set('branch', id);
+        if (value === null) copy.delete(key);
+        else copy.set(key, value);
         return copy;
       },
       { replace: true },
     );
 
-  const go = (next: string) =>
-    setParams(
-      (current) => {
-        const copy = new URLSearchParams(current);
-        if (next === today) copy.delete('date');
-        else copy.set('date', next);
-        return copy;
-      },
-      { replace: true },
-    );
+  const go = (next: string) => {
+    setDay(null);
+    setParam('date', next === today ? null : next);
+  };
 
-  const orders = data?.orders ?? [];
-  const sentEarlier = orders.filter((o) => o.status === 'dispatched' && o.fromBefore);
-  const sentToday = orders.filter((o) => o.status === 'dispatched' && !o.fromBefore);
-  const pending = orders.filter((o) => o.status === 'pending');
-  const cancelled = orders.filter((o) => o.status === 'cancelled');
-  const next = formatDate(shift(date, 1));
+  const orders = [...(data?.orders ?? [])].sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) ||
+      STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
+      a.invoiceNo.localeCompare(b.invoiceNo),
+  );
+  const days = [...new Set(orders.map((o) => o.date))];
+  const byDay = days.map((d) => {
+    const mine = orders.filter((o) => o.date === d);
+    return {
+      date: d,
+      sent: mine.filter((o) => o.status === 'dispatched').length,
+      waiting: mine.filter((o) => o.status === 'pending').length,
+      cancelled: mine.filter((o) => o.status === 'cancelled').length,
+    };
+  });
+  const count = (v: View) => orders.filter((o) => v === 'all' || o.status === v).length;
+  const rows = orders.filter((o) => (view === 'all' || o.status === view) && (!day || o.date === day));
+  const total = rows.reduce((sum, o) => sum + Number(o.total), 0);
+  const next = formatDate(shift(date, 1), 'dd MMM');
+  const s = data?.summary;
+
+  const tabs: { key: View; label: string }[] = [
+    { key: 'all', label: 'All orders' },
+    { key: 'dispatched', label: 'Dispatched today' },
+    { key: 'pending', label: 'Still waiting' },
+    ...(count('cancelled') ? [{ key: 'cancelled' as const, label: 'Cancelled' }] : []),
+  ];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="GDN report"
-        description="Day-end dispatch report of online orders: what was waiting from earlier days, what was dispatched today and what carries to the next day."
+        description="One view of the day: every online order that was waiting or booked, what went out and what is still waiting. Each booking day has its own colour, so an old order dispatched today shows the colour of the day it was booked."
         actions={
           <>
             {isSuperAdmin && choices.length ? (
-              <Select value={picked ?? ''} onValueChange={pickBranch}>
+              <Select value={picked ?? ''} onValueChange={(id) => setParam('branch', id)}>
                 <SelectTrigger className="w-48" aria-label="Branch">
                   <SelectValue placeholder="Choose branch" />
                 </SelectTrigger>
@@ -341,7 +237,7 @@ export function GdnReportPage() {
             ) : null}
             <Button onClick={() => window.print()} disabled={!data}>
               <Printer />
-              Print report
+              Print
             </Button>
           </>
         }
@@ -349,10 +245,10 @@ export function GdnReportPage() {
 
       {report.isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-36 w-full" />
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-80 w-full" />
         </div>
-      ) : !data ? (
+      ) : !data || !s ? (
         <div className="rounded-xl border bg-card">
           <EmptyState
             title="Report not available"
@@ -368,61 +264,238 @@ export function GdnReportPage() {
               <div className="text-sm">{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</div>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground print:hidden">
-            <span className="font-medium text-foreground">{data.branch.name}</span>
-            <span>·</span>
-            <span>{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</span>
-            <span>·</span>
-            <span>
-              {data.branch.dispatch
-                ? 'Orders this department dispatches'
-                : 'Online orders booked at this branch'}
-            </span>
+          <div className="text-sm text-muted-foreground print:hidden">
+            <span className="font-medium text-foreground">{data.branch.name}</span> ·{' '}
+            {formatDate(data.date, 'EEEE, dd MMMM yyyy')}
           </div>
 
-          {data.orders.length === 0 ? (
-            <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-              No online order was waiting, booked or sent at {data.branch.name} on this day.
-              {data.branch.dispatch
-                ? ''
-                : dispatchBranch
-                  ? ` Online orders are sent by ${dispatchBranch.name}; choose it to see its GDN report.`
-                  : ''}
-            </p>
-          ) : null}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Kpi
+              label="Waiting from earlier days"
+              value={s.opening}
+              hint={
+                s.opening
+                  ? `Left over at the start of the day · ${formatMoney(s.openingAmount)}`
+                  : 'Nothing was left over'
+              }
+              icon={History}
+              accent="bg-warning-soft text-warning-soft-foreground"
+            />
+            <Kpi
+              label="Booked today"
+              value={s.newOrders}
+              hint={s.newOrders ? formatMoney(s.newAmount) : 'No new order'}
+              icon={PackagePlus}
+              accent="bg-info-soft text-info-soft-foreground"
+            />
+            <Kpi
+              label="Dispatched today"
+              value={s.dispatched}
+              hint={
+                s.dispatched
+                  ? `${s.dispatchedFromOpening} from earlier days · ${s.dispatchedFromNew} booked today`
+                  : 'Nothing went out'
+              }
+              icon={Truck}
+              accent="bg-success-soft text-success-soft-foreground"
+            />
+            <Kpi
+              label="Still waiting tonight"
+              value={s.closing}
+              hint={
+                s.closing
+                  ? `Moves to ${next}${s.cancelled ? ` · ${s.cancelled} cancelled today` : ''}`
+                  : s.cancelled
+                    ? `All cleared · ${s.cancelled} cancelled today`
+                    : 'All cleared'
+              }
+              icon={CalendarClock}
+              accent="bg-neutral-soft text-neutral-soft-foreground"
+            />
+          </div>
 
-          <Flow report={data} />
+          {orders.length === 0 ? (
+            <div className="rounded-xl border bg-card">
+              <EmptyState
+                title="No online orders on this day"
+                description={
+                  data.branch.dispatch || !dispatchBranch
+                    ? `Nothing was waiting, booked or sent at ${data.branch.name}.`
+                    : `Nothing at ${data.branch.name}. Online orders are sent by ${dispatchBranch.name}; choose it above.`
+                }
+              />
+            </div>
+          ) : (
+            <section className="overflow-hidden rounded-xl border bg-card shadow-xs print:shadow-none">
+              <div className="space-y-3 border-b p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold">Orders by booking day</h2>
+                  <span className="text-xs text-muted-foreground print:hidden">
+                    Click a day to see only its orders
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {byDay.map((d) => {
+                    const on = day === d.date;
+                    return (
+                      <button
+                        key={d.date}
+                        type="button"
+                        onClick={() => setDay(on ? null : d.date)}
+                        aria-pressed={on}
+                        className={cn(
+                          'flex min-w-40 items-center gap-3 rounded-lg border px-3 py-2 text-left transition-shadow hover:shadow-sm',
+                          on && 'ring-2 ring-ring',
+                          day && !on && 'opacity-50',
+                        )}
+                        style={{ borderLeft: `4px solid ${dayColor(d.date)}`, ...tint(d.date, 8) }}
+                      >
+                        <div>
+                          <div className="text-sm font-semibold">
+                            {d.date === data.date ? 'Booked today' : formatDate(d.date, 'EEE dd MMM')}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {d.sent ? <span className="font-medium text-success">{d.sent} sent</span> : null}
+                            {d.sent && (d.waiting || d.cancelled) ? ' · ' : ''}
+                            {d.waiting ? (
+                              <span className="font-medium text-warning-soft-foreground">
+                                {d.waiting} waiting
+                              </span>
+                            ) : null}
+                            {d.waiting && d.cancelled ? ' · ' : ''}
+                            {d.cancelled ? (
+                              <span className="text-destructive">{d.cancelled} cancelled</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-          <Panel
-            title={`Dispatched today from earlier days (${sentEarlier.length})`}
-            description="Orders booked before today that were waiting and went out today."
-            bodyClassName="p-0"
-            className="print:break-inside-avoid-page"
-          >
-            <OrdersTable orders={sentEarlier} showGdn />
-          </Panel>
+              <div
+                className="flex flex-wrap items-center gap-1 border-b px-4 py-2 print:hidden"
+                role="tablist"
+              >
+                {tabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={view === t.key}
+                    onClick={() => setView(t.key)}
+                    className={cn(
+                      'rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+                      view === t.key && 'bg-muted text-foreground',
+                    )}
+                  >
+                    {t.label} <span className="tabular-nums">({count(t.key)})</span>
+                  </button>
+                ))}
+                {day ? (
+                  <button
+                    type="button"
+                    onClick={() => setDay(null)}
+                    className="ml-auto text-xs font-medium text-primary hover:underline"
+                  >
+                    Show every booking day
+                  </button>
+                ) : null}
+              </div>
 
-          <Panel
-            title={`Dispatched today from today's orders (${sentToday.length})`}
-            description="Orders booked today that also went out today."
-            bodyClassName="p-0"
-          >
-            <OrdersTable orders={sentToday} showGdn />
-          </Panel>
-
-          <Panel
-            title={`Still pending, carried to ${next} (${pending.length})`}
-            description="Not dispatched by the end of the day. They open the next day's report as pending from earlier days."
-            bodyClassName="p-0"
-          >
-            <OrdersTable orders={pending} showFrom />
-          </Panel>
-
-          {cancelled.length ? (
-            <Panel title={`Cancelled today (${cancelled.length})`} bodyClassName="p-0">
-              <OrdersTable orders={cancelled} showFrom />
-            </Panel>
-          ) : null}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
+                      <th className="py-2 pr-3 pl-5 font-medium">Booked</th>
+                      <th className="px-3 py-2 font-medium">Order</th>
+                      <th className="px-3 py-2 font-medium">Customer</th>
+                      <th className="px-3 py-2 font-medium">City · booked at</th>
+                      <th className="px-3 py-2 font-medium">Items</th>
+                      <th className="px-3 py-2 text-right font-medium">Amount</th>
+                      <th className="px-3 py-2 font-medium">Today</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((o) => {
+                      const pay = PAYMENT[o.paymentStatus] ?? {
+                        label: o.paymentStatus,
+                        tone: 'neutral' as Tone,
+                      };
+                      return (
+                        <tr
+                          key={o.id}
+                          className={cn(
+                            'border-b align-top last:border-b-0 print:break-inside-avoid',
+                            o.status === 'cancelled' && 'text-muted-foreground',
+                          )}
+                          style={tint(o.date, 5)}
+                        >
+                          <td
+                            className="py-2.5 pr-3 pl-4"
+                            style={{ borderLeft: `4px solid ${dayColor(o.date)}` }}
+                          >
+                            <BookedChip date={o.date} reportDate={data.date} />
+                            <div
+                              className={cn(
+                                'mt-1 text-xs text-muted-foreground',
+                                o.status === 'pending' &&
+                                  o.waitingDays >= 2 &&
+                                  'font-semibold text-destructive',
+                              )}
+                            >
+                              {ago(o.waitingDays)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 font-medium whitespace-nowrap">{o.invoiceNo}</td>
+                          <td className="px-3 py-2.5">
+                            <div className="font-medium">{o.customer.name ?? '—'}</div>
+                            <div className="text-xs text-muted-foreground tabular-nums">
+                              {o.customer.phone}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div>{o.city ?? '—'}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {o.bookedAt?.name ?? o.bookedAt?.code ?? '—'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <ul className="min-w-40 space-y-0.5 text-xs">
+                              {o.items.map((item, i) => (
+                                <li key={i}>
+                                  {item.name} <span className="text-muted-foreground">× {item.qty}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
+                            <div className="font-medium">{formatMoney(o.total)}</div>
+                            <div className="mt-0.5 print:hidden">
+                              <StatusBadge tone={pay.tone}>{pay.label}</StatusBadge>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <Status order={o} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t bg-muted/30 text-sm font-semibold">
+                      <td className="py-2 pr-3 pl-5" colSpan={5}>
+                        {rows.length} order{rows.length === 1 ? '' : 's'}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatMoney(total)}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </section>
+          )}
 
           <div className="hidden grid-cols-2 gap-16 pt-12 text-sm print:grid">
             <div className="border-t pt-2 text-center">Dispatched by</div>
