@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## No DOB on patient forms, Leading Pharma menu (2026-10-22)
+
+- The patient form (Patients, new patient in Book appointment and in POS, and edit) no longer has Date of birth. The profile still shows it when the patient set it in the app.
+- The Insights group (Reports) is hidden in a Dispatch Department such as Leading Pharma and for dispatchers. GDN Report is now in the dispatcher menu (it was missing from `DISPATCHER_KEYS`), and the dispatch dashboard has a "Today's GDN report" tile.
+
 ## Stock request approval capped (2026-10-22)
 
 - In the stock request sheet the Super Admin cannot approve more than asked: the box turns red with "At most N" and Approve stays off until fixed.

@@ -96,6 +96,7 @@ const DISPATCHER_KEYS = new Set([
   'dashboard',
   'deliveries',
   'delivery',
+  'gdn-report',
   'returns',
   'write-offs',
   'stock',
@@ -538,6 +539,7 @@ export const MENU: MenuGroup[] = [
   },
   {
     label: 'Insights',
+    notInDispatch: true,
     items: [
       {
         key: 'reports',

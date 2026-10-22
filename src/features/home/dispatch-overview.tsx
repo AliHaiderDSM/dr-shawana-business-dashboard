@@ -1,4 +1,12 @@
-import { CalendarClock, ClipboardList, PackageCheck, PackageX, RotateCcw, Truck } from 'lucide-react';
+import {
+  CalendarClock,
+  ClipboardCheck,
+  ClipboardList,
+  PackageCheck,
+  PackageX,
+  RotateCcw,
+  Truck,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useSidebarBadges } from '@redux/features/layout';
@@ -43,6 +51,14 @@ export function DispatchOverview() {
           value={formatCount(todayRow?.dispatchedOn ?? 0)}
           hint={`${formatCount(todayRow?.orders ?? 0)} booked today`}
           icon={Truck}
+        />
+      </Tile>
+      <Tile to="/gdn-report">
+        <StatCard
+          label="Today's GDN report"
+          value={formatCount(todayRow?.dispatchedOn ?? 0)}
+          hint={`Dispatched today · ${formatCount(awaiting?.orders ?? 0)} still waiting`}
+          icon={ClipboardCheck}
         />
       </Tile>
       <Tile to="/delivery-report">

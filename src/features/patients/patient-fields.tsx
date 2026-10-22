@@ -14,7 +14,6 @@ export const patientFieldsSchema = z.object({
   phone: patientPhone,
   city: requiredText(100, 'City'),
   age: optionalAge,
-  dateOfBirth: z.string(),
   country: optionalText(100),
   address: optionalText(2000),
 });
@@ -27,7 +26,6 @@ export function patientDefaults(patient?: Patient | null): PatientFieldValues {
     phone: patient?.phone ?? '',
     city: patient?.city ?? '',
     age: patient?.age === null || patient?.age === undefined ? '' : String(patient.age),
-    dateOfBirth: patient?.dateOfBirth ?? '',
     country: patient?.country ?? 'Pakistan',
     address: patient?.address ?? null,
   };
@@ -39,7 +37,6 @@ export function toPatientInput(values: z.output<typeof patientFieldsSchema>): Pa
     phone: values.phone,
     city: values.city,
     age: values.age ? Number(values.age) : undefined,
-    dateOfBirth: values.dateOfBirth || null,
     country: values.country,
     address: values.address,
   };
@@ -155,10 +152,7 @@ export function PatientFields({ prefix = '', excludeId, onUseExisting }: Patient
         />
         <TextField control={form.control} name={name('country')} label="Country" />
       </FieldRow>
-      <FieldRow>
-        <TextField control={form.control} name={name('age')} label="Age" inputMode="numeric" />
-        <TextField control={form.control} name={name('dateOfBirth')} label="Date of birth" type="date" />
-      </FieldRow>
+      <TextField control={form.control} name={name('age')} label="Age" inputMode="numeric" />
       <TextareaField control={form.control} name={name('address')} label="Address" rows={2} />
     </div>
   );

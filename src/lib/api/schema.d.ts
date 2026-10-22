@@ -31592,11 +31592,6 @@ export interface components {
             city: string;
             /** @example 42 */
             age?: number;
-            /**
-             * Format: date
-             * @example 2026-09-30
-             */
-            dateOfBirth?: string | null;
             country?: string | null;
             address?: string | null;
         };
@@ -31607,13 +31602,13 @@ export interface components {
             city?: string;
             /** @example 42 */
             age?: number;
+            country?: string | null;
+            address?: string | null;
             /**
              * Format: date
              * @example 2026-09-30
              */
             dateOfBirth?: string | null;
-            country?: string | null;
-            address?: string | null;
         };
         Patient: {
             /** Format: uuid */
@@ -31843,11 +31838,6 @@ export interface components {
                 city: string;
                 /** @example 42 */
                 age?: number;
-                /**
-                 * Format: date
-                 * @example 2026-09-30
-                 */
-                dateOfBirth?: string | null;
                 country?: string | null;
                 address?: string | null;
             };
@@ -34233,11 +34223,6 @@ export interface components {
                 city: string;
                 /** @example 42 */
                 age?: number;
-                /**
-                 * Format: date
-                 * @example 2026-09-30
-                 */
-                dateOfBirth?: string | null;
                 country?: string | null;
                 address?: string | null;
             };
