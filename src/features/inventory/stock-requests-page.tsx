@@ -26,6 +26,7 @@ import { toastError } from '@/lib/api/errors';
 import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchKind } from '@/lib/auth/branches';
+import { cn } from '@/lib/utils';
 import { formatDateTime, formatQuantity } from '@/lib/format';
 import {
   useAskStockMutation,
@@ -265,6 +266,9 @@ function RequestSheet({
   const pending = request.status === 'pending';
   const choosing = isSuperAdmin && pending;
   const busy = decideState.isLoading;
+  const tooMuch = new Set(
+    request.items.filter((i) => approved[i.id] && Number(approved[i.id]) > Number(i.qty)).map((i) => i.id),
+  );
 
   const toSend = request.items
     .map((i) => ({
@@ -341,12 +345,19 @@ function RequestSheet({
                           prefix=""
                           decimals={3}
                           aria-label={`Approve ${i.productName}`}
-                          className="ml-auto h-8 w-24 text-right"
+                          className={cn(
+                            'ml-auto h-8 w-24 text-right',
+                            tooMuch.has(i.id) && 'border-destructive focus-visible:ring-destructive/30',
+                          )}
+                          aria-invalid={tooMuch.has(i.id)}
                           placeholder={String(Number(i.qty))}
                           value={approved[i.id] ?? ''}
                           onChange={(e) => setApproved((current) => ({ ...current, [i.id]: e.target.value }))}
                         />
-                      ) : i.approvedQty === null ? (
+                      ) : null}
+                      {choosing && tooMuch.has(i.id) ? (
+                        <div className="mt-1 text-xs text-destructive">At most {formatQuantity(i.qty)}</div>
+                      ) : choosing ? null : i.approvedQty === null ? (
                         '—'
                       ) : (
                         formatQuantity(i.approvedQty)
@@ -432,7 +443,11 @@ function RequestSheet({
                 <X />
                 Reject
               </Button>
-              <Button disabled={decideState.isLoading} onClick={() => void answer(true)}>
+              <Button
+                disabled={decideState.isLoading || tooMuch.size > 0}
+                title={tooMuch.size ? 'Approve no more than the branch asked' : undefined}
+                onClick={() => void answer(true)}
+              >
                 {decideState.isLoading ? <Loader2 className="animate-spin" /> : <Check />}
                 Approve
               </Button>

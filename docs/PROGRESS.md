@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Stock request approval capped (2026-10-22)
+
+- In the stock request sheet the Super Admin cannot approve more than asked: the box turns red with "At most N" and Approve stays off until fixed.
+
 ## GDN day-end report (2026-10-22)
 
 - New page `/gdn-report` (menu Sales → GDN Report, and Reports): pick a day (previous / next / today). Five flow cards: pending from earlier days + new orders → dispatched today (earlier vs today) → cancelled → carried to the next day, with the sum written out. Tables for dispatched-from-earlier, dispatched-from-today, still pending (tagged earlier/new, days waiting in red from 2 days) and cancelled. Prints as a day-end report with signature lines.
