@@ -10,6 +10,7 @@ import type {
   CreateSaleArgs,
   DeliveriesQuery,
   DeliverySlipsQuery,
+  GdnReport,
   DeliverySlipsResult,
   DispatchSaleOrderArgs,
   OnlineCatalogQuery,
@@ -173,6 +174,15 @@ export const salesEndpointsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['sales'],
     }),
+    getGdnReport: build.query<GdnReport, string>({
+      queryFn: (date) =>
+        fromApi<GdnReport>(() =>
+          unwrap(api.GET('/branch/sales/gdn-report', { params: { query: { date } } })).then(
+            (r) => r.data as unknown as GdnReport,
+          ),
+        ),
+      providesTags: ['sales'],
+    }),
     getDeliverySlips: build.query<DeliverySlipsResult, DeliverySlipsQuery>({
       queryFn: (query) =>
         fromApi<DeliverySlipsResult>(() =>
@@ -204,6 +214,7 @@ export const {
   useRemoveSalePaymentProofMutation,
   useGetSaleBillQuery,
   useGetDeliverySlipsQuery,
+  useGetGdnReportQuery,
 } = salesEndpointsApi;
 
 export function useSales(query: Record<string, unknown>) {
@@ -224,6 +235,10 @@ export function useOnlineCatalog(query: OnlineCatalogQuery, enabled = true) {
 
 export function useBill(id: string) {
   return useGetSaleBillQuery(id, { skip: !id });
+}
+
+export function useGdnReport(date: string) {
+  return useGetGdnReportQuery(date, { skip: !date });
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

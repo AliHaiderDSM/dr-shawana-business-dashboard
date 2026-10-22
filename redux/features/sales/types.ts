@@ -147,6 +147,46 @@ export interface DeliverySlip {
   from: { name: string; phone: string | null; city: string; address: string | null };
 }
 
+export type GdnOrderStatus = 'dispatched' | 'cancelled' | 'pending';
+
+export interface GdnOrder {
+  id: string;
+  invoiceNo: string;
+  gdnNo: string | null;
+  date: string;
+  dispatchedOn: string | null;
+  status: GdnOrderStatus;
+  fromBefore: boolean;
+  waitingDays: number;
+  paymentStatus: string;
+  total: string;
+  city: string | null;
+  customer: { name: string | null; phone: string | null };
+  bookedAt: { code: string; name: string | null } | null;
+  items: { name: string; qty: string }[];
+}
+
+export interface GdnReport {
+  date: string;
+  branch: { name: string; code: string; dispatch: boolean };
+  summary: {
+    opening: number;
+    openingAmount: string;
+    newOrders: number;
+    newAmount: string;
+    dispatched: number;
+    dispatchedAmount: string;
+    dispatchedFromOpening: number;
+    dispatchedFromNew: number;
+    cancelled: number;
+    closing: number;
+    closingAmount: string;
+    closingFromOpening: number;
+    oldestPending: string | null;
+  };
+  orders: GdnOrder[];
+}
+
 export interface DeliverySlipsQuery {
   from?: string;
   to?: string;

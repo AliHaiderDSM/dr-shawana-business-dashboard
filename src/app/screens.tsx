@@ -362,6 +362,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'gdn-report',
+    element: page(() => import('@/features/sales/gdn-report'), 'GdnReportPage'),
+    anyOf: ['deliveryReport.view'],
+    scope: 'branch',
+  },
+  {
     path: 'journal',
     element: page(() => import('@/features/finance/journal-page'), 'JournalPage'),
     anyOf: ['journal.view'],

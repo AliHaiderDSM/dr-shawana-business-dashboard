@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarCheck,
+  ClipboardCheck,
   ClipboardList,
   HandCoins,
   History,
@@ -117,6 +118,16 @@ export const REPORTS: ReportDef[] = [
     allowed: permission('deliveryReport.view'),
     filters: [],
     path: '/delivery-report',
+  },
+  {
+    key: 'gdn-report',
+    title: 'GDN day-end report',
+    description: 'Online orders waiting, dispatched and carried to the next day',
+    icon: ClipboardCheck,
+    group: 'Sales',
+    allowed: permission('deliveryReport.view'),
+    filters: [],
+    path: '/gdn-report',
   },
   {
     key: 'sale-products',

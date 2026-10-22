@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN day-end report (2026-10-22)
+
+- New page `/gdn-report` (menu Sales → GDN Report, and Reports): pick a day (previous / next / today). Five flow cards: pending from earlier days + new orders → dispatched today (earlier vs today) → cancelled → carried to the next day, with the sum written out. Tables for dispatched-from-earlier, dispatched-from-today, still pending (tagged earlier/new, days waiting in red from 2 days) and cancelled. Prints as a day-end report with signature lines.
+
 ## Medical history topics trimmed (2026-10-21)
 
 - "What are the top 3 things…" and "Anything else…" are gone from the consultation Medical history tab and from the copy link form. They stay on the follow up form.
