@@ -19,6 +19,9 @@ import { Panel } from '@/components/shared/panel';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useBranchOptions } from '@/lib/auth/branches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -242,8 +245,27 @@ export function GdnReportPage() {
   const [params, setParams] = useSearchParams();
   const today = isoDate();
   const date = params.get('date') ?? today;
-  const report = useGdnReport(date);
+  const { isSuperAdmin, branchId: currentBranch } = useAuth();
+  const branches = useBranchOptions(isSuperAdmin);
+  const choices = (branches.data ?? []).filter((b) => b.kind !== 'warehouse');
+  const dispatchBranch = choices.find((b) => b.kind === 'dispatch');
+  const current = choices.find((b) => b.id === currentBranch);
+  const picked = isSuperAdmin
+    ? (params.get('branch') ??
+      (current?.kind === 'dispatch' ? current.id : (dispatchBranch?.id ?? current?.id)))
+    : undefined;
+  const report = useGdnReport(date, picked, !isSuperAdmin || Boolean(picked));
   const data = report.data;
+
+  const pickBranch = (id: string) =>
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current);
+        copy.set('branch', id);
+        return copy;
+      },
+      { replace: true },
+    );
 
   const go = (next: string) =>
     setParams(
@@ -270,6 +292,21 @@ export function GdnReportPage() {
         description="Day-end dispatch report of online orders: what was waiting from earlier days, what was dispatched today and what carries to the next day."
         actions={
           <>
+            {isSuperAdmin && choices.length ? (
+              <Select value={picked ?? ''} onValueChange={pickBranch}>
+                <SelectTrigger className="w-48" aria-label="Branch">
+                  <SelectValue placeholder="Choose branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {choices.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                      {b.kind === 'dispatch' ? ' (dispatch)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
@@ -342,6 +379,17 @@ export function GdnReportPage() {
                 : 'Online orders booked at this branch'}
             </span>
           </div>
+
+          {data.orders.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              No online order was waiting, booked or sent at {data.branch.name} on this day.
+              {data.branch.dispatch
+                ? ''
+                : dispatchBranch
+                  ? ` Online orders are sent by ${dispatchBranch.name}; choose it to see its GDN report.`
+                  : ''}
+            </p>
+          ) : null}
 
           <Flow report={data} />
 

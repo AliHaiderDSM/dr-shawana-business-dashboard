@@ -174,10 +174,10 @@ export const salesEndpointsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['sales'],
     }),
-    getGdnReport: build.query<GdnReport, string>({
-      queryFn: (date) =>
+    getGdnReport: build.query<GdnReport, { date: string; branchId?: string }>({
+      queryFn: (query) =>
         fromApi<GdnReport>(() =>
-          unwrap(api.GET('/branch/sales/gdn-report', { params: { query: { date } } })).then(
+          unwrap(api.GET('/branch/sales/gdn-report', { params: { query } })).then(
             (r) => r.data as unknown as GdnReport,
           ),
         ),
@@ -237,8 +237,8 @@ export function useBill(id: string) {
   return useGetSaleBillQuery(id, { skip: !id });
 }
 
-export function useGdnReport(date: string) {
-  return useGetGdnReportQuery(date, { skip: !date });
+export function useGdnReport(date: string, branchId?: string, enabled = true) {
+  return useGetGdnReportQuery(branchId ? { date, branchId } : { date }, { skip: !date || !enabled });
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

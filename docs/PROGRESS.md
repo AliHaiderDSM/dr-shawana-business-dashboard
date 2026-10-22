@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report branch for the Super Admin (2026-10-22)
+
+- The GDN report follows the branch in the switcher, so a Super Admin on another branch (e.g. Super Admin Stock) saw it empty while the Delivery Report shows every branch. The page now has its own branch picker for the Super Admin, opening on the Dispatch Department (Leading Pharma). An empty day says which branch it is and points to the dispatch branch.
+
 ## No DOB on patient forms, Leading Pharma menu (2026-10-22)
 
 - The patient form (Patients, new patient in Book appointment and in POS, and edit) no longer has Date of birth. The profile still shows it when the patient set it in the app.
