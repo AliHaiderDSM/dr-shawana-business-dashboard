@@ -352,6 +352,16 @@ export function BloodWorkPanel({
     }
     return row;
   });
+  const chartTop = Math.max(
+    50,
+    Math.ceil(
+      Math.max(
+        0,
+        ...chartRows.flatMap((row) => Object.values(row).filter((v): v is number => typeof v === 'number')),
+      ) / 50,
+    ) * 50,
+  );
+  const yTicks = Array.from({ length: chartTop / 50 + 1 }, (_, i) => i * 50);
 
   return (
     <Panel
@@ -448,7 +458,9 @@ export function BloodWorkPanel({
                       axisLine={{ stroke: 'var(--chart-grid)' }}
                     />
                     <YAxis
-                      domain={[0, 'auto']}
+                      domain={[0, chartTop]}
+                      ticks={yTicks}
+                      interval={0}
                       allowDecimals={false}
                       tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                       tickLine={false}

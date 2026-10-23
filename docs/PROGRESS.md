@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Lab delete request, pasted screenshots, blood chart ticks (2026-10-23)
+
+- Stock In: the Lab Officer gets Delete on GRN rows. A pending GRN deletes at once; a confirmed one sends a delete request to the Super Admin (approved from GRN edit requests).
+- `FilePicker` takes pasted images: Ctrl+V anywhere while it is shown, or the "Paste copied image" button (Clipboard API). Pasted files are named `pasted-<time>-<n>.png`; type, size and count limits still apply. Used for sale payment screenshots.
+- Blood work chart: Y axis ticks every 50, from 0 up to the highest value rounded up to 50.
+
 ## Plain numbers in stock edit, password eye (2026-10-23)
 
 - The stock entry edit shows qty and unit cost as plain numbers (5, 6000, 5.5) instead of the API's 5.000 / 6000.00.

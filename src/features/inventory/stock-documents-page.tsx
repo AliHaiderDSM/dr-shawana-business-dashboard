@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import {
   useRemoveStockDocument,
+  useEditStoreReceiptMutation,
   useStockDocuments,
   type StockDocument,
   type StockKind,
@@ -81,6 +82,7 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
   const list = useListState({ defaultSort: '-date' });
   const query = useStockDocuments(kind, list.query);
   const [remove] = useRemoveStockDocument(kind);
+  const [editGrn] = useEditStoreReceiptMutation();
   const products = productsApi.useOptions();
   const parties = suppliersApi.useOptions({ type: config.partyType });
   const [creating, setCreating] = useState(false);
@@ -102,6 +104,9 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
     'grnNo' in r && r.grnNo
       ? { no: r.grnNo, status: r.receiptStatus ?? null, received: r.receivedQty ?? null }
       : null;
+
+  const removingGrn = removing ? receiptOf(removing) : null;
+  const labRemovalNeedsApproval = labEdits && removingGrn?.status === 'confirmed';
 
   const columns: ColumnDef<StockDocument, unknown>[] = [
     ...(kind === 'in' && inWarehouseView
@@ -305,7 +310,8 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
               icon: Trash2,
               destructive: true,
               separatorBefore: true,
-              hidden: !can('stock.delete') || isTransferIn(row.original),
+              hidden:
+                !(can('stock.delete') || (labEdits && receiptOf(row.original))) || isTransferIn(row.original),
               onSelect: () => setRemoving(row.original),
             },
           ]}
@@ -399,16 +405,31 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(open) => !open && setRemoving(null)}
-        title="Delete this entry?"
-        description="Its stock movement is reversed. This is refused if it would take the product below zero."
-        confirmLabel="Delete"
+        title={labRemovalNeedsApproval ? 'Ask to delete this entry?' : 'Delete this entry?'}
+        description={
+          labRemovalNeedsApproval
+            ? `${removingGrn?.no} is already confirmed. The Super Admin gets the request; the entry and its stock go only after approval.`
+            : 'Its stock movement is reversed. This is refused if it would take the product below zero.'
+        }
+        confirmLabel={labRemovalNeedsApproval ? 'Send delete request' : 'Delete'}
         destructive
         onConfirm={() =>
           removing
-            ? remove(removing.id)
-                .unwrap()
-                .then(() => toast.success('Entry deleted'))
-                .catch(toastError)
+            ? labEdits && removingGrn
+              ? editGrn({ grnNo: removingGrn.no, body: { update: [], add: [], remove: [removing.id] } })
+                  .unwrap()
+                  .then((result) =>
+                    toast.success(
+                      result.applied
+                        ? 'Entry deleted'
+                        : 'Delete request sent to the Super Admin. The entry stays until it is approved.',
+                    ),
+                  )
+                  .catch(toastError)
+              : remove(removing.id)
+                  .unwrap()
+                  .then(() => toast.success('Entry deleted'))
+                  .catch(toastError)
             : undefined
         }
       />

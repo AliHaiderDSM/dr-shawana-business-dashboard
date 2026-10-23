@@ -1,4 +1,4 @@
-import { FileText, ImagePlus, Loader2, Upload, X } from 'lucide-react';
+import { ClipboardPaste, FileText, ImagePlus, Loader2, Upload, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -118,6 +118,15 @@ export function ImageUpload({ value, onUpload, disabled, label = 'Image', classN
   );
 }
 
+const EXTENSIONS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+let pasted = 0;
+
+function named(file: File) {
+  pasted += 1;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+  return new File([file], `pasted-${stamp}-${pasted}.${EXTENSIONS[file.type] ?? 'png'}`, { type: file.type });
+}
+
 interface FilePickerProps {
   files: File[];
   onChange: (files: File[]) => void;
@@ -137,8 +146,10 @@ export function FilePicker({
 }: FilePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const full = disabled || files.length >= maxFiles;
+  const latest = useRef({ files, full, add });
 
-  function add(list: FileList | null) {
+  function add(list: FileList | File[] | null) {
     if (!list) return;
     const next = [...files];
     for (const file of Array.from(list)) {
@@ -149,11 +160,49 @@ export function FilePicker({
     onChange(next);
   }
 
+  useEffect(() => {
+    latest.current = { files, full, add };
+  });
+
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      if (latest.current.full) return;
+      const images = Array.from(event.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
+      if (images.length === 0) return;
+      event.preventDefault();
+      latest.current.add(images.map(named));
+    }
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, []);
+
+  async function pasteFromClipboard() {
+    if (!navigator.clipboard?.read) {
+      toast.error('Press Ctrl+V to paste the copied image');
+      return;
+    }
+    try {
+      const items = await navigator.clipboard.read();
+      const images: File[] = [];
+      for (const item of items) {
+        const type = item.types.find((t) => t.startsWith('image/'));
+        if (type) {
+          const blob = await item.getType(type);
+          images.push(named(new File([blob], 'image', { type: blob.type || type })));
+        }
+      }
+      if (images.length === 0) toast.error('No image in the clipboard. Copy an image first.');
+      else add(images);
+    } catch {
+      toast.error('Clipboard access was blocked. Press Ctrl+V to paste the image.');
+    }
+  }
+
   return (
     <div className="space-y-2">
       <button
         type="button"
-        disabled={disabled || files.length >= maxFiles}
+        disabled={full}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -173,9 +222,21 @@ export function FilePicker({
         <Upload className="size-5" />
         <span className="font-medium text-foreground">Click or drop files</span>
         <span className="text-xs">
-          Images or PDF, up to {Math.round(maxBytes / MB)} MB each, max {maxFiles}
+          Images or PDF, up to {Math.round(maxBytes / MB)} MB each, max {maxFiles}. Copied image? Press
+          Ctrl+V.
         </span>
       </button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="w-full"
+        disabled={full}
+        onClick={() => void pasteFromClipboard()}
+      >
+        <ClipboardPaste />
+        Paste copied image
+      </Button>
       <input
         ref={inputRef}
         type="file"
