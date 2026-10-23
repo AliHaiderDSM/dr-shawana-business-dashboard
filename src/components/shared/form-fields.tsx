@@ -1,4 +1,5 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { useState, type HTMLAttributes, type ReactNode } from 'react';
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
 import {
   FormControl,
@@ -54,6 +55,8 @@ export function TextField<T extends FieldValues>({
   inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
   list?: string;
 }) {
+  const [shown, setShown] = useState(false);
+  const secret = type === 'password';
   return (
     <FormField
       control={control}
@@ -61,18 +64,33 @@ export function TextField<T extends FieldValues>({
       render={({ field }) => (
         <FormItem className={className}>
           <FieldLabel label={label} required={required} />
-          <FormControl>
-            <Input
-              type={type}
-              placeholder={placeholder}
-              autoComplete={autoComplete}
-              inputMode={inputMode}
-              list={list}
-              disabled={disabled}
-              {...field}
-              value={field.value ?? ''}
-            />
-          </FormControl>
+          <div className="relative">
+            <FormControl>
+              <Input
+                type={secret && shown ? 'text' : type}
+                placeholder={placeholder}
+                autoComplete={autoComplete}
+                inputMode={inputMode}
+                list={list}
+                disabled={disabled}
+                className={secret ? 'pr-10' : undefined}
+                {...field}
+                value={field.value ?? ''}
+              />
+            </FormControl>
+            {secret ? (
+              <button
+                type="button"
+                onClick={() => setShown((v) => !v)}
+                aria-label={shown ? 'Hide password' : 'Show password'}
+                aria-pressed={shown}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+              >
+                {shown ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            ) : null}
+          </div>
           {description ? <FormDescription>{description}</FormDescription> : null}
           <FormMessage />
         </FormItem>

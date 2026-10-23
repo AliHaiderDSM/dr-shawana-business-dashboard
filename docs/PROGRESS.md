@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Plain numbers in stock edit, password eye (2026-10-23)
+
+- The stock entry edit shows qty and unit cost as plain numbers (5, 6000, 5.5) instead of the API's 5.000 / 6000.00.
+- Every `TextField` with `type="password"` (change password's three boxes and others) has an eye button to show or hide the text.
+
 ## Passwords for store staff, editable reset (2026-10-23)
 
 - The profile page (profile and change password) was closed to the Lab Officer and the Warehouse Keeper: its route asked for dashboard, branches or delivery report rights. It now also opens with stock or inventory report rights.

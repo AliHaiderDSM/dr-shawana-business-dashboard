@@ -57,6 +57,9 @@ const withBatchRules = <S extends z.ZodType<Values>>(base: S) =>
 
 type Values = z.input<typeof schema>;
 
+const plain = (value: string | number | null | undefined) =>
+  value === null || value === undefined || value === '' ? '' : String(Number(value));
+
 interface StockEntrySheetProps {
   config: StockKindConfig;
   entry: StockDocument | null;
@@ -87,11 +90,11 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
       partyId: entry ? ('supplierId' in entry ? entry.supplierId : entry.dispatcherId) : null,
       productId: entry?.productId ?? '',
       date: entry?.date ?? '',
-      qty: entry?.qty ?? '',
+      qty: entry ? plain(entry.qty) : '',
       detail: entry ? (stockLineDetail(entry) ?? '') : '',
       manufacturingDate: entry && 'manufacturingDate' in entry ? (entry.manufacturingDate ?? '') : '',
       expiryDate: entry && 'expiryDate' in entry ? (entry.expiryDate ?? '') : '',
-      unitCost: entry && 'unitCost' in entry ? (entry.unitCost ?? '') : '',
+      unitCost: entry && 'unitCost' in entry ? plain(entry.unitCost) : '',
       note: entry?.note ?? null,
     },
   });
@@ -109,7 +112,7 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
       detail: stockLineDetail(entry) ?? '',
       manufacturingDate: 'manufacturingDate' in entry ? (entry.manufacturingDate ?? '') : '',
       expiryDate: 'expiryDate' in entry ? (entry.expiryDate ?? '') : '',
-      unitCost: 'unitCost' in entry ? (entry.unitCost ?? '') : '',
+      unitCost: 'unitCost' in entry ? plain(entry.unitCost) : '',
     };
     const change: GrnLineChange = { id: entry.id };
     if (Number(values.qty) !== Number(original.qty)) change.qty = String(values.qty);
@@ -118,7 +121,7 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
       change.manufacturingDate = values.manufacturingDate || null;
     if ((values.expiryDate || '') !== (original.expiryDate || ''))
       change.expiryDate = values.expiryDate || null;
-    if ((values.unitCost || '') !== (original.unitCost || '')) change.unitCost = values.unitCost || null;
+    if (plain(values.unitCost) !== original.unitCost) change.unitCost = values.unitCost || null;
     if (Object.keys(change).length === 1) {
       toast.message('Nothing was changed');
       return;
