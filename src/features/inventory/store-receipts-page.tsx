@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, PackageCheck, Printer } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, PackageCheck, Pencil, Printer } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity, isoDate } from '@/lib/format';
 import { useConfirmStoreReceiptMutation, useStoreReceipts } from '@redux/features/inventory';
 import { normalizeSerial } from './constants';
+import { GrnEditRequests, GrnEditSheet } from './grn-edit';
 
 type Receipt = Schemas['StoreReceipt'];
 type Line = Receipt['lines'][number];
@@ -194,11 +195,14 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
 }
 
 export function StoreReceiptsPage() {
-  const { me } = useAuth();
-  const [status, setStatus] = useState<'pending' | 'confirmed' | 'all'>('pending');
-  const receipts = useStoreReceipts(status === 'all' ? undefined : status);
+  const { me, isSuperAdmin } = useAuth();
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'all' | 'edits'>('pending');
+  const receipts = useStoreReceipts(status === 'all' || status === 'edits' ? undefined : status);
   const [confirming, setConfirming] = useState<Receipt | null>(null);
+  const [editing, setEditing] = useState<Receipt | null>(null);
   const keeper = me?.role === 'warehouse_keeper';
+  const canEdit = isSuperAdmin;
+  const lab = me?.role === 'lab_officer';
 
   return (
     <>
@@ -215,9 +219,12 @@ export function StoreReceiptsPage() {
           <TabsTrigger value="pending">Waiting</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
+          {canEdit || keeper || lab ? <TabsTrigger value="edits">Edit requests</TabsTrigger> : null}
         </TabsList>
       </Tabs>
-      {receipts.isLoading ? (
+      {status === 'edits' ? (
+        <GrnEditRequests canDecide={isSuperAdmin} />
+      ) : receipts.isLoading ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : receipts.error ? (
         <ErrorState error={receipts.error} onRetry={() => void receipts.refetch()} />
@@ -254,6 +261,17 @@ export function StoreReceiptsPage() {
                       Print GRN
                     </Link>
                   </Button>
+                  {(canEdit || lab) && r.pendingEdit ? (
+                    <StatusBadge tone="warning">
+                      <Clock className="size-3.5" />
+                      Edit waiting for the Super Admin
+                    </StatusBadge>
+                  ) : canEdit ? (
+                    <Button variant="outline" onClick={() => setEditing(r)}>
+                      <Pencil />
+                      Edit GRN
+                    </Button>
+                  ) : null}
                   {keeper && r.status === 'pending' ? (
                     <Button onClick={() => setConfirming(r)}>
                       <PackageCheck />
@@ -305,6 +323,14 @@ export function StoreReceiptsPage() {
       )}
       {confirming ? (
         <ConfirmDialog key={confirming.grnNo} receipt={confirming} onClose={() => setConfirming(null)} />
+      ) : null}
+      {editing ? (
+        <GrnEditSheet
+          key={editing.grnNo}
+          receipt={editing}
+          direct={isSuperAdmin || editing.status === 'pending'}
+          onClose={() => setEditing(null)}
+        />
       ) : null}
     </>
   );

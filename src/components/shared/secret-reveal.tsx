@@ -2,6 +2,7 @@ import { Check, Copy, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -27,14 +28,27 @@ export async function copyText(text: string, label = 'Copied') {
 interface SecretRevealProps {
   value: string;
   onRegenerate?: () => void;
+  onChange?: (value: string) => void;
   className?: string;
 }
 
-export function SecretReveal({ value, onRegenerate, className }: SecretRevealProps) {
+export function SecretReveal({ value, onRegenerate, onChange, className }: SecretRevealProps) {
   const [copied, setCopied] = useState(false);
   return (
     <div className={cn('flex items-center gap-2 rounded-lg border bg-muted/50 p-1.5 pl-3', className)}>
-      <code className="flex-1 truncate font-mono text-sm tracking-wide select-all">{value}</code>
+      {onChange ? (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label="Password"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={72}
+          className="h-8 flex-1 border-0 bg-transparent px-0 font-mono text-sm tracking-wide shadow-none focus-visible:ring-0"
+        />
+      ) : (
+        <code className="flex-1 truncate font-mono text-sm tracking-wide select-all">{value}</code>
+      )}
       {onRegenerate ? (
         <Button
           type="button"

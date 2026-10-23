@@ -31,7 +31,7 @@ export const screenRoutes: ScreenRoute[] = [
   {
     path: 'profile',
     element: page(() => import('@/features/profile/profile-page'), 'ProfilePage'),
-    anyOf: anyStaff,
+    anyOf: traceViewers,
     scope: 'any',
   },
   {

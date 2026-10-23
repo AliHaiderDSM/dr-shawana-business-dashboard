@@ -51,7 +51,14 @@ function ResetPasswordDialog({
   onDone: (c: Credentials) => void;
 }) {
   const [resetPassword, reset] = useResetStaffPasswordMutation();
+  const { isSuperAdmin } = useAuth();
   const [password, setPassword] = useState(generatePassword);
+  const problem =
+    password.length < 8
+      ? 'Use at least 8 characters'
+      : password.trim() !== password
+        ? 'Do not start or end with a space'
+        : null;
   if (!staff) return null;
   return (
     <Dialog open onOpenChange={(o) => !o && !reset.isLoading && onClose()}>
@@ -59,17 +66,25 @@ function ResetPasswordDialog({
         <DialogHeader>
           <DialogTitle>Reset password</DialogTitle>
           <DialogDescription>
-            Set a temporary password for {staff.firstName} {staff.lastName}. Their current password stops
-            working.
+            {isSuperAdmin
+              ? `A temporary password is filled in for ${staff.firstName} ${staff.lastName}. Keep it or type your own. Their current password stops working.`
+              : `Set a temporary password for ${staff.firstName} ${staff.lastName}. Their current password stops working.`}
           </DialogDescription>
         </DialogHeader>
-        <SecretReveal value={password} onRegenerate={() => setPassword(generatePassword())} />
+        <div className="space-y-1.5">
+          <SecretReveal
+            value={password}
+            onRegenerate={() => setPassword(generatePassword())}
+            onChange={isSuperAdmin ? setPassword : undefined}
+          />
+          {problem ? <p className="text-xs text-destructive">{problem}</p> : null}
+        </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={reset.isLoading}>
             Cancel
           </Button>
           <Button
-            disabled={reset.isLoading}
+            disabled={reset.isLoading || problem !== null}
             onClick={() =>
               void resetPassword({ id: staff.id, password, branchId: staff.branchId })
                 .unwrap()

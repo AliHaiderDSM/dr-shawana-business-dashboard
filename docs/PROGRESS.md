@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Passwords for store staff, editable reset (2026-10-23)
+
+- The profile page (profile and change password) was closed to the Lab Officer and the Warehouse Keeper: its route asked for dashboard, branches or delivery report rights. It now also opens with stock or inventory report rights.
+- Reset password: the Super Admin sees the temporary password in an editable box (keep it, regenerate or type their own; at least 8 characters, no spaces at the ends). Other admins keep the generated one.
+
+## GRN edit (2026-10-23)
+
+- Store receipts: "Edit GRN" for the Lab Officer and the Super Admin opens a sheet to change qty, batch, mfg date, expiry and cost of each line, remove lines (undo before saving) and add products with or without new labels, plus a note. Pending GRNs and Super Admin edits save at once; a Lab Officer edit of a confirmed GRN is "Send for approval" and the GRN shows "Edit waiting for the Super Admin".
+- Lab Officer: no "Edit GRN". On the Stock In list each GRN row has the plain "Edit" (and row click). She can change qty, batch, mfg date, expiry and unit cost; product, date, supplier and note stay locked. A pending GRN saves at once; a confirmed one is "Send for approval" through the GRN edit request. "Edit GRN" on Store receipts is for the Super Admin only; the Lab Officer still sees the Edit requests tab and the waiting badge.
+- New "Edit requests" tab lists each edit as Change / Add / Remove lines with before → after; the Super Admin approves or rejects with a note.
+
 ## GDN report: product filter, dispatch and Super Admin only (2026-10-22)
 
 - Product filter (in the URL as `product`): the table, the booking-day strip, the tabs and the four cards count only orders with that product; the footer adds the units of it. "Dispatched today" is always the orders whose GDN date is the chosen day.

@@ -76,7 +76,8 @@ function isTransferIn(doc: StockDocument) {
 export function StockDocumentsPage({ kind }: { kind: StockKind }) {
   const config = STOCK_KINDS[kind];
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, me } = useAuth();
+  const labEdits = kind === 'in' && me?.role === 'lab_officer';
   const list = useListState({ defaultSort: '-date' });
   const query = useStockDocuments(kind, list.query);
   const [remove] = useRemoveStockDocument(kind);
@@ -295,7 +296,8 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
             {
               label: 'Edit',
               icon: Pencil,
-              hidden: !can('stock.update') || isTransferIn(row.original),
+              hidden:
+                !(can('stock.update') || (labEdits && receiptOf(row.original))) || isTransferIn(row.original),
               onSelect: () => setEditing(row.original),
             },
             {
@@ -350,7 +352,13 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
         onRetry={() => void query.refetch()}
         searchPlaceholder="Search product or note"
         exportFileName={kind === 'in' ? 'stock-in' : 'stock-out'}
-        onRowClick={can('stock.update') ? (r) => !isTransferIn(r) && setEditing(r) : undefined}
+        onRowClick={
+          can('stock.update')
+            ? (r) => !isTransferIn(r) && setEditing(r)
+            : labEdits
+              ? (r) => receiptOf(r) && setEditing(r)
+              : undefined
+        }
         emptyTitle={`No ${config.title.toLowerCase()} entries`}
         emptyDescription={config.description}
         toolbar={

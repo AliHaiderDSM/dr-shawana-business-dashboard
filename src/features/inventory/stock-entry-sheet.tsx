@@ -25,7 +25,9 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { optionalText, positiveQuantity } from '@/lib/validation';
 import {
   stockAttachmentUrl,
+  type GrnLineChange,
   useAddStockAttachments,
+  useEditStoreReceiptMutation,
   useRemoveStockAttachment,
   useUpdateStockDocument,
   type StockDocument,
@@ -63,9 +65,10 @@ interface StockEntrySheetProps {
 }
 
 export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntrySheetProps) {
-  const { can } = useAuth();
+  const { can, me } = useAuth();
   const listId = useId();
   const [update, updateState] = useUpdateStockDocument(config.kind);
+  const [editGrn, editGrnState] = useEditStoreReceiptMutation();
   const [addFiles, addFilesState] = useAddStockAttachments(config.kind);
   const [removeFile] = useRemoveStockAttachment(config.kind);
   const products = productsApi.useOptions({}, open);
@@ -95,32 +98,71 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
 
   if (!entry) return null;
 
-  const submit = form.handleSubmit(
-    (values) =>
-      void update({
-        id: entry.id,
-        body: {
-          [config.partyField]: values.partyId,
-          productId: values.productId,
-          date: values.date,
-          qty: values.qty,
-          note: values.note,
-          [config.detailField]: values.detail || null,
-          ...(config.batched
-            ? {
-                manufacturingDate: values.manufacturingDate || null,
-                expiryDate: values.expiryDate || null,
-                unitCost: values.unitCost || null,
-              }
-            : {}),
-        },
+  const grnNo = 'grnNo' in entry ? entry.grnNo : null;
+  const receiptStatus = 'receiptStatus' in entry ? entry.receiptStatus : null;
+  const lab = Boolean(grnNo) && me?.role === 'lab_officer';
+  const needsApproval = lab && receiptStatus === 'confirmed';
+
+  const saveAsLab = (values: z.output<typeof schema>) => {
+    const original = {
+      qty: entry.qty,
+      detail: stockLineDetail(entry) ?? '',
+      manufacturingDate: 'manufacturingDate' in entry ? (entry.manufacturingDate ?? '') : '',
+      expiryDate: 'expiryDate' in entry ? (entry.expiryDate ?? '') : '',
+      unitCost: 'unitCost' in entry ? (entry.unitCost ?? '') : '',
+    };
+    const change: GrnLineChange = { id: entry.id };
+    if (Number(values.qty) !== Number(original.qty)) change.qty = String(values.qty);
+    if ((values.detail || '') !== (original.detail || '')) change.batch = values.detail || null;
+    if ((values.manufacturingDate || '') !== (original.manufacturingDate || ''))
+      change.manufacturingDate = values.manufacturingDate || null;
+    if ((values.expiryDate || '') !== (original.expiryDate || ''))
+      change.expiryDate = values.expiryDate || null;
+    if ((values.unitCost || '') !== (original.unitCost || '')) change.unitCost = values.unitCost || null;
+    if (Object.keys(change).length === 1) {
+      toast.message('Nothing was changed');
+      return;
+    }
+    void editGrn({ grnNo: grnNo!, body: { update: [change], add: [], remove: [] } })
+      .unwrap()
+      .then((result) => {
+        toast.success(
+          result.applied
+            ? 'Entry updated'
+            : 'Sent to the Super Admin. The stock changes once it is approved.',
+        );
+        onOpenChange(false);
       })
-        .unwrap()
-        .then(() => {
-          toast.success('Entry updated');
-          onOpenChange(false);
+      .catch((error) => applyServerErrors(form, error));
+  };
+
+  const submit = form.handleSubmit((values) =>
+    lab
+      ? saveAsLab(values)
+      : void update({
+          id: entry.id,
+          body: {
+            [config.partyField]: values.partyId,
+            productId: values.productId,
+            date: values.date,
+            qty: values.qty,
+            note: values.note,
+            [config.detailField]: values.detail || null,
+            ...(config.batched
+              ? {
+                  manufacturingDate: values.manufacturingDate || null,
+                  expiryDate: values.expiryDate || null,
+                  unitCost: values.unitCost || null,
+                }
+              : {}),
+          },
         })
-        .catch((error) => applyServerErrors(form, error)),
+          .unwrap()
+          .then(() => {
+            toast.success('Entry updated');
+            onOpenChange(false);
+          })
+          .catch((error) => applyServerErrors(form, error)),
   );
 
   return (
@@ -129,15 +171,22 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
         open={open}
         onOpenChange={onOpenChange}
         title={`Edit ${config.singular}`}
-        description="The old movement is reversed and posted again with the new values."
+        description={
+          needsApproval
+            ? `${grnNo} is already confirmed. Your change goes to the Super Admin; the stock changes only after approval.`
+            : lab
+              ? `${grnNo} is still waiting for the Warehouse Keeper, so your change applies at once.`
+              : 'The old movement is reversed and posted again with the new values.'
+        }
         onSubmit={submit}
-        submitting={updateState.isLoading}
-        submitLabel="Save changes"
+        submitting={updateState.isLoading || editGrnState.isLoading}
+        submitLabel={needsApproval ? 'Send for approval' : 'Save changes'}
       >
         <ComboboxField
           control={form.control}
           name="productId"
           label="Product"
+          disabled={lab}
           required
           options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
           selectedLabel={entry.product?.name}
@@ -153,13 +202,14 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
             placeholder="0"
             required
           />
-          <TextField control={form.control} name="date" label="Date" type="date" required />
+          <TextField control={form.control} name="date" label="Date" type="date" disabled={lab} required />
         </FieldRow>
         <FieldRow>
           <SelectField
             control={form.control}
             name="partyId"
             label={config.partyLabel}
+            disabled={lab}
             allowEmpty
             options={(parties.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
           />
@@ -202,7 +252,13 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
             New dates apply to the whole batch: every entry of it, and the branches it was sent to.
           </p>
         ) : null}
-        <TextareaField control={form.control} name="note" label="Note" rows={2} />
+        <TextareaField control={form.control} name="note" label="Note" rows={2} disabled={lab} />
+        {lab ? (
+          <p className="text-xs text-muted-foreground">
+            You can change the qty, batch, dates and unit cost. Ask the Super Admin to change the product,
+            date, supplier or note.
+          </p>
+        ) : null}
         <FormSection title="Attachments">
           <AttachmentList
             files={attachments}

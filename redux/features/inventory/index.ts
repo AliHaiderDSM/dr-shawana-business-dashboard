@@ -53,6 +53,72 @@ async function getStockDocumentById(kind: StockKind, id: string) {
   return result.data as StockDocument;
 }
 
+export type GrnEditStatus = 'pending' | 'approved' | 'rejected';
+
+export interface GrnLineSnapshot {
+  id: string;
+  productId: string;
+  productName: string;
+  qty: string;
+  batch: string | null;
+  manufacturingDate: string | null;
+  expiryDate: string | null;
+  unitCost: string | null;
+}
+
+export interface GrnLineChange {
+  id: string;
+  qty?: string;
+  batch?: string | null;
+  manufacturingDate?: string | null;
+  expiryDate?: string | null;
+  unitCost?: string | null;
+}
+
+export interface GrnAddLine {
+  productId: string;
+  productName?: string;
+  qty: string;
+  batch?: string | null;
+  manufacturingDate?: string | null;
+  expiryDate?: string | null;
+  unitCost?: string | null;
+  labels?: 'none' | 'generate';
+}
+
+export interface GrnEditInput {
+  note?: string | null;
+  update: GrnLineChange[];
+  add: GrnAddLine[];
+  remove: string[];
+}
+
+interface GrnPerson {
+  id: string;
+  name: string;
+  role: string;
+}
+
+export interface GrnEditRequest {
+  id: string;
+  grnNo: string;
+  status: GrnEditStatus;
+  changes: { update: GrnLineChange[]; add: GrnAddLine[]; remove: string[] };
+  before: GrnLineSnapshot[];
+  note: string | null;
+  decisionNote: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  branchName: string;
+  requestedBy: GrnPerson | null;
+  decidedBy: GrnPerson | null;
+}
+
+export interface GrnEditResult {
+  applied: boolean;
+  request: GrnEditRequest | null;
+}
+
 export const inventoryApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getStockDocuments: build.query<StockDocumentPage, { kind: StockKind; query: Record<string, unknown> }>({
@@ -318,6 +384,44 @@ export const inventoryApi = baseApi.injectEndpoints({
         ),
       providesTags: ['stock'],
     }),
+    editStoreReceipt: build.mutation<GrnEditResult, { grnNo: string; body: GrnEditInput }>({
+      queryFn: ({ grnNo, body }) =>
+        toApi<GrnEditResult>(() =>
+          unwrap(
+            api.PUT('/branch/stock-receipts/{grnNo}/lines', {
+              params: { path: { grnNo } },
+              body: body as never,
+            }),
+          ).then((r) => r.data as unknown as GrnEditResult),
+        ),
+      invalidatesTags: (_r, error) => (error ? [] : ['stock', 'sidebar-badges']),
+    }),
+    getGrnEditRequests: build.query<GrnEditRequest[], GrnEditStatus | null>({
+      queryFn: (status) =>
+        fromApi<GrnEditRequest[]>(() =>
+          unwrap(
+            api.GET('/branch/stock-receipts/edit-requests', { params: { query: status ? { status } : {} } }),
+          ).then((r) => r.data as unknown as GrnEditRequest[]),
+        ),
+      providesTags: ['stock'],
+    }),
+    decideGrnEdit: build.mutation<GrnEditRequest, { id: string; approve: boolean; note?: string | null }>({
+      queryFn: ({ id, approve, note }) =>
+        toApi<GrnEditRequest>(() =>
+          unwrap(
+            approve
+              ? api.POST('/admin/stock-receipts/edit-requests/{id}/approve', {
+                  params: { path: { id } },
+                  body: { note: note ?? null },
+                })
+              : api.POST('/admin/stock-receipts/edit-requests/{id}/reject', {
+                  params: { path: { id } },
+                  body: { note: note ?? null },
+                }),
+          ).then((r) => r.data as unknown as GrnEditRequest),
+        ),
+      invalidatesTags: (_r, error) => (error ? [] : ['stock', 'sidebar-badges']),
+    }),
     confirmStoreReceipt: build.mutation<
       InventoryPostResponse<'/branch/stock-receipts/{grnNo}/confirm'>,
       { grnNo: string; body: ConfirmStoreReceiptInput }
@@ -345,6 +449,9 @@ export const inventoryApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useEditStoreReceiptMutation,
+  useGetGrnEditRequestsQuery,
+  useDecideGrnEditMutation,
   useGetStockDocumentsQuery,
   useGetStockDocumentQuery,
   useGetStockDocumentsByIdsQuery,
@@ -511,6 +618,10 @@ export function useLabelBatches(query: Record<string, unknown>) {
 
 export function useLabelsPrintItems(args: LabelsPrintArgs) {
   return useGetLabelsPrintItemsQuery(args);
+}
+
+export function useGrnEditRequests(status?: GrnEditStatus, enabled = true) {
+  return useGetGrnEditRequestsQuery(status ?? null, { skip: !enabled });
 }
 
 export function useStoreReceipts(status?: StoreReceiptStatus) {
