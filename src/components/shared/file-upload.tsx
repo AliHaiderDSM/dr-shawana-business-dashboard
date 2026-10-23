@@ -199,44 +199,59 @@ export function FilePicker({
   }
 
   return (
-    <div className="space-y-2">
-      <button
-        type="button"
-        disabled={full}
-        onClick={() => inputRef.current?.click()}
+    <div className="min-w-0 space-y-3">
+      <div
         onDragOver={(e) => {
           e.preventDefault();
-          setDragging(true);
+          if (!full) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          add(e.dataTransfer.files);
+          if (!full) add(e.dataTransfer.files);
         }}
         className={cn(
-          'flex w-full flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground transition-colors hover:border-border-strong hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60',
+          'flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-5 text-center transition-colors',
           dragging && 'border-primary bg-primary-soft',
+          full && 'opacity-60',
         )}
       >
-        <Upload className="size-5" />
-        <span className="font-medium text-foreground">Click or drop files</span>
-        <span className="text-xs">
-          Images or PDF, up to {Math.round(maxBytes / MB)} MB each, max {maxFiles}. Copied image? Press
-          Ctrl+V.
-        </span>
-      </button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-full"
-        disabled={full}
-        onClick={() => void pasteFromClipboard()}
-      >
-        <ClipboardPaste />
-        Paste copied image
-      </Button>
+        <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Upload className="size-5" />
+        </div>
+        <div className="space-y-0.5">
+          <p className="text-sm font-medium text-foreground">
+            Drop files, choose them, or paste a copied image
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {accept.includes('application/pdf') ? 'Images or PDF' : 'Images'}, up to{' '}
+            {Math.round(maxBytes / MB)} MB each, max {maxFiles}. Ctrl+V works too.
+          </p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={full}
+            onClick={() => inputRef.current?.click()}
+          >
+            <Upload />
+            Choose files
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={full}
+            onClick={() => void pasteFromClipboard()}
+          >
+            <ClipboardPaste />
+            Paste image
+          </Button>
+        </div>
+      </div>
       <input
         ref={inputRef}
         type="file"
@@ -249,17 +264,34 @@ export function FilePicker({
         }}
       />
       {files.length > 0 ? (
-        <ul className="divide-y rounded-lg border">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(7rem,1fr))] gap-2">
           {files.map((file, index) => (
-            <li key={`${file.name}-${index}`} className="flex items-center gap-3 px-3 py-2 text-sm">
-              <FileText className="size-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate">{file.name}</span>
-              <span className="text-xs text-muted-foreground">{(file.size / MB).toFixed(1)} MB</span>
+            <li
+              key={`${file.name}-${index}`}
+              className="group relative overflow-hidden rounded-lg border bg-muted"
+            >
+              {file.type.startsWith('image/') ? (
+                <img
+                  ref={(el) => previewInto(el, file)}
+                  alt={file.name}
+                  className="aspect-square w-full object-cover"
+                />
+              ) : (
+                <div className="flex aspect-square w-full items-center justify-center text-muted-foreground">
+                  <FileText className="size-8" />
+                </div>
+              )}
+              <div className="border-t bg-card px-2 py-1 text-left">
+                <p className="truncate text-xs font-medium text-foreground" title={file.name}>
+                  {file.name}
+                </p>
+                <p className="text-[11px] text-muted-foreground">{sizeOf(file.size)}</p>
+              </div>
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="icon"
-                className="size-7"
+                className="absolute top-1 right-1 size-6 rounded-full shadow-sm"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => onChange(files.filter((_, i) => i !== index))}
               >
@@ -271,6 +303,17 @@ export function FilePicker({
       ) : null}
     </div>
   );
+}
+
+function previewInto(el: HTMLImageElement | null, file: File) {
+  if (!el) return;
+  const url = URL.createObjectURL(file);
+  el.src = url;
+  return () => URL.revokeObjectURL(url);
+}
+
+function sizeOf(bytes: number) {
+  return bytes < MB ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / MB).toFixed(1)} MB`;
 }
 
 interface SignedFileButtonProps {

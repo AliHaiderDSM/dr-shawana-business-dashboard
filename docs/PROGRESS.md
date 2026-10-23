@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## File picker card, blood chart 0-350 (2026-10-23)
+
+- `FilePicker` is one card: drop zone with "Choose files" and "Paste image" buttons, files shown as thumbnails with size in KB/MB and a remove button. Root has `min-w-0` so long names no longer push it out of a grid column.
+- Payment screenshots moved to their own full-width row under the sender fields.
+- Blood work chart is taller (30rem); Y axis runs 0-350 in steps of 50 and grows only when a shown value is higher.
+
 ## Lab delete request, pasted screenshots, blood chart ticks (2026-10-23)
 
 - Stock In: the Lab Officer gets Delete on GRN rows. A pending GRN deletes at once; a confirmed one sends a delete request to the Super Admin (approved from GRN edit requests).

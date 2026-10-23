@@ -158,16 +158,16 @@ export function PaymentFields({
           </FieldRow>
           <FieldRow>
             <TextField control={form.control} name={name('senderAccountNo')} label="Sender account no" />
-            <FormItem>
-              <FormLabel>{maxProofs > 1 ? 'Screenshots' : 'Screenshot'}</FormLabel>
-              <FilePicker
-                files={proofs}
-                maxFiles={maxProofs}
-                accept={IMAGE_TYPES}
-                onChange={(files) => form.setValue(name('proofs'), files)}
-              />
-            </FormItem>
           </FieldRow>
+          <FormItem>
+            <FormLabel>{maxProofs > 1 ? 'Screenshots' : 'Screenshot'}</FormLabel>
+            <FilePicker
+              files={proofs}
+              maxFiles={maxProofs}
+              accept={IMAGE_TYPES}
+              onChange={(files) => form.setValue(name('proofs'), files)}
+            />
+          </FormItem>
         </>
       ) : null}
     </div>

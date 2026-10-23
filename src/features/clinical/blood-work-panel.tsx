@@ -352,15 +352,13 @@ export function BloodWorkPanel({
     }
     return row;
   });
-  const chartTop = Math.max(
-    50,
-    Math.ceil(
-      Math.max(
-        0,
-        ...chartRows.flatMap((row) => Object.values(row).filter((v): v is number => typeof v === 'number')),
-      ) / 50,
-    ) * 50,
+  const highest = Math.max(
+    0,
+    ...chartRows.flatMap((row) =>
+      shown.map((t) => row[t.test]).filter((v): v is number => typeof v === 'number'),
+    ),
   );
+  const chartTop = Math.max(350, Math.ceil(highest / 50) * 50);
   const yTicks = Array.from({ length: chartTop / 50 + 1 }, (_, i) => i * 50);
 
   return (
@@ -447,7 +445,7 @@ export function BloodWorkPanel({
                 </div>
               </div>
             ) : (
-              <div className="h-80">
+              <div className="h-[30rem]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartRows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
                     <CartesianGrid stroke="var(--chart-grid)" />
