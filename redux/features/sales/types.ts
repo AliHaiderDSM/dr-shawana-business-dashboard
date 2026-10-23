@@ -149,10 +149,13 @@ export interface DeliverySlip {
 
 export type GdnOrderStatus = 'dispatched' | 'cancelled' | 'pending';
 
+export type GdnReportType = 'online' | 'office' | 'all';
+
 export interface GdnOrder {
   id: string;
   invoiceNo: string;
   gdnNo: string | null;
+  saleType: 'online' | 'office';
   date: string;
   dispatchedOn: string | null;
   status: GdnOrderStatus;
@@ -168,6 +171,7 @@ export interface GdnOrder {
 
 export interface GdnReport {
   date: string;
+  type: GdnReportType;
   branch: { name: string; code: string; dispatch: boolean };
   summary: {
     opening: number;
@@ -176,6 +180,8 @@ export interface GdnReport {
     newAmount: string;
     dispatched: number;
     dispatchedAmount: string;
+    office: number;
+    officeAmount: string;
     dispatchedFromOpening: number;
     dispatchedFromNew: number;
     cancelled: number;

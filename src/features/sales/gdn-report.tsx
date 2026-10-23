@@ -8,6 +8,7 @@ import {
   History,
   PackagePlus,
   Printer,
+  Store,
   Truck,
   XCircle,
   type LucideIcon,
@@ -26,13 +27,19 @@ import { useBranchOptions } from '@/lib/auth/branches';
 import { formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo-hd.png';
-import { useGdnReport, type GdnOrder, type GdnOrderStatus } from '@redux/features/sales';
+import { useGdnReport, type GdnOrder, type GdnOrderStatus, type GdnReportType } from '@redux/features/sales';
 
 type View = 'all' | GdnOrderStatus;
 
 const PALETTE = 8;
 
 const ALL_PRODUCTS = '__all__';
+
+const TYPES: Record<GdnReportType, string> = {
+  online: 'Online orders',
+  office: 'Office sales',
+  all: 'Online + office',
+};
 
 const PAYMENT: Record<string, { label: string; tone: Tone }> = {
   paid: { label: 'Paid', tone: 'success' },
@@ -95,6 +102,16 @@ function BookedChip({ date, reportDate }: { date: string; reportDate: string }) 
 }
 
 function Status({ order }: { order: GdnOrder }) {
+  if (order.saleType === 'office')
+    return (
+      <div className="space-y-0.5">
+        <span className="inline-flex items-center gap-1 text-sm font-semibold text-success">
+          <Store className="size-4" />
+          Handed over
+        </span>
+        <div className="text-xs text-muted-foreground tabular-nums">{order.gdnNo ?? '—'}</div>
+      </div>
+    );
   if (order.status === 'dispatched')
     return (
       <div className="space-y-0.5">
@@ -133,7 +150,10 @@ export function GdnReportPage() {
     ? (params.get('branch') ??
       (current?.kind === 'dispatch' ? current.id : (dispatchBranch?.id ?? current?.id)))
     : undefined;
-  const report = useGdnReport(date, picked, !isSuperAdmin || Boolean(picked));
+  const typeParam = params.get('type');
+  const type: GdnReportType =
+    isSuperAdmin && (typeParam === 'office' || typeParam === 'all') ? typeParam : 'online';
+  const report = useGdnReport(date, type, picked, !isSuperAdmin || Boolean(picked));
   const data = report.data;
   const [view, setView] = useState<View>('all');
   const [day, setDay] = useState<string | null>(null);
@@ -192,6 +212,7 @@ export function GdnReportPage() {
         newOrders: fresh.length,
         newAmount: amount(fresh),
         dispatched: sent.length,
+        office: sent.filter((o) => o.saleType === 'office').length,
         dispatchedFromOpening: sent.filter((o) => o.fromBefore).length,
         dispatchedFromNew: sent.filter((o) => !o.fromBefore).length,
         cancelled: orders.filter((o) => o.status === 'cancelled').length,
@@ -214,7 +235,7 @@ export function GdnReportPage() {
       <PageHeader
         className="print:hidden"
         title="GDN report"
-        description="One view of the day: every online order that was waiting or booked, what went out and what is still waiting. Each booking day has its own colour, so an old order dispatched today shows the colour of the day it was booked."
+        description="One view of the day: every online order that was waiting or booked, what went out and what is still waiting, and for a branch the office sales handed over at the counter. Each booking day has its own colour, so an old order dispatched today shows the colour of the day it was booked."
         actions={
           <>
             {products.length ? (
@@ -230,6 +251,20 @@ export function GdnReportPage() {
                   {products.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {isSuperAdmin ? (
+              <Select value={type} onValueChange={(v) => setParam('type', v === 'online' ? null : v)}>
+                <SelectTrigger className="w-44" aria-label="Sales">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TYPES) as GdnReportType[]).map((key) => (
+                    <SelectItem key={key} value={key}>
+                      {TYPES[key]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -307,7 +342,9 @@ export function GdnReportPage() {
           <div className="hidden items-center justify-between border-b pb-2 print:flex">
             <img src={logo} alt="Dr Shawana DSM" className="h-9 w-auto" />
             <div className="text-right">
-              <div className="text-base font-semibold">GDN day-end report · {data.branch.name}</div>
+              <div className="text-base font-semibold">
+                GDN day-end report · {data.branch.name} · {TYPES[data.type]}
+              </div>
               <div className="text-xs">
                 {formatDate(data.date, 'EEEE, dd MMMM yyyy')}
                 {product ? ` · ${product}` : ''} · {s.opening} from earlier days + {s.newOrders} booked ·{' '}
@@ -319,6 +356,12 @@ export function GdnReportPage() {
             <span className="font-medium text-foreground">{data.branch.name}</span>
             <span>·</span>
             <span>{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</span>
+            {isSuperAdmin ? (
+              <>
+                <span>·</span>
+                <span>{TYPES[data.type]}</span>
+              </>
+            ) : null}
             {product ? (
               <>
                 <span>·</span>
@@ -358,7 +401,9 @@ export function GdnReportPage() {
               value={s.dispatched}
               hint={
                 s.dispatched
-                  ? `${s.dispatchedFromOpening} from earlier days · ${s.dispatchedFromNew} booked today`
+                  ? s.office === s.dispatched
+                    ? `${s.office} handed over at the counter`
+                    : `${s.dispatchedFromOpening} from earlier days · ${s.dispatchedFromNew - s.office} booked today${s.office ? ` · ${s.office} at the counter` : ''}`
                   : 'Nothing went out'
               }
               icon={Truck}
@@ -382,11 +427,17 @@ export function GdnReportPage() {
           {orders.length === 0 ? (
             <div className="rounded-xl border bg-card">
               <EmptyState
-                title={product ? `No order with ${product} on this day` : 'No online orders on this day'}
+                title={
+                  product
+                    ? `No order with ${product} on this day`
+                    : `No ${TYPES[data.type].toLowerCase()} on this day`
+                }
                 description={
-                  data.branch.dispatch || !dispatchBranch
-                    ? `Nothing was waiting, booked or sent at ${data.branch.name}.`
-                    : `Nothing at ${data.branch.name}. Online orders are sent by ${dispatchBranch.name}; choose it above.`
+                  data.type === 'office' && data.branch.dispatch
+                    ? `${data.branch.name} does not sell at a counter. Office sales belong to a branch; choose one above.`
+                    : data.branch.dispatch || !dispatchBranch || data.type !== 'online'
+                      ? `Nothing was waiting, booked or sent at ${data.branch.name}.`
+                      : `Nothing at ${data.branch.name}. Online orders are sent by ${dispatchBranch.name}; choose it above.`
                 }
               />
             </div>
@@ -502,6 +553,11 @@ export function GdnReportPage() {
                             style={{ borderLeft: `4px solid ${dayColor(o.date)}` }}
                           >
                             <BookedChip date={o.date} reportDate={data.date} />
+                            {o.saleType === 'office' ? (
+                              <div className="mt-1">
+                                <StatusBadge tone="info">Office</StatusBadge>
+                              </div>
+                            ) : null}
                             <div
                               className={cn(
                                 'mt-1 text-xs text-muted-foreground',

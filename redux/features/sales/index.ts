@@ -11,6 +11,7 @@ import type {
   DeliveriesQuery,
   DeliverySlipsQuery,
   GdnReport,
+  GdnReportType,
   DeliverySlipsResult,
   DispatchSaleOrderArgs,
   OnlineCatalogQuery,
@@ -174,7 +175,7 @@ export const salesEndpointsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['sales'],
     }),
-    getGdnReport: build.query<GdnReport, { date: string; branchId?: string }>({
+    getGdnReport: build.query<GdnReport, { date: string; type: GdnReportType; branchId?: string }>({
       queryFn: (query) =>
         fromApi<GdnReport>(() =>
           unwrap(api.GET('/branch/sales/gdn-report', { params: { query } })).then(
@@ -237,8 +238,10 @@ export function useBill(id: string) {
   return useGetSaleBillQuery(id, { skip: !id });
 }
 
-export function useGdnReport(date: string, branchId?: string, enabled = true) {
-  return useGetGdnReportQuery(branchId ? { date, branchId } : { date }, { skip: !date || !enabled });
+export function useGdnReport(date: string, type: GdnReportType, branchId?: string, enabled = true) {
+  return useGetGdnReportQuery(branchId ? { date, type, branchId } : { date, type }, {
+    skip: !date || !enabled,
+  });
 }
 
 export function useDeliverySlips(query: DeliverySlipsQuery, enabled = true) {

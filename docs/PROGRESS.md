@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report: online / office / all (2026-10-23)
+
+- Super Admin picks Online orders (default), Office sales or Online + office on the GDN report (`?type=`). Office rows show an Office badge and "Handed over" with their GDN number; the Dispatched KPI counts counter sales apart. The Dispatch Department still sees only online orders.
+- Office sales now have a GDN number, so their sale page shows Print GDN.
+
 ## File picker card, blood chart 0-350 (2026-10-23)
 
 - `FilePicker` is one card: drop zone with "Choose files" and "Paste image" buttons, files shown as thumbnails with size in KB/MB and a remove button. Root has `min-w-0` so long names no longer push it out of a grid column.
