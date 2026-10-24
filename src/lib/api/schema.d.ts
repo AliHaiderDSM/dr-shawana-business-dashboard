@@ -20182,12 +20182,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Own appointments in every branch: upcoming (today onwards, soonest first) or past (newest first), 30 a page */
+        /** Own appointments in every branch: upcoming (today onwards, soonest first) or past (newest first), 30 a page; or a whole month with ?month=YYYY-MM */
         get: {
             parameters: {
                 query?: {
                     when?: "upcoming" | "past";
                     page?: number;
+                    /** @description Every appointment of this month (YYYY-MM), oldest first; when and page are ignored */
+                    month?: string;
                 };
                 header?: never;
                 path?: never;
@@ -34597,6 +34599,8 @@ export interface components {
             received: string;
             /** @example 1250.50 */
             refunded: string;
+            /** @description Overall discount of the sale */
+            discountPercent: string;
             items: {
                 /** Format: uuid */
                 productId: string;
@@ -34612,6 +34616,11 @@ export interface components {
                 returned: string;
                 /** @example 10.000 */
                 returnable: string;
+                /**
+                 * @description What one unit really cost the customer: its line total after the product discount, less its share of the overall discount (shared by price)
+                 * @example 1250.50
+                 */
+                unitPrice: string;
                 trackSerials: boolean;
                 /** @description Labels sold on the sale and not returned yet */
                 serials: string[];

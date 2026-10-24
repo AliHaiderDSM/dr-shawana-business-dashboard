@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { errorMessage } from '@/components/shared/error-state';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -143,13 +143,29 @@ export function ReturnFormSheet({
     resolver: zodResolver(schema),
     defaultValues: emptyValues(initialSale?.id),
   });
-  const [saleId, withRefund] = useWatch({ control: form.control, name: ['saleId', 'withRefund'] });
+  const [saleId, withRefund, returning] = useWatch({
+    control: form.control,
+    name: ['saleId', 'withRefund', 'qty'],
+  });
   const returnable = useReturnable(saleId || null);
   const accounts = useReceivingAccounts(open && withRefund);
   const items = saleId && returnable.data?.saleId === saleId ? returnable.data.items : [];
   const refundable = returnable.data
     ? Number(returnable.data.received) - Number(returnable.data.refunded)
     : 0;
+  const returnValue =
+    Math.round(
+      items.reduce(
+        (sum, item) => sum + (Number(returning?.[item.productId]) || 0) * Number(item.unitPrice),
+        0,
+      ) * 100,
+    ) / 100;
+  const suggestedRefund = Math.max(0, Math.min(returnValue, refundable));
+
+  useEffect(() => {
+    if (!withRefund || form.getFieldState('refundAmount').isDirty) return;
+    form.setValue('refundAmount', suggestedRefund > 0 ? suggestedRefund.toFixed(2) : '');
+  }, [form, withRefund, suggestedRefund]);
 
   const chooseSale = (id: string | null, label: string | null) => {
     form.setValue('saleId', id ?? '', { shouldValidate: true });
@@ -280,6 +296,7 @@ export function ReturnFormSheet({
                   { header: 'Product', width: 'minmax(0,1fr)' },
                   { header: 'Sold', width: '5rem', align: 'right' },
                   { header: 'Returnable', width: '6rem', align: 'right' },
+                  { header: 'Unit value', width: '7rem', align: 'right' },
                   { header: 'Returning', width: '7rem' },
                 ]}
                 rowKeys={items.map((item) => item.productId)}
@@ -300,6 +317,9 @@ export function ReturnFormSheet({
                     </span>,
                     <span key="returnable" className="flex h-9 items-center justify-end text-sm tabular-nums">
                       {formatQuantity(item.returnable)}
+                    </span>,
+                    <span key="value" className="flex h-9 items-center justify-end text-sm tabular-nums">
+                      {formatMoney(item.unitPrice)}
                     </span>,
                     item.trackSerials ? (
                       <PieceChooser
@@ -345,7 +365,11 @@ export function ReturnFormSheet({
             label="Refund the customer"
             description={
               returnable.data
-                ? `Up to ${formatMoney(refundable)} can still be refunded on this sale.`
+                ? `Returned items are worth ${formatMoney(returnValue)} after the product and overall discounts${
+                    Number(returnable.data.discountPercent) > 0
+                      ? ` (sale discount ${Number(returnable.data.discountPercent)}%, shared by price)`
+                      : ''
+                  }. Up to ${formatMoney(refundable)} can still be refunded on this sale.`
                 : 'Leave off when no money is given back.'
             }
           />

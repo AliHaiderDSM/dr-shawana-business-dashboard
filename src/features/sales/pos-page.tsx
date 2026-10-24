@@ -993,13 +993,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                     variant="outline"
                     size="sm"
                     disabled={payments.fields.length >= 10}
-                    onClick={() => {
-                      const subtotal = values.items.reduce((s, l) => s + lineAmounts(l).net, 0);
-                      const paid = values.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-                      payments.append(
-                        emptyPayment(subtotal > paid ? String(Number((subtotal - paid).toFixed(2))) : ''),
-                      );
-                    }}
+                    onClick={() => payments.append(emptyPayment())}
                   >
                     <Plus />
                     Add payment
