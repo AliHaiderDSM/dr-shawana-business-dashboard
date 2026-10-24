@@ -95,6 +95,7 @@ const schema = z
     items: z.array(lineSchema).min(1, 'Add at least one product'),
     pieces: z.array(z.object({ serial: z.string(), productId: z.string(), productName: z.string() })),
     autoDiscount: z.boolean(),
+    overallRequestId: z.string().optional(),
     discountPercent: z
       .string()
       .trim()
@@ -312,7 +313,10 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
         ? { customerName: values.patient.name.trim() }
         : {};
   const requestIds = [
-    ...new Set((values.items ?? []).flatMap((l) => (l.discountRequestId ? [l.discountRequestId] : []))),
+    ...new Set([
+      ...(values.items ?? []).flatMap((l) => (l.discountRequestId ? [l.discountRequestId] : [])),
+      ...(values.overallRequestId ? [values.overallRequestId] : []),
+    ]),
   ];
   const discountRequests = useDiscountRequests({ ids: requestIds }, requestIds.length > 0 && !isSuperAdmin);
   const requestById = new Map((discountRequests.data ?? []).map((r) => [r.id, r]));
@@ -326,6 +330,17 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       Number(request.discountPercent) === percent &&
       (Number(line.qty) || 0) <= Number(request.qty) &&
       (line.kind === 'product' ? request.productId === line.refId : request.bundleId === line.refId);
+    return { needed: true as const, request: fits ? request : undefined };
+  };
+  const saleAmount = (values.items ?? []).reduce((sum, l) => sum + lineAmounts(l).net, 0);
+  const overallApproval = () => {
+    const percent = Number(values.discountPercent) || 0;
+    const amount = Math.round(saleAmount * percent) / 100;
+    if (percent <= 0 || isSuperAdmin) return { needed: false as const };
+    if (sale && percent <= Number(sale.discountPercent) && amount <= Number(sale.discountAmount) + 0.005)
+      return { needed: false as const };
+    const request = values.overallRequestId ? requestById.get(values.overallRequestId) : undefined;
+    const fits = request && request.scope === 'sale' && amount <= Number(request.discountAmount) + 0.005;
     return { needed: true as const, request: fits ? request : undefined };
   };
   const hasDispatch = useHasDispatch();
@@ -467,6 +482,12 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       );
       return;
     }
+    const overall = overallApproval();
+    if (overall.needed && overall.request?.status !== 'approved') {
+      toast.error("The overall discount needs the Super Admin's approval first.");
+      return;
+    }
+    const overallRequest = overall.needed && overall.request ? { discountRequestId: overall.request.id } : {};
     const items = v.items.map((l) => {
       const approval = approvalOf(l);
       return {
@@ -495,6 +516,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
           items,
           serials,
           discountPercent: v.discountPercent || '0',
+          ...overallRequest,
         },
       })
         .unwrap()
@@ -518,6 +540,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       ...(serials.length ? { serials } : {}),
       autoDiscount: v.autoDiscount,
       ...(v.autoDiscount ? {} : { discountPercent: v.discountPercent || '0' }),
+      ...overallRequest,
       payments: v.payments.map((p) => {
         const proofIndexes = p.method === 'online' ? p.proofs.map((file) => proofs.push(file) - 1) : [];
         return { ...toPaymentBody(p), ...(proofIndexes.length ? { proofIndexes } : {}) };
@@ -900,6 +923,23 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
               <div>
                 <div className="text-sm font-medium">Discount</div>
                 <div className="text-xs text-muted-foreground">Overall discount on the sub amount.</div>
+                <DiscountApproval
+                  approval={overallApproval()}
+                  asking={askDiscountState.isLoading}
+                  onAsk={() =>
+                    askDiscount({
+                      saleAmount: saleAmount.toFixed(2),
+                      discountPercent: values.discountPercent || '0',
+                      ...customerOf(),
+                    })
+                      .unwrap()
+                      .then((request) => {
+                        form.setValue('overallRequestId', request.id);
+                        toast.success('Sent to the Super Admin');
+                      })
+                      .catch(toastError)
+                  }
+                />
               </div>
               <FormField
                 control={form.control}

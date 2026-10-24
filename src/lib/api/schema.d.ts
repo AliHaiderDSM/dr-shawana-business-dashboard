@@ -25344,7 +25344,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Ask the Super Admin to allow a discount on one product or bundle of a sale */
+        /** Ask the Super Admin to allow a discount on one product or bundle of a sale, or an overall discount on the whole sale (saleAmount, no productId or bundleId) */
         post: {
             parameters: {
                 query?: {
@@ -34684,6 +34684,11 @@ export interface components {
             autoDiscount?: boolean;
             /** @example 10 */
             discountPercent?: string;
+            /**
+             * Format: uuid
+             * @description The approved overall discount request (not needed for the Super Admin)
+             */
+            discountRequestId?: string;
         };
         UpdateSale: {
             /** Format: uuid */
@@ -34719,6 +34724,11 @@ export interface components {
             serials?: string[];
             /** @example 10 */
             discountPercent?: string;
+            /**
+             * Format: uuid
+             * @description The approved overall discount request when the discount grows (not needed for the Super Admin)
+             */
+            discountRequestId?: string;
         };
         SaleDeliveryStatus: {
             /** @enum {string} */
@@ -35005,7 +35015,12 @@ export interface components {
             /** Format: uuid */
             bundleId?: string;
             /** @example 10.000 */
-            qty: string;
+            qty?: string;
+            /**
+             * @description For an overall discount (no productId or bundleId): the sub amount of the sale the percent applies to
+             * @example 1250.50
+             */
+            saleAmount?: string;
             /** @example 15 */
             discountPercent: string;
             note?: string | null;
@@ -35036,6 +35051,11 @@ export interface components {
                 name: string;
                 role: string;
             } | null;
+            /**
+             * @description item: one product or bundle; sale: overall discount
+             * @enum {string}
+             */
+            scope: "item" | "sale";
             /** Format: uuid */
             productId: string | null;
             /** Format: uuid */

@@ -16,7 +16,8 @@ export interface DiscountRequestsArg {
 export interface AskDiscountInput {
   productId?: string;
   bundleId?: string;
-  qty: string;
+  qty?: string;
+  saleAmount?: string;
   discountPercent: string;
   note?: string | null;
   patientId?: string;

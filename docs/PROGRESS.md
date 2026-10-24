@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Overall discount approval in POS (2026-10-24)
+
+- POS: an overall discount above 0 shows "Ask for approval" under the Discount field (sends the sub amount and percent). The sale is refused in the form until the Super Admin approves; on edit only a bigger discount asks again. The Super Admin is never asked.
+- Discount requests page shows overall requests as "Overall discount on the sale", Qty "Whole sale", Price = sale amount.
+
 ## GDN report: online / office / all (2026-10-23)
 
 - Super Admin picks Online orders (default), Office sales or Online + office on the GDN report (`?type=`). Office rows show an Office badge and "Handed over" with their GDN number; the Dispatched KPI counts counter sales apart. The Dispatch Department still sees only online orders.

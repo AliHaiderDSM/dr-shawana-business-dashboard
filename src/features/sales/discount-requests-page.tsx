@@ -63,8 +63,10 @@ function DecideDialog({
             {approve ? 'Approve' : 'Reject'} {request.requestNo}
           </DialogTitle>
           <DialogDescription>
-            {request.discountPercent}% off {formatQuantity(request.qty)} × {request.itemName} for{' '}
-            {request.branch.name}, asked by {request.requestedBy?.name ?? 'staff'}. It takes{' '}
+            {request.scope === 'sale'
+              ? `${request.discountPercent}% overall discount on a sale of ${formatMoney(request.unitPrice)}`
+              : `${request.discountPercent}% off ${formatQuantity(request.qty)} × ${request.itemName}`}{' '}
+            for {request.branch.name}, asked by {request.requestedBy?.name ?? 'staff'}. It takes{' '}
             {formatMoney(request.discountAmount)} off the sale.
           </DialogDescription>
         </DialogHeader>
@@ -186,7 +188,12 @@ export function DiscountRequestsPage() {
       header: 'Qty',
       accessorFn: (r) => Number(r.qty),
       meta: { align: 'right' },
-      cell: ({ row }) => <span className="tabular-nums">{formatQuantity(row.original.qty)}</span>,
+      cell: ({ row }) =>
+        row.original.scope === 'sale' ? (
+          <span className="text-muted-foreground">Whole sale</span>
+        ) : (
+          <span className="tabular-nums">{formatQuantity(row.original.qty)}</span>
+        ),
     },
     {
       id: 'price',
