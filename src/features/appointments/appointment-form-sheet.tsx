@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useIdempotencyKey } from '@/lib/api/idempotency';
 import { Pencil, Plus, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -116,6 +117,7 @@ export function AppointmentFormSheet({
   const isDoctor = me?.role === 'doctor';
   const editing = Boolean(appointment);
   const [book, bookState] = useBookAppointmentMutation();
+  const submitKey = useIdempotencyKey();
   const [update, updateState] = appointmentsApi.useSave();
   const doctors = doctorsApi.useOptions({}, open);
   const myDoctor = useMyDoctorProfile(open && isDoctor);
@@ -186,12 +188,14 @@ export function AppointmentFormSheet({
                 appointmentId: appointment.id,
                 body: toPaymentBody(payment),
                 proof: payment.proofs[0] ?? null,
+                idempotencyKey: `${submitKey.key}-${index}`,
               }).unwrap();
             } catch (error) {
               payments.remove(Array.from({ length: index }, (_, i) => i));
               throw error;
             }
           }
+          submitKey.renew();
           toast.success(values.payments.length ? 'Appointment and payments saved' : 'Appointment updated');
           payments.replace([]);
           onOpenChange(false);
@@ -212,9 +216,10 @@ export function AppointmentFormSheet({
         return { ...toPaymentBody(payment), ...(proofIndex === undefined ? {} : { proofIndex }) };
       }),
     };
-    void book({ body, medicalRecordFiles: recordFiles, paymentProofs: proofs })
+    void book({ body, medicalRecordFiles: recordFiles, paymentProofs: proofs, idempotencyKey: submitKey.key })
       .unwrap()
       .then((created) => {
+        submitKey.renew();
         toast.success(`Appointment #${created.appointmentNo} booked`, {
           action: { label: 'Print slip', onClick: () => void navigate(`/print/appointment/${created.id}`) },
         });

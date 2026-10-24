@@ -12,6 +12,17 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Security headers, idempotency keys, package fixes (2026-10-24)
+
+- `vercel.json` headers: CSP (self, Supabase for images/voice/realtime, backend), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` (camera and mic self), HSTS. The built login page loads with no CSP violation.
+- `useIdempotencyKey` (`src/lib/api/idempotency.ts`): POS sale, appointment booking (and its payments on edit), sale payment, appointment payment and return send `Idempotency-Key`; the key stays for retries and is renewed after success.
+- `npm audit fix`: dompurify 3.4.17, zod 4.6.7; `npm audit --omit=dev`: 0.
+
+## Return refund from item value, POS payment amount empty (2026-10-24)
+
+- Return form: Unit value column; the refund amount fills itself with the value of the returned items, capped at what can still be refunded, until the user types their own amount.
+- POS: Add payment starts with an empty amount.
+
 ## Overall discount approval in POS (2026-10-24)
 
 - POS: an overall discount above 0 shows "Ask for approval" under the Discount field (sends the sub amount and percent). The sale is refused in the form until the Super Admin approves; on edit only a bigger discount asks again. The Super Admin is never asked.

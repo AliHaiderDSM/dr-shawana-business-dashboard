@@ -1,4 +1,5 @@
 import { baseApi, fromApi, toApi } from '@redux/api/baseApi';
+import { idempotencyHeaders } from '@/lib/api/idempotency';
 import { createCrud } from '@redux/api/crud';
 import type { TagType } from '@redux/api/tagTypes';
 import { store } from '@redux/store';
@@ -70,9 +71,20 @@ const requestDeliveries = (query: DeliveriesQuery) =>
 const requestOnlineCatalog = (query: OnlineCatalogQuery) =>
   unwrap(api.GET('/branch/sales/online-catalog', { params: { query } })).then((r) => r.data);
 
-const requestSaveSalePayment = async ({ saleId, paymentId, body, proofs }: SaveSalePaymentArgs) => {
+const requestSaveSalePayment = async ({
+  saleId,
+  paymentId,
+  body,
+  proofs,
+  idempotencyKey,
+}: SaveSalePaymentArgs) => {
   if (!paymentId)
-    return uploadForm<Sale>(`/branch/sales/${saleId}/payments`, jsonFormData(body, { proof: proofs }));
+    return uploadForm<Sale>(
+      `/branch/sales/${saleId}/payments`,
+      jsonFormData(body, { proof: proofs }),
+      'POST',
+      idempotencyHeaders(idempotencyKey),
+    );
   const updated = await unwrap(
     api.PATCH('/branch/sales/{id}/payments/{paymentId}', {
       params: { path: { id: saleId, paymentId } },
@@ -116,8 +128,15 @@ export const salesEndpointsApi = baseApi.injectEndpoints({
       providesTags: ['sales'],
     }),
     createSale: build.mutation<Sale, CreateSaleArgs>({
-      queryFn: ({ body, proofs }) =>
-        toApi(() => uploadForm<Sale>('/branch/sales', jsonFormData(body, { paymentProofs: proofs }))),
+      queryFn: ({ body, proofs, idempotencyKey }) =>
+        toApi(() =>
+          uploadForm<Sale>(
+            '/branch/sales',
+            jsonFormData(body, { paymentProofs: proofs }),
+            'POST',
+            idempotencyHeaders(idempotencyKey),
+          ),
+        ),
       invalidatesTags: invalidateDependents,
     }),
     setSaleDelivery: build.mutation<Result<typeof requestSetSaleDelivery>, SetSaleDeliveryArgs>({

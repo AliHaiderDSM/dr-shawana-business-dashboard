@@ -5,6 +5,8 @@ export type ReturnItem = SaleReturn['items'][number];
 export type ReturnReason = SaleReturn['reason'];
 export type ReturnDisposition = ReturnItem['disposition'];
 export type ReturnInput = Schemas['CreateSaleReturn'];
+
+export type CreateReturnArgs = ReturnInput & { idempotencyKey?: string };
 export type RefundInput = Schemas['ReturnRefundInput'];
 export type Returnable = Schemas['ReturnableSale'];
 

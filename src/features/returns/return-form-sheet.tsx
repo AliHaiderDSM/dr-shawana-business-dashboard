@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useIdempotencyKey } from '@/lib/api/idempotency';
 import { errorMessage } from '@/components/shared/error-state';
 import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -136,6 +137,7 @@ export function ReturnFormSheet({
 }) {
   const navigate = useNavigate();
   const [create, createState] = useCreateReturnMutation();
+  const returnKey = useIdempotencyKey();
   const [search, setSearch] = useState('');
   const [saleLabel, setSaleLabel] = useState<string | null>(initialSale?.label ?? null);
   const sales = useSaleSearch(search, open);
@@ -202,6 +204,7 @@ export function ReturnFormSheet({
       form.setError(`qty.${item.productId}`, { message: `At most ${Number(item.returnable)}` });
     if (tooMany.length) return;
     void create({
+      idempotencyKey: returnKey.key,
       saleId: values.saleId,
       date: values.date,
       reason: values.reason,
@@ -226,6 +229,7 @@ export function ReturnFormSheet({
     })
       .unwrap()
       .then((created) => {
+        returnKey.renew();
         toast.success(`Return ${created.returnNo} received. Inspect the items next.`);
         form.reset(emptyValues());
         setSaleLabel(null);

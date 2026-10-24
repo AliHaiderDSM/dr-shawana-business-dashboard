@@ -32,6 +32,7 @@ export interface BookAppointmentArg {
   body: AppointmentInput;
   medicalRecordFiles: File[];
   paymentProofs: File[];
+  idempotencyKey?: string;
 }
 
 export interface ChangeAppointmentStatusArg {
@@ -46,6 +47,7 @@ export interface SaveAppointmentPaymentArg {
   paymentId?: string;
   body: Omit<PaymentInput, 'proofIndex'>;
   proof: File | null;
+  idempotencyKey?: string;
 }
 
 export interface RemoveAppointmentPaymentArg {

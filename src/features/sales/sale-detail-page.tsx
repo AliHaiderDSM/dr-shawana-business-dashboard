@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useIdempotencyKey } from '@/lib/api/idempotency';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   ArrowLeft,
@@ -226,6 +227,7 @@ export function SalePaymentSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const [save, saveState] = useSaveSalePaymentMutation();
+  const paymentKey = useIdempotencyKey();
   const accounts = useReceivingAccounts(open);
   const form = useForm<PaymentValues, unknown, z.output<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
@@ -250,9 +252,11 @@ export function SalePaymentSheet({
         paymentId: payment?.id,
         body: toPaymentBody(values),
         proofs: values.method === 'online' ? values.proofs : [],
+        idempotencyKey: paymentKey.key,
       })
         .unwrap()
         .then(() => {
+          paymentKey.renew();
           toast.success(payment ? 'Payment updated' : 'Payment added');
           onOpenChange(false);
         })

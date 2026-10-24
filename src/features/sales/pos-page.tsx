@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useIdempotencyKey } from '@/lib/api/idempotency';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -288,6 +289,7 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
   const [saved, setSaved] = useState<{ id: string; invoiceNo: string } | null>(null);
   const editing = Boolean(sale);
   const [create, createState] = useCreateSaleMutation();
+  const saleKey = useIdempotencyKey();
   const [update, updateState] = salesApi.useSave();
   const accounts = useReceivingAccounts(!editing);
   const [patientSearch, setPatientSearch] = useState('');
@@ -546,9 +548,10 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
         return { ...toPaymentBody(p), ...(proofIndexes.length ? { proofIndexes } : {}) };
       }),
     };
-    void create({ body, proofs })
+    void create({ body, proofs, idempotencyKey: saleKey.key })
       .unwrap()
       .then((created) => {
+        saleKey.renew();
         toast.success(
           created.saleType === 'online'
             ? `Order ${created.invoiceNo} booked · awaiting dispatch`

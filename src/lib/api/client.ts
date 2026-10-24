@@ -158,8 +158,11 @@ export async function uploadForm<T>(
   path: string,
   form: FormData,
   method: 'POST' | 'PATCH' = 'POST',
+  headers: Record<string, string> = {},
 ): Promise<T> {
-  const response = await authFetch(new Request(`${env.VITE_API_BASE_URL}${path}`, { method, body: form }));
+  const response = await authFetch(
+    new Request(`${env.VITE_API_BASE_URL}${path}`, { method, body: form, headers }),
+  );
   const body = (await response.json().catch(() => ({}))) as {
     data?: T;
     error?: { code?: string; message?: string; details?: unknown };

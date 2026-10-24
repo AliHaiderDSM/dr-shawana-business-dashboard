@@ -1,7 +1,13 @@
 import { baseApi, fromApi, toApi } from '@redux/api/baseApi';
+import { idempotencyHeaders } from '@/lib/api/idempotency';
 import type { TagType } from '@redux/api/tagTypes';
 import { api, unwrap } from '@/lib/api/client';
-import type { DecideReturnItemArgs, ResolveReturnItemArgs, ReturnInput, SetReturnRefundArgs } from './types';
+import type {
+  CreateReturnArgs,
+  DecideReturnItemArgs,
+  ResolveReturnItemArgs,
+  SetReturnRefundArgs,
+} from './types';
 
 export type * from './types';
 
@@ -27,8 +33,10 @@ const requestSaleSearch = (term: string) =>
     }),
   ).then((r) => r.data);
 
-const requestCreateReturn = (body: ReturnInput) =>
-  unwrap(api.POST('/branch/returns', { body })).then((r) => r.data);
+const requestCreateReturn = ({ idempotencyKey, ...body }: CreateReturnArgs) =>
+  unwrap(api.POST('/branch/returns', { body, headers: idempotencyHeaders(idempotencyKey) })).then(
+    (r) => r.data,
+  );
 
 const requestResolveReturnItem = ({ returnId, itemId, disposition, note }: ResolveReturnItemArgs) =>
   unwrap(
@@ -82,7 +90,7 @@ export const returnsApi = baseApi.injectEndpoints({
       queryFn: (term) => fromApi(() => requestSaleSearch(term)),
       providesTags: ['sales'],
     }),
-    createReturn: build.mutation<Result<typeof requestCreateReturn>, ReturnInput>({
+    createReturn: build.mutation<Result<typeof requestCreateReturn>, CreateReturnArgs>({
       queryFn: (body) => toApi(() => requestCreateReturn(body)),
       invalidatesTags: invalidate,
     }),

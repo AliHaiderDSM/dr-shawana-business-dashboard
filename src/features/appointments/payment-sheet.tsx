@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useIdempotencyKey } from '@/lib/api/idempotency';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
@@ -32,6 +33,7 @@ export function PaymentSheet({
   onOpenChange,
 }: PaymentSheetProps) {
   const [save, saveState] = useSaveAppointmentPaymentMutation();
+  const paymentKey = useIdempotencyKey();
   const accounts = useReceivingAccounts(open);
   const form = useForm<PaymentValues, unknown, z.output<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
@@ -55,9 +57,11 @@ export function PaymentSheet({
       paymentId: payment?.id,
       body: toPaymentBody(values),
       proof: values.proofs[0] ?? null,
+      idempotencyKey: paymentKey.key,
     })
       .unwrap()
       .then(() => {
+        paymentKey.renew();
         toast.success(payment ? 'Payment updated' : 'Payment recorded');
         onOpenChange(false);
       })

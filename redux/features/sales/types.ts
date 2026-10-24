@@ -61,6 +61,7 @@ export interface OnlineCatalogQuery {
 export interface CreateSaleArgs {
   body: SaleInput;
   proofs: File[];
+  idempotencyKey?: string;
 }
 
 export interface SetSaleDeliveryArgs {
@@ -90,6 +91,7 @@ export interface SaveSalePaymentArgs {
   body: Schemas['UpdateSalePayment'] &
     Pick<Schemas['SalePaymentInput'], 'method' | 'amount' | 'accountSheetId'>;
   proofs: File[];
+  idempotencyKey?: string;
 }
 
 export interface RemoveSalePaymentArgs {

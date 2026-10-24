@@ -1,4 +1,5 @@
 import { baseApi, fromApi, toApi } from '@redux/api/baseApi';
+import { idempotencyHeaders } from '@/lib/api/idempotency';
 import { createCrud } from '@redux/api/crud';
 import type { TagType } from '@redux/api/tagTypes';
 import { store } from '@redux/store';
@@ -49,11 +50,13 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
       providesTags: ['appointments'],
     }),
     bookAppointment: build.mutation<AppointmentDetail, BookAppointmentArg>({
-      queryFn: ({ body, medicalRecordFiles, paymentProofs }) =>
+      queryFn: ({ body, medicalRecordFiles, paymentProofs, idempotencyKey }) =>
         toApi<AppointmentDetail>(() =>
           uploadForm<AppointmentDetail>(
             '/branch/appointments',
             jsonFormData(body, { medicalRecordFiles, paymentProofs }),
+            'POST',
+            idempotencyHeaders(idempotencyKey),
           ),
         ),
       invalidatesTags: (_r, error) => (error ? [] : DEPENDENTS),
@@ -69,12 +72,14 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, error) => (error ? [] : DEPENDENTS),
     }),
     saveAppointmentPayment: build.mutation<AppointmentPayment, SaveAppointmentPaymentArg>({
-      queryFn: ({ appointmentId, paymentId, body, proof }) =>
+      queryFn: ({ appointmentId, paymentId, body, proof, idempotencyKey }) =>
         toApi<AppointmentPayment>(async () => {
           if (!paymentId)
             return uploadForm<AppointmentPayment>(
               `/branch/appointments/${appointmentId}/payments`,
               jsonFormData(body, { proof }),
+              'POST',
+              idempotencyHeaders(idempotencyKey),
             );
           const updated = await unwrap(
             api.PATCH('/branch/appointments/{id}/payments/{paymentId}', {
