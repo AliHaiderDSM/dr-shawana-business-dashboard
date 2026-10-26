@@ -14,6 +14,7 @@
 
 ## Profit & Loss page, unit cost required (2026-10-26)
 
+- Follow-up 2: Billed card removed; products table and Excel keep only Sale price / unit and Cost / unit (List price and Last cost removed).
 - Follow-up: loss months show the Profit bar in red; legend order Revenue, Cost, Profit; no Margin column or margin on the Profit card (and none in Excel); print is A4 landscape with smaller table text so every product column fits, and hides the cards and the estimated-cost warning.
 - /profit-loss (Super Admin, Insights menu): year, month (or whole year) and branch filters; KPIs (revenue, cost of goods, profit with margin, billed, not received yet); month chart and table; products table with list price, last cost, avg sale price, avg cost, profit, margin and a warning mark when the cost was estimated; branch table; Excel and print.
 - Stock In forms (single and multi line) and GRN edit added lines require the unit cost.

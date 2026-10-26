@@ -137,10 +137,8 @@ function exportRows(data: ProfitLossData, periodName: string, branchName: string
       'Product',
       'Sold',
       'Returned',
-      'List price',
-      'Last cost',
-      'Avg sale price',
-      'Avg cost',
+      'Sale price per unit',
+      'Cost per unit',
       ...FIGURE_HEADERS,
       'Cost estimated',
     ],
@@ -148,8 +146,6 @@ function exportRows(data: ProfitLossData, periodName: string, branchName: string
       p.product,
       Number(p.qtySold),
       Number(p.qtyReturned),
-      p.listPrice ? Number(p.listPrice) : null,
-      p.lastCost ? Number(p.lastCost) : null,
       p.avgSalePrice ? Number(p.avgSalePrice) : null,
       p.avgCost ? Number(p.avgCost) : null,
       ...figures(p),
@@ -284,7 +280,7 @@ export function ProfitLossPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5 print:hidden">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:hidden">
             <Kpi
               label="Revenue"
               value={formatMoney(data.summary.revenue)}
@@ -305,7 +301,6 @@ export function ProfitLossPage() {
               }
               tone={Number(data.summary.profit) < 0 ? 'text-destructive' : 'text-success'}
             />
-            <Kpi label="Billed" value={formatMoney(data.summary.invoiced)} hint="Sales value of the period" />
             <Kpi
               label="Not received yet"
               value={formatMoney(data.summary.notReceived)}
@@ -415,12 +410,10 @@ export function ProfitLossPage() {
                       <th className="px-5 py-2 text-left font-medium print:px-1 print:py-1">Product</th>
                       <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Sold</th>
                       <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Returned</th>
-                      <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">List price</th>
-                      <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Last cost</th>
                       <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">
-                        Avg sale price
+                        Sale price / unit
                       </th>
-                      <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Avg cost</th>
+                      <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Cost / unit</th>
                       {FIGURE_HEADERS.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium print:px-1 print:py-1">
                           {h}
@@ -449,12 +442,6 @@ export function ProfitLossPage() {
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
                             {Number(p.qtyReturned) ? formatQuantity(p.qtyReturned) : '—'}
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
-                            {p.listPrice ? formatMoney(p.listPrice) : '—'}
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
-                            {p.lastCost ? formatMoney(p.lastCost) : '—'}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
                             {p.avgSalePrice ? formatMoney(p.avgSalePrice) : '—'}
