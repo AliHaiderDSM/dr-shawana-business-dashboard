@@ -149,9 +149,11 @@ export function GdnReportPage() {
   const choices = (branches.data ?? []).filter((b) => b.kind !== 'warehouse');
   const dispatchBranch = choices.find((b) => b.kind === 'dispatch');
   const current = choices.find((b) => b.id === currentBranch);
+  const onDispatch = current?.kind === 'dispatch';
   const picked = isSuperAdmin
-    ? (params.get('branch') ??
-      (current?.kind === 'dispatch' ? current.id : (dispatchBranch?.id ?? current?.id)))
+    ? onDispatch
+      ? current.id
+      : (params.get('branch') ?? dispatchBranch?.id ?? current?.id)
     : undefined;
   const typeParam = params.get('type');
   const type: GdnReportType =
@@ -239,80 +241,93 @@ export function GdnReportPage() {
         className="print:hidden"
         title="GDN report"
         description="One view of the day: every online order that was waiting or booked, what went out and what is still waiting, and for a branch the office sales handed over at the counter. Each booking day has its own colour, so an old order dispatched today shows the colour of the day it was booked."
-        actions={
-          <>
-            {products.length ? (
-              <Select
-                value={product ?? ALL_PRODUCTS}
-                onValueChange={(v) => setParam('product', v === ALL_PRODUCTS ? null : v)}
-              >
-                <SelectTrigger className="w-48" aria-label="Product">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_PRODUCTS}>All products</SelectItem>
-                  {products.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
-            {isSuperAdmin && choices.length ? (
-              <Select value={picked ?? ''} onValueChange={(id) => setParam('branch', id)}>
-                <SelectTrigger className="w-48" aria-label="Branch">
-                  <SelectValue placeholder="Choose branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {choices.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                      {b.kind === 'dispatch' ? ' (dispatch)' : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="Previous day"
-                onClick={() => go(shift(date, -1))}
-              >
-                <ChevronLeft />
-              </Button>
-              <Input
-                type="date"
-                className="w-40"
-                value={date}
-                max={today}
-                onChange={(e) => e.target.value && go(e.target.value)}
-                aria-label="Report date"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="Next day"
-                disabled={date >= today}
-                onClick={() => go(shift(date, 1))}
-              >
-                <ChevronRight />
-              </Button>
-            </div>
-            {date !== today ? (
-              <Button variant="ghost" onClick={() => go(today)}>
-                Today
-              </Button>
-            ) : null}
-            <Button onClick={() => window.print()} disabled={!data}>
-              <Printer />
-              Print
-            </Button>
-          </>
-        }
       />
+      <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
+        {isSuperAdmin ? (
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={type}
+            onValueChange={(v) => v && setParam('type', v === 'online' ? null : v)}
+            aria-label="Sales to show"
+          >
+            {(Object.keys(TYPES) as GdnReportType[]).map((key) => (
+              <ToggleGroupItem
+                key={key}
+                value={key}
+                className="h-9 px-3 text-sm data-[state=on]:border-primary data-[state=on]:bg-primary-soft data-[state=on]:text-primary-soft-foreground"
+              >
+                {TOGGLE_LABELS[key]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        ) : null}
+        {products.length ? (
+          <Select
+            value={product ?? ALL_PRODUCTS}
+            onValueChange={(v) => setParam('product', v === ALL_PRODUCTS ? null : v)}
+          >
+            <SelectTrigger className="w-48" aria-label="Product">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_PRODUCTS}>All products</SelectItem>
+              {products.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+        {isSuperAdmin && choices.length && !onDispatch ? (
+          <Select value={picked ?? ''} onValueChange={(id) => setParam('branch', id)}>
+            <SelectTrigger className="w-48" aria-label="Branch">
+              <SelectValue placeholder="Choose branch" />
+            </SelectTrigger>
+            <SelectContent>
+              {choices.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}
+                  {b.kind === 'dispatch' ? ' (dispatch)' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => go(shift(date, -1))}>
+            <ChevronLeft />
+          </Button>
+          <Input
+            type="date"
+            className="w-40"
+            value={date}
+            max={today}
+            onChange={(e) => e.target.value && go(e.target.value)}
+            aria-label="Report date"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Next day"
+            disabled={date >= today}
+            onClick={() => go(shift(date, 1))}
+          >
+            <ChevronRight />
+          </Button>
+        </div>
+        {date !== today ? (
+          <Button variant="ghost" onClick={() => go(today)}>
+            Today
+          </Button>
+        ) : null}
+        <Button className="ml-auto" onClick={() => window.print()} disabled={!data}>
+          <Printer />
+          Print
+        </Button>
+      </div>
 
       {report.isLoading ? (
         <div className="space-y-4">
@@ -341,34 +356,14 @@ export function GdnReportPage() {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground print:hidden">
-            <span className="font-medium text-foreground">{data.branch.name}</span>
-            <span>·</span>
-            <span>{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</span>
-            {isSuperAdmin ? (
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                size="sm"
-                value={type}
-                onValueChange={(v) => v && setParam('type', v === 'online' ? null : v)}
-                aria-label="Sales to show"
-                className="ml-1"
-              >
-                {(Object.keys(TYPES) as GdnReportType[]).map((key) => (
-                  <ToggleGroupItem
-                    key={key}
-                    value={key}
-                    className="h-7 px-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary-soft data-[state=on]:text-primary-soft-foreground"
-                  >
-                    {TOGGLE_LABELS[key]}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            ) : null}
+          <div
+            className={cn(
+              'flex flex-wrap items-center gap-2 text-sm text-muted-foreground print:hidden',
+              !product && 'hidden',
+            )}
+          >
             {product ? (
               <>
-                <span>·</span>
                 <StatusBadge tone="info">Orders with {product}</StatusBadge>
                 <button
                   type="button"
@@ -526,7 +521,8 @@ export function GdnReportPage() {
                 <table className="w-full text-sm print:text-[11px]">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
-                      <th className="py-2 pr-3 pl-5 font-medium">Booked</th>
+                      <th className="py-2 pr-2 pl-5 font-medium">Sr.</th>
+                      <th className="px-3 py-2 font-medium">Booked</th>
                       <th className="px-3 py-2 font-medium">Order</th>
                       <th className="px-3 py-2 font-medium">Customer</th>
                       <th className="px-3 py-2 font-medium">City · booked at</th>
@@ -536,7 +532,7 @@ export function GdnReportPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((o) => {
+                    {rows.map((o, index) => {
                       const pay = PAYMENT[o.paymentStatus] ?? {
                         label: o.paymentStatus,
                         tone: 'neutral' as Tone,
@@ -551,15 +547,20 @@ export function GdnReportPage() {
                           style={tint(o.date, 5)}
                         >
                           <td
-                            className="py-2.5 pr-3 pl-4"
+                            className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
                             style={{ borderLeft: `4px solid ${dayColor(o.date)}` }}
                           >
+                            {index + 1}
+                          </td>
+                          <td className="px-3 py-2.5">
                             <BookedChip date={o.date} reportDate={data.date} />
-                            {o.saleType === 'office' ? (
-                              <div className="mt-1">
+                            <div className="mt-1">
+                              {o.saleType === 'office' ? (
                                 <StatusBadge tone="info">Office</StatusBadge>
-                              </div>
-                            ) : null}
+                              ) : (
+                                <StatusBadge tone="neutral">Online</StatusBadge>
+                              )}
+                            </div>
                             <div
                               className={cn(
                                 'mt-1 text-xs text-muted-foreground',
@@ -611,7 +612,7 @@ export function GdnReportPage() {
                   </tbody>
                   <tfoot className="print:table-row-group">
                     <tr className="border-t bg-muted/30 text-sm font-semibold">
-                      <td className="py-2 pr-3 pl-5" colSpan={5}>
+                      <td className="py-2 pr-3 pl-5" colSpan={6}>
                         {rows.length} order{rows.length === 1 ? '' : 's'}
                         {product
                           ? ` · ${formatCount(rows.reduce((sum, o) => sum + units(o), 0))} × ${product}`

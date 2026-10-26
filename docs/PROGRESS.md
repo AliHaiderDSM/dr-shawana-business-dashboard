@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report layout (2026-10-26)
+
+- Filters (Online/Office/All for the Super Admin, product, branch, date, Print) sit in one row under the description instead of beside it.
+- When the Super Admin has Leading Pharma (dispatch) chosen in the header, the branch picker is hidden and the report is that branch.
+- The read-only branch and date line is gone (it shows only the product filter badge when one is picked).
+- Table: Sr. column first; every row shows an Online or Office badge.
+
 ## GDN report: Online / Office / All buttons (2026-10-26)
 
 - The sales type is a button group (Online, Office, All) next to the branch and date line, for the Super Admin; on Leading Pharma Office and All include the office sales of every branch.
