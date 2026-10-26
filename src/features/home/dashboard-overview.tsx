@@ -418,7 +418,12 @@ function BranchRevenue({ rows, label }: { rows: NonNullable<DashboardData['byBra
     >
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 4 }} barCategoryGap="30%">
+          <BarChart
+            data={points}
+            margin={{ top: 8, right: 12, bottom: 0, left: 4 }}
+            barCategoryGap="28%"
+            barGap={4}
+          >
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis dataKey="branch" tick={AXIS_TICK} tickLine={false} axisLine={false} />
             <YAxis
@@ -444,21 +449,16 @@ function BranchRevenue({ rows, label }: { rows: NonNullable<DashboardData['byBra
             <Bar
               dataKey="sales"
               name={SERIES.sales.label}
-              stackId="revenue"
               fill={SERIES.sales.color}
-              stroke="var(--card)"
-              strokeWidth={2}
-              maxBarSize={48}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
             />
             <Bar
               dataKey="appointments"
               name={SERIES.appointments.label}
-              stackId="revenue"
               fill={SERIES.appointments.color}
-              stroke="var(--card)"
-              strokeWidth={2}
               radius={[4, 4, 0, 0]}
-              maxBarSize={48}
+              maxBarSize={40}
             />
           </BarChart>
         </ResponsiveContainer>
@@ -502,6 +502,13 @@ export function DashboardOverview() {
 
   const data = dashboard.data;
   const hasCharts = Boolean(data.charts.salesAmount || data.charts.appointmentAmount);
+  const insights = [
+    data.charts.productSales ? <TopProducts key="top" /> : null,
+    data.scope === 'branch' && data.stock ? <StockAlerts key="stock" data={data} /> : null,
+    data.pendingDeliveries !== undefined ? (
+      <PendingDeliveries key="pending" count={data.pendingDeliveries} />
+    ) : null,
+  ].filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -533,16 +540,17 @@ export function DashboardOverview() {
         <div className="grid gap-6 xl:grid-cols-3">
           <RevenueChart data={data} year={year} years={years} onYearChange={setYear} />
           <RevenueSplit data={data} />
-          {data.byBranch?.length ? <BranchRevenue rows={data.byBranch} label={periodLabel(data)} /> : null}
-          {data.byBranch?.length ? <BranchComparison rows={data.byBranch} label={periodLabel(data)} /> : null}
         </div>
       ) : null}
-      {data.scope === 'branch' &&
-      (data.charts.productSales || data.stock || data.pendingDeliveries !== undefined) ? (
-        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          {data.charts.productSales ? <TopProducts data={data} /> : null}
-          {data.stock ? <StockAlerts data={data} /> : null}
-          {data.pendingDeliveries !== undefined ? <PendingDeliveries count={data.pendingDeliveries} /> : null}
+      {insights.length ? (
+        <div className={cn('grid gap-6 lg:grid-cols-2', insights.length > 2 && 'xl:grid-cols-3')}>
+          {insights}
+        </div>
+      ) : null}
+      {hasCharts && data.byBranch?.length ? (
+        <div className="grid gap-6 xl:grid-cols-3">
+          <BranchRevenue rows={data.byBranch} label={periodLabel(data)} />
+          <BranchComparison rows={data.byBranch} label={periodLabel(data)} />
         </div>
       ) : null}
     </div>

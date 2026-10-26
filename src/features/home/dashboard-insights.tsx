@@ -1,13 +1,25 @@
 import { AlertTriangle, ArrowUpRight, PackageCheck, Truck } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useStockBalances } from '@redux/features/inventory';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCount, formatMoney, formatQuantity } from '@/lib/format';
-import { useBranchCodes, type DashboardData } from '@redux/features/home';
+import {
+  useBranchCodes,
+  useTopProducts,
+  type DashboardData,
+  type TopProductsRange,
+} from '@redux/features/home';
+
+const RANGES: { value: TopProductsRange; label: string; description: string }[] = [
+  { value: 'today', label: 'Day', description: 'Units sold today' },
+  { value: 'month', label: 'Month', description: 'Units sold this month' },
+  { value: 'year', label: 'Year', description: 'Units sold this year' },
+];
 
 function Card({
   title,
@@ -34,17 +46,45 @@ function Card({
   );
 }
 
-export function TopProducts({ data }: { data: DashboardData }) {
-  const totals = (data.charts.productSales ?? [])
-    .map((p) => ({ name: p.product, qty: p.qty.reduce((sum, q) => sum + Number(q), 0) }))
-    .filter((p) => p.qty > 0)
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 6);
+export function TopProducts() {
+  const [range, setRange] = useState<TopProductsRange>('month');
+  const top = useTopProducts(range);
+  const totals = (top.data?.items ?? [])
+    .map((p) => ({ name: p.product, qty: Number(p.qty) }))
+    .filter((p) => p.qty > 0);
   const max = totals[0]?.qty ?? 0;
+  const chosen = RANGES.find((r) => r.value === range) ?? RANGES[1]!;
   return (
-    <Card title="Top products" description={`Units sold in ${data.charts.year}`}>
-      {totals.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No products sold yet.</p>
+    <Card
+      title="Top products"
+      description={chosen.description}
+      action={
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={range}
+          onValueChange={(value) => value && setRange(value as TopProductsRange)}
+          aria-label="Top products period"
+        >
+          {RANGES.map((r) => (
+            <ToggleGroupItem
+              key={r.value}
+              value={r.value}
+              className="h-7 px-2.5 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary-soft data-[state=on]:text-primary-soft-foreground"
+            >
+              {r.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      }
+    >
+      {top.isLoading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : totals.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {range === 'today' ? 'Nothing sold today yet.' : 'No products sold in this period.'}
+        </p>
       ) : (
         <ol className="space-y-3">
           {totals.map((p, index) => (

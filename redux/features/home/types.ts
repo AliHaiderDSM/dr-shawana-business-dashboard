@@ -31,6 +31,15 @@ export interface DashboardData {
   byBranch?: { branch: string; name: string; salesMonth: string; appointmentsMonth: string }[];
 }
 
+export type TopProductsRange = 'today' | 'month' | 'year';
+
+export interface TopProductsData {
+  range: TopProductsRange;
+  from: string;
+  to: string;
+  items: { product: string; qty: string }[];
+}
+
 export interface DashboardPeriod {
   from?: string;
   to?: string;

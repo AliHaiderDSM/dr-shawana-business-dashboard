@@ -1,7 +1,13 @@
 import { baseApi, fromApi } from '@redux/api/baseApi';
 import { BRANCH_OPTIONS_STALE_SECONDS, useGetBranchOptionsQuery } from '@redux/features/branches';
 import { api, unwrap } from '@/lib/api/client';
-import type { DashboardArgs, DashboardData, DashboardPeriod } from './types';
+import type {
+  DashboardArgs,
+  DashboardData,
+  DashboardPeriod,
+  TopProductsData,
+  TopProductsRange,
+} from './types';
 
 export type * from './types';
 
@@ -20,11 +26,28 @@ export const homeApi = baseApi.injectEndpoints({
         ),
       providesTags: ['dashboard'],
     }),
+    getTopProducts: build.query<TopProductsData, TopProductsRange>({
+      queryFn: (range) =>
+        fromApi<TopProductsData>(() =>
+          unwrap(api.GET('/branch/dashboard/top-products', { params: { query: { range } } })).then(
+            (r) => r.data as unknown as TopProductsData,
+          ),
+        ),
+      providesTags: ['dashboard'],
+    }),
   }),
   overrideExisting: false,
 });
 
-export const { useGetDashboardQuery } = homeApi;
+export const { useGetDashboardQuery, useGetTopProductsQuery } = homeApi;
+
+export function useTopProducts(range: TopProductsRange) {
+  return useGetTopProductsQuery(range, {
+    pollingInterval: 60_000,
+    skipPollingIfUnfocused: true,
+    refetchOnFocus: true,
+  });
+}
 
 export function useDashboard(year: number, period: DashboardPeriod = {}) {
   return useGetDashboardQuery(

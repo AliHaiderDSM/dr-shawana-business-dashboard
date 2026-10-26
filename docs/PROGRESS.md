@@ -12,6 +12,16 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Dashboard order and branch revenue bars (2026-10-26)
+
+- Order: KPIs, revenue chart and split, then the insight cards (Top products, Low stock on branches, Pending deliveries), then Revenue by branch and Branch comparison. With two cards (Super Admin) they share the full width; with three they sit three across on wide screens.
+- Revenue by branch shows Sales and Appointments as two side-by-side bars per branch instead of one stacked bar.
+
+## Super Admin dashboard: top products and pending deliveries (2026-10-26)
+
+- Top products card has a Day / Month / Year switch (default Month) and loads from /branch/dashboard/top-products, for branch staff and the Super Admin.
+- The Super Admin dashboard (all branches) now shows Top products and Pending deliveries; Low stock stays on branch dashboards only.
+
 ## Security headers, idempotency keys, package fixes (2026-10-24)
 
 - `vercel.json` headers: CSP (self, Supabase for images/voice/realtime, backend), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` (camera and mic self), HSTS. The built login page loads with no CSP violation.
