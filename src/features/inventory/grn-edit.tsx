@@ -123,7 +123,7 @@ export function GrnEditSheet({
     if (draft.manufacturingDate !== original.manufacturingDate)
       change.manufacturingDate = nullable(draft.manufacturingDate);
     if (draft.expiryDate !== original.expiryDate) change.expiryDate = nullable(draft.expiryDate);
-    if (draft.unitCost !== original.unitCost) change.unitCost = nullable(draft.unitCost);
+    if (draft.unitCost !== original.unitCost && draft.unitCost) change.unitCost = draft.unitCost;
     if (Object.keys(change).length > 1) update.push(change);
   }
   const remove = receipt.lines.filter((l) => drafts[l.id]!.removed).map((l) => l.id);
@@ -133,11 +133,11 @@ export function GrnEditSheet({
     batch: nullable(a.batch),
     manufacturingDate: nullable(a.manufacturingDate),
     expiryDate: nullable(a.expiryDate),
-    unitCost: nullable(a.unitCost),
+    unitCost: a.unitCost,
     labels: a.labels,
   }));
   const badLine = receipt.lines.some((l) => !drafts[l.id]!.removed && !(Number(drafts[l.id]!.qty) > 0));
-  const badAdd = adds.some((a) => !a.productId || !(Number(a.qty) > 0));
+  const badAdd = adds.some((a) => !a.productId || !(Number(a.qty) > 0) || a.unitCost === '');
   const nothing = update.length + remove.length + add.length === 0;
   const allGone = remove.length === receipt.lines.length && add.length === 0;
   const blocked = badLine || badAdd || nothing || allGone;

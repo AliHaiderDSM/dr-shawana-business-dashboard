@@ -89,6 +89,9 @@ function buildSchema(config: StockKindConfig, transfer = false) {
           if (line.labels !== 'none' && !Number.isInteger(Number(line.qty))) {
             ctx.addIssue({ code: 'custom', path: ['qty'], message: 'Whole pieces' });
           }
+          if (config.batched && !transfer && !line.unitCost) {
+            ctx.addIssue({ code: 'custom', path: ['unitCost'], message: 'Enter the unit cost' });
+          }
           if (line.labels === 'existing' && !isSerial(line.firstSerial)) {
             ctx.addIssue({ code: 'custom', path: ['firstSerial'], message: 'Like DSM-000001' });
           }

@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Profit & Loss page, unit cost required (2026-10-26)
+
+- Follow-up: loss months show the Profit bar in red; legend order Revenue, Cost, Profit; no Margin column or margin on the Profit card (and none in Excel); print is A4 landscape with smaller table text so every product column fits, and hides the cards and the estimated-cost warning.
+- /profit-loss (Super Admin, Insights menu): year, month (or whole year) and branch filters; KPIs (revenue, cost of goods, profit with margin, billed, not received yet); month chart and table; products table with list price, last cost, avg sale price, avg cost, profit, margin and a warning mark when the cost was estimated; branch table; Excel and print.
+- Stock In forms (single and multi line) and GRN edit added lines require the unit cost.
+
 ## Dashboard order and branch revenue bars (2026-10-26)
 
 - Order: KPIs, revenue chart and split, then the insight cards (Top products, Low stock on branches, Pending deliveries), then Revenue by branch and Branch comparison. With two cards (Super Admin) they share the full width; with three they sit three across on wide screens.

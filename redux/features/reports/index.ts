@@ -9,7 +9,7 @@ import type { OptionSource } from '@/features/reports/reports-config';
 import { api, fetchFile, unwrap } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
 import { downloadXlsx, parseCsv } from '@/lib/xlsx';
-import type { ReportArgs, ReportData } from './types';
+import type { ProfitLossArgs, ProfitLossData, ReportArgs, ReportData } from './types';
 
 export type * from './types';
 
@@ -24,6 +24,19 @@ export const reportsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['reports'],
     }),
+    getProfitLoss: build.query<ProfitLossData, ProfitLossArgs>({
+      queryFn: ({ year, month, branchId }) =>
+        fromApi<ProfitLossData>(() =>
+          unwrap(
+            api.GET('/admin/reports/profit-loss', {
+              params: {
+                query: { year, ...(month ? { month } : {}), ...(branchId ? { branchId } : {}) },
+              },
+            }),
+          ).then((r) => r.data as unknown as ProfitLossData),
+        ),
+      providesTags: ['reports'],
+    }),
     downloadReportFile: build.mutation<Blob, ReportArgs>({
       queryFn: ({ key, query }) => toApi(() => fetchFile(reportPath(key), { ...query, format: 'csv' })),
     }),
@@ -31,7 +44,7 @@ export const reportsApi = baseApi.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetReportQuery, useDownloadReportFileMutation } = reportsApi;
+export const { useGetReportQuery, useDownloadReportFileMutation, useGetProfitLossQuery } = reportsApi;
 
 export function useReport(key: string, query: Record<string, string>) {
   return useGetReportQuery({ key, query });

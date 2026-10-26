@@ -81,9 +81,14 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(
       withBatchRules(
-        config.detailRequired
-          ? schema.extend({ detail: schema.shape.detail.min(1, `${config.detailLabel} is required`) })
-          : schema,
+        schema.extend({
+          detail: config.detailRequired
+            ? schema.shape.detail.min(1, `${config.detailLabel} is required`)
+            : schema.shape.detail,
+          unitCost: config.batched
+            ? schema.shape.unitCost.min(1, 'Enter the unit cost')
+            : schema.shape.unitCost,
+        }),
       ),
     ),
     values: {
@@ -249,7 +254,9 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
             <TextField control={form.control} name="expiryDate" label="Expiry date" type="date" />
           </FieldRow>
         ) : null}
-        {config.batched ? <MoneyField control={form.control} name="unitCost" label="Unit cost" /> : null}
+        {config.batched ? (
+          <MoneyField control={form.control} name="unitCost" label="Unit cost" required />
+        ) : null}
         {config.batched ? (
           <p className="text-xs text-muted-foreground">
             New dates apply to the whole batch: every entry of it, and the branches it was sent to.
