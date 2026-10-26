@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report: Online / Office / All buttons (2026-10-26)
+
+- The sales type is a button group (Online, Office, All) next to the branch and date line, for the Super Admin; on Leading Pharma Office and All include the office sales of every branch.
+
 ## Sale products: Sr. and posSoft export (2026-10-26)
 
 - Follow-up: the header Excel button is gone on every report; the table Export is the one download (server posSoft sheet for sale-products, the visible table elsewhere). Invoice values show in small text.

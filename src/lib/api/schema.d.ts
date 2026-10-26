@@ -24336,7 +24336,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Day-end GDN report. type=online (default): orders still waiting from earlier days (opening), new orders of the day, what was dispatched (split into earlier and same-day orders), cancelled, and what carries to the next day. Only for a Dispatch Department (the orders it sends) and the Super Admin, who may pick any branch (a booking branch shows the orders it booked). type=office adds the office sales of the branch: each gets its GDN when it is saved and counts as new and dispatched the same day; type=all shows both. */
+        /** Day-end GDN report. type=online (default): orders still waiting from earlier days (opening), new orders of the day, what was dispatched (split into earlier and same-day orders), cancelled, and what carries to the next day. Only for a Dispatch Department (the orders it sends) and the Super Admin, who may pick any branch (a booking branch shows the orders it booked). type=office adds the office sales of the branch (of every branch when the Super Admin opens the Dispatch Department): each gets its GDN when it is saved and counts as new and dispatched the same day; type=all shows both. */
         get: {
             parameters: {
                 query?: {

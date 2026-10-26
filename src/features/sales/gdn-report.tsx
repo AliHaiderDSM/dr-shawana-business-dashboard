@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
 import { formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
@@ -34,6 +35,8 @@ type View = 'all' | GdnOrderStatus;
 const PALETTE = 8;
 
 const ALL_PRODUCTS = '__all__';
+
+const TOGGLE_LABELS: Record<GdnReportType, string> = { online: 'Online', office: 'Office', all: 'All' };
 
 const TYPES: Record<GdnReportType, string> = {
   online: 'Online orders',
@@ -256,20 +259,6 @@ export function GdnReportPage() {
                 </SelectContent>
               </Select>
             ) : null}
-            {isSuperAdmin ? (
-              <Select value={type} onValueChange={(v) => setParam('type', v === 'online' ? null : v)}>
-                <SelectTrigger className="w-44" aria-label="Sales">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(TYPES) as GdnReportType[]).map((key) => (
-                    <SelectItem key={key} value={key}>
-                      {TYPES[key]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
             {isSuperAdmin && choices.length ? (
               <Select value={picked ?? ''} onValueChange={(id) => setParam('branch', id)}>
                 <SelectTrigger className="w-48" aria-label="Branch">
@@ -357,10 +346,25 @@ export function GdnReportPage() {
             <span>·</span>
             <span>{formatDate(data.date, 'EEEE, dd MMMM yyyy')}</span>
             {isSuperAdmin ? (
-              <>
-                <span>·</span>
-                <span>{TYPES[data.type]}</span>
-              </>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                value={type}
+                onValueChange={(v) => v && setParam('type', v === 'online' ? null : v)}
+                aria-label="Sales to show"
+                className="ml-1"
+              >
+                {(Object.keys(TYPES) as GdnReportType[]).map((key) => (
+                  <ToggleGroupItem
+                    key={key}
+                    value={key}
+                    className="h-7 px-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary-soft data-[state=on]:text-primary-soft-foreground"
+                  >
+                    {TOGGLE_LABELS[key]}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
             ) : null}
             {product ? (
               <>
@@ -433,11 +437,9 @@ export function GdnReportPage() {
                     : `No ${TYPES[data.type].toLowerCase()} on this day`
                 }
                 description={
-                  data.type === 'office' && data.branch.dispatch
-                    ? `${data.branch.name} does not sell at a counter. Office sales belong to a branch; choose one above.`
-                    : data.branch.dispatch || !dispatchBranch || data.type !== 'online'
-                      ? `Nothing was waiting, booked or sent at ${data.branch.name}.`
-                      : `Nothing at ${data.branch.name}. Online orders are sent by ${dispatchBranch.name}; choose it above.`
+                  data.branch.dispatch || !dispatchBranch || data.type !== 'online'
+                    ? `Nothing was waiting, booked or sent at ${data.branch.name}.`
+                    : `Nothing at ${data.branch.name}. Online orders are sent by ${dispatchBranch.name}; choose it above.`
                 }
               />
             </div>
