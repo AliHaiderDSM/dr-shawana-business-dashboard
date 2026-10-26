@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Sale products: Sr. and posSoft export (2026-10-26)
+
+- Follow-up: the header Excel button is gone on every report; the table Export is the one download (server posSoft sheet for sale-products, the visible table elsewhere). Invoice values show in small text.
+- The screen table keeps its layout and gains Sr.; both Excel and Export download the posSoft layout (`exportQuery: { layout: "products" }` in reports-config, `onExport` on DataTable).
+
 ## Profit & Loss page, unit cost required (2026-10-26)
 
 - Follow-up 2: Billed card removed; products table and Excel keep only Sale price / unit and Cost / unit (List price and Last cost removed).

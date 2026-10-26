@@ -35,6 +35,7 @@ export interface ReportDef {
   filters: ReportFilter[];
   path?: string;
   columnsMenu?: boolean;
+  exportQuery?: Record<string, string>;
 }
 
 const roles =
@@ -125,6 +126,7 @@ export const REPORTS: ReportDef[] = [
     icon: Receipt,
     group: 'Sales',
     allowed: permission('sales.view'),
+    exportQuery: { layout: 'products' },
     filters: [
       { kind: 'text', key: 'customer', label: 'Customer or phone' },
       { kind: 'text', key: 'patientCity', label: 'Customer city' },

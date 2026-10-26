@@ -29436,6 +29436,8 @@ export interface paths {
                     createdFrom?: string;
                     createdTo?: string;
                     createdBy?: string;
+                    /** @description list: one Products cell per sale; products: posSoft layout with a name, Qty and Price column for every product */
+                    layout?: "list" | "products";
                 };
                 header?: never;
                 path?: never;

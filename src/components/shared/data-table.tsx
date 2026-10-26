@@ -71,6 +71,7 @@ interface DataTableProps<T> {
   emptyDescription?: ReactNode;
   emptyAction?: ReactNode;
   exportFileName?: string;
+  onExport?: () => void;
   columnsMenu?: boolean;
   onRowClick?: (row: T) => void;
   getRowId?: (row: T) => string;
@@ -104,6 +105,7 @@ export function DataTable<T>({
   emptyDescription,
   emptyAction,
   exportFileName,
+  onExport,
   columnsMenu,
   onRowClick,
   getRowId,
@@ -189,7 +191,12 @@ export function DataTable<T>({
             <div className="ml-auto flex items-center gap-2">
               {actions}
               {exportFileName ? (
-                <Button variant="outline" size="sm" onClick={exportExcel} disabled={rows.length === 0}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onExport ?? exportExcel}
+                  disabled={rows.length === 0}
+                >
                   <Download />
                   Export
                 </Button>

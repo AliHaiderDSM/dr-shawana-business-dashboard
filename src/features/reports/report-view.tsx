@@ -1,7 +1,7 @@
 import { ReportCharts } from './report-charts';
 import { useBranchOptions } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, Download, Printer } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Combobox } from '@/components/shared/combobox';
@@ -158,6 +158,7 @@ function columnsFor(data: ReportData): ColumnDef<Row, unknown>[] {
               long ? 'block max-w-md min-w-56 whitespace-normal' : 'whitespace-nowrap',
               row.original.__total && 'font-semibold',
               index === 0 && 'font-medium',
+              column.key === 'invoiceNo' && 'text-xs',
             )}
           >
             {shown}
@@ -243,6 +244,14 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
     .filter((b) => b.kind === 'branch')
     .map((b) => ({ value: b.id, label: `${b.name} · ${b.code}` }));
 
+  const exportFromServer = () => {
+    if (downloading) return;
+    setDownloading(true);
+    downloadReportExcel(report.key, data.data?.title ?? report.title, { ...query, ...report.exportQuery })
+      .catch(toastError)
+      .finally(() => setDownloading(false));
+  };
+
   return (
     <>
       {standalone ? null : (
@@ -258,19 +267,6 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
         description={report.description}
         actions={
           <>
-            <Button
-              variant="outline"
-              disabled={downloading}
-              onClick={() => {
-                setDownloading(true);
-                downloadReportExcel(report.key, data.data?.title ?? report.title, query)
-                  .catch(toastError)
-                  .finally(() => setDownloading(false));
-              }}
-            >
-              <Download />
-              Excel
-            </Button>
             <Button
               variant="outline"
               onClick={() => void navigate(`/print/report/${report.key}?${params.toString()}`)}
@@ -294,6 +290,7 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
             isFetching={data.isFetching}
             rowClassName={(row) => (row.__total ? 'bg-muted/50 hover:bg-muted/50' : undefined)}
             exportFileName={report.key}
+            onExport={report.exportQuery ? exportFromServer : undefined}
             columnsMenu={report.columnsMenu}
             emptyTitle="Nothing in this period"
             emptyDescription="Change the dates or filters."
