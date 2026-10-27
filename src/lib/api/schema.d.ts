@@ -30641,19 +30641,21 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/reports/appointment-payments/day": {
+    "/admin/reports/appointment-payments": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Super Admin day-end of appointment money: due from earlier days, advances (paid before the visit day), balances (on or after the visit day), refunds, appointments fully paid and still due tonight */
+        /** Super Admin ledger of appointment money between two days: one entry per booking without payment, advance (paid before the visit day), balance (on or after it) and refund, each with the appointment total paid and remaining after it */
         get: {
             parameters: {
                 query?: {
-                    /** @description The day; today when left out */
-                    date?: string;
+                    /** @description First day; today when left out */
+                    from?: string;
+                    /** @description Last day; the same as from when left out */
+                    to?: string;
                     /** @description One branch; every branch when left out */
                     branchId?: string;
                 };
@@ -30663,96 +30665,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Day */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                [key: string]: unknown;
-                            };
-                        };
-                    };
-                };
-                /** @description Validation error */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not authenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not allowed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/reports/appointment-payments/month": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Super Admin month of appointment money, one line per day */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description YYYY-MM; this month when left out */
-                    month?: string;
-                    branchId?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Month */
+                /** @description Entries */
                 200: {
                     headers: {
                         [name: string]: unknown;

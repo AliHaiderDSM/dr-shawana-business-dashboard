@@ -52,78 +52,49 @@ export interface ProfitLossData {
 }
 
 export type AppointmentMoneyState = 'unpaid' | 'advance' | 'paid' | 'cancelled' | 'held' | 'refunded';
+export type AppointmentMoneyKind = 'booked' | 'advance' | 'balance' | 'refund';
 
-export interface AppointmentMoneyRow {
+export interface AppointmentMoneyEntry {
   sr: number;
   id: string;
-  appointmentNo: number;
-  bookedOn: string;
-  visitDate: string;
-  appointmentStatus: string;
+  kind: AppointmentMoneyKind;
+  date: string;
+  amount: string;
+  method: string | null;
+  account: string | null;
+  appointment: {
+    id: string;
+    appointmentNo: number;
+    visitDate: string;
+    bookedOn: string;
+    status: string;
+    fee: string;
+  };
   patient: { name: string | null; phone: string | null };
   doctor: string | null;
   branch: { code: string; name: string };
-  fee: string;
-  advance: string;
-  paidBefore: string;
-  advanceToday: string;
-  balanceToday: string;
-  refundToday: string;
-  totalPaid: string;
-  refunded: string;
-  remaining: string;
-  held: string;
-  state: AppointmentMoneyState;
-  fullyPaidToday: boolean;
-  fromBefore: boolean;
-  waitingDays: number;
-  dueBefore: string;
-  dueAfter: string;
-  methods: string[];
+  paidAfter: string;
+  refundedAfter: string;
+  remainingAfter: string;
+  stateAfter: AppointmentMoneyState;
+  fullyPaidHere: boolean;
 }
 
-export interface AppointmentMoneyDay {
-  date: string;
+export interface AppointmentMoneyLedger {
+  from: string;
+  to: string;
   branchId: string | null;
   summary: {
-    opening: number;
-    openingAmount: string;
-    booked: number;
+    bookings: number;
     advance: number;
     advanceAmount: string;
     balance: number;
     balanceAmount: string;
-    fullyPaid: number;
     refunds: number;
     refundAmount: string;
     collected: string;
     net: string;
-    closing: number;
-    closingAmount: string;
-  };
-  rows: AppointmentMoneyRow[];
-}
-
-export interface AppointmentMoneyMonth {
-  month: string;
-  branchId: string | null;
-  days: {
-    date: string;
-    booked: number;
-    advance: string;
-    balance: string;
-    refunds: string;
-    net: string;
-    fullyPaid: number;
-    due: number;
-    dueAmount: string;
-  }[];
-  totals: {
-    booked: number;
-    advance: string;
-    balance: string;
-    refunds: string;
-    net: string;
     fullyPaid: number;
   };
+  rows: AppointmentMoneyEntry[];
 }

@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment Payments report as a ledger (2026-10-27)
+
+- Day or Month, branch filter; every booking, advance, balance and refund is its own row with Sr., the appointment chip coloured by appointment number (all rows of one appointment share the colour), entry badge, amount (refunds in red), method and account, fee, paid so far, remaining and the status after the entry ("Cleared with this payment" on the one that completes the fee). Tabs: All, Booked, Advance, Balance, Refunds. Excel and print. Branch staff keep the old appointment payments table.
+
 ## Appointment refunds and Appointment Payments report (2026-10-27)
 
 - Appointment detail: a Refunds section on cancelled appointments (Super Admin can Refund and remove a refund; others see the list). RefundSheet takes method, amount (capped at what is still held), account, date and note.

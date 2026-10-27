@@ -9,14 +9,7 @@ import type { OptionSource } from '@/features/reports/reports-config';
 import { api, fetchFile, unwrap } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
 import { downloadXlsx, parseCsv } from '@/lib/xlsx';
-import type {
-  AppointmentMoneyDay,
-  AppointmentMoneyMonth,
-  ProfitLossArgs,
-  ProfitLossData,
-  ReportArgs,
-  ReportData,
-} from './types';
+import type { AppointmentMoneyLedger, ProfitLossArgs, ProfitLossData, ReportArgs, ReportData } from './types';
 
 export type * from './types';
 
@@ -44,25 +37,17 @@ export const reportsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['reports'],
     }),
-    getAppointmentMoneyDay: build.query<AppointmentMoneyDay, { date: string; branchId: string | null }>({
-      queryFn: ({ date, branchId }) =>
-        fromApi<AppointmentMoneyDay>(() =>
+    getAppointmentMoney: build.query<
+      AppointmentMoneyLedger,
+      { from: string; to: string; branchId: string | null }
+    >({
+      queryFn: ({ from, to, branchId }) =>
+        fromApi<AppointmentMoneyLedger>(() =>
           unwrap(
-            api.GET('/admin/reports/appointment-payments/day', {
-              params: { query: { date, ...(branchId ? { branchId } : {}) } },
+            api.GET('/admin/reports/appointment-payments', {
+              params: { query: { from, to, ...(branchId ? { branchId } : {}) } },
             }),
-          ).then((r) => r.data as unknown as AppointmentMoneyDay),
-        ),
-      providesTags: ['reports', 'appointments'],
-    }),
-    getAppointmentMoneyMonth: build.query<AppointmentMoneyMonth, { month: string; branchId: string | null }>({
-      queryFn: ({ month, branchId }) =>
-        fromApi<AppointmentMoneyMonth>(() =>
-          unwrap(
-            api.GET('/admin/reports/appointment-payments/month', {
-              params: { query: { month, ...(branchId ? { branchId } : {}) } },
-            }),
-          ).then((r) => r.data as unknown as AppointmentMoneyMonth),
+          ).then((r) => r.data as unknown as AppointmentMoneyLedger),
         ),
       providesTags: ['reports', 'appointments'],
     }),
@@ -77,8 +62,7 @@ export const {
   useGetReportQuery,
   useDownloadReportFileMutation,
   useGetProfitLossQuery,
-  useGetAppointmentMoneyDayQuery,
-  useGetAppointmentMoneyMonthQuery,
+  useGetAppointmentMoneyQuery,
 } = reportsApi;
 
 export function useReport(key: string, query: Record<string, string>) {
