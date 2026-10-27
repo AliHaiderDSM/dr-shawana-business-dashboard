@@ -527,7 +527,7 @@ export function AppointmentMoneyPage() {
                     </tfoot>
                   </table>
                 </div>
-                {pages > 1 ? (
+                {rows.length ? (
                   <div className="flex items-center justify-between gap-2 border-t px-4 py-2 text-xs text-muted-foreground print:hidden">
                     <span>
                       {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, rows.length)} of{' '}

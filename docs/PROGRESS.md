@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report and ledger: pages, newest first, Excel links (2026-10-28)
+
+- GDN report: newest booking day first (Sr. keeps its number), 25 orders a page with an always-visible pager (print shows every order), smaller text, amounts without "Rs", first four columns left and the rest centred.
+- GDN Excel (new button): rows as on screen plus "Booked on", "Order of that day" (x of n) and "Other orders of that day (Sr.)" so orders of one booking day can be matched, GDN number, type, status today and days since booking.
+- Appointment Payments ledger: the pager now always shows (also with one page).
+
 ## Appointment Payments ledger: newest first, pages, plain numbers (2026-10-28)
 
 - Newest entry on top (Sr. keeps its number, so the latest has the highest), 25 entries a page (print still prints every entry).

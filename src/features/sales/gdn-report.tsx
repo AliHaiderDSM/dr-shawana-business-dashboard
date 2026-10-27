@@ -8,6 +8,7 @@ import {
   History,
   PackagePlus,
   Printer,
+  Download,
   Store,
   Truck,
   XCircle,
@@ -25,7 +26,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
-import { formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
+import { formatAmount, formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
+import { downloadXlsx } from '@/lib/xlsx';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo-hd.png';
 import { useGdnReport, type GdnOrder, type GdnOrderStatus, type GdnReportType } from '@redux/features/sales';
@@ -33,6 +35,7 @@ import { useGdnReport, type GdnOrder, type GdnOrderStatus, type GdnReportType } 
 type View = 'all' | GdnOrderStatus;
 
 const PALETTE = 8;
+const PAGE_SIZE = 25;
 
 const ALL_PRODUCTS = '__all__';
 
@@ -162,6 +165,7 @@ export function GdnReportPage() {
   const data = report.data;
   const [view, setView] = useState<View>('all');
   const [day, setDay] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const product = params.get('product');
 
   const setParam = (key: string, value: string | null) =>
@@ -177,6 +181,7 @@ export function GdnReportPage() {
 
   const go = (next: string) => {
     setDay(null);
+    setPage(1);
     setParam('date', next === today ? null : next);
   };
 
@@ -202,7 +207,77 @@ export function GdnReportPage() {
     };
   });
   const count = (v: View) => orders.filter((o) => v === 'all' || o.status === v).length;
-  const rows = orders.filter((o) => (view === 'all' || o.status === view) && (!day || o.date === day));
+  const srOf = new Map(orders.map((o, i) => [o.id, i + 1]));
+  const rows = orders
+    .filter((o) => (view === 'all' || o.status === view) && (!day || o.date === day))
+    .reverse();
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageNow = Math.min(page, pages);
+  const onPage = (index: number) => Math.floor(index / PAGE_SIZE) + 1 === pageNow;
+  const exportExcel = () => {
+    if (!data) return;
+    const sameDay = (o: GdnOrder) =>
+      orders
+        .filter((x) => x.date === o.date)
+        .map((x) => srOf.get(x.id) ?? 0)
+        .sort((a, b) => a - b);
+    downloadXlsx(
+      [
+        [`GDN day-end report · ${data.branch.name} · ${formatDate(data.date, 'dd MMM yyyy')}`],
+        [],
+        [
+          'Sr.',
+          'Booked on',
+          'Order of that day',
+          'Other orders of that day (Sr.)',
+          'Order',
+          'GDN',
+          'Type',
+          'Customer',
+          'Phone',
+          'City',
+          'Booked at',
+          'Items',
+          'Amount',
+          'Payment',
+          'Today',
+          'Days since booking',
+        ],
+        ...rows.map((o) => {
+          const sr = srOf.get(o.id) ?? 0;
+          const group = sameDay(o);
+          return [
+            sr,
+            o.date,
+            `${group.indexOf(sr) + 1} of ${group.length}`,
+            group.filter((x) => x !== sr).join(', ') || '—',
+            o.invoiceNo,
+            o.gdnNo,
+            o.saleType === 'office' ? 'Office' : 'Online',
+            o.customer.name,
+            o.customer.phone,
+            o.city,
+            o.bookedAt?.name ?? o.bookedAt?.code ?? null,
+            o.items.map((i) => `${i.name} x ${i.qty}`).join(', '),
+            Number(o.total),
+            (PAYMENT[o.paymentStatus] ?? { label: o.paymentStatus }).label,
+            o.saleType === 'office'
+              ? 'Handed over'
+              : o.status === 'dispatched'
+                ? 'Dispatched'
+                : o.status === 'cancelled'
+                  ? 'Cancelled'
+                  : 'Waiting',
+            o.waitingDays,
+          ];
+        }),
+        [],
+        ['Total', null, null, null, null, null, null, null, null, null, null, null, total],
+      ],
+      `gdn-report-${data.date}`,
+      'GDN',
+    );
+  };
   const total = rows.reduce((sum, o) => sum + Number(o.total), 0);
   const next = formatDate(shift(date, 1), 'dd MMM');
   const amount = (list: GdnOrder[]) => list.reduce((sum, o) => sum + Number(o.total), 0);
@@ -323,7 +398,16 @@ export function GdnReportPage() {
             Today
           </Button>
         ) : null}
-        <Button className="ml-auto" onClick={() => window.print()} disabled={!data}>
+        <Button
+          variant="outline"
+          className="ml-auto"
+          onClick={exportExcel}
+          disabled={!data || rows.length === 0}
+        >
+          <Download />
+          Excel
+        </Button>
+        <Button onClick={() => window.print()} disabled={!data}>
           <Printer />
           Print
         </Button>
@@ -454,7 +538,10 @@ export function GdnReportPage() {
                       <button
                         key={d.date}
                         type="button"
-                        onClick={() => setDay(on ? null : d.date)}
+                        onClick={() => {
+                          setDay(on ? null : d.date);
+                          setPage(1);
+                        }}
                         aria-pressed={on}
                         className={cn(
                           'flex min-w-40 items-center gap-3 rounded-lg border px-3 py-2 text-left transition-shadow hover:shadow-sm',
@@ -497,7 +584,10 @@ export function GdnReportPage() {
                     type="button"
                     role="tab"
                     aria-selected={view === t.key}
-                    onClick={() => setView(t.key)}
+                    onClick={() => {
+                      setView(t.key);
+                      setPage(1);
+                    }}
                     className={cn(
                       'rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
                       view === t.key && 'bg-muted text-foreground',
@@ -518,17 +608,17 @@ export function GdnReportPage() {
               </div>
 
               <div className="overflow-x-auto print:overflow-visible">
-                <table className="w-full text-sm print:text-[11px]">
+                <table className="w-full text-xs print:text-[10px]">
                   <thead>
-                    <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
-                      <th className="py-2 pr-2 pl-5 font-medium">Sr.</th>
-                      <th className="px-3 py-2 font-medium">Booked</th>
-                      <th className="px-3 py-2 font-medium">Order</th>
-                      <th className="px-3 py-2 font-medium">Customer</th>
-                      <th className="px-3 py-2 font-medium">City · booked at</th>
-                      <th className="px-3 py-2 font-medium">Items</th>
-                      <th className="px-3 py-2 text-right font-medium">Amount</th>
-                      <th className="px-3 py-2 font-medium">Today</th>
+                    <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+                      <th className="py-2 pr-2 pl-5 text-left font-medium">Sr.</th>
+                      <th className="px-3 py-2 text-left font-medium">Booked</th>
+                      <th className="px-3 py-2 text-left font-medium">Order</th>
+                      <th className="px-3 py-2 text-left font-medium">Customer</th>
+                      <th className="px-3 py-2 text-center font-medium">City · booked at</th>
+                      <th className="px-3 py-2 text-center font-medium">Items</th>
+                      <th className="px-3 py-2 text-center font-medium">Amount</th>
+                      <th className="px-3 py-2 text-center font-medium">Today</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -541,8 +631,9 @@ export function GdnReportPage() {
                         <tr
                           key={o.id}
                           className={cn(
-                            'border-b align-top last:border-b-0 print:break-inside-avoid',
+                            'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
                             o.status === 'cancelled' && 'text-muted-foreground',
+                            !onPage(index) && 'hidden',
                           )}
                           style={tint(o.date, 5)}
                         >
@@ -550,7 +641,7 @@ export function GdnReportPage() {
                             className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
                             style={{ borderLeft: `4px solid ${dayColor(o.date)}` }}
                           >
-                            {index + 1}
+                            {srOf.get(o.id)}
                           </td>
                           <td className="px-3 py-2.5">
                             <BookedChip date={o.date} reportDate={data.date} />
@@ -579,14 +670,14 @@ export function GdnReportPage() {
                               {o.customer.phone}
                             </div>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td className="px-3 py-2.5 text-center">
                             <div>{o.city ?? '—'}</div>
                             <div className="text-xs text-muted-foreground">
                               {o.bookedAt?.name ?? o.bookedAt?.code ?? '—'}
                             </div>
                           </td>
-                          <td className="px-3 py-2.5">
-                            <ul className="min-w-40 space-y-0.5 text-xs print:min-w-0 print:text-[10px]">
+                          <td className="px-3 py-2.5 text-center">
+                            <ul className="min-w-40 space-y-0.5 print:min-w-0">
                               {o.items.map((item, i) => (
                                 <li
                                   key={i}
@@ -597,13 +688,13 @@ export function GdnReportPage() {
                               ))}
                             </ul>
                           </td>
-                          <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
-                            <div className="font-medium">{formatMoney(o.total)}</div>
+                          <td className="px-3 py-2.5 text-center whitespace-nowrap tabular-nums">
+                            <div className="font-medium">{formatAmount(o.total)}</div>
                             <div className="mt-0.5 print:hidden">
                               <StatusBadge tone={pay.tone}>{pay.label}</StatusBadge>
                             </div>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td className="px-3 py-2.5 text-center">
                             <Status order={o} />
                           </td>
                         </tr>
@@ -611,19 +702,52 @@ export function GdnReportPage() {
                     })}
                   </tbody>
                   <tfoot className="print:table-row-group">
-                    <tr className="border-t bg-muted/30 text-sm font-semibold">
+                    <tr className="border-t bg-muted/30 font-semibold">
                       <td className="py-2 pr-3 pl-5" colSpan={6}>
                         {rows.length} order{rows.length === 1 ? '' : 's'}
                         {product
                           ? ` · ${formatCount(rows.reduce((sum, o) => sum + units(o), 0))} × ${product}`
                           : ''}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{formatMoney(total)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums">{formatAmount(total)}</td>
                       <td />
                     </tr>
                   </tfoot>
                 </table>
               </div>
+              {rows.length ? (
+                <div className="flex items-center justify-between gap-2 border-t px-4 py-2 text-xs text-muted-foreground print:hidden">
+                  <span>
+                    {(pageNow - 1) * PAGE_SIZE + 1}–{Math.min(pageNow * PAGE_SIZE, rows.length)} of{' '}
+                    {rows.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      aria-label="Previous page"
+                      disabled={pageNow <= 1}
+                      onClick={() => setPage(pageNow - 1)}
+                    >
+                      <ChevronLeft />
+                    </Button>
+                    <span className="px-2 tabular-nums">
+                      Page {pageNow} of {pages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      aria-label="Next page"
+                      disabled={pageNow >= pages}
+                      onClick={() => setPage(pageNow + 1)}
+                    >
+                      <ChevronRight />
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </section>
           )}
 
