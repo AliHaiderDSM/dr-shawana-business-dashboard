@@ -24,7 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
-import { formatDate, formatMoney, isoDate } from '@/lib/format';
+import { formatAmount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { downloadXlsx } from '@/lib/xlsx';
 import {
@@ -73,7 +73,24 @@ const colorOf = (appointmentNo: number) => `var(--booked-${(appointmentNo % PALE
 const tint = (appointmentNo: number, percent: number): CSSProperties => ({
   backgroundColor: `color-mix(in oklch, ${colorOf(appointmentNo)} ${percent}%, transparent)`,
 });
-const money = (value: string) => (Number(value) ? formatMoney(value) : '—');
+const amount = (value: string) => (Number(value) ? formatAmount(value) : '—');
+const PAGE_SIZE = 25;
+
+function linksOf(rows: AppointmentMoneyEntry[]) {
+  const byAppointment = new Map<string, AppointmentMoneyEntry[]>();
+  for (const r of rows)
+    byAppointment.set(r.appointment.id, [...(byAppointment.get(r.appointment.id) ?? []), r]);
+  return (r: AppointmentMoneyEntry) => {
+    const all = (byAppointment.get(r.appointment.id) ?? []).slice().sort((a, b) => a.sr - b.sr);
+    return {
+      part: `${all.findIndex((x) => x.sr === r.sr) + 1} of ${all.length}`,
+      others: all
+        .filter((x) => x.sr !== r.sr)
+        .map((x) => x.sr)
+        .join(', '),
+    };
+  };
+}
 
 function Kpi({
   label,
@@ -108,6 +125,7 @@ function exportRows(
   title: string,
   allBranches: boolean,
 ) {
+  const link = linksOf(data.rows);
   return [
     [title],
     [],
@@ -115,6 +133,8 @@ function exportRows(
       'Sr.',
       'Date',
       'Appointment',
+      'Entry of appointment',
+      'Other entries (Sr.)',
       'Visit date',
       'Patient',
       'Phone',
@@ -129,10 +149,12 @@ function exportRows(
       'Remaining',
       'Status',
     ],
-    ...rows.map((r, i) => [
-      i + 1,
+    ...rows.map((r) => [
+      r.sr,
       r.date,
       `APP#${r.appointment.appointmentNo}`,
+      link(r).part,
+      link(r).others || '—',
       r.appointment.visitDate,
       r.patient.name,
       r.patient.phone,
@@ -169,10 +191,12 @@ export function AppointmentMoneyPage() {
   const to = view === 'day' ? date : monthEnd(month);
   const report = useGetAppointmentMoneyQuery({ from, to, branchId }, { skip: !isSuperAdmin });
   const [tab, setTab] = useState<Tab>('all');
+  const [page, setPage] = useState(1);
 
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
-  const set = (changes: Record<string, string | null>) =>
+  const set = (changes: Record<string, string | null>) => {
+    setPage(1);
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -184,6 +208,7 @@ export function AppointmentMoneyPage() {
       },
       { replace: true },
     );
+  };
 
   const data = report.data;
   const allBranches = branchId === null;
@@ -191,7 +216,10 @@ export function AppointmentMoneyPage() {
     view === 'day'
       ? `Appointment payments · ${formatDate(date, 'EEEE, dd MMMM yyyy')}`
       : `Appointment payments · ${formatDate(`${month}-01`, 'MMMM yyyy')}`;
-  const rows = (data?.rows ?? []).filter((r) => tab === 'all' || r.kind === tab);
+  const rows = (data?.rows ?? []).filter((r) => tab === 'all' || r.kind === tab).reverse();
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const onPage = (index: number) => Math.floor(index / PAGE_SIZE) + 1 === current;
   const sumOf = (kind: AppointmentMoneyKind) =>
     rows.filter((r) => r.kind === kind).reduce((total, r) => total + Number(r.amount), 0);
 
@@ -351,7 +379,10 @@ export function AppointmentMoneyPage() {
                   type="button"
                   role="tab"
                   aria-selected={tab === t.key}
-                  onClick={() => setTab(t.key)}
+                  onClick={() => {
+                    setTab(t.key);
+                    setPage(1);
+                  }}
                   className={cn(
                     'rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
                     tab === t.key && 'bg-muted text-foreground',
@@ -370,121 +401,166 @@ export function AppointmentMoneyPage() {
                 description="No appointment was booked, paid or refunded in this period."
               />
             ) : (
-              <div className="overflow-x-auto print:overflow-visible">
-                <table className="w-full text-sm print:text-[9px]">
-                  <thead>
-                    <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
-                      <th className="py-2 pr-2 pl-5 font-medium">Sr.</th>
-                      {view === 'month' ? <th className="px-3 py-2 font-medium">Date</th> : null}
-                      <th className="px-3 py-2 font-medium">Appointment</th>
-                      <th className="px-3 py-2 font-medium">Patient</th>
-                      <th className="px-3 py-2 font-medium">Doctor{allBranches ? ' · branch' : ''}</th>
-                      <th className="px-3 py-2 font-medium">Entry</th>
-                      <th className="px-3 py-2 text-right font-medium">Amount</th>
-                      <th className="px-3 py-2 font-medium">Method · account</th>
-                      <th className="px-3 py-2 text-right font-medium">Fee</th>
-                      <th className="px-3 py-2 text-right font-medium">Paid so far</th>
-                      <th className="px-3 py-2 text-right font-medium">Remaining</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r, index) => {
-                      const no = r.appointment.appointmentNo;
-                      return (
-                        <tr
-                          key={`${r.kind}-${r.id}`}
-                          className="border-b align-top last:border-b-0 print:break-inside-avoid"
-                          style={tint(no, 6)}
+              <>
+                <div className="overflow-x-auto print:overflow-visible">
+                  <table className="w-full text-xs print:text-[9px]">
+                    <thead>
+                      <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+                        <th className="py-2 pr-2 pl-5 text-left font-medium">Sr.</th>
+                        {view === 'month' ? <th className="px-3 py-2 text-left font-medium">Date</th> : null}
+                        <th className="px-3 py-2 text-left font-medium">Appointment</th>
+                        <th className="px-3 py-2 text-left font-medium">Patient</th>
+                        <th
+                          className={cn(
+                            'px-3 py-2 font-medium',
+                            view === 'month' ? 'text-center' : 'text-left',
+                          )}
                         >
-                          <td
-                            className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
-                            style={{ borderLeft: `4px solid ${colorOf(no)}` }}
-                          >
-                            {index + 1}
-                          </td>
-                          {view === 'month' ? (
-                            <td className="px-3 py-2.5 whitespace-nowrap">
-                              {formatDate(r.date, 'EEE dd MMM')}
-                            </td>
-                          ) : null}
-                          <td className="px-3 py-2.5">
-                            <span
-                              className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap"
-                              style={tint(no, 20)}
-                            >
-                              <span
-                                className="size-2 rounded-full"
-                                style={{ backgroundColor: colorOf(no) }}
-                              />
-                              APP#{no}
-                            </span>
-                            <div className="mt-1 text-xs whitespace-nowrap text-muted-foreground">
-                              Visit {formatDate(r.appointment.visitDate, 'dd MMM')}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <div className="font-medium">{r.patient.name ?? '—'}</div>
-                            <div className="text-xs text-muted-foreground tabular-nums">
-                              {r.patient.phone}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <div>{r.doctor ?? '—'}</div>
-                            {allBranches ? (
-                              <div className="text-xs text-muted-foreground">{r.branch.name}</div>
-                            ) : null}
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <StatusBadge tone={KIND[r.kind].tone}>{KIND[r.kind].label}</StatusBadge>
-                          </td>
-                          <td
+                          Doctor{allBranches ? ' · branch' : ''}
+                        </th>
+                        <th className="px-3 py-2 text-center font-medium">Entry</th>
+                        <th className="px-3 py-2 text-center font-medium">Amount</th>
+                        <th className="px-3 py-2 text-center font-medium">Method · account</th>
+                        <th className="px-3 py-2 text-center font-medium">Fee</th>
+                        <th className="px-3 py-2 text-center font-medium">Paid so far</th>
+                        <th className="px-3 py-2 text-center font-medium">Remaining</th>
+                        <th className="px-3 py-2 text-center font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, index) => {
+                        const no = r.appointment.appointmentNo;
+                        return (
+                          <tr
+                            key={`${r.kind}-${r.id}`}
                             className={cn(
-                              'px-3 py-2.5 text-right font-semibold whitespace-nowrap tabular-nums',
-                              r.kind === 'refund' && 'text-destructive',
+                              'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
+                              !onPage(index) && 'hidden',
                             )}
+                            style={tint(no, 6)}
                           >
-                            {r.kind === 'booked'
-                              ? '—'
-                              : `${r.kind === 'refund' ? '− ' : ''}${formatMoney(r.amount)}`}
-                          </td>
-                          <td className="px-3 py-2.5 text-xs">
-                            {r.method ? <span className="capitalize">{r.method}</span> : '—'}
-                            {r.account ? <div className="text-muted-foreground">{r.account}</div> : null}
-                          </td>
-                          <td className="px-3 py-2.5 text-right tabular-nums">{money(r.appointment.fee)}</td>
-                          <td className="px-3 py-2.5 text-right tabular-nums">{money(r.paidAfter)}</td>
-                          <td className="px-3 py-2.5 text-right tabular-nums">{money(r.remainingAfter)}</td>
-                          <td className="px-3 py-2.5">
-                            <StatusBadge tone={STATE[r.stateAfter].tone}>
-                              {STATE[r.stateAfter].label}
-                            </StatusBadge>
-                            {r.fullyPaidHere ? (
-                              <div className="mt-1 text-xs font-medium text-success">
-                                Cleared with this payment
-                              </div>
+                            <td
+                              className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
+                              style={{ borderLeft: `4px solid ${colorOf(no)}` }}
+                            >
+                              {r.sr}
+                            </td>
+                            {view === 'month' ? (
+                              <td className="px-3 py-2.5 whitespace-nowrap">
+                                {formatDate(r.date, 'EEE dd MMM')}
+                              </td>
                             ) : null}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t bg-muted/30 font-semibold">
-                      <td className="py-2 pr-3 pl-5" colSpan={view === 'month' ? 6 : 5}>
-                        {rows.length} entr{rows.length === 1 ? 'y' : 'ies'}
-                      </td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
-                        {formatMoney(sumOf('advance') + sumOf('balance') - sumOf('refund'))}
-                      </td>
-                      <td colSpan={5} className="px-3 py-2 text-xs font-normal text-muted-foreground">
-                        Advance {formatMoney(sumOf('advance'))} · Balance {formatMoney(sumOf('balance'))} ·
-                        Refunds {formatMoney(sumOf('refund'))}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+                            <td className="px-3 py-2.5">
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap"
+                                style={tint(no, 20)}
+                              >
+                                <span
+                                  className="size-2 rounded-full"
+                                  style={{ backgroundColor: colorOf(no) }}
+                                />
+                                APP#{no}
+                              </span>
+                              <div className="mt-1 whitespace-nowrap text-muted-foreground">
+                                Visit {formatDate(r.appointment.visitDate, 'dd MMM')}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="font-medium">{r.patient.name ?? '—'}</div>
+                              <div className="text-muted-foreground tabular-nums">{r.patient.phone}</div>
+                            </td>
+                            <td className={cn('px-3 py-2.5', view === 'month' && 'text-center')}>
+                              <div>{r.doctor ?? '—'}</div>
+                              {allBranches ? (
+                                <div className="text-muted-foreground">{r.branch.name}</div>
+                              ) : null}
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <StatusBadge tone={KIND[r.kind].tone}>{KIND[r.kind].label}</StatusBadge>
+                            </td>
+                            <td
+                              className={cn(
+                                'px-3 py-2.5 text-center font-semibold whitespace-nowrap tabular-nums',
+                                r.kind === 'refund' && 'text-destructive',
+                              )}
+                            >
+                              {r.kind === 'booked'
+                                ? '—'
+                                : `${r.kind === 'refund' ? '− ' : ''}${formatAmount(r.amount)}`}
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              {r.method ? <span className="capitalize">{r.method}</span> : '—'}
+                              {r.account ? <div className="text-muted-foreground">{r.account}</div> : null}
+                            </td>
+                            <td className="px-3 py-2.5 text-center tabular-nums">
+                              {amount(r.appointment.fee)}
+                            </td>
+                            <td className="px-3 py-2.5 text-center tabular-nums">{amount(r.paidAfter)}</td>
+                            <td className="px-3 py-2.5 text-center tabular-nums">
+                              {amount(r.remainingAfter)}
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <StatusBadge tone={STATE[r.stateAfter].tone}>
+                                {STATE[r.stateAfter].label}
+                              </StatusBadge>
+                              {r.fullyPaidHere ? (
+                                <div className="mt-1 font-medium text-success">Cleared with this payment</div>
+                              ) : null}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t bg-muted/30 font-semibold">
+                        <td className="py-2 pr-3 pl-5" colSpan={view === 'month' ? 6 : 5}>
+                          {rows.length} entr{rows.length === 1 ? 'y' : 'ies'}
+                        </td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap tabular-nums">
+                          {formatAmount(sumOf('advance') + sumOf('balance') - sumOf('refund'))}
+                        </td>
+                        <td colSpan={5} className="px-3 py-2 text-center font-normal text-muted-foreground">
+                          Advance {formatAmount(sumOf('advance'))} · Balance {formatAmount(sumOf('balance'))}{' '}
+                          · Refunds {formatAmount(sumOf('refund'))}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                {pages > 1 ? (
+                  <div className="flex items-center justify-between gap-2 border-t px-4 py-2 text-xs text-muted-foreground print:hidden">
+                    <span>
+                      {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, rows.length)} of{' '}
+                      {rows.length}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        aria-label="Previous page"
+                        disabled={current <= 1}
+                        onClick={() => setPage(current - 1)}
+                      >
+                        <ChevronLeft />
+                      </Button>
+                      <span className="px-2 tabular-nums">
+                        Page {current} of {pages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        aria-label="Next page"
+                        disabled={current >= pages}
+                        onClick={() => setPage(current + 1)}
+                      >
+                        <ChevronRight />
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
             )}
           </section>
         </>

@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment Payments ledger: newest first, pages, plain numbers (2026-10-28)
+
+- Newest entry on top (Sr. keeps its number, so the latest has the highest), 25 entries a page (print still prints every entry).
+- Amounts without "Rs", table text smaller, every column centred except the first four.
+- Excel: rows newest first with two linking columns, "Entry of appointment" (like 2 of 2) and "Other entries (Sr.)", so the advance and the balance of one appointment can be matched by APP# and Sr.
+
 ## Appointment Payments report as a ledger (2026-10-27)
 
 - Day or Month, branch filter; every booking, advance, balance and refund is its own row with Sr., the appointment chip coloured by appointment number (all rows of one appointment share the colour), entry badge, amount (refunds in red), method and account, fee, paid so far, remaining and the status after the entry ("Cleared with this payment" on the one that completes the fee). Tabs: All, Booked, Advance, Balance, Refunds. Excel and print. Branch staff keep the old appointment payments table.
