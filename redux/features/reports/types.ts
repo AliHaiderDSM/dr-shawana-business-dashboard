@@ -50,3 +50,80 @@ export interface ProfitLossData {
   })[];
   branches: (ProfitFigures & { code: string; name: string })[];
 }
+
+export type AppointmentMoneyState = 'unpaid' | 'advance' | 'paid' | 'cancelled' | 'held' | 'refunded';
+
+export interface AppointmentMoneyRow {
+  sr: number;
+  id: string;
+  appointmentNo: number;
+  bookedOn: string;
+  visitDate: string;
+  appointmentStatus: string;
+  patient: { name: string | null; phone: string | null };
+  doctor: string | null;
+  branch: { code: string; name: string };
+  fee: string;
+  advance: string;
+  paidBefore: string;
+  advanceToday: string;
+  balanceToday: string;
+  refundToday: string;
+  totalPaid: string;
+  refunded: string;
+  remaining: string;
+  held: string;
+  state: AppointmentMoneyState;
+  fullyPaidToday: boolean;
+  fromBefore: boolean;
+  waitingDays: number;
+  dueBefore: string;
+  dueAfter: string;
+  methods: string[];
+}
+
+export interface AppointmentMoneyDay {
+  date: string;
+  branchId: string | null;
+  summary: {
+    opening: number;
+    openingAmount: string;
+    booked: number;
+    advance: number;
+    advanceAmount: string;
+    balance: number;
+    balanceAmount: string;
+    fullyPaid: number;
+    refunds: number;
+    refundAmount: string;
+    collected: string;
+    net: string;
+    closing: number;
+    closingAmount: string;
+  };
+  rows: AppointmentMoneyRow[];
+}
+
+export interface AppointmentMoneyMonth {
+  month: string;
+  branchId: string | null;
+  days: {
+    date: string;
+    booked: number;
+    advance: string;
+    balance: string;
+    refunds: string;
+    net: string;
+    fullyPaid: number;
+    due: number;
+    dueAmount: string;
+  }[];
+  totals: {
+    booked: number;
+    advance: string;
+    balance: string;
+    refunds: string;
+    net: string;
+    fullyPaid: number;
+  };
+}

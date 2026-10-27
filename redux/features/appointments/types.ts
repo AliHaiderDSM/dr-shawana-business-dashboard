@@ -50,6 +50,19 @@ export interface SaveAppointmentPaymentArg {
   idempotencyKey?: string;
 }
 
+export type AppointmentRefund = Schemas['AppointmentRefund'];
+
+export interface AddAppointmentRefundArg {
+  appointmentId: string;
+  idempotencyKey?: string;
+  body: Schemas['AppointmentRefundInput'];
+}
+
+export interface RemoveAppointmentRefundArg {
+  appointmentId: string;
+  refundId: string;
+}
+
 export interface RemoveAppointmentPaymentArg {
   appointmentId: string;
   paymentId: string;

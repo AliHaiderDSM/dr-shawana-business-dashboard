@@ -5,6 +5,9 @@ import type { TagType } from '@redux/api/tagTypes';
 import { store } from '@redux/store';
 import { api, jsonFormData, unwrap, uploadForm } from '@/lib/api/client';
 import type {
+  AddAppointmentRefundArg,
+  AppointmentRefund,
+  RemoveAppointmentRefundArg,
   AppointmentAttachmentUrl,
   AppointmentCalendar,
   AppointmentCalendarQuery,
@@ -108,6 +111,30 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
         ),
       invalidatesTags: (_r, error) => (error ? [] : DEPENDENTS),
     }),
+    addAppointmentRefund: build.mutation<AppointmentRefund, AddAppointmentRefundArg>({
+      queryFn: ({ appointmentId, body, idempotencyKey }) =>
+        toApi<AppointmentRefund>(() =>
+          unwrap(
+            api.POST('/branch/appointments/{id}/refunds', {
+              params: { path: { id: appointmentId } },
+              body,
+              headers: idempotencyHeaders(idempotencyKey),
+            }),
+          ).then((r) => r.data as AppointmentRefund),
+        ),
+      invalidatesTags: (_r, error) => (error ? [] : [...DEPENDENTS, 'account-sheets', 'reports']),
+    }),
+    removeAppointmentRefund: build.mutation<unknown, RemoveAppointmentRefundArg>({
+      queryFn: ({ appointmentId, refundId }) =>
+        toApi<unknown>(() =>
+          unwrap(
+            api.DELETE('/branch/appointments/{id}/refunds/{refundId}', {
+              params: { path: { id: appointmentId, refundId } },
+            }),
+          ),
+        ),
+      invalidatesTags: (_r, error) => (error ? [] : [...DEPENDENTS, 'account-sheets', 'reports']),
+    }),
     removeAppointmentAttachment: build.mutation<unknown, RemoveAppointmentAttachmentArg>({
       queryFn: ({ appointmentId, attachmentId }) =>
         toApi<unknown>(() =>
@@ -181,6 +208,8 @@ export const {
   useRemoveAppointmentPaymentMutation,
   useRemoveAppointmentAttachmentMutation,
   useGetAppointmentReceivingAccountsQuery,
+  useAddAppointmentRefundMutation,
+  useRemoveAppointmentRefundMutation,
 } = appointmentsQueryApi;
 
 export function useAppointmentList(query: Record<string, unknown>) {

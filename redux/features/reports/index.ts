@@ -9,7 +9,14 @@ import type { OptionSource } from '@/features/reports/reports-config';
 import { api, fetchFile, unwrap } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
 import { downloadXlsx, parseCsv } from '@/lib/xlsx';
-import type { ProfitLossArgs, ProfitLossData, ReportArgs, ReportData } from './types';
+import type {
+  AppointmentMoneyDay,
+  AppointmentMoneyMonth,
+  ProfitLossArgs,
+  ProfitLossData,
+  ReportArgs,
+  ReportData,
+} from './types';
 
 export type * from './types';
 
@@ -37,6 +44,28 @@ export const reportsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['reports'],
     }),
+    getAppointmentMoneyDay: build.query<AppointmentMoneyDay, { date: string; branchId: string | null }>({
+      queryFn: ({ date, branchId }) =>
+        fromApi<AppointmentMoneyDay>(() =>
+          unwrap(
+            api.GET('/admin/reports/appointment-payments/day', {
+              params: { query: { date, ...(branchId ? { branchId } : {}) } },
+            }),
+          ).then((r) => r.data as unknown as AppointmentMoneyDay),
+        ),
+      providesTags: ['reports', 'appointments'],
+    }),
+    getAppointmentMoneyMonth: build.query<AppointmentMoneyMonth, { month: string; branchId: string | null }>({
+      queryFn: ({ month, branchId }) =>
+        fromApi<AppointmentMoneyMonth>(() =>
+          unwrap(
+            api.GET('/admin/reports/appointment-payments/month', {
+              params: { query: { month, ...(branchId ? { branchId } : {}) } },
+            }),
+          ).then((r) => r.data as unknown as AppointmentMoneyMonth),
+        ),
+      providesTags: ['reports', 'appointments'],
+    }),
     downloadReportFile: build.mutation<Blob, ReportArgs>({
       queryFn: ({ key, query }) => toApi(() => fetchFile(reportPath(key), { ...query, format: 'csv' })),
     }),
@@ -44,7 +73,13 @@ export const reportsApi = baseApi.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetReportQuery, useDownloadReportFileMutation, useGetProfitLossQuery } = reportsApi;
+export const {
+  useGetReportQuery,
+  useDownloadReportFileMutation,
+  useGetProfitLossQuery,
+  useGetAppointmentMoneyDayQuery,
+  useGetAppointmentMoneyMonthQuery,
+} = reportsApi;
 
 export function useReport(key: string, query: Record<string, string>) {
   return useGetReportQuery({ key, query });

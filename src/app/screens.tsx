@@ -362,6 +362,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'appointment-payments-report',
+    element: page(() => import('@/features/reports/appointment-money-page'), 'AppointmentMoneyPage'),
+    anyOf: ['branches.view'],
+    scope: 'any',
+  },
+  {
     path: 'profit-loss',
     element: page(() => import('@/features/reports/profit-loss-page'), 'ProfitLossPage'),
     anyOf: ['branches.view'],

@@ -8,6 +8,7 @@ import {
   Plus,
   Printer,
   RotateCcw,
+  Undo2,
   Stethoscope,
   Trash2,
 } from 'lucide-react';
@@ -33,17 +34,24 @@ import {
   appointmentsApi,
   useRemoveAppointmentAttachmentMutation,
   useRemoveAppointmentPaymentMutation,
+  useRemoveAppointmentRefundMutation,
   type AppointmentPayment,
+  type AppointmentRefund,
 } from '@redux/features/appointments';
 import { METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
 import { AppointmentFormSheet } from './appointment-form-sheet';
 import { PaymentSheet } from './payment-sheet';
+import { RefundSheet } from './refund-sheet';
 import { StatusDialog, type StatusChange } from './status-dialog';
 
 export function AppointmentDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
+  const [removeRefund] = useRemoveAppointmentRefundMutation();
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundKey, setRefundKey] = useState(0);
+  const [removingRefund, setRemovingRefund] = useState<AppointmentRefund | null>(null);
   const appointment = appointmentsApi.useDetail(id);
   const [removePayment] = useRemoveAppointmentPaymentMutation();
   const [removeAttachment] = useRemoveAppointmentAttachmentMutation();
@@ -59,6 +67,7 @@ export function AppointmentDetailPage() {
     return <ErrorState error={appointment.error} onRetry={() => void appointment.refetch()} />;
   const a = appointment.data;
   const isOpen = a.status === 'booked';
+  const refundable = Math.max(0, Number(a.receivedAmount) - Number(a.refundedAmount));
   const canUpdate = can('appointments.update');
 
   const openPayment = (entry: AppointmentPayment | null) => {
@@ -274,6 +283,64 @@ export function AppointmentDetailPage() {
               emptyDescription="Record cash or online payments for this visit."
             />
           </div>
+
+          {a.status === 'cancelled' && (a.refunds.length > 0 || (isSuperAdmin && refundable > 0)) ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold">
+                  Refunds{' '}
+                  <span className="font-normal text-muted-foreground">
+                    · {formatMoney(a.refundedAmount)} refunded
+                    {refundable > 0 ? ` · ${formatMoney(refundable)} still held` : ''}
+                  </span>
+                </h2>
+                {isSuperAdmin && refundable > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setRefundKey((k) => k + 1);
+                      setRefundOpen(true);
+                    }}
+                  >
+                    <Undo2 />
+                    Refund
+                  </Button>
+                ) : null}
+              </div>
+              {a.refunds.length ? (
+                <ul className="divide-y rounded-xl border bg-card text-sm">
+                  {a.refunds.map((r) => (
+                    <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium tabular-nums">{formatMoney(r.amount)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(r.date)} · {METHOD_LABELS[r.method]} ·{' '}
+                          {r.accountSheet?.accountName ?? '—'}
+                          {r.note ? ` · ${r.note}` : ''}
+                        </div>
+                      </div>
+                      {isSuperAdmin ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          aria-label="Remove refund"
+                          onClick={() => setRemovingRefund(r)}
+                        >
+                          <Trash2 />
+                        </Button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No refund yet. {formatMoney(refundable)} received for this cancelled visit is still held.
+                </p>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-6">
@@ -323,6 +390,29 @@ export function AppointmentDetailPage() {
         payment={payment}
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
+      />
+      <RefundSheet
+        key={refundKey}
+        appointmentId={a.id}
+        refundable={refundable}
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+      />
+      <ConfirmDialog
+        open={removingRefund !== null}
+        onOpenChange={(o) => !o && setRemovingRefund(null)}
+        title="Remove this refund?"
+        description="Use this only for a refund entered by mistake. The money counts as held again."
+        confirmLabel="Remove"
+        destructive
+        onConfirm={() =>
+          removingRefund
+            ? removeRefund({ appointmentId: id, refundId: removingRefund.id })
+                .unwrap()
+                .then(() => toast.success('Refund removed'))
+                .catch(toastError)
+            : undefined
+        }
       />
       <ConfirmDialog
         open={removingPayment !== null}

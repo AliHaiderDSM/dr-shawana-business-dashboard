@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment refunds and Appointment Payments report (2026-10-27)
+
+- Appointment detail: a Refunds section on cancelled appointments (Super Admin can Refund and remove a refund; others see the list). RefundSheet takes method, amount (capped at what is still held), account, date and note.
+- /appointment-payments-report (Super Admin, Insights menu): Day view (date with prev/next, KPIs, tabs All / Advance today / Balance today / Refunds / Still due, Sr., booking-day colours, totals, Excel, print) and Month view (one line per day, click opens that day, totals, Excel, print). Branch filter: all branches or one.
+
 ## GDN report layout (2026-10-26)
 
 - Filters (Online/Office/All for the Super Admin, product, branch, date, Print) sit in one row under the description instead of beside it.

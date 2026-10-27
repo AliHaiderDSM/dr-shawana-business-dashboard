@@ -15,6 +15,7 @@ import {
   FlaskConical,
   FolderTree,
   Gift,
+  HandCoins,
   History,
   Landmark,
   LayoutDashboard,
@@ -551,6 +552,15 @@ export const MENU: MenuGroup[] = [
         icon: BarChart3,
         anyOf: ['reports.view'],
         scope: 'any',
+      },
+      {
+        key: 'appointment-payments-report',
+        label: 'Appointment Payments',
+        path: '/appointment-payments-report',
+        icon: HandCoins,
+        anyOf: ['reports.view'],
+        scope: 'any',
+        superAdminOnly: true,
       },
       {
         key: 'profit-loss',
