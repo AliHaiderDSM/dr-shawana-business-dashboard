@@ -28,6 +28,7 @@ export interface ProfitLossArgs {
   year: number;
   month: number | null;
   branchId: string | null;
+  product: string | null;
 }
 
 export interface ProfitLossData {
@@ -35,6 +36,8 @@ export interface ProfitLossData {
   month: number | null;
   period: { from: string; to: string };
   branchId: string | null;
+  product: string | null;
+  productNames: string[];
   summary: ProfitFigures & { sales: number; estimatedCostUnits: string; unknownCostUnits: string };
   months: (ProfitFigures & { month: string; label: string })[];
   products: (ProfitFigures & {

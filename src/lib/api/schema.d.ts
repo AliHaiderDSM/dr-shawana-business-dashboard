@@ -30749,6 +30749,8 @@ export interface paths {
                     month?: number;
                     /** @description One branch; every branch when left out */
                     branchId?: string;
+                    /** @description Only this product (by name); every product when left out */
+                    product?: string;
                 };
                 header?: never;
                 path?: never;

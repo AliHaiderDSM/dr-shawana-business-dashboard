@@ -167,9 +167,10 @@ export function ProfitLossPage() {
   const [year, setYear] = useState(thisYear);
   const [month, setMonth] = useState<number | null>(new Date().getMonth() + 1);
   const [branchId, setBranchId] = useState<string | null>(null);
+  const [product, setProduct] = useState<string | null>(null);
   const branches = useBranchOptions(isSuperAdmin);
   const sellingBranches = (branches.data ?? []).filter((b) => b.kind === 'branch');
-  const report = useGetProfitLossQuery({ year, month, branchId }, { skip: !isSuperAdmin });
+  const report = useGetProfitLossQuery({ year, month, branchId, product }, { skip: !isSuperAdmin });
 
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
@@ -178,6 +179,10 @@ export function ProfitLossPage() {
   const branchName = branchId
     ? (sellingBranches.find((b) => b.id === branchId)?.name ?? 'Branch')
     : 'All branches';
+  const scopeName = product ? `${branchName} · ${product}` : branchName;
+  const productChoices = [
+    ...new Set([...(report.data?.productNames ?? []), ...(product ? [product] : [])]),
+  ].sort((a, b) => a.localeCompare(b));
   const flagged = data ? Number(data.summary.estimatedCostUnits) + Number(data.summary.unknownCostUnits) : 0;
 
   return (
@@ -229,13 +234,26 @@ export function ProfitLossPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={product ?? ALL} onValueChange={(v) => setProduct(v === ALL ? null : v)}>
+              <SelectTrigger className="w-48" aria-label="Product">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All products</SelectItem>
+                {productChoices.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               disabled={!data}
               onClick={() =>
                 data &&
                 downloadXlsx(
-                  exportRows(data, periodName, branchName),
+                  exportRows(data, periodName, scopeName),
                   `profit-loss-${year}${month ? `-${String(month).padStart(2, '0')}` : ''}`,
                   'Profit & loss',
                 )
@@ -262,7 +280,7 @@ export function ProfitLossPage() {
       ) : (
         <>
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{periodName}</span> · {branchName} ·{' '}
+            <span className="font-medium text-foreground">{periodName}</span> · {scopeName} ·{' '}
             {data.summary.sales} sale{data.summary.sales === 1 ? '' : 's'}
           </div>
 

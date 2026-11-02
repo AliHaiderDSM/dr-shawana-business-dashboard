@@ -25,12 +25,17 @@ export const reportsApi = baseApi.injectEndpoints({
       providesTags: ['reports'],
     }),
     getProfitLoss: build.query<ProfitLossData, ProfitLossArgs>({
-      queryFn: ({ year, month, branchId }) =>
+      queryFn: ({ year, month, branchId, product }) =>
         fromApi<ProfitLossData>(() =>
           unwrap(
             api.GET('/admin/reports/profit-loss', {
               params: {
-                query: { year, ...(month ? { month } : {}), ...(branchId ? { branchId } : {}) },
+                query: {
+                  year,
+                  ...(month ? { month } : {}),
+                  ...(branchId ? { branchId } : {}),
+                  ...(product ? { product } : {}),
+                },
               },
             }),
           ).then((r) => r.data as unknown as ProfitLossData),

@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Profit & Loss product filter (2026-11-02)
+
+- Product picker (All products or one) next to year, month and branch; every card, the month chart and table, the products table, branches and the Excel follow it.
+
 ## GDN report and ledger: pages, newest first, Excel links (2026-10-28)
 
 - GDN report: newest booking day first (Sr. keeps its number), 25 orders a page with an always-visible pager (print shows every order), smaller text, amounts without "Rs", first four columns left and the rest centred.
