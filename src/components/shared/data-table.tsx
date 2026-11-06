@@ -8,8 +8,6 @@ import {
 import {
   ArrowDown,
   ArrowUp,
-  ChevronLeft,
-  ChevronRight,
   ChevronsUpDown,
   Download,
   Search,
@@ -17,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { PageNumbers } from '@/components/shared/page-numbers';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -403,31 +402,7 @@ export function DataTable<T>({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-8"
-                onClick={() => list.setPage(meta.page - 1)}
-                disabled={meta.page <= 1}
-                aria-label="Previous page"
-              >
-                <ChevronLeft />
-              </Button>
-              <span className="min-w-16 text-center text-muted-foreground tabular-nums">
-                {meta.page} / {Math.max(1, meta.totalPages)}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-8"
-                onClick={() => list.setPage(meta.page + 1)}
-                disabled={meta.page >= meta.totalPages}
-                aria-label="Next page"
-              >
-                <ChevronRight />
-              </Button>
-            </div>
+            <PageNumbers page={meta.page} totalPages={meta.totalPages} onChange={list.setPage} />
           </div>
         </div>
       ) : null}

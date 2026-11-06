@@ -15,6 +15,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
+import { PageNumbers } from '@/components/shared/page-numbers';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -48,18 +49,25 @@ const STATE: Record<AppointmentMoneyState, { label: string; tone: Tone }> = {
 };
 
 const KIND: Record<AppointmentMoneyKind, { label: string; tone: Tone }> = {
-  booked: { label: 'Booked', tone: 'neutral' },
+  booked: { label: 'Booking', tone: 'neutral' },
   advance: { label: 'Advance', tone: 'info' },
-  balance: { label: 'Balance', tone: 'success' },
+  balance: { label: 'Collection', tone: 'success' },
   refund: { label: 'Refund', tone: 'danger' },
 };
+
+const entryOf = (r: AppointmentMoneyEntry) =>
+  r.kind === 'balance'
+    ? r.date > r.appointment.visitDate
+      ? { label: 'Dues received', tone: 'success' as Tone }
+      : { label: 'Visit payment', tone: 'success' as Tone }
+    : KIND[r.kind];
 
 type Tab = 'all' | AppointmentMoneyKind;
 const TABS: { key: Tab; label: string }[] = [
   { key: 'all', label: 'All entries' },
-  { key: 'booked', label: 'Booked' },
+  { key: 'booked', label: 'Bookings' },
   { key: 'advance', label: 'Advance' },
-  { key: 'balance', label: 'Balance' },
+  { key: 'balance', label: 'Collections' },
   { key: 'refund', label: 'Refunds' },
 ];
 
@@ -160,7 +168,7 @@ function exportRows(
       r.patient.phone,
       r.doctor,
       ...(allBranches ? [r.branch.name] : []),
-      KIND[r.kind].label,
+      entryOf(r).label,
       r.kind === 'refund' ? -Number(r.amount) : Number(r.amount),
       r.method,
       r.account,
@@ -171,7 +179,7 @@ function exportRows(
     ]),
     [],
     ['Advance', Number(data.summary.advanceAmount)],
-    ['Balance', Number(data.summary.balanceAmount)],
+    ['Collections (visit payments + dues)', Number(data.summary.balanceAmount)],
     ['Refunds', -Number(data.summary.refundAmount)],
     ['Net received', Number(data.summary.net)],
   ];
@@ -229,7 +237,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, advance, balance and refund as its own entry. Entries of the same appointment share a colour. An advance is paid before the visit day, a balance on or after it."
+        description="Every booking, advance, collection and refund as its own entry. Entries of the same appointment share a colour. Advance: paid before the visit day. Collection: paid on the visit day (visit payment) or after it (dues received) — the appointment sales of the period."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
@@ -349,9 +357,9 @@ export function AppointmentMoneyPage() {
               accent="bg-info-soft text-info-soft-foreground"
             />
             <Kpi
-              label="Balance"
+              label="Collections"
               value={formatMoney(data.summary.balanceAmount)}
-              hint={`${data.summary.balance} entr${data.summary.balance === 1 ? 'y' : 'ies'} · ${data.summary.fullyPaid} fully paid`}
+              hint={`Visit payments + dues received · ${data.summary.balance} entr${data.summary.balance === 1 ? 'y' : 'ies'} · no advance`}
               icon={Wallet}
               accent="bg-primary-soft text-primary-soft-foreground"
             />
@@ -365,7 +373,7 @@ export function AppointmentMoneyPage() {
             <Kpi
               label="Net received"
               value={formatMoney(data.summary.net)}
-              hint="Advance + balance − refunds"
+              hint="Advance + collections − refunds"
               icon={CheckCircle2}
               accent="bg-success-soft text-success-soft-foreground"
             />
@@ -476,7 +484,7 @@ export function AppointmentMoneyPage() {
                               ) : null}
                             </td>
                             <td className="px-3 py-2.5 text-center">
-                              <StatusBadge tone={KIND[r.kind].tone}>{KIND[r.kind].label}</StatusBadge>
+                              <StatusBadge tone={entryOf(r).tone}>{entryOf(r).label}</StatusBadge>
                             </td>
                             <td
                               className={cn(
@@ -520,8 +528,8 @@ export function AppointmentMoneyPage() {
                           {formatAmount(sumOf('advance') + sumOf('balance') - sumOf('refund'))}
                         </td>
                         <td colSpan={5} className="px-3 py-2 text-center font-normal text-muted-foreground">
-                          Advance {formatAmount(sumOf('advance'))} · Balance {formatAmount(sumOf('balance'))}{' '}
-                          · Refunds {formatAmount(sumOf('refund'))}
+                          Advance {formatAmount(sumOf('advance'))} · Collections{' '}
+                          {formatAmount(sumOf('balance'))} · Refunds {formatAmount(sumOf('refund'))}
                         </td>
                       </tr>
                     </tfoot>
@@ -533,31 +541,7 @@ export function AppointmentMoneyPage() {
                       {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, rows.length)} of{' '}
                       {rows.length}
                     </span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        aria-label="Previous page"
-                        disabled={current <= 1}
-                        onClick={() => setPage(current - 1)}
-                      >
-                        <ChevronLeft />
-                      </Button>
-                      <span className="px-2 tabular-nums">
-                        Page {current} of {pages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        aria-label="Next page"
-                        disabled={current >= pages}
-                        onClick={() => setPage(current + 1)}
-                      >
-                        <ChevronRight />
-                      </Button>
-                    </div>
+                    <PageNumbers page={current} totalPages={pages} onChange={setPage} />
                   </div>
                 ) : null}
               </>

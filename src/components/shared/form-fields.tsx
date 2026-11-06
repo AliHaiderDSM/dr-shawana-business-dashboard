@@ -48,8 +48,10 @@ export function TextField<T extends FieldValues>({
   autoComplete,
   inputMode,
   list,
+  max,
 }: BaseFieldProps<T> & {
   type?: string;
+  max?: string;
   placeholder?: string;
   autoComplete?: string;
   inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
@@ -72,6 +74,7 @@ export function TextField<T extends FieldValues>({
                 autoComplete={autoComplete}
                 inputMode={inputMode}
                 list={list}
+                max={max}
                 disabled={disabled}
                 className={secret ? 'pr-10' : undefined}
                 {...field}

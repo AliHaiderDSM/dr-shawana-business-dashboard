@@ -14,7 +14,10 @@ import { METHOD_LABELS } from './constants';
 export const paymentSchema = z.object({
   method: z.enum(['cash', 'online']),
   amount: moneyString('Amount').refine((v) => Number(v) > 0, 'Amount must be more than zero'),
-  date: z.string().min(1, 'Choose a date'),
+  date: z
+    .string()
+    .min(1, 'Choose a date')
+    .refine((d) => d <= isoDate(), 'The payment date cannot be in the future'),
   accountSheetId: z.string().min(1, 'Choose the receiving account'),
   senderBank: optionalText(150),
   senderAccountTitle: optionalText(150),
@@ -120,7 +123,14 @@ export function PaymentFields({
             hint: a.type === 'bank' ? (a.accountCode ?? 'bank') : 'cash',
           }))}
         />
-        <TextField control={form.control} name={name('date')} label="Date" type="date" required />
+        <TextField
+          control={form.control}
+          name={name('date')}
+          label="Date"
+          type="date"
+          max={isoDate()}
+          required
+        />
       </FieldRow>
       {method === 'online' && selected?.type === 'bank' ? (
         <div className="flex items-start gap-3 rounded-lg border bg-muted/40 px-3 py-2.5 text-sm">

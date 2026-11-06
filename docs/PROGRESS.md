@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Numbered pagination, appointment ledger names, payment date limit (2026-11-06)
+
+- New PageNumbers (Previous, 1 2 3 … last pages, Next) used by DataTable, label batches, GDN report and appointment payments.
+- Appointment payments: entries are Booking, Advance, Visit payment (paid on the visit day), Dues received (paid after it) and Refund; the Balance tab and card are now Collections (visit payments + dues, no advance).
+- Payment forms (shared payment-fields) do not take a future date (max today and a schema check); TextField takes max.
+
 ## GDN report by day, month or date range (2026-11-06)
 
 - GDN report has a Day / Month / Date range toggle (?mode=month&month=YYYY-MM or ?mode=range&from&to); headings, cards, Excel title and file name follow the period.

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ErrorState } from '@/components/shared/error-state';
 import { FilterSelect } from '@/components/shared/list-filters';
+import { PageNumbers } from '@/components/shared/page-numbers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -368,28 +369,7 @@ export function LabelBatchesView() {
           <span>
             Page {meta.page} of {meta.totalPages} · {meta.total} batches
           </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-8"
-              disabled={meta.page <= 1}
-              onClick={() => list.setPage(meta.page - 1)}
-              aria-label="Previous page"
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-8"
-              disabled={meta.page >= meta.totalPages}
-              onClick={() => list.setPage(meta.page + 1)}
-              aria-label="Next page"
-            >
-              <ChevronRight />
-            </Button>
-          </div>
+          <PageNumbers page={meta.page} totalPages={meta.totalPages} onChange={list.setPage} />
         </div>
       ) : null}
     </div>

@@ -17,6 +17,7 @@ import {
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/shared/empty-state';
+import { PageNumbers } from '@/components/shared/page-numbers';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -829,31 +830,7 @@ export function GdnReportPage() {
                     {(pageNow - 1) * PAGE_SIZE + 1}–{Math.min(pageNow * PAGE_SIZE, rows.length)} of{' '}
                     {rows.length}
                   </span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="size-8"
-                      aria-label="Previous page"
-                      disabled={pageNow <= 1}
-                      onClick={() => setPage(pageNow - 1)}
-                    >
-                      <ChevronLeft />
-                    </Button>
-                    <span className="px-2 tabular-nums">
-                      Page {pageNow} of {pages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="size-8"
-                      aria-label="Next page"
-                      disabled={pageNow >= pages}
-                      onClick={() => setPage(pageNow + 1)}
-                    >
-                      <ChevronRight />
-                    </Button>
-                  </div>
+                  <PageNumbers page={pageNow} totalPages={pages} onChange={setPage} />
                 </div>
               ) : null}
             </section>
