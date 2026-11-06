@@ -12,6 +12,16 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment payments: two entry types, no Sales tab (2026-11-06)
+
+- Entry column shows only Booking (fee unpaid or partly paid) or Completed (doctor completed and fee fully paid), plus Refund; the payment state stays in Status.
+- Sales tab removed; the active tab is filled with the primary colour.
+
+## Appointment payments: Sales only when fully paid, Dues received and Completed tabs (2026-11-06)
+
+- A visit payment or dues payment that leaves the fee unpaid now counts as Advance (tab, card, footer, Excel); Sales holds only the payment that clears the fee.
+- New tabs: Dues received (payments after the visit day) and Completed appointments (doctor completed, fee cleared by that entry).
+
 ## No default periods, cash accounts only for cash (2026-11-06)
 
 - Payment fields list only cash sheets for Cash and only bank sheets for Online (no fallback to every account); a note shows when none exists.

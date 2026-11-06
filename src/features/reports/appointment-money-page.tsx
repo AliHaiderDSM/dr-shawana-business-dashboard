@@ -31,7 +31,6 @@ import { downloadXlsx } from '@/lib/xlsx';
 import {
   useGetAppointmentMoneyQuery,
   type AppointmentMoneyEntry,
-  type AppointmentMoneyKind,
   type AppointmentMoneyLedger,
   type AppointmentMoneyState,
 } from '@redux/features/reports';
@@ -48,28 +47,48 @@ const STATE: Record<AppointmentMoneyState, { label: string; tone: Tone }> = {
   refunded: { label: 'Refunded', tone: 'info' },
 };
 
-const KIND: Record<AppointmentMoneyKind, { label: string; tone: Tone }> = {
-  booked: { label: 'Booking', tone: 'neutral' },
-  advance: { label: 'Advance', tone: 'info' },
-  balance: { label: 'Sale', tone: 'success' },
-  refund: { label: 'Refund', tone: 'danger' },
-};
+const isCompleted = (r: AppointmentMoneyEntry) =>
+  r.kind !== 'refund' && r.appointment.status === 'completed' && r.stateAfter === 'paid';
 
-const entryOf = (r: AppointmentMoneyEntry) =>
+const entryOf = (r: AppointmentMoneyEntry): { label: string; tone: Tone } =>
+  r.kind === 'refund'
+    ? { label: 'Refund', tone: 'danger' }
+    : isCompleted(r)
+      ? { label: 'Completed', tone: 'success' }
+      : { label: 'Booking', tone: 'neutral' };
+
+type Group = 'booked' | 'advance' | 'sale' | 'refund';
+const groupOf = (r: AppointmentMoneyEntry): Group =>
   r.kind === 'balance'
-    ? r.date > r.appointment.visitDate
-      ? { label: 'Dues received', tone: 'success' as Tone }
-      : { label: 'Visit payment', tone: 'success' as Tone }
-    : KIND[r.kind];
+    ? r.stateAfter === 'paid'
+      ? 'sale'
+      : 'advance'
+    : r.kind === 'booked'
+      ? 'booked'
+      : r.kind;
 
-type Tab = 'all' | AppointmentMoneyKind;
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'all', label: 'All entries' },
-  { key: 'booked', label: 'Bookings' },
-  { key: 'advance', label: 'Advance' },
-  { key: 'balance', label: 'Sales' },
-  { key: 'refund', label: 'Refunds' },
+type Tab = 'all' | Group | 'dues' | 'completed';
+const TABS: { key: Tab; label: string; match: (r: AppointmentMoneyEntry) => boolean }[] = [
+  { key: 'all', label: 'All entries', match: () => true },
+  { key: 'booked', label: 'Bookings', match: (r) => r.kind === 'booked' },
+  { key: 'advance', label: 'Advance', match: (r) => groupOf(r) === 'advance' },
+  {
+    key: 'dues',
+    label: 'Dues received',
+    match: (r) => r.kind === 'balance' && r.date > r.appointment.visitDate,
+  },
+  {
+    key: 'completed',
+    label: 'Completed appointments',
+    match: isCompleted,
+  },
+  { key: 'refund', label: 'Refunds', match: (r) => r.kind === 'refund' },
 ];
+const matchOf = (tab: Tab) => TABS.find((t) => t.key === tab)!.match;
+const totalOf = (rows: AppointmentMoneyEntry[], group: Group) =>
+  rows.filter((r) => groupOf(r) === group).reduce((total, r) => total + Number(r.amount), 0);
+const countOf = (rows: AppointmentMoneyEntry[], group: Group) =>
+  rows.filter((r) => groupOf(r) === group).length;
 
 const shift = (date: string, days: number) => isoDate(addDays(parseISO(date), days));
 const monthEnd = (month: string) => {
@@ -178,8 +197,8 @@ function exportRows(
       STATE[r.stateAfter].label,
     ]),
     [],
-    ['Advance', Number(data.summary.advanceAmount)],
-    ['Sales (visit payments + dues received)', Number(data.summary.balanceAmount)],
+    ['Advance (not yet fully paid)', totalOf(data.rows, 'advance')],
+    ['Sales (payments that cleared the fee)', totalOf(data.rows, 'sale')],
     ['Refunds', -Number(data.summary.refundAmount)],
     ['Net received', Number(data.summary.net)],
   ];
@@ -230,12 +249,13 @@ export function AppointmentMoneyPage() {
       : view === 'day'
         ? `Appointment payments · ${formatDate(date, 'EEEE, dd MMMM yyyy')}`
         : `Appointment payments · ${formatDate(`${month}-01`, 'MMMM yyyy')}`;
-  const rows = (data?.rows ?? []).filter((r) => tab === 'all' || r.kind === tab).reverse();
+  const rows = (data?.rows ?? []).filter(matchOf(tab)).reverse();
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
   const onPage = (index: number) => Math.floor(index / PAGE_SIZE) + 1 === current;
-  const sumOf = (kind: AppointmentMoneyKind) =>
-    rows.filter((r) => r.kind === kind).reduce((total, r) => total + Number(r.amount), 0);
+  const sumOf = (group: Group) => totalOf(rows, group);
+  const advanceCount = countOf(data?.rows ?? [], 'advance');
+  const saleCount = countOf(data?.rows ?? [], 'sale');
 
   return (
     <div className="space-y-6 [-webkit-print-color-adjust:exact] [print-color-adjust:exact] print:space-y-3">
@@ -243,7 +263,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, advance, sale and refund as its own entry. Entries of the same appointment share a colour. Advance: paid before the visit day. Sales: money of the period's visits, paid on the visit day (visit payment) or after it (dues received)."
+        description="Every booking, payment and refund as its own entry. Entries of the same appointment share a colour. Entry: Booking while the fee is unpaid or partly paid, Completed once the doctor completed the visit and the fee is fully paid. Status shows the payment state after that entry."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
@@ -357,15 +377,15 @@ export function AppointmentMoneyPage() {
             />
             <Kpi
               label="Advance"
-              value={formatMoney(data.summary.advanceAmount)}
-              hint={`${data.summary.advance} entr${data.summary.advance === 1 ? 'y' : 'ies'} before the visit day`}
+              value={formatMoney(totalOf(data.rows, 'advance'))}
+              hint={`${advanceCount} entr${advanceCount === 1 ? 'y' : 'ies'} · fee not fully paid yet`}
               icon={HandCoins}
               accent="bg-info-soft text-info-soft-foreground"
             />
             <Kpi
-              label="Sales"
-              value={formatMoney(data.summary.balanceAmount)}
-              hint={`Visit payments + dues received · ${data.summary.balance} entr${data.summary.balance === 1 ? 'y' : 'ies'} · no advance`}
+              label="Received"
+              value={formatMoney(totalOf(data.rows, 'sale'))}
+              hint={`${saleCount} entr${saleCount === 1 ? 'y' : 'ies'} · fee fully paid on or after the visit`}
               icon={Wallet}
               accent="bg-primary-soft text-primary-soft-foreground"
             />
@@ -398,14 +418,12 @@ export function AppointmentMoneyPage() {
                     setPage(1);
                   }}
                   className={cn(
-                    'rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
-                    tab === t.key && 'bg-muted text-foreground',
+                    'rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground',
+                    tab === t.key &&
+                      'border-primary/30 bg-primary-soft font-semibold text-primary-soft-foreground hover:bg-primary-soft hover:text-primary-soft-foreground',
                   )}
                 >
-                  {t.label}{' '}
-                  <span className="tabular-nums">
-                    ({(data.rows ?? []).filter((r) => t.key === 'all' || r.kind === t.key).length})
-                  </span>
+                  {t.label} <span className="tabular-nums">({(data.rows ?? []).filter(t.match).length})</span>
                 </button>
               ))}
             </div>
@@ -539,10 +557,10 @@ export function AppointmentMoneyPage() {
                           {rows.length} entr{rows.length === 1 ? 'y' : 'ies'}
                         </td>
                         <td className="px-3 py-2 text-center whitespace-nowrap tabular-nums">
-                          {formatAmount(sumOf('advance') + sumOf('balance') - sumOf('refund'))}
+                          {formatAmount(sumOf('advance') + sumOf('sale') - sumOf('refund'))}
                         </td>
                         <td colSpan={5} className="px-3 py-2 text-center font-normal text-muted-foreground">
-                          Advance {formatAmount(sumOf('advance'))} · Sales {formatAmount(sumOf('balance'))} ·
+                          Advance {formatAmount(sumOf('advance'))} · Sales {formatAmount(sumOf('sale'))} ·
                           Refunds {formatAmount(sumOf('refund'))}
                         </td>
                       </tr>

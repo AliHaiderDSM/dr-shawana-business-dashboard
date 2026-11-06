@@ -167,7 +167,7 @@ export function ProfitLossPage() {
   const { isSuperAdmin } = useAuth();
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);
-  const [month, setMonth] = useState<number | null>(new Date().getMonth() + 1);
+  const [month, setMonth] = useState<number | null>(null);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [product, setProduct] = useState<string | null>(null);
   const branches = useBranchOptions(isSuperAdmin);
