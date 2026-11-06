@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Stock in without attachments, paste image, P&L month table (2026-11-06)
+
+- Stock In form and entry sheet no longer show Attachments; stock in is sent as JSON. Stock Out keeps attachments.
+- ImageUpload (product, bundle, doctor) has a Paste image button and takes Ctrl+V; clipboard code shared with FilePicker.
+- Profit & Loss: with a month chosen, the month table under the chart and the Excel show only that month; the chart still shows the whole year.
+
 ## Profit & Loss product filter (2026-11-02)
 
 - Product picker (All products or one) next to year, month and branch; every card, the month chart and table, the products table, branches and the Excel follow it.

@@ -468,7 +468,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
             : {}),
       })),
     };
-    void create({ body: body as never, files })
+    void create({ body: body as never, files: config.kind === 'out' ? files : [] })
       .unwrap()
       .then((rows) => {
         const labelled = rows.filter((r) => r.labels);
@@ -657,9 +657,11 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
           />
         </FormSection>
         <TextareaField control={form.control} name="note" label="Note" rows={2} />
-        <FormSection title="Attachments" description="Delivery notes or invoices, saved with every line.">
-          <FilePicker files={files} onChange={setFiles} />
-        </FormSection>
+        {config.kind === 'out' ? (
+          <FormSection title="Attachments" description="Delivery notes or invoices, saved with every line.">
+            <FilePicker files={files} onChange={setFiles} />
+          </FormSection>
+        ) : null}
       </FormSheet>
     </Form>
   );

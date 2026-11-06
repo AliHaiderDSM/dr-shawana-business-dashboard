@@ -117,7 +117,7 @@ function FigureCells({ row }: { row: ProfitFigures }) {
 
 const FIGURE_HEADERS = ['Revenue', 'Cost', 'Profit'];
 
-function exportRows(data: ProfitLossData, periodName: string, branchName: string) {
+function exportRows(data: ProfitLossData, periodName: string, branchName: string, month: number | null) {
   const figures = (r: ProfitFigures) => [Number(r.revenue), Number(r.cost), Number(r.profit)];
   return [
     [`Profit & loss · ${periodName} · ${branchName}`],
@@ -131,7 +131,9 @@ function exportRows(data: ProfitLossData, periodName: string, branchName: string
     ['Not received yet', Number(data.summary.notReceived)],
     [],
     ['Month', ...FIGURE_HEADERS],
-    ...data.months.map((m) => [m.label, ...figures(m)]),
+    ...data.months
+      .filter((m) => !month || Number(m.month.slice(5)) === month)
+      .map((m) => [m.label, ...figures(m)]),
     [],
     [
       'Product',
@@ -253,7 +255,7 @@ export function ProfitLossPage() {
               onClick={() =>
                 data &&
                 downloadXlsx(
-                  exportRows(data, periodName, scopeName),
+                  exportRows(data, periodName, scopeName, month),
                   `profit-loss-${year}${month ? `-${String(month).padStart(2, '0')}` : ''}`,
                   'Profit & loss',
                 )
@@ -395,18 +397,16 @@ export function ProfitLossPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.months.map((m, i) => (
-                    <tr
-                      key={m.month}
-                      className={cn(
-                        'border-b last:border-b-0',
-                        month === i + 1 && 'bg-primary-soft/50 font-medium',
-                      )}
-                    >
-                      <td className="px-5 py-2 print:px-1 print:py-1">{MONTHS[i]}</td>
-                      <FigureCells row={m} />
-                    </tr>
-                  ))}
+                  {data.months
+                    .filter((m) => !month || Number(m.month.slice(5)) === month)
+                    .map((m) => (
+                      <tr key={m.month} className="border-b last:border-b-0">
+                        <td className="px-5 py-2 print:px-1 print:py-1">
+                          {MONTHS[Number(m.month.slice(5)) - 1]}
+                        </td>
+                        <FigureCells row={m} />
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

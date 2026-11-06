@@ -9,6 +9,56 @@ const MB = 1024 * 1024;
 export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const DOCUMENT_TYPES = [...IMAGE_TYPES, 'application/pdf'];
 
+const EXTENSIONS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+let pasted = 0;
+
+function named(file: File) {
+  pasted += 1;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+  return new File([file], `pasted-${stamp}-${pasted}.${EXTENSIONS[file.type] ?? 'png'}`, { type: file.type });
+}
+
+async function clipboardImages(): Promise<File[] | null> {
+  if (!navigator.clipboard?.read) {
+    toast.error('Press Ctrl+V to paste the copied image');
+    return null;
+  }
+  try {
+    const items = await navigator.clipboard.read();
+    const images: File[] = [];
+    for (const item of items) {
+      const type = item.types.find((t) => t.startsWith('image/'));
+      if (type) {
+        const blob = await item.getType(type);
+        images.push(named(new File([blob], 'image', { type: blob.type || type })));
+      }
+    }
+    if (images.length === 0) toast.error('No image in the clipboard. Copy an image first.');
+    return images.length ? images : null;
+  } catch {
+    toast.error('Clipboard access was blocked. Press Ctrl+V to paste the image.');
+    return null;
+  }
+}
+
+function usePastedImages(enabled: boolean, onImages: (files: File[]) => void) {
+  const latest = useRef({ enabled, onImages });
+  useEffect(() => {
+    latest.current = { enabled, onImages };
+  });
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      if (!latest.current.enabled) return;
+      const images = Array.from(event.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
+      if (images.length === 0) return;
+      event.preventDefault();
+      latest.current.onImages(images.map(named));
+    }
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, []);
+}
+
 function validate(file: File, accept: string[], maxBytes: number) {
   if (!accept.includes(file.type)) return `${file.name}: this file type is not allowed`;
   if (file.size > maxBytes) return `${file.name}: larger than ${Math.round(maxBytes / MB)} MB`;
@@ -56,6 +106,8 @@ export function ImageUpload({ value, onUpload, disabled, label = 'Image', classN
       setBusy(false);
     }
   }
+
+  usePastedImages(!disabled && !busy, (images) => void handle(images[0]));
 
   const shown = preview ?? value;
 
@@ -110,21 +162,23 @@ export function ImageUpload({ value, onUpload, disabled, label = 'Image', classN
           <Upload />
           {shown ? 'Replace' : 'Upload'} {label.toLowerCase()}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="ml-2"
+          disabled={disabled || busy}
+          onClick={() => void clipboardImages().then((images) => images && handle(images[0]))}
+        >
+          <ClipboardPaste />
+          Paste image
+        </Button>
         <p className="text-xs text-muted-foreground">
-          JPG, PNG or WebP, up to 5 MB. You can also drop a file.
+          JPG, PNG or WebP, up to 5 MB. You can also drop a file or press Ctrl+V.
         </p>
       </div>
     </div>
   );
-}
-
-const EXTENSIONS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
-let pasted = 0;
-
-function named(file: File) {
-  pasted += 1;
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
-  return new File([file], `pasted-${stamp}-${pasted}.${EXTENSIONS[file.type] ?? 'png'}`, { type: file.type });
 }
 
 interface FilePickerProps {
@@ -147,7 +201,6 @@ export function FilePicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const full = disabled || files.length >= maxFiles;
-  const latest = useRef({ files, full, add });
 
   function add(list: FileList | File[] | null) {
     if (!list) return;
@@ -160,42 +213,11 @@ export function FilePicker({
     onChange(next);
   }
 
-  useEffect(() => {
-    latest.current = { files, full, add };
-  });
-
-  useEffect(() => {
-    function onPaste(event: ClipboardEvent) {
-      if (latest.current.full) return;
-      const images = Array.from(event.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
-      if (images.length === 0) return;
-      event.preventDefault();
-      latest.current.add(images.map(named));
-    }
-    window.addEventListener('paste', onPaste);
-    return () => window.removeEventListener('paste', onPaste);
-  }, []);
+  usePastedImages(!full, add);
 
   async function pasteFromClipboard() {
-    if (!navigator.clipboard?.read) {
-      toast.error('Press Ctrl+V to paste the copied image');
-      return;
-    }
-    try {
-      const items = await navigator.clipboard.read();
-      const images: File[] = [];
-      for (const item of items) {
-        const type = item.types.find((t) => t.startsWith('image/'));
-        if (type) {
-          const blob = await item.getType(type);
-          images.push(named(new File([blob], 'image', { type: blob.type || type })));
-        }
-      }
-      if (images.length === 0) toast.error('No image in the clipboard. Copy an image first.');
-      else add(images);
-    } catch {
-      toast.error('Clipboard access was blocked. Press Ctrl+V to paste the image.');
-    }
+    const images = await clipboardImages();
+    if (images) add(images);
   }
 
   return (

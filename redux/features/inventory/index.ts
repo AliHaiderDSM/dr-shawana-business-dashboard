@@ -146,8 +146,10 @@ export const inventoryApi = baseApi.injectEndpoints({
       { kind: StockKind; body: StockDocumentInput; files: File[] }
     >({
       queryFn: ({ kind, body, files }) =>
-        toApi<StockDocument[]>(() =>
-          uploadForm<StockDocument[]>(STOCK_PATHS[kind], jsonFormData(body, { files })),
+        toApi<StockDocument[]>(async () =>
+          kind === 'in'
+            ? ((await unwrap(api.POST('/branch/stock-ins', { body: body as never }))).data as StockDocument[])
+            : uploadForm<StockDocument[]>(STOCK_PATHS[kind], jsonFormData(body, { files })),
         ),
       invalidatesTags: (_r, error) => (error ? [] : ['stock', 'products']),
     }),
@@ -186,27 +188,24 @@ export const inventoryApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, error) => (error ? [] : ['stock', 'products']),
     }),
     removeStockAttachment: build.mutation<unknown, { kind: StockKind; id: string; attachmentId: string }>({
-      queryFn: ({ kind, id, attachmentId }) =>
+      queryFn: ({ id, attachmentId }) =>
         toApi<unknown>(() => {
           const init = { params: { path: { id, attachmentId } } };
-          return kind === 'in'
-            ? unwrap(api.DELETE('/branch/stock-ins/{id}/attachments/{attachmentId}', init))
-            : unwrap(api.DELETE('/branch/stock-outs/{id}/attachments/{attachmentId}', init));
+          return unwrap(api.DELETE('/branch/stock-outs/{id}/attachments/{attachmentId}', init));
         }),
       invalidatesTags: (_r, error) => (error ? [] : ['stock', 'products']),
     }),
     getStockAttachmentUrl: build.query<
-      InventoryGetResponse<'/branch/stock-ins/{id}/attachments/{attachmentId}/url'>['data'],
+      InventoryGetResponse<'/branch/stock-outs/{id}/attachments/{attachmentId}/url'>['data'],
       { kind: StockKind; id: string; attachmentId: string }
     >({
-      queryFn: ({ kind, id, attachmentId }) =>
-        fromApi<InventoryGetResponse<'/branch/stock-ins/{id}/attachments/{attachmentId}/url'>['data']>(
+      queryFn: ({ id, attachmentId }) =>
+        fromApi<InventoryGetResponse<'/branch/stock-outs/{id}/attachments/{attachmentId}/url'>['data']>(
           async () => {
             const init = { params: { path: { id, attachmentId } } };
-            const result =
-              kind === 'in'
-                ? await unwrap(api.GET('/branch/stock-ins/{id}/attachments/{attachmentId}/url', init))
-                : await unwrap(api.GET('/branch/stock-outs/{id}/attachments/{attachmentId}/url', init));
+            const result = await unwrap(
+              api.GET('/branch/stock-outs/{id}/attachments/{attachmentId}/url', init),
+            );
             return result.data;
           },
         ),

@@ -269,50 +269,52 @@ export function StockEntrySheet({ config, entry, open, onOpenChange }: StockEntr
             date, supplier or note.
           </p>
         ) : null}
-        <FormSection title="Attachments">
-          <AttachmentList
-            files={attachments}
-            emptyText="No attachments yet."
-            getUrl={(file) => stockAttachmentUrl(config.kind, entry.id, file.id)}
-            onRemove={
-              can('stock.update')
-                ? (file) =>
-                    removeFile({ id: entry.id, attachmentId: file.id })
-                      .unwrap()
-                      .then(() => {
-                        setAttachments((list) => list.filter((a) => a.id !== file.id));
-                        toast.success('Attachment removed');
-                      })
-                : undefined
-            }
-          />
-          {can('stock.update') ? (
-            <div className="space-y-2">
-              <FilePicker files={files} onChange={setFiles} />
-              {files.length > 0 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={addFilesState.isLoading}
-                  onClick={() =>
-                    addFiles({ id: entry.id, files })
-                      .unwrap()
-                      .then((updated) => {
-                        setAttachments(updated.attachments);
-                        setFiles([]);
-                        toast.success('Attachments uploaded');
-                      })
-                      .catch(toastError)
-                  }
-                >
-                  <Upload />
-                  Upload {files.length} file{files.length > 1 ? 's' : ''}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-        </FormSection>
+        {config.kind === 'out' ? (
+          <FormSection title="Attachments">
+            <AttachmentList
+              files={attachments}
+              emptyText="No attachments yet."
+              getUrl={(file) => stockAttachmentUrl(config.kind, entry.id, file.id)}
+              onRemove={
+                can('stock.update')
+                  ? (file) =>
+                      removeFile({ id: entry.id, attachmentId: file.id })
+                        .unwrap()
+                        .then(() => {
+                          setAttachments((list) => list.filter((a) => a.id !== file.id));
+                          toast.success('Attachment removed');
+                        })
+                  : undefined
+              }
+            />
+            {can('stock.update') ? (
+              <div className="space-y-2">
+                <FilePicker files={files} onChange={setFiles} />
+                {files.length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={addFilesState.isLoading}
+                    onClick={() =>
+                      addFiles({ id: entry.id, files })
+                        .unwrap()
+                        .then((updated) => {
+                          setAttachments(updated.attachments);
+                          setFiles([]);
+                          toast.success('Attachments uploaded');
+                        })
+                        .catch(toastError)
+                    }
+                  >
+                    <Upload />
+                    Upload {files.length} file{files.length > 1 ? 's' : ''}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </FormSection>
+        ) : null}
       </FormSheet>
     </Form>
   );
