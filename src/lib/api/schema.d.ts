@@ -30386,6 +30386,8 @@ export interface paths {
                     to?: string;
                     /** @description One branch; every branch when left out */
                     branchId?: string;
+                    /** @description true: every entry up to today, from and to are ignored */
+                    all?: "true" | "false";
                 };
                 header?: never;
                 path?: never;

@@ -277,19 +277,23 @@ export function StockDocumentsPage({ kind }: { kind: StockKind }) {
         <span className="line-clamp-1 max-w-56 text-muted-foreground">{row.original.note ?? '—'}</span>
       ),
     },
-    {
-      id: 'files',
-      header: 'Files',
-      accessorFn: (r) => r.attachments.length,
-      meta: { align: 'center' },
-      cell: ({ row }) =>
-        row.original.attachments.length ? (
-          <span className="inline-flex items-center gap-1 text-muted-foreground">
-            <Paperclip className="size-3.5" />
-            {row.original.attachments.length}
-          </span>
-        ) : null,
-    },
+    ...(config.kind === 'out'
+      ? [
+          {
+            id: 'files',
+            header: 'Files',
+            accessorFn: (r: StockDocument) => r.attachments.length,
+            meta: { align: 'center' as const },
+            cell: ({ row }: { row: { original: StockDocument } }) =>
+              row.original.attachments.length ? (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <Paperclip className="size-3.5" />
+                  {row.original.attachments.length}
+                </span>
+              ) : null,
+          },
+        ]
+      : []),
     {
       id: 'actions',
       header: '',

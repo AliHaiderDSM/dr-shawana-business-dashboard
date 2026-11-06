@@ -77,7 +77,7 @@ function SignedQuantity({
 
 const columnsFor = (
   quantities: typeof QUANTITY_COLUMNS,
-  range: { from: string; to: string },
+  range: { from?: string; to?: string },
 ): ColumnDef<ReportRow, unknown>[] => [
   {
     id: 'name',
@@ -89,7 +89,7 @@ const columnsFor = (
         <span className="font-medium">{row.original.name}</span>
       ) : (
         <Link
-          to={`/stock/${row.original.productId}?from=${range.from}&to=${range.to}`}
+          to={`/stock/${row.original.productId}${rangeQuery(range)}`}
           className="font-medium text-primary hover:underline"
           title="Full history of this product"
           onClick={(e) => e.stopPropagation()}
@@ -228,13 +228,28 @@ function BranchSplitSheet({
   );
 }
 
+function rangeQuery(range: { from?: string; to?: string }) {
+  const q = new URLSearchParams();
+  if (range.from) q.set('from', range.from);
+  if (range.to) q.set('to', range.to);
+  const text = q.toString();
+  return text ? `?${text}` : '';
+}
+
 export function InventoryReportPage() {
   const navigate = useNavigate();
   const list = useListState();
   const [split, setSplit] = useState<ReportRow | null>(null);
-  const today = new Date();
-  const from = list.filters.from ?? isoDate(startOfMonth(today));
-  const to = list.filters.to ?? isoDate(endOfMonth(today));
+  const from = list.filters.from;
+  const to = list.filters.to;
+  const period =
+    from && to
+      ? `${formatDate(from)} to ${formatDate(to)}`
+      : from
+        ? `from ${formatDate(from)}`
+        : to
+          ? `up to ${formatDate(to)}`
+          : 'for all dates';
   const report = useInventoryReport({
     from,
     to,
@@ -255,8 +270,8 @@ export function InventoryReportPage() {
   const bookedOnly = list.filters.booked === 'true';
   const baseColumns = targetBranch ? BRANCH_COLUMNS : perBranch ? SUPER_ADMIN_COLUMNS : QUANTITY_COLUMNS;
   const columns = columnsFor(bookedOnly ? [BOOKED_COLUMN, ...baseColumns] : baseColumns, { from, to });
-  const month = list.filters.from?.slice(0, 7) ?? isoDate(today).slice(0, 7);
-  const history = (productId: string) => void navigate(`/stock/${productId}?from=${from}&to=${to}`);
+  const month = list.filters.from?.slice(0, 7) ?? '';
+  const history = (productId: string) => void navigate(`/stock/${productId}${rangeQuery({ from, to })}`);
 
   const shown = (report.data?.rows ?? []).filter((r) => !bookedOnly || Number(r.booked) > 0);
   const totals = report.data
@@ -290,10 +305,10 @@ export function InventoryReportPage() {
         title="Inventory report"
         description={
           targetBranch
-            ? `Stock sent to ${targetBranch.name}, sold there and left there, ${formatDate(from)} to ${formatDate(to)}. Stock that goes out shows with a minus.`
+            ? `Stock sent to ${targetBranch.name}, sold there and left there, ${period}. Stock that goes out shows with a minus.`
             : perBranch
-              ? `What came in, what went to the branches, what they sold and got back, and what they hold now, ${formatDate(from)} to ${formatDate(to)}. Stock that goes out shows with a minus. Click a row to see each branch.`
-              : `Stock in, stock out, sales and total stock from ${formatDate(from)} to ${formatDate(to)}. Stock that goes out shows with a minus. Click a product for its full history.`
+              ? `What came in, what went to the branches, what they sold and got back, and what they hold now, ${period}. Stock that goes out shows with a minus. Click a row to see each branch.`
+              : `Stock in, stock out, sales and total stock, ${period}. Stock that goes out shows with a minus. Click a product for its full history.`
         }
         actions={<PrintButton />}
       />
@@ -311,7 +326,9 @@ export function InventoryReportPage() {
           else history(r.productId);
         }}
         rowClassName={(r) => (r.isTotal ? 'bg-muted/50 font-semibold hover:bg-muted/50' : undefined)}
-        exportFileName={`inventory-report-${from}-to-${to}`}
+        exportFileName={
+          from || to ? `inventory-report-${from ?? 'start'}-to-${to ?? 'today'}` : 'inventory-report-all'
+        }
         emptyTitle={bookedOnly ? 'No booked orders waiting' : 'No stock in this period'}
         toolbar={
           <>
@@ -326,7 +343,7 @@ export function InventoryReportPage() {
                 list.setFilters({ from: isoDate(startOfMonth(first)), to: isoDate(endOfMonth(first)) });
               }}
             />
-            <DateRangeFilter list={list} placeholder="This month" />
+            <DateRangeFilter list={list} placeholder="All dates" />
             <FilterSelect
               list={list}
               name="booked"

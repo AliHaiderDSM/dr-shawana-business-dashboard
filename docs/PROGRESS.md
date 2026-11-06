@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## No default periods, cash accounts only for cash (2026-11-06)
+
+- Payment fields list only cash sheets for Cash and only bank sheets for Online (no fallback to every account); a note shows when none exists.
+- Inventory report and generic reports start with all dates ("All dates" placeholder). Appointment payments opens on All (Day and Month still there); the Collections tab and card are now Sales; the method column shows the account only for online payments.
+- Stock In list has no Files column (Stock Out keeps it).
+
 ## Numbered pagination, appointment ledger names, payment date limit (2026-11-06)
 
 - New PageNumbers (Previous, 1 2 3 … last pages, Next) used by DataTable, label batches, GDN report and appointment payments.

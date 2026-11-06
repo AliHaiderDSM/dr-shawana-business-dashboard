@@ -305,7 +305,7 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
                     options={branchOptions}
                   />
                 ) : null}
-                <DateRangeFilter list={list} placeholder="This month" />
+                <DateRangeFilter list={list} placeholder="All dates" />
                 {report.filters.map((filter) =>
                   filter.kind === 'source' ? (
                     <SourceFilter key={filter.key} list={list} filter={filter} branchId={sourceBranch} />
@@ -368,7 +368,7 @@ export function ReportPrint() {
         const rows = rowsWithTotals(d);
         const period = query.from
           ? `${formatDate(query.from)} – ${formatDate(query.to ?? query.from)}`
-          : 'This month';
+          : 'All dates';
         return (
           <div className="space-y-5 text-xs">
             <Letterhead title={d.title} subtitle={period} />

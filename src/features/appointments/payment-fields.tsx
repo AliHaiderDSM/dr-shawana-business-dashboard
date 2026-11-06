@@ -86,8 +86,7 @@ export function PaymentFields({
   const method = useWatch({ control: form.control, name: name('method') }) as PaymentValues['method'];
   const accountSheetId = useWatch({ control: form.control, name: name('accountSheetId') }) as string;
   const wanted = method === 'online' ? 'bank' : 'cash';
-  const matching = accounts.filter((a) => a.type === wanted);
-  const choices = matching.length ? matching : accounts;
+  const choices = accounts.filter((a) => a.type === wanted);
   const selected = accounts.find((a) => a.id === accountSheetId);
   const accountField = name('accountSheetId');
   const onlyChoice = choices.length === 1 ? choices[0]?.id : undefined;
@@ -116,7 +115,15 @@ export function PaymentFields({
           name={name('accountSheetId')}
           label={method === 'online' ? 'Received in bank' : 'Received in'}
           required
-          placeholder={method === 'online' ? 'Choose bank' : 'Choose account'}
+          placeholder={
+            choices.length
+              ? method === 'online'
+                ? 'Choose bank'
+                : 'Choose cash account'
+              : method === 'online'
+                ? 'No bank account yet'
+                : 'No cash account yet'
+          }
           options={choices.map((a) => ({
             value: a.id,
             label: a.type === 'bank' && a.bankName ? `${a.bankName} · ${a.accountName}` : a.accountName,
@@ -151,9 +158,11 @@ export function PaymentFields({
           </dl>
         </div>
       ) : null}
-      {method === 'online' && matching.length === 0 ? (
+      {choices.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          No bank account yet. Add one under Bank &amp; Cash Accounts to pick it here.
+          {method === 'online'
+            ? 'No bank account yet. Add one under Bank & Cash Accounts to pick it here.'
+            : 'No cash account yet. Add one under Bank & Cash Accounts to pick it here.'}
         </p>
       ) : null}
       {method === 'online' ? (

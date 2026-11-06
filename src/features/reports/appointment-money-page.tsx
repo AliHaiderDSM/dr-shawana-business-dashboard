@@ -51,7 +51,7 @@ const STATE: Record<AppointmentMoneyState, { label: string; tone: Tone }> = {
 const KIND: Record<AppointmentMoneyKind, { label: string; tone: Tone }> = {
   booked: { label: 'Booking', tone: 'neutral' },
   advance: { label: 'Advance', tone: 'info' },
-  balance: { label: 'Collection', tone: 'success' },
+  balance: { label: 'Sale', tone: 'success' },
   refund: { label: 'Refund', tone: 'danger' },
 };
 
@@ -67,7 +67,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'all', label: 'All entries' },
   { key: 'booked', label: 'Bookings' },
   { key: 'advance', label: 'Advance' },
-  { key: 'balance', label: 'Collections' },
+  { key: 'balance', label: 'Sales' },
   { key: 'refund', label: 'Refunds' },
 ];
 
@@ -179,7 +179,7 @@ function exportRows(
     ]),
     [],
     ['Advance', Number(data.summary.advanceAmount)],
-    ['Collections (visit payments + dues)', Number(data.summary.balanceAmount)],
+    ['Sales (visit payments + dues received)', Number(data.summary.balanceAmount)],
     ['Refunds', -Number(data.summary.refundAmount)],
     ['Net received', Number(data.summary.net)],
   ];
@@ -191,13 +191,17 @@ export function AppointmentMoneyPage() {
   const branches = useBranchOptions(isSuperAdmin);
   const selling = (branches.data ?? []).filter((b) => b.kind === 'branch');
   const today = isoDate();
-  const view = params.get('view') === 'month' ? 'month' : 'day';
+  const viewParam = params.get('view');
+  const view = viewParam === 'month' || viewParam === 'day' ? viewParam : 'all';
   const date = params.get('date') ?? today;
   const month = params.get('month') ?? today.slice(0, 7);
   const branchId = params.get('branch');
   const from = view === 'day' ? date : `${month}-01`;
   const to = view === 'day' ? date : monthEnd(month);
-  const report = useGetAppointmentMoneyQuery({ from, to, branchId }, { skip: !isSuperAdmin });
+  const report = useGetAppointmentMoneyQuery(
+    view === 'all' ? { all: 'true', branchId } : { from, to, branchId },
+    { skip: !isSuperAdmin },
+  );
   const [tab, setTab] = useState<Tab>('all');
   const [page, setPage] = useState(1);
 
@@ -221,9 +225,11 @@ export function AppointmentMoneyPage() {
   const data = report.data;
   const allBranches = branchId === null;
   const title =
-    view === 'day'
-      ? `Appointment payments · ${formatDate(date, 'EEEE, dd MMMM yyyy')}`
-      : `Appointment payments · ${formatDate(`${month}-01`, 'MMMM yyyy')}`;
+    view === 'all'
+      ? 'Appointment payments · All dates'
+      : view === 'day'
+        ? `Appointment payments · ${formatDate(date, 'EEEE, dd MMMM yyyy')}`
+        : `Appointment payments · ${formatDate(`${month}-01`, 'MMMM yyyy')}`;
   const rows = (data?.rows ?? []).filter((r) => tab === 'all' || r.kind === tab).reverse();
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
@@ -237,23 +243,23 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, advance, collection and refund as its own entry. Entries of the same appointment share a colour. Advance: paid before the visit day. Collection: paid on the visit day (visit payment) or after it (dues received) — the appointment sales of the period."
+        description="Every booking, advance, sale and refund as its own entry. Entries of the same appointment share a colour. Advance: paid before the visit day. Sales: money of the period's visits, paid on the visit day (visit payment) or after it (dues received)."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
           type="single"
           variant="outline"
           value={view}
-          onValueChange={(v) => v && set({ view: v === 'day' ? null : v })}
+          onValueChange={(v) => v && set({ view: v === 'all' ? null : v })}
           aria-label="Report view"
         >
-          {(['day', 'month'] as const).map((key) => (
+          {(['all', 'day', 'month'] as const).map((key) => (
             <ToggleGroupItem
               key={key}
               value={key}
               className="h-9 px-4 data-[state=on]:border-primary data-[state=on]:bg-primary-soft data-[state=on]:text-primary-soft-foreground"
             >
-              {key === 'day' ? 'Day' : 'Month'}
+              {key === 'all' ? 'All' : key === 'day' ? 'Day' : 'Month'}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -300,7 +306,7 @@ export function AppointmentMoneyPage() {
               <ChevronRight />
             </Button>
           </div>
-        ) : (
+        ) : view === 'month' ? (
           <Input
             type="month"
             className="w-44"
@@ -309,7 +315,7 @@ export function AppointmentMoneyPage() {
             onChange={(e) => e.target.value && set({ month: e.target.value })}
             aria-label="Report month"
           />
-        )}
+        ) : null}
         <div className="ml-auto flex gap-2">
           <Button
             variant="outline"
@@ -318,7 +324,7 @@ export function AppointmentMoneyPage() {
               data &&
               downloadXlsx(
                 exportRows(data, rows, title, allBranches),
-                `appointment-payments-${from}`,
+                view === 'all' ? 'appointment-payments-all' : `appointment-payments-${from}`,
                 'Payments',
               )
             }
@@ -357,7 +363,7 @@ export function AppointmentMoneyPage() {
               accent="bg-info-soft text-info-soft-foreground"
             />
             <Kpi
-              label="Collections"
+              label="Sales"
               value={formatMoney(data.summary.balanceAmount)}
               hint={`Visit payments + dues received · ${data.summary.balance} entr${data.summary.balance === 1 ? 'y' : 'ies'} · no advance`}
               icon={Wallet}
@@ -373,7 +379,7 @@ export function AppointmentMoneyPage() {
             <Kpi
               label="Net received"
               value={formatMoney(data.summary.net)}
-              hint="Advance + collections − refunds"
+              hint="Advance + sales − refunds"
               icon={CheckCircle2}
               accent="bg-success-soft text-success-soft-foreground"
             />
@@ -415,13 +421,13 @@ export function AppointmentMoneyPage() {
                     <thead>
                       <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
                         <th className="py-2 pr-2 pl-5 text-left font-medium">Sr.</th>
-                        {view === 'month' ? <th className="px-3 py-2 text-left font-medium">Date</th> : null}
+                        {view !== 'day' ? <th className="px-3 py-2 text-left font-medium">Date</th> : null}
                         <th className="px-3 py-2 text-left font-medium">Appointment</th>
                         <th className="px-3 py-2 text-left font-medium">Patient</th>
                         <th
                           className={cn(
                             'px-3 py-2 font-medium',
-                            view === 'month' ? 'text-center' : 'text-left',
+                            view !== 'day' ? 'text-center' : 'text-left',
                           )}
                         >
                           Doctor{allBranches ? ' · branch' : ''}
@@ -453,9 +459,9 @@ export function AppointmentMoneyPage() {
                             >
                               {r.sr}
                             </td>
-                            {view === 'month' ? (
+                            {view !== 'day' ? (
                               <td className="px-3 py-2.5 whitespace-nowrap">
-                                {formatDate(r.date, 'EEE dd MMM')}
+                                {formatDate(r.date, view === 'all' ? 'dd MMM yyyy' : 'EEE dd MMM')}
                               </td>
                             ) : null}
                             <td className="px-3 py-2.5">
@@ -477,7 +483,7 @@ export function AppointmentMoneyPage() {
                               <div className="font-medium">{r.patient.name ?? '—'}</div>
                               <div className="text-muted-foreground tabular-nums">{r.patient.phone}</div>
                             </td>
-                            <td className={cn('px-3 py-2.5', view === 'month' && 'text-center')}>
+                            <td className={cn('px-3 py-2.5', view !== 'day' && 'text-center')}>
                               <div>{r.doctor ?? '—'}</div>
                               {allBranches ? (
                                 <div className="text-muted-foreground">{r.branch.name}</div>
@@ -497,8 +503,16 @@ export function AppointmentMoneyPage() {
                                 : `${r.kind === 'refund' ? '− ' : ''}${formatAmount(r.amount)}`}
                             </td>
                             <td className="px-3 py-2.5 text-center">
-                              {r.method ? <span className="capitalize">{r.method}</span> : '—'}
-                              {r.account ? <div className="text-muted-foreground">{r.account}</div> : null}
+                              {r.method ? (
+                                <span className="capitalize">
+                                  {r.method === 'online' ? 'Online' : 'Cash'}
+                                </span>
+                              ) : (
+                                '—'
+                              )}
+                              {r.method === 'online' && r.account ? (
+                                <div className="text-muted-foreground">{r.account}</div>
+                              ) : null}
                             </td>
                             <td className="px-3 py-2.5 text-center tabular-nums">
                               {amount(r.appointment.fee)}
@@ -521,15 +535,15 @@ export function AppointmentMoneyPage() {
                     </tbody>
                     <tfoot>
                       <tr className="border-t bg-muted/30 font-semibold">
-                        <td className="py-2 pr-3 pl-5" colSpan={view === 'month' ? 6 : 5}>
+                        <td className="py-2 pr-3 pl-5" colSpan={view !== 'day' ? 6 : 5}>
                           {rows.length} entr{rows.length === 1 ? 'y' : 'ies'}
                         </td>
                         <td className="px-3 py-2 text-center whitespace-nowrap tabular-nums">
                           {formatAmount(sumOf('advance') + sumOf('balance') - sumOf('refund'))}
                         </td>
                         <td colSpan={5} className="px-3 py-2 text-center font-normal text-muted-foreground">
-                          Advance {formatAmount(sumOf('advance'))} · Collections{' '}
-                          {formatAmount(sumOf('balance'))} · Refunds {formatAmount(sumOf('refund'))}
+                          Advance {formatAmount(sumOf('advance'))} · Sales {formatAmount(sumOf('balance'))} ·
+                          Refunds {formatAmount(sumOf('refund'))}
                         </td>
                       </tr>
                     </tfoot>

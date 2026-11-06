@@ -44,13 +44,13 @@ export const reportsApi = baseApi.injectEndpoints({
     }),
     getAppointmentMoney: build.query<
       AppointmentMoneyLedger,
-      { from: string; to: string; branchId: string | null }
+      { from?: string; to?: string; all?: 'true'; branchId: string | null }
     >({
-      queryFn: ({ from, to, branchId }) =>
+      queryFn: ({ from, to, all, branchId }) =>
         fromApi<AppointmentMoneyLedger>(() =>
           unwrap(
             api.GET('/admin/reports/appointment-payments', {
-              params: { query: { from, to, ...(branchId ? { branchId } : {}) } },
+              params: { query: { ...(all ? { all } : { from, to }), ...(branchId ? { branchId } : {}) } },
             }),
           ).then((r) => r.data as unknown as AppointmentMoneyLedger),
         ),
