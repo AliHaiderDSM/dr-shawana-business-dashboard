@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## GDN report by day, month or date range (2026-11-06)
+
+- GDN report has a Day / Month / Date range toggle (?mode=month&month=YYYY-MM or ?mode=range&from&to); headings, cards, Excel title and file name follow the period.
+
 ## Stock in without attachments, paste image, P&L month table (2026-11-06)
 
 - Stock In form and entry sheet no longer show Attachments; stock in is sent as JSON. Stock Out keeps attachments.

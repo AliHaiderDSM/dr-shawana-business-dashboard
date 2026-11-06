@@ -173,6 +173,8 @@ export interface GdnOrder {
 
 export interface GdnReport {
   date: string;
+  from: string;
+  to: string;
   type: GdnReportType;
   branch: { name: string; code: string; dispatch: boolean };
   summary: {

@@ -194,7 +194,10 @@ export const salesEndpointsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['sales'],
     }),
-    getGdnReport: build.query<GdnReport, { date: string; type: GdnReportType; branchId?: string }>({
+    getGdnReport: build.query<
+      GdnReport,
+      { from: string; to: string; type: GdnReportType; branchId?: string }
+    >({
       queryFn: (query) =>
         fromApi<GdnReport>(() =>
           unwrap(api.GET('/branch/sales/gdn-report', { params: { query } })).then(
@@ -257,9 +260,15 @@ export function useBill(id: string) {
   return useGetSaleBillQuery(id, { skip: !id });
 }
 
-export function useGdnReport(date: string, type: GdnReportType, branchId?: string, enabled = true) {
-  return useGetGdnReportQuery(branchId ? { date, type, branchId } : { date, type }, {
-    skip: !date || !enabled,
+export function useGdnReport(
+  from: string,
+  to: string,
+  type: GdnReportType,
+  branchId?: string,
+  enabled = true,
+) {
+  return useGetGdnReportQuery(branchId ? { from, to, type, branchId } : { from, to, type }, {
+    skip: !from || !to || !enabled,
   });
 }
 

@@ -1,4 +1,4 @@
-import { addDays, parseISO } from 'date-fns';
+import { addDays, addMonths, endOfMonth, parseISO } from 'date-fns';
 import {
   CalendarClock,
   CheckCircle2,
@@ -56,6 +56,9 @@ const PAYMENT: Record<string, { label: string; tone: Tone }> = {
 const STATUS_ORDER: Record<GdnOrderStatus, number> = { dispatched: 0, pending: 1, cancelled: 2 };
 
 const shift = (date: string, days: number) => isoDate(addDays(parseISO(date), days));
+const shiftMonth = (month: string, by: number) => isoDate(addMonths(parseISO(`${month}-01`), by)).slice(0, 7);
+type Mode = 'day' | 'month' | 'range';
+const MODES: Record<Mode, string> = { day: 'Day', month: 'Month', range: 'Date range' };
 
 const dayColor = (date: string) => {
   const day = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
@@ -147,6 +150,27 @@ export function GdnReportPage() {
   const [params, setParams] = useSearchParams();
   const today = isoDate();
   const date = params.get('date') ?? today;
+  const month = params.get('month') ?? today.slice(0, 7);
+  const rangeFrom = params.get('from');
+  const rangeTo = params.get('to');
+  const modeParam = params.get('mode');
+  const mode: Mode = modeParam === 'month' || modeParam === 'range' ? modeParam : 'day';
+  const monthEnd = isoDate(endOfMonth(parseISO(`${month}-01`)));
+  const from = mode === 'month' ? `${month}-01` : mode === 'range' ? (rangeFrom ?? today) : date;
+  const to =
+    mode === 'month'
+      ? monthEnd < today
+        ? monthEnd
+        : today
+      : mode === 'range'
+        ? (rangeTo ?? rangeFrom ?? today)
+        : date;
+  const single = from === to;
+  const periodName = single
+    ? formatDate(from, 'EEEE, dd MMMM yyyy')
+    : mode === 'month'
+      ? formatDate(from, 'MMMM yyyy')
+      : `${formatDate(from, 'dd MMM yyyy')} – ${formatDate(to, 'dd MMM yyyy')}`;
   const { isSuperAdmin, branchId: currentBranch } = useAuth();
   const branches = useBranchOptions(isSuperAdmin);
   const choices = (branches.data ?? []).filter((b) => b.kind !== 'warehouse');
@@ -161,7 +185,7 @@ export function GdnReportPage() {
   const typeParam = params.get('type');
   const type: GdnReportType =
     isSuperAdmin && (typeParam === 'office' || typeParam === 'all') ? typeParam : 'online';
-  const report = useGdnReport(date, type, picked, !isSuperAdmin || Boolean(picked));
+  const report = useGdnReport(from, to, type, picked, (!isSuperAdmin || Boolean(picked)) && from <= to);
   const data = report.data;
   const [view, setView] = useState<View>('all');
   const [day, setDay] = useState<string | null>(null);
@@ -183,6 +207,21 @@ export function GdnReportPage() {
     setDay(null);
     setPage(1);
     setParam('date', next === today ? null : next);
+  };
+  const setMany = (values: Record<string, string | null>) => {
+    setDay(null);
+    setPage(1);
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current);
+        for (const [key, value] of Object.entries(values)) {
+          if (value === null) copy.delete(key);
+          else copy.set(key, value);
+        }
+        return copy;
+      },
+      { replace: true },
+    );
   };
 
   const products = [...new Set((data?.orders ?? []).flatMap((o) => o.items.map((i) => i.name)))].sort(
@@ -223,7 +262,7 @@ export function GdnReportPage() {
         .sort((a, b) => a - b);
     downloadXlsx(
       [
-        [`GDN day-end report · ${data.branch.name} · ${formatDate(data.date, 'dd MMM yyyy')}`],
+        [`GDN report · ${data.branch.name} · ${periodName}`],
         [],
         [
           'Sr.',
@@ -240,7 +279,7 @@ export function GdnReportPage() {
           'Items',
           'Amount',
           'Payment',
-          'Today',
+          single ? 'Today' : 'Status',
           'Days since booking',
         ],
         ...rows.map((o) => {
@@ -274,12 +313,12 @@ export function GdnReportPage() {
         [],
         ['Total', null, null, null, null, null, null, null, null, null, null, null, total],
       ],
-      `gdn-report-${data.date}`,
+      single ? `gdn-report-${from}` : `gdn-report-${from}-to-${to}`,
       'GDN',
     );
   };
   const total = rows.reduce((sum, o) => sum + Number(o.total), 0);
-  const next = formatDate(shift(date, 1), 'dd MMM');
+  const next = formatDate(shift(to, 1), 'dd MMM');
   const amount = (list: GdnOrder[]) => list.reduce((sum, o) => sum + Number(o.total), 0);
   const earlier = orders.filter((o) => o.fromBefore);
   const fresh = orders.filter((o) => !o.fromBefore);
@@ -304,7 +343,7 @@ export function GdnReportPage() {
 
   const tabs: { key: View; label: string }[] = [
     { key: 'all', label: 'All orders' },
-    { key: 'dispatched', label: 'Dispatched today' },
+    { key: 'dispatched', label: single ? 'Dispatched today' : 'Dispatched' },
     { key: 'pending', label: 'Still waiting' },
     ...(count('cancelled') ? [{ key: 'cancelled' as const, label: 'Cancelled' }] : []),
   ];
@@ -371,7 +410,76 @@ export function GdnReportPage() {
             </SelectContent>
           </Select>
         ) : null}
-        <div className="flex items-center gap-1">
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={mode}
+          onValueChange={(v) => v && setMany({ mode: v === 'day' ? null : v })}
+          aria-label="Period"
+        >
+          {(Object.keys(MODES) as Mode[]).map((key) => (
+            <ToggleGroupItem
+              key={key}
+              value={key}
+              className="h-9 px-3 text-sm data-[state=on]:border-primary data-[state=on]:bg-primary-soft data-[state=on]:text-primary-soft-foreground"
+            >
+              {MODES[key]}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        {mode === 'month' ? (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous month"
+              onClick={() => setMany({ month: shiftMonth(month, -1) })}
+            >
+              <ChevronLeft />
+            </Button>
+            <Input
+              type="month"
+              className="w-40"
+              value={month}
+              max={today.slice(0, 7)}
+              onChange={(e) => e.target.value && setMany({ month: e.target.value })}
+              aria-label="Report month"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next month"
+              disabled={month >= today.slice(0, 7)}
+              onClick={() => setMany({ month: shiftMonth(month, 1) })}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        ) : null}
+        {mode === 'range' ? (
+          <div className="flex items-center gap-1">
+            <Input
+              type="date"
+              className="w-40"
+              value={from}
+              max={to}
+              onChange={(e) => e.target.value && setMany({ from: e.target.value, to })}
+              aria-label="From"
+            />
+            <span className="text-sm text-muted-foreground">to</span>
+            <Input
+              type="date"
+              className="w-40"
+              value={to}
+              min={from}
+              max={today}
+              onChange={(e) => e.target.value && setMany({ from, to: e.target.value })}
+              aria-label="To"
+            />
+          </div>
+        ) : null}
+        <div className={cn('flex items-center gap-1', mode !== 'day' && 'hidden')}>
           <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => go(shift(date, -1))}>
             <ChevronLeft />
           </Button>
@@ -393,7 +501,7 @@ export function GdnReportPage() {
             <ChevronRight />
           </Button>
         </div>
-        {date !== today ? (
+        {mode === 'day' && date !== today ? (
           <Button variant="ghost" onClick={() => go(today)}>
             Today
           </Button>
@@ -431,10 +539,10 @@ export function GdnReportPage() {
             <img src={logo} alt="Dr Shawana DSM" className="h-9 w-auto" />
             <div className="text-right">
               <div className="text-base font-semibold">
-                GDN day-end report · {data.branch.name} · {TYPES[data.type]}
+                GDN {single ? 'day-end ' : ''}report · {data.branch.name} · {TYPES[data.type]}
               </div>
               <div className="text-xs">
-                {formatDate(data.date, 'EEEE, dd MMMM yyyy')}
+                {periodName}
                 {product ? ` · ${product}` : ''} · {s.opening} from earlier days + {s.newOrders} booked ·{' '}
                 {s.dispatched} dispatched · {s.closing} still waiting
               </div>
@@ -462,44 +570,44 @@ export function GdnReportPage() {
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:hidden">
             <Kpi
-              label="Waiting from earlier days"
+              label={single ? 'Waiting from earlier days' : 'Waiting from before'}
               value={s.opening}
               hint={
                 s.opening
-                  ? `Left over at the start of the day · ${formatMoney(s.openingAmount)}`
+                  ? `Left over at the start of ${single ? 'the day' : 'the period'} · ${formatMoney(s.openingAmount)}`
                   : 'Nothing was left over'
               }
               icon={History}
               accent="bg-warning-soft text-warning-soft-foreground"
             />
             <Kpi
-              label="Booked today"
+              label={single ? 'Booked today' : 'Booked in the period'}
               value={s.newOrders}
               hint={s.newOrders ? formatMoney(s.newAmount) : 'No new order'}
               icon={PackagePlus}
               accent="bg-info-soft text-info-soft-foreground"
             />
             <Kpi
-              label="Dispatched today"
+              label={single ? 'Dispatched today' : 'Dispatched in the period'}
               value={s.dispatched}
               hint={
                 s.dispatched
                   ? s.office === s.dispatched
                     ? `${s.office} handed over at the counter`
-                    : `${s.dispatchedFromOpening} from earlier days · ${s.dispatchedFromNew - s.office} booked today${s.office ? ` · ${s.office} at the counter` : ''}`
+                    : `${s.dispatchedFromOpening} from earlier days · ${s.dispatchedFromNew - s.office} booked ${single ? 'today' : 'in the period'}${s.office ? ` · ${s.office} at the counter` : ''}`
                   : 'Nothing went out'
               }
               icon={Truck}
               accent="bg-success-soft text-success-soft-foreground"
             />
             <Kpi
-              label="Still waiting tonight"
+              label={single ? 'Still waiting tonight' : 'Still waiting at the end'}
               value={s.closing}
               hint={
                 s.closing
-                  ? `Moves to ${next}${s.cancelled ? ` · ${s.cancelled} cancelled today` : ''}`
+                  ? `Moves to ${next}${s.cancelled ? ` · ${s.cancelled} cancelled${single ? ' today' : ''}` : ''}`
                   : s.cancelled
-                    ? `All cleared · ${s.cancelled} cancelled today`
+                    ? `All cleared · ${s.cancelled} cancelled${single ? ' today' : ''}`
                     : 'All cleared'
               }
               icon={CalendarClock}
@@ -512,8 +620,8 @@ export function GdnReportPage() {
               <EmptyState
                 title={
                   product
-                    ? `No order with ${product} on this day`
-                    : `No ${TYPES[data.type].toLowerCase()} on this day`
+                    ? `No order with ${product} ${single ? 'on this day' : 'in this period'}`
+                    : `No ${TYPES[data.type].toLowerCase()} ${single ? 'on this day' : 'in this period'}`
                 }
                 description={
                   data.branch.dispatch || !dispatchBranch || data.type !== 'online'
@@ -552,7 +660,7 @@ export function GdnReportPage() {
                       >
                         <div>
                           <div className="text-sm font-semibold">
-                            {d.date === data.date ? 'Booked today' : formatDate(d.date, 'EEE dd MMM')}
+                            {single && d.date === from ? 'Booked today' : formatDate(d.date, 'EEE dd MMM')}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {d.sent ? <span className="font-medium text-success">{d.sent} sent</span> : null}
@@ -644,7 +752,7 @@ export function GdnReportPage() {
                             {srOf.get(o.id)}
                           </td>
                           <td className="px-3 py-2.5">
-                            <BookedChip date={o.date} reportDate={data.date} />
+                            <BookedChip date={o.date} reportDate={single ? from : ''} />
                             <div className="mt-1">
                               {o.saleType === 'office' ? (
                                 <StatusBadge tone="info">Office</StatusBadge>
