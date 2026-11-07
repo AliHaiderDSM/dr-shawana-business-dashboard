@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useBranchOptions } from '@/lib/auth/branches';
 import { formatAmount, formatDate, formatMoney, isoDate } from '@/lib/format';
@@ -47,8 +48,7 @@ const STATE: Record<AppointmentMoneyState, { label: string; tone: Tone }> = {
   refunded: { label: 'Refunded', tone: 'info' },
 };
 
-const isCompleted = (r: AppointmentMoneyEntry) =>
-  r.kind !== 'refund' && r.appointment.status === 'completed' && r.stateAfter === 'paid';
+const isCompleted = (r: AppointmentMoneyEntry) => r.kind !== 'refund' && r.appointment.status === 'completed';
 
 const entryOf = (r: AppointmentMoneyEntry): { label: string; tone: Tone } =>
   r.kind === 'refund'
@@ -63,28 +63,64 @@ const groupOf = (r: AppointmentMoneyEntry): Group =>
     ? r.stateAfter === 'paid'
       ? 'sale'
       : 'advance'
-    : r.kind === 'booked'
+    : r.kind === 'booked' || r.kind === 'visit'
       ? 'booked'
       : r.kind;
 
-type Tab = 'all' | Group | 'dues' | 'completed';
-const TABS: { key: Tab; label: string; match: (r: AppointmentMoneyEntry) => boolean }[] = [
-  { key: 'all', label: 'All entries', match: () => true },
+interface TabContext {
+  completed: Set<number>;
+  gdn: Set<number>;
+}
+
+function latestPerAppointment(rows: AppointmentMoneyEntry[], keep: (r: AppointmentMoneyEntry) => boolean) {
+  const latest = new Map<string, AppointmentMoneyEntry>();
+  for (const r of rows) {
+    if (r.kind === 'refund' || !keep(r)) continue;
+    const seen = latest.get(r.appointment.id);
+    if (!seen || r.sr > seen.sr) latest.set(r.appointment.id, r);
+  }
+  return [...latest.values()];
+}
+
+const isDues = (r: AppointmentMoneyEntry) => r.kind === 'balance' && r.date > r.appointment.visitDate;
+
+function tabContext(
+  rows: AppointmentMoneyEntry[],
+  visits: AppointmentMoneyEntry[],
+  period: { from: string; to: string } | null,
+): TabContext {
+  const inPeriod = (day: string) => !period || (day >= period.from && day <= period.to);
+  const gdn = rows.filter((r) => r.kind !== 'refund' && (inPeriod(r.appointment.visitDate) || isDues(r)));
+  return {
+    completed: new Set(latestPerAppointment([...rows, ...visits], isCompleted).map((r) => r.sr)),
+    gdn: new Set([...gdn, ...visits].map((r) => r.sr)),
+  };
+}
+
+type Tab = 'all' | Group | 'dues' | 'completed' | 'gdn';
+const TABS: {
+  key: Tab;
+  label: string;
+  match: (r: AppointmentMoneyEntry, ctx: TabContext) => boolean;
+}[] = [
+  { key: 'all', label: 'All entries', match: (r) => r.kind !== 'visit' },
+  { key: 'gdn', label: 'GDN', match: (r, ctx) => ctx.gdn.has(r.sr) },
   { key: 'booked', label: 'Bookings', match: (r) => r.kind === 'booked' },
   { key: 'advance', label: 'Advance', match: (r) => groupOf(r) === 'advance' },
   {
     key: 'dues',
     label: 'Dues received',
-    match: (r) => r.kind === 'balance' && r.date > r.appointment.visitDate,
+    match: isDues,
   },
   {
     key: 'completed',
     label: 'Completed appointments',
-    match: isCompleted,
+    match: (r, ctx) => ctx.completed.has(r.sr),
   },
   { key: 'refund', label: 'Refunds', match: (r) => r.kind === 'refund' },
 ];
-const matchOf = (tab: Tab) => TABS.find((t) => t.key === tab)!.match;
+const matchOf = (tab: Tab, ctx: TabContext) => (r: AppointmentMoneyEntry) =>
+  TABS.find((t) => t.key === tab)!.match(r, ctx);
 const totalOf = (rows: AppointmentMoneyEntry[], group: Group) =>
   rows.filter((r) => groupOf(r) === group).reduce((total, r) => total + Number(r.amount), 0);
 const countOf = (rows: AppointmentMoneyEntry[], group: Group) =>
@@ -117,6 +153,28 @@ function linksOf(rows: AppointmentMoneyEntry[]) {
         .join(', '),
     };
   };
+}
+
+function PatientName({ name }: { name: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [cut, setCut] = useState(false);
+  if (!name) return <div className="font-medium">—</div>;
+  return (
+    <Tooltip open={open && cut} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <div
+          className="max-w-30 truncate font-medium print:max-w-none print:whitespace-normal"
+          onMouseEnter={(e) => setCut(e.currentTarget.scrollWidth > e.currentTarget.clientWidth)}
+          onFocus={(e) => setCut(e.currentTarget.scrollWidth > e.currentTarget.clientWidth)}
+        >
+          {name}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start">
+        {name}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 function Kpi({
@@ -152,7 +210,7 @@ function exportRows(
   title: string,
   allBranches: boolean,
 ) {
-  const link = linksOf(data.rows);
+  const link = linksOf([...data.rows, ...(data.visits ?? [])]);
   return [
     [title],
     [],
@@ -249,7 +307,10 @@ export function AppointmentMoneyPage() {
       : view === 'day'
         ? `Appointment payments · ${formatDate(date, 'EEEE, dd MMMM yyyy')}`
         : `Appointment payments · ${formatDate(`${month}-01`, 'MMMM yyyy')}`;
-  const rows = (data?.rows ?? []).filter(matchOf(tab)).reverse();
+  const visits = data?.visits ?? [];
+  const pool = [...(data?.rows ?? []), ...visits];
+  const context = tabContext(data?.rows ?? [], visits, view === 'all' ? null : { from, to });
+  const rows = pool.filter(matchOf(tab, context)).sort((a, b) => b.date.localeCompare(a.date) || b.sr - a.sr);
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
   const onPage = (index: number) => Math.floor(index / PAGE_SIZE) + 1 === current;
@@ -263,7 +324,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own entry. Entries of the same appointment share a colour. Entry: Booking while the fee is unpaid or partly paid, Completed once the doctor completed the visit and the fee is fully paid. Status shows the payment state after that entry."
+        description="Every booking, payment and refund as its own entry. Entries of the same appointment share a colour. Entry: Completed once the doctor completed the visit, Booking until then. Status shows the payment state after that entry. GDN: for the chosen period, the visits of the period (paid or not) and the dues of earlier visits received in it. Completed appointments: one line per completed visit, paid or not."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
@@ -423,7 +484,8 @@ export function AppointmentMoneyPage() {
                       'border-primary/30 bg-primary-soft font-semibold text-primary-soft-foreground hover:bg-primary-soft hover:text-primary-soft-foreground',
                   )}
                 >
-                  {t.label} <span className="tabular-nums">({(data.rows ?? []).filter(t.match).length})</span>
+                  {t.label}{' '}
+                  <span className="tabular-nums">({pool.filter((r) => t.match(r, context)).length})</span>
                 </button>
               ))}
             </div>
@@ -498,7 +560,7 @@ export function AppointmentMoneyPage() {
                               </div>
                             </td>
                             <td className="px-3 py-2.5">
-                              <div className="font-medium">{r.patient.name ?? '—'}</div>
+                              <PatientName name={r.patient.name} />
                               <div className="text-muted-foreground tabular-nums">{r.patient.phone}</div>
                             </td>
                             <td className={cn('px-3 py-2.5', view !== 'day' && 'text-center')}>
@@ -516,7 +578,7 @@ export function AppointmentMoneyPage() {
                                 r.kind === 'refund' && 'text-destructive',
                               )}
                             >
-                              {r.kind === 'booked'
+                              {r.kind === 'booked' || r.kind === 'visit'
                                 ? '—'
                                 : `${r.kind === 'refund' ? '− ' : ''}${formatAmount(r.amount)}`}
                             </td>
@@ -543,9 +605,6 @@ export function AppointmentMoneyPage() {
                               <StatusBadge tone={STATE[r.stateAfter].tone}>
                                 {STATE[r.stateAfter].label}
                               </StatusBadge>
-                              {r.fullyPaidHere ? (
-                                <div className="mt-1 font-medium text-success">Cleared with this payment</div>
-                              ) : null}
                             </td>
                           </tr>
                         );

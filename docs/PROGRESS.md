@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment payments: GDN follows the period filter (2026-11-07)
+
+- Today's GDN is now GDN and follows All / Day / Month: the visits of the period (their bookings, advances and visit payments, plus visits with no entry in the period from the new visits list) and the dues of earlier visits received in the period. Refunds stay in their own tab; All entries does not show the visit lines.
+
+## Appointment payments: completed means doctor-completed, Today's GDN tab (2026-11-07)
+
+- Entry shows Completed as soon as the doctor completed the visit, paid or not. The Completed appointments tab lists one line per completed appointment (its latest entry, so Paid so far / Remaining / Status are current).
+- New Today's GDN tab: every entry dated today (dues of previous visits paid today too) plus today's visits that have no entry today (their latest entry). In the Day view it follows the chosen date.
+
 ## P&L products: discount column and sales sidebar (2026-11-07)
 
 - The Products table shows the sale price before discount and a Discount column (also in Excel).

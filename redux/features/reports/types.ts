@@ -106,7 +106,7 @@ export interface ProductSalesData {
 }
 
 export type AppointmentMoneyState = 'unpaid' | 'advance' | 'paid' | 'cancelled' | 'held' | 'refunded';
-export type AppointmentMoneyKind = 'booked' | 'advance' | 'balance' | 'refund';
+export type AppointmentMoneyKind = 'booked' | 'advance' | 'balance' | 'refund' | 'visit';
 
 export interface AppointmentMoneyEntry {
   sr: number;
@@ -151,4 +151,5 @@ export interface AppointmentMoneyLedger {
     fullyPaid: number;
   };
   rows: AppointmentMoneyEntry[];
+  visits: AppointmentMoneyEntry[];
 }
