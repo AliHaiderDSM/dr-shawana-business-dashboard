@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## API types for /auth/logout-all (2026-11-07)
+
+- Regenerated schema.d.ts after the backend added POST /auth/logout-all. No UI uses it yet.
+
 ## Login without Supabase Auth, refresh token in a cookie (2026-11-07)
 
 - The access token now lives only in memory; the refresh token is an HttpOnly cookie set by the API (requests to /auth/login, /auth/refresh and /auth/logout send credentials and X-Auth-Transport: cookie). localStorage keeps only a dsm.signedIn flag; the old dsm.session entry is removed on load.
