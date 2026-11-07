@@ -23,6 +23,7 @@ import { formatCompactMoney, formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { downloadXlsx } from '@/lib/xlsx';
 import { useGetProfitLossQuery, type ProfitFigures, type ProfitLossData } from '@redux/features/reports';
+import { ProductSalesSheet } from './profit-loss-product-sheet';
 
 const ALL = 'all';
 const MONTHS = [
@@ -140,6 +141,7 @@ function exportRows(data: ProfitLossData, periodName: string, branchName: string
       'Sold',
       'Returned',
       'Sale price per unit',
+      'Discount',
       'Cost per unit',
       ...FIGURE_HEADERS,
       'Cost estimated',
@@ -149,6 +151,7 @@ function exportRows(data: ProfitLossData, periodName: string, branchName: string
       Number(p.qtySold),
       Number(p.qtyReturned),
       p.avgSalePrice ? Number(p.avgSalePrice) : null,
+      Number(p.discount),
       p.avgCost ? Number(p.avgCost) : null,
       ...figures(p),
       Number(p.estimatedQty) + Number(p.unknownQty) > 0 ? 'Yes' : '',
@@ -170,6 +173,7 @@ export function ProfitLossPage() {
   const [month, setMonth] = useState<number | null>(null);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [product, setProduct] = useState<string | null>(null);
+  const [opened, setOpened] = useState<string | null>(null);
   const branches = useBranchOptions(isSuperAdmin);
   const sellingBranches = (branches.data ?? []).filter((b) => b.kind === 'branch');
   const report = useGetProfitLossQuery({ year, month, branchId, product }, { skip: !isSuperAdmin });
@@ -414,7 +418,7 @@ export function ProfitLossPage() {
 
           <Section
             title="Products"
-            description={`${periodName} · most profitable first. ⚠ = cost estimated from the last known cost`}
+            description={`${periodName} · most profitable first. Click a product to see every sale. ⚠ = cost estimated from the last known cost`}
           >
             {data.products.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-muted-foreground">
@@ -431,6 +435,7 @@ export function ProfitLossPage() {
                       <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">
                         Sale price / unit
                       </th>
+                      <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Discount</th>
                       <th className="px-3 py-2 text-right font-medium print:px-1 print:py-1">Cost / unit</th>
                       {FIGURE_HEADERS.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium print:px-1 print:py-1">
@@ -443,7 +448,19 @@ export function ProfitLossPage() {
                     {data.products.map((p) => {
                       const flaggedRow = Number(p.estimatedQty) + Number(p.unknownQty) > 0;
                       return (
-                        <tr key={p.product} className="border-b last:border-b-0">
+                        <tr
+                          key={p.product}
+                          tabIndex={0}
+                          aria-label={`Show the sales of ${p.product}`}
+                          onClick={() => setOpened(p.product)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setOpened(p.product);
+                            }
+                          }}
+                          className="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+                        >
                           <td className="px-5 py-2 font-medium print:px-1 print:py-1">
                             {p.product}
                             {flaggedRow ? (
@@ -463,6 +480,13 @@ export function ProfitLossPage() {
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
                             {p.avgSalePrice ? formatMoney(p.avgSalePrice) : '—'}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
+                            {Number(p.discount) ? (
+                              <span className="text-destructive">− {formatMoney(p.discount)}</span>
+                            ) : (
+                              '—'
+                            )}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums print:px-1 print:py-1">
                             {p.avgCost ? formatMoney(p.avgCost) : '—'}
@@ -508,6 +532,14 @@ export function ProfitLossPage() {
           ) : null}
         </>
       )}
+      <ProductSalesSheet
+        product={opened}
+        year={year}
+        month={month}
+        branchId={branchId}
+        scope={`${periodName} · ${branchName}`}
+        onClose={() => setOpened(null)}
+      />
     </div>
   );
 }

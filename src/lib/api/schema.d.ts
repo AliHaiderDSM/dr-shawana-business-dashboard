@@ -30718,6 +30718,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/reports/profit-loss/product-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Super Admin: every sale and return of one product in the period, with list price, discount, revenue received, cost and profit per invoice. The totals match the product row of the profit and loss report. */
+        get: {
+            parameters: {
+                query: {
+                    year: number;
+                    /** @description 1-12; the whole year when left out */
+                    month?: number;
+                    /** @description One branch; every branch when left out */
+                    branchId?: string;
+                    /** @description Product name as shown in the report */
+                    product: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Product sales */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ProfitLossProductSales"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/dashboard/top-products": {
         parameters: {
             query?: never;
@@ -35911,6 +36002,60 @@ export interface components {
             summary?: {
                 [key: string]: unknown;
             };
+        };
+        ProfitLossProductSales: {
+            product: string;
+            year: number;
+            month: number | null;
+            period: {
+                from: string;
+                to: string;
+            };
+            /** Format: uuid */
+            branchId: string | null;
+            summary: {
+                sales: number;
+                returns: number;
+                qty: string;
+                gross: string;
+                discount: string;
+                invoiced: string;
+                revenue: string;
+                cost: string;
+                profit: string;
+            };
+            branches: {
+                code: string;
+                name: string;
+                qty: string;
+                revenue: string;
+                profit: string;
+            }[];
+            rows: {
+                /** @enum {string} */
+                kind: "sale" | "return";
+                /** Format: uuid */
+                id: string;
+                reference: string;
+                invoiceNo: string;
+                saleType: string | null;
+                date: string;
+                branch: {
+                    code: string;
+                    name: string;
+                };
+                patient: string | null;
+                qty: string;
+                unitPrice: string | null;
+                gross: string | null;
+                discount: string | null;
+                invoiced: string | null;
+                revenue: string;
+                notReceived: string | null;
+                cost: string;
+                costEstimated: boolean;
+                profit: string;
+            }[];
         };
         ErrorResponse: {
             error: {

@@ -48,10 +48,61 @@ export interface ProfitLossData {
     lastCost: string | null;
     avgSalePrice: string | null;
     avgCost: string | null;
+    gross: string;
+    discount: string;
     estimatedQty: string;
     unknownQty: string;
   })[];
   branches: (ProfitFigures & { code: string; name: string })[];
+}
+
+export interface ProductSalesArgs {
+  year: number;
+  month: number | null;
+  branchId: string | null;
+  product: string;
+}
+
+export interface ProductSaleRow {
+  kind: 'sale' | 'return';
+  id: string;
+  reference: string;
+  invoiceNo: string;
+  saleType: string | null;
+  date: string;
+  branch: { code: string; name: string };
+  patient: string | null;
+  qty: string;
+  unitPrice: string | null;
+  gross: string | null;
+  discount: string | null;
+  invoiced: string | null;
+  revenue: string;
+  notReceived: string | null;
+  cost: string;
+  costEstimated: boolean;
+  profit: string;
+}
+
+export interface ProductSalesData {
+  product: string;
+  year: number;
+  month: number | null;
+  period: { from: string; to: string };
+  branchId: string | null;
+  summary: {
+    sales: number;
+    returns: number;
+    qty: string;
+    gross: string;
+    discount: string;
+    invoiced: string;
+    revenue: string;
+    cost: string;
+    profit: string;
+  };
+  branches: { code: string; name: string; qty: string; revenue: string; profit: string }[];
+  rows: ProductSaleRow[];
 }
 
 export type AppointmentMoneyState = 'unpaid' | 'advance' | 'paid' | 'cancelled' | 'held' | 'refunded';

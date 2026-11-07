@@ -9,7 +9,15 @@ import type { OptionSource } from '@/features/reports/reports-config';
 import { api, fetchFile, unwrap } from '@/lib/api/client';
 import type { Schemas } from '@/lib/api/types';
 import { downloadXlsx, parseCsv } from '@/lib/xlsx';
-import type { AppointmentMoneyLedger, ProfitLossArgs, ProfitLossData, ReportArgs, ReportData } from './types';
+import type {
+  AppointmentMoneyLedger,
+  ProductSalesArgs,
+  ProductSalesData,
+  ProfitLossArgs,
+  ProfitLossData,
+  ReportArgs,
+  ReportData,
+} from './types';
 
 export type * from './types';
 
@@ -42,6 +50,19 @@ export const reportsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['reports'],
     }),
+    getProfitLossProductSales: build.query<ProductSalesData, ProductSalesArgs>({
+      queryFn: ({ year, month, branchId, product }) =>
+        fromApi<ProductSalesData>(() =>
+          unwrap(
+            api.GET('/admin/reports/profit-loss/product-sales', {
+              params: {
+                query: { year, product, ...(month ? { month } : {}), ...(branchId ? { branchId } : {}) },
+              },
+            }),
+          ).then((r) => r.data as ProductSalesData),
+        ),
+      providesTags: ['reports'],
+    }),
     getAppointmentMoney: build.query<
       AppointmentMoneyLedger,
       { from?: string; to?: string; all?: 'true'; branchId: string | null }
@@ -67,6 +88,7 @@ export const {
   useGetReportQuery,
   useDownloadReportFileMutation,
   useGetProfitLossQuery,
+  useGetProfitLossProductSalesQuery,
   useGetAppointmentMoneyQuery,
 } = reportsApi;
 

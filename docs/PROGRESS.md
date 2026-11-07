@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## P&L products: discount column and sales sidebar (2026-11-07)
+
+- The Products table shows the sale price before discount and a Discount column (also in Excel).
+- Clicking (or Enter on) a product row opens a side sheet (profit-loss-product-sheet.tsx) with sold, list value, discount, revenue, cost and profit, a branch split when all branches are shown, and every invoice and return of the product in the period.
+
 ## API types for /auth/logout-all (2026-11-07)
 
 - Regenerated schema.d.ts after the backend added POST /auth/logout-all. No UI uses it yet.
