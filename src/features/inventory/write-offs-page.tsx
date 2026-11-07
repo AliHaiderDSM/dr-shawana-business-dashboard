@@ -47,6 +47,7 @@ import {
   type WriteOffRecord,
 } from '@redux/features/stock-requests';
 import { WRITE_OFF_LABELS } from './constants';
+import { ITEM_STATUS } from '@/features/inventory/item-status';
 
 const REASON_TONES: Record<WriteOffReason, Tone> = {
   expired: 'warning',
@@ -111,7 +112,7 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
     try {
       const piece = await findItemBySerial(code);
       if (piece.status !== 'in_stock') {
-        toast.error(`${piece.serial} is ${piece.status.replace(/_/g, ' ')}`);
+        toast.error(`${piece.serial} is ${ITEM_STATUS[piece.status].label.toLowerCase()}`);
         return;
       }
       if (!piece.batchId) {

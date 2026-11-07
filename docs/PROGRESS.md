@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Under observation (2026-11-07)
+
+- Dispatch dialog: Report issue next to the scan box and an eye button on each scanned label put a piece under observation with a reason and note; the piece leaves the scanned list and the order's held pieces show below the table. Stock request sheet: the Warehouse Keeper gets Report issue while sending, and everyone sees the held pieces of the request.
+- New Under Observation page (sidebar with badge for the Super Admin, the Warehouse Keeper and the Dispatch Department): tabs by status, search, and a Decide dialog (release, write off, send to supplier, note required) for the Warehouse Keeper and the Dispatch Department admin. Quarantine labels now read Under observation everywhere.
+
 ## Appointment payments: GDN follows the period filter (2026-11-07)
 
 - Today's GDN is now GDN and follows All / Day / Month: the visits of the period (their bookings, advances and visit payments, plus visits with no entry in the period from the new visits list) and the dues of earlier visits received in the period. Refunds stay in their own tab; All entries does not show the visit lines.

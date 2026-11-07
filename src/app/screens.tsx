@@ -344,6 +344,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'any',
   },
   {
+    path: 'under-observation',
+    element: page(() => import('@/features/inventory/under-observation-page'), 'UnderObservationPage'),
+    anyOf: ['stock.view', 'inventoryReport.view', 'sales.update'],
+    scope: 'any',
+  },
+  {
     path: 'write-offs',
     element: page(() => import('@/features/inventory/write-offs-page'), 'WriteOffsPage'),
     anyOf: ['stock.view', 'inventoryReport.view'],

@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, Loader2, Pencil, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
+import { Check, Eye, Loader2, Pencil, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -43,6 +43,7 @@ import { STOCK_REQUEST_LABELS } from './constants';
 import { StockDocumentSheet, type StockRequestPrefill } from './stock-document-sheet';
 import { TraceNumber } from '@/features/trace/trace-page';
 import { STOCK_KINDS } from './stock-config';
+import { HoldsTable, ReportIssueDialog } from './under-observation';
 
 export const STOCK_REQUEST_TONES: Record<StockRequestStatus, Tone> = {
   pending: 'warning',
@@ -262,6 +263,7 @@ function RequestSheet({
   const [withdraw, withdrawState] = useWithdrawStockRequestMutation();
   const [approved, setApproved] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
+  const [reporting, setReporting] = useState(false);
   if (!request) return null;
   const pending = request.status === 'pending';
   const choosing = isSuperAdmin && pending;
@@ -382,6 +384,7 @@ function RequestSheet({
               {request.decisionNote ? ` · “${request.decisionNote}”` : ''}
             </p>
           ) : null}
+          <HoldsTable holds={request.holds} />
           {request.transfers.length ? (
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-sm">
@@ -453,6 +456,12 @@ function RequestSheet({
               </Button>
             </>
           ) : null}
+          {sender && (request.status === 'approved' || request.status === 'sent') ? (
+            <Button variant="outline" onClick={() => setReporting(true)}>
+              <Eye />
+              Report issue
+            </Button>
+          ) : null}
           {canSend ? (
             <Button
               onClick={() =>
@@ -494,6 +503,15 @@ function RequestSheet({
             </Button>
           ) : null}
         </SheetFooter>
+        {reporting ? (
+          <ReportIssueDialog
+            context={{
+              title: `While sending ${request.requestNo} to ${request.branch.name}`,
+              stockRequestId: request.id,
+            }}
+            onClose={() => setReporting(false)}
+          />
+        ) : null}
       </SheetContent>
     </Sheet>
   );

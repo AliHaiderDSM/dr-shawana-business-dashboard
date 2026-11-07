@@ -5,7 +5,7 @@ export const ITEM_STATUS: Record<ItemStatus, { label: string; tone: Tone }> = {
   in_stock: { label: 'In stock', tone: 'success' },
   sold: { label: 'Sold', tone: 'info' },
   returned: { label: 'Awaiting inspection', tone: 'warning' },
-  quarantined: { label: 'Quarantine', tone: 'warning' },
+  quarantined: { label: 'Under observation', tone: 'warning' },
   damaged: { label: 'Damaged', tone: 'danger' },
   expired: { label: 'Expired', tone: 'danger' },
   supplier_returned: { label: 'Sent to supplier', tone: 'neutral' },

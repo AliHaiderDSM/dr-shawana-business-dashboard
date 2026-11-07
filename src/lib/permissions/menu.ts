@@ -41,6 +41,7 @@ import {
   Warehouse,
   MessageSquareText,
   MessagesSquare,
+  Eye,
 } from 'lucide-react';
 import type { Role } from '@/lib/api/types';
 
@@ -60,12 +61,14 @@ export interface MenuItem {
   showInWarehouse?: boolean;
   dispatchOnly?: boolean;
   dispatchOrSuperAdmin?: boolean;
+  observersOnly?: boolean;
   notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
   badge?:
     | 'stockRequests'
     | 'incomingStock'
     | 'writeOffs'
+    | 'observations'
     | 'discountRequests'
     | 'returns'
     | 'stockReceipts'
@@ -89,6 +92,7 @@ const WAREHOUSE_KEEPER_KEYS = new Set([
   'stock-out',
   'stock-out-report',
   'inventory-report',
+  'under-observation',
   'incoming-stock',
   'stock',
   'batches',
@@ -102,6 +106,7 @@ const DISPATCHER_KEYS = new Set([
   'gdn-report',
   'returns',
   'write-offs',
+  'under-observation',
   'stock',
   'labels',
 ]);
@@ -415,6 +420,16 @@ export const MENU: MenuGroup[] = [
         scope: 'any',
       },
       {
+        key: 'under-observation',
+        badge: 'observations',
+        label: 'Under Observation',
+        path: '/under-observation',
+        icon: Eye,
+        anyOf: ['stock.view', 'inventoryReport.view', 'sales.update'],
+        scope: 'any',
+        observersOnly: true,
+      },
+      {
         key: 'write-offs',
         badge: 'writeOffs',
         label: 'Write-offs',
@@ -596,6 +611,11 @@ export function visibleMenu(
           !((dispatch.inDispatch || role === 'dispatcher') && (group.notInDispatch || item.notInDispatch)) &&
           (!item.dispatchOnly || dispatch.inDispatch || !dispatch.hasDispatch) &&
           (!item.dispatchOrSuperAdmin || isSuperAdmin || dispatch.inDispatch || role === 'dispatcher') &&
+          (!item.observersOnly ||
+            isSuperAdmin ||
+            inWarehouse ||
+            dispatch.inDispatch ||
+            role === 'dispatcher') &&
           (!item.superAdminOnly || isSuperAdmin) &&
           (!item.doctorOnly || role === 'doctor') &&
           (!item.warehouseOnly || inWarehouse) &&

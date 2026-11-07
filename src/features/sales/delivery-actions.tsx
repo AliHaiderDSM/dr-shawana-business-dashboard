@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, Printer, ShieldAlert, X } from 'lucide-react';
+import { CheckCircle2, Eye, Loader2, Printer, ShieldAlert, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useHref } from 'react-router';
 import { toast } from 'sonner';
@@ -24,6 +24,9 @@ import { useReceivingAccounts } from '@redux/features/appointments';
 import { productsApi } from '@redux/features/catalog';
 import { normalizeSerial } from '@/features/inventory/constants';
 import { findItemBySerial } from '@redux/features/inventory';
+import { ITEM_STATUS } from '@/features/inventory/item-status';
+import { useStockHolds } from '@redux/features/stock-holds';
+import { holdLineOf, HoldsTable, ReportIssueDialog } from '@/features/inventory/under-observation';
 import { toastError } from '@/lib/api/errors';
 import { formatDate, formatMoney, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -72,6 +75,8 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
   const slip = slips.data?.slips.find((s) => s.saleId === order.id);
   const [date, setDate] = useState(isoDate());
   const [pieces, setPieces] = useState<{ serial: string; productId: string }[]>([]);
+  const [reporting, setReporting] = useState<{ serial: string } | null>(null);
+  const holds = useStockHolds({ saleId: order.id });
   const tracked = new Set((products.data ?? []).filter((p) => p.trackSerials).map((p) => p.id));
   const lines = new Map<string, { productId: string; name: string; qty: number }>();
   for (const item of sale.data?.items ?? []) {
@@ -99,7 +104,7 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
         return;
       }
       if (piece.status !== 'in_stock') {
-        toast.error(`${piece.serial} is ${piece.status.replace(/_/g, ' ')}`);
+        toast.error(`${piece.serial} is ${ITEM_STATUS[piece.status].label.toLowerCase()}`);
         return;
       }
       if (pieces.some((p) => p.serial === piece.serial)) {
@@ -145,7 +150,23 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
               />
             </div>
             {needsScan ? (
-              <BarcodeScanInput onScan={scan} autoFocus placeholder="Scan each DSM label" />
+              <div className="flex gap-2">
+                <BarcodeScanInput
+                  onScan={scan}
+                  autoFocus
+                  placeholder="Scan each DSM label"
+                  className="min-w-0 flex-1"
+                />
+                <Button
+                  variant="outline"
+                  className="h-10 shrink-0"
+                  onClick={() => setReporting({ serial: '' })}
+                  title="A piece is damaged, expired or its label is wrong"
+                >
+                  <Eye />
+                  Report issue
+                </Button>
+              </div>
             ) : null}
           </div>
           {slip ? (
@@ -226,6 +247,15 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
                                   {p.serial}
                                   <button
                                     type="button"
+                                    className="rounded p-0.5 text-muted-foreground hover:bg-warning-soft hover:text-warning-soft-foreground"
+                                    aria-label={`Put ${p.serial} under observation`}
+                                    title="Put under observation"
+                                    onClick={() => setReporting({ serial: p.serial })}
+                                  >
+                                    <Eye className="size-3" />
+                                  </button>
+                                  <button
+                                    type="button"
                                     className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                     aria-label={`Remove ${p.serial}`}
                                     onClick={() =>
@@ -253,7 +283,16 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
               </table>
             </div>
           )}
+          <HoldsTable holds={(holds.data ?? []).map(holdLineOf)} title="Under observation on this order" />
         </div>
+        {reporting ? (
+          <ReportIssueDialog
+            context={{ title: `While dispatching ${order.invoiceNo}`, saleId: order.id }}
+            serial={reporting.serial}
+            onClose={() => setReporting(null)}
+            onReported={(hold) => setPieces((current) => current.filter((p) => p.serial !== hold.serial))}
+          />
+        ) : null}
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={dispatchState.isLoading}>
             Cancel

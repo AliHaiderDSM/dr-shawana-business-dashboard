@@ -35,6 +35,7 @@ export const TAG_TYPES = [
   'sidebar-badges',
   'staff',
   'stock',
+  'stock-holds',
   'stock-out-report',
   'stock-requests',
   'suppliers',

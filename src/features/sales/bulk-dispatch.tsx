@@ -21,6 +21,7 @@ import { toastError } from '@/lib/api/errors';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useDispatchSaleOrderMutation, type DeliveryOrder } from '@redux/features/sales';
+import { ITEM_STATUS } from '@/features/inventory/item-status';
 
 interface Piece {
   serial: string;
@@ -67,7 +68,7 @@ export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[
         return;
       }
       if (piece.status !== 'in_stock') {
-        toast.error(`${piece.serial} is ${piece.status.replace(/_/g, ' ')}`);
+        toast.error(`${piece.serial} is ${ITEM_STATUS[piece.status].label.toLowerCase()}`);
         return;
       }
       const target = orders.find(

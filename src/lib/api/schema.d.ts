@@ -25841,6 +25841,342 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/stock-holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Labelled pieces under observation. The Super Admin and the Warehouse Keeper see every one, Dispatch Department staff see their own, other branches see the ones held on their stock requests. */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "open" | "released" | "written_off" | "supplier_returned";
+                    saleId?: string;
+                    stockRequestId?: string;
+                    search?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Pieces */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StockHold"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Put a labelled piece under observation while dispatching an order or sending a stock request. It can no longer be sold or sent until it is decided. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReportStockHold"];
+                };
+            };
+            responses: {
+                /** @description Under observation */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StockHold"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/stock-holds/{id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Warehouse Keeper (any piece) or the Dispatch Department admin (its own pieces) decides: release back to stock, write off, or send back to the supplier */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DecideStockHold"];
+                };
+            };
+            responses: {
+                /** @description Decided */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["StockHold"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/stock-holds/open-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many pieces are under observation for the viewer */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Count */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                open: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/stock-requests": {
         parameters: {
             query?: never;
@@ -35591,6 +35927,82 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        ReportStockHold: {
+            /** @example DSM-000123 */
+            serial: string;
+            /** @enum {string} */
+            reason: "damaged" | "expired" | "label_issue" | "other";
+            note?: string | null;
+            /**
+             * Format: uuid
+             * @description The online order being dispatched
+             */
+            saleId?: string;
+            /**
+             * Format: uuid
+             * @description The stock request being sent
+             */
+            stockRequestId?: string;
+        };
+        DecideStockHold: {
+            /** @enum {string} */
+            decision: "release" | "write_off" | "supplier_return";
+            note: string;
+        };
+        StockHold: {
+            /** Format: uuid */
+            id: string;
+            holdNo: string;
+            /** @enum {string} */
+            status: "open" | "released" | "written_off" | "supplier_returned";
+            /** @enum {string} */
+            reason: "damaged" | "expired" | "label_issue" | "other";
+            note: string | null;
+            serial: string;
+            itemStatus: string;
+            product: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            batchNo: string | null;
+            expiryDate: string | null;
+            branch: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                code: string;
+                kind: string;
+            };
+            sale: {
+                /** Format: uuid */
+                id: string;
+                invoiceNo: string;
+            } | null;
+            stockRequest: {
+                /** Format: uuid */
+                id: string;
+                requestNo: string;
+                branchName: string;
+            } | null;
+            reportedBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+            } | null;
+            decidedBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                role: string;
+            } | null;
+            decidedAt: string | null;
+            decisionNote: string | null;
+            writeOffNo: string | null;
+            canDecide: boolean;
+            createdAt: string;
+        };
         CreateStockRequest: {
             note?: string | null;
             items: {
@@ -35668,6 +36080,20 @@ export interface components {
                 sentBy: string | null;
                 receivedBy: string | null;
             }[];
+            holds: {
+                /** Format: uuid */
+                id: string;
+                holdNo: string;
+                serial: string;
+                productName: string;
+                /** @enum {string} */
+                reason: "damaged" | "expired" | "label_issue" | "other";
+                note: string | null;
+                /** @enum {string} */
+                status: "open" | "released" | "written_off" | "supplier_returned";
+                decisionNote: string | null;
+                createdAt: string;
+            }[];
             items: {
                 /** Format: uuid */
                 id: string;
@@ -35736,6 +36162,7 @@ export interface components {
             stockRequests: number;
             incomingStock: number;
             writeOffs: number;
+            observations: number;
             discountRequests: number;
             returns: number;
             stockReceipts: number;

@@ -54,7 +54,7 @@ const EVENT_LABELS: Record<InventoryItemDetail['history'][number]['type'], strin
   sale_deleted: 'Sale deleted',
   returned: 'Returned',
   return_cancelled: 'Return cancelled',
-  quarantined: 'Put in quarantine',
+  quarantined: 'Put under observation',
   restocked: 'Back in stock',
   damaged: 'Written off as damaged',
   expired: 'Written off as expired',
