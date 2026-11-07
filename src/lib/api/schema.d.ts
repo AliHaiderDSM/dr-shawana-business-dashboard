@@ -806,7 +806,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Exchange a refresh token for a new session */
+        /** Exchange a refresh token for a new session. The refresh token rotates on every call; replaying an old one ends the session. */
         post: {
             parameters: {
                 query?: never;
@@ -830,6 +830,89 @@ export interface paths {
                             data: components["schemas"]["Session"];
                         };
                     };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End the session of this refresh token (body or cookie) and clear the cookie */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["Logout"];
+                };
+            };
+            responses: {
+                /** @description Logged out */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Validation error */
                 400: {
@@ -30839,8 +30922,15 @@ export interface components {
             identifier: string;
             password: string;
         };
+        /** @default {} */
         RefreshSession: {
-            refreshToken: string;
+            /** @description Mobile apps send the refresh token here. The dashboard leaves it out and sends the HttpOnly cookie with X-Auth-Transport: cookie. */
+            refreshToken?: string;
+        };
+        /** @default {} */
+        Logout: {
+            /** @description Mobile apps send the refresh token here. The dashboard leaves it out and sends the HttpOnly cookie with X-Auth-Transport: cookie. */
+            refreshToken?: string;
         };
         ChangePassword: {
             currentPassword: string;
@@ -30876,12 +30966,15 @@ export interface components {
             dispatchDepartmentId: string | null;
         };
         Session: {
+            /** @description Short-lived JWT, send as Authorization: Bearer */
             accessToken: string;
-            refreshToken: string;
+            /** @description Null when X-Auth-Transport: cookie is sent; the token is then in an HttpOnly cookie */
+            refreshToken: string | null;
             /** @enum {string} */
             tokenType: "bearer";
             expiresIn: number;
             expiresAt: number | null;
+            refreshExpiresAt: string;
             me: components["schemas"]["Me"];
         };
         CreateBranch: {

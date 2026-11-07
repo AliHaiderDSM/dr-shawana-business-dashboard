@@ -43,39 +43,81 @@ const OVERVIEW_PATHS = [
 ];
 const OVERVIEW_PREFIXES = ['/branch/returns/', '/branch/trace/'];
 
+const COOKIE_ROUTES = ['/auth/login', '/auth/refresh', '/auth/logout'];
+const TRANSPORT_HEADER = 'X-Auth-Transport';
+const REFRESH_LOCK = 'dsm-auth-refresh';
+const RENEW_BEFORE_SECONDS = 30;
+const RETRY_AFTER_MS = 1500;
+
 let refreshing: Promise<StoredSession | null> | null = null;
 
-async function refreshSession(): Promise<StoredSession | null> {
-  const current = sessionStore.get();
-  if (!current?.refreshToken) return null;
-  refreshing ??= fetch(`${env.VITE_API_BASE_URL}/auth/refresh`, {
+function cookieRequest(path: string) {
+  return fetch(`${env.VITE_API_BASE_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken: current.refreshToken }),
-  })
-    .then(async (res) => {
-      if (!res.ok) return null;
-      const body = (await res.json()) as { data: StoredSession };
-      const next = {
-        accessToken: body.data.accessToken,
-        refreshToken: body.data.refreshToken,
-        expiresAt: body.data.expiresAt,
-      };
-      sessionStore.set(next);
-      return next;
-    })
-    .catch(() => null)
-    .finally(() => {
-      refreshing = null;
-    });
-  return refreshing;
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', [TRANSPORT_HEADER]: 'cookie' },
+    body: '{}',
+  });
+}
+
+async function renew(): Promise<StoredSession | null> {
+  try {
+    let res = await cookieRequest('/auth/refresh');
+    if (res.status === 401 && !('locks' in navigator)) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_AFTER_MS));
+      res = await cookieRequest('/auth/refresh');
+    }
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data: StoredSession };
+    const next = { accessToken: body.data.accessToken, expiresAt: body.data.expiresAt };
+    sessionStore.set(next);
+    return next;
+  } catch {
+    return null;
+  }
+}
+
+function refreshSession(): Promise<StoredSession | null> {
+  if (!sessionStore.hasSession()) return Promise.resolve(null);
+  const pending =
+    refreshing ??
+    (async () => {
+      try {
+        return 'locks' in navigator
+          ? await navigator.locks.request(REFRESH_LOCK, () => renew())
+          : await renew();
+      } finally {
+        refreshing = null;
+      }
+    })();
+  refreshing = pending;
+  return pending;
+}
+
+export async function endServerSession() {
+  await cookieRequest('/auth/logout').catch(() => undefined);
+}
+
+async function currentAccessToken() {
+  const session = sessionStore.get();
+  if (
+    session &&
+    (session.expiresAt === null || session.expiresAt - RENEW_BEFORE_SECONDS > Date.now() / 1000)
+  ) {
+    return session.accessToken;
+  }
+  return (await refreshSession())?.accessToken;
+}
+
+function apiPath(url: URL) {
+  return url.pathname.replace(new URL(env.VITE_API_BASE_URL, window.location.origin).pathname, '');
 }
 
 function withBranch(href: string): string {
   const branchId = branchStore.queryValue();
   if (!branchId) return href;
   const url = new URL(href, window.location.origin);
-  const path = url.pathname.replace(new URL(env.VITE_API_BASE_URL, window.location.origin).pathname, '');
+  const path = apiPath(url);
   if (BRANCHLESS_PREFIXES.some((p) => path.startsWith(p)) || url.searchParams.has('branchId')) return href;
   if (
     branchStore.inWarehouse() &&
@@ -90,21 +132,25 @@ function withBranch(href: string): string {
 
 export async function authFetch(input: Request): Promise<Response> {
   const url = withBranch(input.url);
+  const cookieRoute = COOKIE_ROUTES.includes(apiPath(new URL(url, window.location.origin)));
   const body = input.method === 'GET' || input.method === 'HEAD' ? undefined : await input.arrayBuffer();
   const send = (token: string | undefined) => {
     const headers = new Headers(input.headers);
     if (token) headers.set('Authorization', `Bearer ${token}`);
+    if (cookieRoute) headers.set(TRANSPORT_HEADER, 'cookie');
     return fetch(url, {
       method: input.method,
       headers,
       body,
       signal: input.signal,
-      credentials: input.credentials,
+      credentials: cookieRoute ? 'include' : input.credentials,
       cache: input.cache,
     });
   };
-  const response = await send(sessionStore.get()?.accessToken);
-  if (response.status !== 401 || !sessionStore.get()) return response;
+  if (cookieRoute) return send(undefined);
+  const hadSession = sessionStore.hasSession();
+  const response = await send(await currentAccessToken());
+  if (response.status !== 401 || !hadSession) return response;
   const renewed = await refreshSession();
   if (!renewed) {
     sessionStore.clear();

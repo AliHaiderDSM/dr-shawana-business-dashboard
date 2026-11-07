@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Login without Supabase Auth, refresh token in a cookie (2026-11-07)
+
+- The access token now lives only in memory; the refresh token is an HttpOnly cookie set by the API (requests to /auth/login, /auth/refresh and /auth/logout send credentials and X-Auth-Transport: cookie). localStorage keeps only a dsm.signedIn flag; the old dsm.session entry is removed on load.
+- A reload refreshes through the cookie before the first call; tokens are renewed 30 s before they expire. Refreshes are serialised across tabs with navigator.locks, and logging out in one tab logs out the others.
+- Log out calls POST /auth/logout so the server session really ends.
+
 ## Appointment payments: two entry types, no Sales tab (2026-11-06)
 
 - Entry column shows only Booking (fee unpaid or partly paid) or Completed (doctor completed and fee fully paid), plus Refund; the payment state stays in Status.

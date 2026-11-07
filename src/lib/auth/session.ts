@@ -1,10 +1,10 @@
-const SESSION_KEY = 'dsm.session';
+const LEGACY_SESSION_KEY = 'dsm.session';
+export const SIGNED_IN_KEY = 'dsm.signedIn';
 const BRANCH_KEY = 'dsm.branch';
 const LAST_USER_KEY = 'dsm.lastUser';
 
 export interface StoredSession {
   accessToken: string;
-  refreshToken: string;
   expiresAt: number | null;
 }
 
@@ -28,11 +28,20 @@ function write(key: string, value: unknown) {
   }
 }
 
+write(LEGACY_SESSION_KEY, null);
+
+let current: StoredSession | null = null;
+
 export const sessionStore = {
-  get: () => read<StoredSession>(SESSION_KEY),
-  set: (session: StoredSession | null) => write(SESSION_KEY, session),
+  get: () => current,
+  hasSession: () => read<boolean>(SIGNED_IN_KEY) === true,
+  set: (session: StoredSession | null) => {
+    current = session;
+    if (session) write(SIGNED_IN_KEY, true);
+  },
   clear: () => {
-    write(SESSION_KEY, null);
+    current = null;
+    write(SIGNED_IN_KEY, null);
     write(BRANCH_KEY, null);
   },
 };

@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AUTH_EXPIRED_EVENT } from '@/lib/api/client';
+import { AUTH_EXPIRED_EVENT, endServerSession } from '@/lib/api/client';
 import { unsubscribeBrowser } from '@/lib/web-push';
 import type { Me } from '@/lib/api/types';
 import { clearApiCache, clearApiCacheKeepingMe, requestLogin, seedMe, useMe } from '@redux/features/auth';
 import { BRANCH_OPTIONS_STALE_SECONDS, useGetBranchOptionsQuery } from '@redux/features/branches';
 import { useAppDispatch } from '@redux/hooks';
-import { ALL_BRANCHES, branchStore, lastUserStore, sessionStore } from './session';
+import { ALL_BRANCHES, branchStore, lastUserStore, sessionStore, SIGNED_IN_KEY } from './session';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
 
@@ -54,7 +54,7 @@ const SUPER_ADMIN_STOCK_MODULES = new Set([
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
-  const [hasSession, setHasSession] = useState(() => sessionStore.get() !== null);
+  const [hasSession, setHasSession] = useState(() => sessionStore.hasSession());
   const [branchId, setBranchState] = useState(() => branchStore.get());
 
   const meQuery = useMe(hasSession);
@@ -70,27 +70,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const superAdminStock = (branchOptions.data ?? []).find((b) => b.kind === 'warehouse')?.id ?? null;
   branchStore.setWarehouse(superAdminStock);
 
-  const logout = useCallback(() => {
-    void unsubscribeBrowser().catch(() => undefined);
+  const endLocally = useCallback(() => {
     sessionStore.clear();
     setHasSession(false);
     setBranchState(ALL_BRANCHES);
     dispatch(clearApiCache());
   }, [dispatch]);
 
+  const logout = useCallback(() => {
+    void unsubscribeBrowser().catch(() => undefined);
+    void endServerSession();
+    endLocally();
+  }, [endLocally]);
+
   useEffect(() => {
-    window.addEventListener(AUTH_EXPIRED_EVENT, logout);
-    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, logout);
-  }, [logout]);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === SIGNED_IN_KEY && event.newValue === null) endLocally();
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, endLocally);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, endLocally);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [endLocally]);
 
   const login = useCallback(
     async (identifier: string, password: string) => {
       const { data } = await requestLogin({ identifier, password });
-      sessionStore.set({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresAt: data.expiresAt,
-      });
+      sessionStore.set({ accessToken: data.accessToken, expiresAt: data.expiresAt });
       dispatch(seedMe(data.me));
       setHasSession(true);
       return data.me;
