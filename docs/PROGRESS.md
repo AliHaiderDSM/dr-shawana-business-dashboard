@@ -12,6 +12,15 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment payments: Bookings, Dues received and the paid breakdown (2026-11-09)
+
+- Bookings shows only appointments not completed yet; completed ones live in Completed appointments.
+- Dues received shows only payments after the visit that cleared the fee; part payments after the visit stay in Advance.
+- GDN now holds only completed visits (paid or not) of the period plus the dues of earlier completed visits received in it; bookings and upcoming visits stay out.
+- Advance holds only payments that left the fee part paid. A payment that clears the rest of the fee (after an advance, even before the visit, or after the visit) moves to Dues received and counts as Received.
+- Dues received holds every payment that made the fee fully paid, also a full payment in one go before the visit.
+- In Dues received, clicking Fully paid opens a breakdown of every payment of that appointment: date, advance or dues, amount, method, paid so far and remaining.
+
 ## Under observation (2026-11-07)
 
 - Dispatch dialog: Report issue next to the scan box and an eye button on each scanned label put a piece under observation with a reason and note; the piece leaves the scanned list and the order's held pieces show below the table. Stock request sheet: the Warehouse Keeper gets Report issue while sending, and everyone sees the held pieces of the request.

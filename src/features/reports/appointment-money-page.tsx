@@ -2,6 +2,7 @@ import { addDays, parseISO } from 'date-fns';
 import {
   CalendarPlus,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -11,7 +12,7 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
@@ -59,7 +60,7 @@ const entryOf = (r: AppointmentMoneyEntry): { label: string; tone: Tone } =>
 
 type Group = 'booked' | 'advance' | 'sale' | 'refund';
 const groupOf = (r: AppointmentMoneyEntry): Group =>
-  r.kind === 'balance'
+  r.kind === 'balance' || r.kind === 'advance'
     ? r.stateAfter === 'paid'
       ? 'sale'
       : 'advance'
@@ -83,6 +84,8 @@ function latestPerAppointment(rows: AppointmentMoneyEntry[], keep: (r: Appointme
 }
 
 const isDues = (r: AppointmentMoneyEntry) => r.kind === 'balance' && r.date > r.appointment.visitDate;
+const isDuesCleared = (r: AppointmentMoneyEntry) =>
+  (r.kind === 'balance' || r.kind === 'advance') && r.stateAfter === 'paid' && r.fullyPaidHere;
 
 function tabContext(
   rows: AppointmentMoneyEntry[],
@@ -90,10 +93,12 @@ function tabContext(
   period: { from: string; to: string } | null,
 ): TabContext {
   const inPeriod = (day: string) => !period || (day >= period.from && day <= period.to);
-  const gdn = rows.filter((r) => r.kind !== 'refund' && (inPeriod(r.appointment.visitDate) || isDues(r)));
+  const gdn = [...rows, ...visits].filter(
+    (r) => isCompleted(r) && (inPeriod(r.appointment.visitDate) || isDues(r)),
+  );
   return {
     completed: new Set(latestPerAppointment([...rows, ...visits], isCompleted).map((r) => r.sr)),
-    gdn: new Set([...gdn, ...visits].map((r) => r.sr)),
+    gdn: new Set(gdn.map((r) => r.sr)),
   };
 }
 
@@ -105,12 +110,16 @@ const TABS: {
 }[] = [
   { key: 'all', label: 'All entries', match: (r) => r.kind !== 'visit' },
   { key: 'gdn', label: 'GDN', match: (r, ctx) => ctx.gdn.has(r.sr) },
-  { key: 'booked', label: 'Bookings', match: (r) => r.kind === 'booked' },
+  {
+    key: 'booked',
+    label: 'Bookings',
+    match: (r) => r.kind === 'booked' && r.appointment.status !== 'completed',
+  },
   { key: 'advance', label: 'Advance', match: (r) => groupOf(r) === 'advance' },
   {
     key: 'dues',
     label: 'Dues received',
-    match: isDues,
+    match: isDuesCleared,
   },
   {
     key: 'completed',
@@ -153,6 +162,73 @@ function linksOf(rows: AppointmentMoneyEntry[]) {
         .join(', '),
     };
   };
+}
+
+function PaymentBreakdown({ entry }: { entry: AppointmentMoneyEntry }) {
+  const signed = entry.appointment.history.map((m) =>
+    m.kind === 'refund' ? -Number(m.amount) : Number(m.amount),
+  );
+  const lines = entry.appointment.history.map((m, index) => ({
+    ...m,
+    paidSoFar: signed.slice(0, index + 1).reduce((sum, value) => sum + value, 0),
+  }));
+  const fee = Number(entry.appointment.fee);
+  return (
+    <div className="space-y-2 rounded-lg border bg-card p-3">
+      <table className="w-full text-xs">
+        <thead className="text-muted-foreground">
+          <tr>
+            <th className="py-1 pr-3 text-left font-medium">Date</th>
+            <th className="px-3 py-1 text-left font-medium">Payment</th>
+            <th className="px-3 py-1 text-center font-medium">Amount</th>
+            <th className="px-3 py-1 text-center font-medium">Method · account</th>
+            <th className="px-3 py-1 text-center font-medium">Paid so far</th>
+            <th className="px-3 py-1 text-center font-medium">Remaining</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {lines.map((m, index) => (
+            <tr key={m.id} className={cn(m.id === entry.id && 'font-semibold')}>
+              <td className="py-1.5 pr-3 whitespace-nowrap">{formatDate(m.date, 'dd MMM yyyy')}</td>
+              <td className="px-3 py-1.5 whitespace-nowrap">
+                {m.kind === 'refund'
+                  ? 'Refund'
+                  : m.paidSoFar >= fee && index > 0
+                    ? 'Dues received'
+                    : m.date < entry.appointment.visitDate
+                      ? m.paidSoFar >= fee
+                        ? 'Paid in full before the visit'
+                        : 'Advance before the visit'
+                      : m.paidSoFar >= fee
+                        ? 'Paid in full'
+                        : 'Part of the dues'}
+                {m.id === entry.id ? <span className="ml-1 text-muted-foreground">(this entry)</span> : null}
+              </td>
+              <td
+                className={cn(
+                  'px-3 py-1.5 text-center tabular-nums',
+                  m.kind === 'refund' && 'text-destructive',
+                )}
+              >
+                {m.kind === 'refund' ? '− ' : ''}
+                {formatAmount(m.amount)}
+              </td>
+              <td className="px-3 py-1.5 text-center">
+                {m.method === 'online' ? 'Online' : m.method ? 'Cash' : '—'}
+                {m.method === 'online' && m.account ? (
+                  <span className="text-muted-foreground"> · {m.account}</span>
+                ) : null}
+              </td>
+              <td className="px-3 py-1.5 text-center tabular-nums">{formatAmount(m.paidSoFar)}</td>
+              <td className="px-3 py-1.5 text-center tabular-nums">
+                {fee - m.paidSoFar > 0 ? formatAmount(fee - m.paidSoFar) : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function PatientName({ name }: { name: string | null }) {
@@ -281,6 +357,14 @@ export function AppointmentMoneyPage() {
   );
   const [tab, setTab] = useState<Tab>('all');
   const [page, setPage] = useState(1);
+  const [opened, setOpened] = useState<Set<string>>(new Set());
+  const toggle = (key: string) =>
+    setOpened((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
@@ -324,7 +408,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own entry. Entries of the same appointment share a colour. Entry: Completed once the doctor completed the visit, Booking until then. Status shows the payment state after that entry. GDN: for the chosen period, the visits of the period (paid or not) and the dues of earlier visits received in it. Completed appointments: one line per completed visit, paid or not."
+        description="Every booking, payment and refund as its own entry. Entries of the same appointment share a colour. Entry: Completed once the doctor completed the visit, Booking until then. Status shows the payment state after that entry. Bookings: appointments booked and not completed yet. Advance: payments that left the fee part paid. Dues received: every payment that made the fee fully paid, in one go or after an advance; click Fully paid to see every payment of that appointment. GDN: only visits the doctor completed, paid or not, for the chosen period, plus dues of earlier completed visits received in it. Completed appointments: one line per completed visit, paid or not."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
@@ -439,14 +523,14 @@ export function AppointmentMoneyPage() {
             <Kpi
               label="Advance"
               value={formatMoney(totalOf(data.rows, 'advance'))}
-              hint={`${advanceCount} entr${advanceCount === 1 ? 'y' : 'ies'} · fee not fully paid yet`}
+              hint={`${advanceCount} entr${advanceCount === 1 ? 'y' : 'ies'} · fee still part paid after it`}
               icon={HandCoins}
               accent="bg-info-soft text-info-soft-foreground"
             />
             <Kpi
               label="Received"
               value={formatMoney(totalOf(data.rows, 'sale'))}
-              hint={`${saleCount} entr${saleCount === 1 ? 'y' : 'ies'} · fee fully paid on or after the visit`}
+              hint={`${saleCount} entr${saleCount === 1 ? 'y' : 'ies'} · payments that cleared the fee`}
               icon={Wallet}
               accent="bg-primary-soft text-primary-soft-foreground"
             />
@@ -524,89 +608,123 @@ export function AppointmentMoneyPage() {
                     <tbody>
                       {rows.map((r, index) => {
                         const no = r.appointment.appointmentNo;
+                        const key = `${r.kind}-${r.id}`;
+                        const expandable = tab === 'dues' && r.stateAfter === 'paid';
+                        const open = expandable && opened.has(key);
                         return (
-                          <tr
-                            key={`${r.kind}-${r.id}`}
-                            className={cn(
-                              'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
-                              !onPage(index) && 'hidden',
-                            )}
-                            style={tint(no, 6)}
-                          >
-                            <td
-                              className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
-                              style={{ borderLeft: `4px solid ${colorOf(no)}` }}
-                            >
-                              {r.sr}
-                            </td>
-                            {view !== 'day' ? (
-                              <td className="px-3 py-2.5 whitespace-nowrap">
-                                {formatDate(r.date, view === 'all' ? 'dd MMM yyyy' : 'EEE dd MMM')}
-                              </td>
-                            ) : null}
-                            <td className="px-3 py-2.5">
-                              <span
-                                className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap"
-                                style={tint(no, 20)}
-                              >
-                                <span
-                                  className="size-2 rounded-full"
-                                  style={{ backgroundColor: colorOf(no) }}
-                                />
-                                APP#{no}
-                              </span>
-                              <div className="mt-1 whitespace-nowrap text-muted-foreground">
-                                Visit {formatDate(r.appointment.visitDate, 'dd MMM')}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <PatientName name={r.patient.name} />
-                              <div className="text-muted-foreground tabular-nums">{r.patient.phone}</div>
-                            </td>
-                            <td className={cn('px-3 py-2.5', view !== 'day' && 'text-center')}>
-                              <div>{r.doctor ?? '—'}</div>
-                              {allBranches ? (
-                                <div className="text-muted-foreground">{r.branch.name}</div>
-                              ) : null}
-                            </td>
-                            <td className="px-3 py-2.5 text-center">
-                              <StatusBadge tone={entryOf(r).tone}>{entryOf(r).label}</StatusBadge>
-                            </td>
-                            <td
+                          <Fragment key={key}>
+                            <tr
                               className={cn(
-                                'px-3 py-2.5 text-center font-semibold whitespace-nowrap tabular-nums',
-                                r.kind === 'refund' && 'text-destructive',
+                                'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
+                                !onPage(index) && 'hidden',
                               )}
+                              style={tint(no, 6)}
                             >
-                              {r.kind === 'booked' || r.kind === 'visit'
-                                ? '—'
-                                : `${r.kind === 'refund' ? '− ' : ''}${formatAmount(r.amount)}`}
-                            </td>
-                            <td className="px-3 py-2.5 text-center">
-                              {r.method ? (
-                                <span className="capitalize">
-                                  {r.method === 'online' ? 'Online' : 'Cash'}
-                                </span>
-                              ) : (
-                                '—'
-                              )}
-                              {r.method === 'online' && r.account ? (
-                                <div className="text-muted-foreground">{r.account}</div>
+                              <td
+                                className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
+                                style={{ borderLeft: `4px solid ${colorOf(no)}` }}
+                              >
+                                {r.sr}
+                              </td>
+                              {view !== 'day' ? (
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  {formatDate(r.date, view === 'all' ? 'dd MMM yyyy' : 'EEE dd MMM')}
+                                </td>
                               ) : null}
-                            </td>
-                            <td className="px-3 py-2.5 text-center tabular-nums">
-                              {amount(r.appointment.fee)}
-                            </td>
-                            <td className="px-3 py-2.5 text-center tabular-nums">{amount(r.paidAfter)}</td>
-                            <td className="px-3 py-2.5 text-center tabular-nums">
-                              {amount(r.remainingAfter)}
-                            </td>
-                            <td className="px-3 py-2.5 text-center">
-                              <StatusBadge tone={STATE[r.stateAfter].tone}>
-                                {STATE[r.stateAfter].label}
-                              </StatusBadge>
-                            </td>
-                          </tr>
+                              <td className="px-3 py-2.5">
+                                <span
+                                  className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap"
+                                  style={tint(no, 20)}
+                                >
+                                  <span
+                                    className="size-2 rounded-full"
+                                    style={{ backgroundColor: colorOf(no) }}
+                                  />
+                                  APP#{no}
+                                </span>
+                                <div className="mt-1 whitespace-nowrap text-muted-foreground">
+                                  Visit {formatDate(r.appointment.visitDate, 'dd MMM')}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <PatientName name={r.patient.name} />
+                                <div className="text-muted-foreground tabular-nums">{r.patient.phone}</div>
+                              </td>
+                              <td className={cn('px-3 py-2.5', view !== 'day' && 'text-center')}>
+                                <div>{r.doctor ?? '—'}</div>
+                                {allBranches ? (
+                                  <div className="text-muted-foreground">{r.branch.name}</div>
+                                ) : null}
+                              </td>
+                              <td className="px-3 py-2.5 text-center">
+                                <StatusBadge tone={entryOf(r).tone}>{entryOf(r).label}</StatusBadge>
+                              </td>
+                              <td
+                                className={cn(
+                                  'px-3 py-2.5 text-center font-semibold whitespace-nowrap tabular-nums',
+                                  r.kind === 'refund' && 'text-destructive',
+                                )}
+                              >
+                                {r.kind === 'booked' || r.kind === 'visit'
+                                  ? '—'
+                                  : `${r.kind === 'refund' ? '− ' : ''}${formatAmount(r.amount)}`}
+                              </td>
+                              <td className="px-3 py-2.5 text-center">
+                                {r.method ? (
+                                  <span className="capitalize">
+                                    {r.method === 'online' ? 'Online' : 'Cash'}
+                                  </span>
+                                ) : (
+                                  '—'
+                                )}
+                                {r.method === 'online' && r.account ? (
+                                  <div className="text-muted-foreground">{r.account}</div>
+                                ) : null}
+                              </td>
+                              <td className="px-3 py-2.5 text-center tabular-nums">
+                                {amount(r.appointment.fee)}
+                              </td>
+                              <td className="px-3 py-2.5 text-center tabular-nums">{amount(r.paidAfter)}</td>
+                              <td className="px-3 py-2.5 text-center tabular-nums">
+                                {amount(r.remainingAfter)}
+                              </td>
+                              <td className="px-3 py-2.5 text-center">
+                                {expandable ? (
+                                  <button
+                                    type="button"
+                                    aria-expanded={open}
+                                    onClick={() => toggle(key)}
+                                    className="inline-flex items-center gap-1 rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                  >
+                                    <StatusBadge tone={STATE[r.stateAfter].tone}>
+                                      {STATE[r.stateAfter].label}
+                                    </StatusBadge>
+                                    <ChevronDown
+                                      className={cn(
+                                        'size-3.5 text-muted-foreground transition-transform',
+                                        open && 'rotate-180',
+                                      )}
+                                    />
+                                  </button>
+                                ) : (
+                                  <StatusBadge tone={STATE[r.stateAfter].tone}>
+                                    {STATE[r.stateAfter].label}
+                                  </StatusBadge>
+                                )}
+                              </td>
+                            </tr>
+                            {open && onPage(index) ? (
+                              <tr className="border-b print:hidden" style={tint(no, 3)}>
+                                <td
+                                  colSpan={view !== 'day' ? 12 : 11}
+                                  className="px-4 py-3"
+                                  style={{ borderLeft: `4px solid ${colorOf(no)}` }}
+                                >
+                                  <PaymentBreakdown entry={r} />
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
                         );
                       })}
                     </tbody>

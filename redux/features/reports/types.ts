@@ -108,6 +108,15 @@ export interface ProductSalesData {
 export type AppointmentMoneyState = 'unpaid' | 'advance' | 'paid' | 'cancelled' | 'held' | 'refunded';
 export type AppointmentMoneyKind = 'booked' | 'advance' | 'balance' | 'refund' | 'visit';
 
+export interface AppointmentMoneyMovement {
+  kind: 'payment' | 'refund';
+  id: string;
+  date: string;
+  amount: string;
+  method: string | null;
+  account: string | null;
+}
+
 export interface AppointmentMoneyEntry {
   sr: number;
   id: string;
@@ -123,6 +132,7 @@ export interface AppointmentMoneyEntry {
     bookedOn: string;
     status: string;
     fee: string;
+    history: AppointmentMoneyMovement[];
   };
   patient: { name: string | null; phone: string | null };
   doctor: string | null;
