@@ -248,6 +248,13 @@ function Builder({
 
   const lockedParties = Boolean(prescription || consultationId);
   const patientName = prescription?.patient?.name ?? consultation.data?.patient?.name;
+  const lockedDoctor = lockedParties || isDoctor;
+  const chosenDoctorId = form.getValues('doctorId');
+  const doctorName =
+    prescription?.doctor?.name ??
+    consultation.data?.doctor?.name ??
+    (isDoctor ? myDoctor.data?.displayName : undefined) ??
+    doctors.data?.find((d) => d.id === chosenDoctorId)?.name;
 
   return (
     <Form {...form}>
@@ -299,14 +306,22 @@ function Builder({
                   )}
                 />
               )}
-              <SelectField
-                control={form.control}
-                name="doctorId"
-                label="Doctor name"
-                required
-                disabled={lockedParties || isDoctor}
-                options={(doctors.data ?? []).map((d) => ({ value: d.id, label: d.name }))}
-              />
+              {lockedDoctor ? (
+                <FormItem>
+                  <FormLabel>Doctor name</FormLabel>
+                  <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
+                    {doctorName ?? '…'}
+                  </div>
+                </FormItem>
+              ) : (
+                <SelectField
+                  control={form.control}
+                  name="doctorId"
+                  label="Doctor name"
+                  required
+                  options={(doctors.data ?? []).map((d) => ({ value: d.id, label: d.name }))}
+                />
+              )}
             </FieldRow>
             <TextField control={form.control} name="date" label="Date" type="date" required />
             <TextareaField control={form.control} name="diagnosis" label="Diagnosis" required rows={2} />

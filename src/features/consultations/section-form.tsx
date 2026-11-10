@@ -268,14 +268,19 @@ function SurgeriesField({
                         onCheckedChange={(checked) =>
                           f.onChange(
                             checked === true
-                              ? [...list, { type: value, year: '' }]
+                              ? [
+                                  ...list.filter((s) =>
+                                    value === 'no_surgery' ? false : s.type !== 'no_surgery',
+                                  ),
+                                  { type: value, year: '' },
+                                ]
                               : list.filter((s) => s.type !== value),
                           )
                         }
                       />
                       <span className="truncate">{label}</span>
                     </label>
-                    {entry ? (
+                    {entry && value !== 'no_surgery' ? (
                       <select
                         aria-label={`${label} year`}
                         className="h-8 w-28 rounded-md border bg-background px-2 text-sm"

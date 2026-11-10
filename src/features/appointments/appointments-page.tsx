@@ -437,7 +437,7 @@ export function AppointmentsPage() {
             .filter((d) => !isDoctor || d.id === myDoctor.data?.id)
             .map((d) => ({ id: d.id, name: d.name }))}
           lockDoctor={isDoctor}
-          defaultSpan={isDoctor ? 'month' : 'day'}
+          defaultSpan={isDoctor ? 'week' : 'day'}
         />
       ) : (
         <DataTable

@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Prescription doctor, doctor calendar, None surgery (2026-11-10)
+
+- New prescription: when the doctor cannot be changed (from a consultation, an existing prescription or a doctor's own login) the doctor shows as read-only text, so the name appears at once instead of an empty disabled list that needed a refresh.
+- My appointments opens for doctors in the week view. Day and week cards show start and end time. The New badge is filled, Follow up stays outlined, so the two are told apart at a glance.
+- Medical history, Surgical history: a None option that clears the surgeries (and is cleared by ticking one), with no year.
+
 ## Appointment calendar: own column, no overlaps (2026-11-10)
 
 - A doctor's calendar shows only their own column in the day view.

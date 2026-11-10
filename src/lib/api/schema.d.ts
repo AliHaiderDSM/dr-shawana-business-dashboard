@@ -34484,7 +34484,7 @@ export interface components {
             /** @default [] */
             surgeries: {
                 /** @enum {string} */
-                type: "hysterectomy" | "ovaries_removed" | "c_section" | "tubal_ligation" | "myomectomy" | "endometriosis_surgery" | "breast_surgery" | "bariatric_surgery" | "other";
+                type: "hysterectomy" | "ovaries_removed" | "c_section" | "tubal_ligation" | "myomectomy" | "endometriosis_surgery" | "breast_surgery" | "bariatric_surgery" | "other" | "no_surgery";
                 /**
                  * Format: date
                  * @default null
@@ -34845,7 +34845,7 @@ export interface components {
             /** @default [] */
             diagnoses: ("osteopenia" | "osteoporosis" | "pcos" | "pms_pmdd" | "endometriosis" | "adenomyosis" | "ovarian_cyst")[];
             /** @default [] */
-            complaints: ("vasomotor" | "gsm" | "hsdd" | "mood" | "sleep_disorder" | "cognitive" | "weight_metabolic" | "hair_loss" | "acne" | "other")[];
+            complaints: ("vasomotor" | "gsm" | "musculoskeletal_disorder" | "hsdd" | "mood" | "sleep_disorder" | "cognitive" | "weight_metabolic" | "hair_loss" | "acne" | "other")[];
             /** @default [] */
             clinicalStatus: ("improved" | "stable" | "worsened" | "no_change")[];
             /** @default [] */

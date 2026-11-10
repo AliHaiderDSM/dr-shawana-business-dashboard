@@ -167,19 +167,19 @@ function TimeGrid({
                         <span className="truncate font-medium">{entry.patient?.name}</span>
                         <span
                           className={cn(
-                            'shrink-0 rounded-full border bg-card px-1.5 py-px text-[10px] leading-none font-medium',
+                            'shrink-0 rounded-full border px-1.5 py-px text-[10px] leading-none font-medium',
                             entry.repeatNo
-                              ? 'border-warning/40 text-warning-soft-foreground'
+                              ? 'border-warning/40 bg-card text-warning-soft-foreground'
                               : entry.visitType === 'followup'
-                                ? 'border-info/40 text-info-soft-foreground'
-                                : 'border-success/40 text-success-soft-foreground',
+                                ? 'border-info/40 bg-card text-info-soft-foreground'
+                                : 'border-success bg-success text-success-foreground',
                           )}
                         >
                           {entry.repeatNo ? 'Repeat' : VISIT_LABELS[entry.visitType]}
                         </span>
                       </div>
                       <div className="truncate opacity-80">
-                        {timeLabel(entry.timeFrom)} · #{appointmentNumber(entry)}
+                        {timeLabel(entry.timeFrom)} – {timeLabel(entry.timeTo)} · #{appointmentNumber(entry)}
                         {entry.mode === 'online' ? ' · online' : ''}
                       </div>
                     </button>

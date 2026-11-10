@@ -407,6 +407,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
           'breast_surgery:Breast Surgery',
           'bariatric_surgery:Bariatric Surgery',
           'other:Other',
+          'no_surgery:None',
         ),
       },
       {
