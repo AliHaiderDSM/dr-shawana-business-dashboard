@@ -47,7 +47,7 @@
 ## Defaults: GDN All, doctor home and calendar, appointment boxes (2026-11-10)
 
 - GDN report opens on All for the Super Admin (Online and Office stay one click away).
-- Doctor home: Today's appointments (time, patient, number, type, status, links to each visit) takes the place of Monthly revenue next to the revenue split, and Monthly revenue moves below at full width.
+- Doctor home: Today's appointments (start and end time, patient, number, type, status, links to each visit) takes the place of Monthly revenue next to the revenue split, and Monthly revenue moves below at full width.
 - My appointments opens for doctors in the calendar, month view; List and Day stay one click away. Other roles keep the list.
 - Appointments list: the Date column shows only the date (no weekday). Patients list: the Patient column shows only the name, since Phone has its own column.
 - The three boxes on Appointments count every date until a date range is picked (they no longer default to this month).

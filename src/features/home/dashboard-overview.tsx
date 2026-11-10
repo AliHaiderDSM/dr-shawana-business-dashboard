@@ -511,8 +511,9 @@ function TodayAppointments() {
                 to={`/appointments/${a.id}`}
                 className="flex items-center gap-4 rounded-md px-2 py-2.5 hover:bg-muted/50"
               >
-                <span className="w-20 shrink-0 text-sm font-semibold tabular-nums">
-                  {timeLabel(a.timeFrom)}
+                <span className="w-20 shrink-0 tabular-nums">
+                  <span className="block text-sm font-semibold">{timeLabel(a.timeFrom)}</span>
+                  <span className="block text-xs text-muted-foreground">to {timeLabel(a.timeTo)}</span>
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{a.patient?.name}</span>
