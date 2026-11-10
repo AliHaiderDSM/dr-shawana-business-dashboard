@@ -173,10 +173,7 @@ export function AppointmentsPage() {
       accessorKey: 'date',
       meta: { sortKey: 'date', hideable: false },
       cell: ({ row }) => (
-        <div className="whitespace-nowrap">
-          <div className="font-medium">{formatDate(row.original.date)}</div>
-          <div className="text-xs text-muted-foreground">{formatDate(row.original.date, 'EEEE')}</div>
-        </div>
+        <span className="font-medium whitespace-nowrap">{formatDate(row.original.date)}</span>
       ),
     },
     {
@@ -198,10 +195,7 @@ export function AppointmentsPage() {
       cell: ({ row }) => (
         <div className="min-w-0">
           <PatientName name={row.original.patient?.name} />
-          <div className="max-w-40 truncate text-xs text-muted-foreground tabular-nums">
-            {row.original.patient?.phone}
-            {row.original.patientCity ? ` · ${row.original.patientCity}` : ''}
-          </div>
+         
         </div>
       ),
     },

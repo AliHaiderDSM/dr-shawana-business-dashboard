@@ -47,12 +47,7 @@ export function PatientsPage() {
       header: 'Patient',
       accessorKey: 'name',
       meta: { sortKey: 'name', hideable: false },
-      cell: ({ row }) => (
-        <div className="min-w-0">
-          <div className="font-medium">{row.original.name}</div>
-          <div className="text-xs text-muted-foreground tabular-nums">{row.original.phone}</div>
-        </div>
-      ),
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
     },
     {
       id: 'phone',
