@@ -20,7 +20,7 @@ import type { ListState } from '@/hooks/use-list-state';
 import { isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAppointmentCalendar, type CalendarEntry } from '@redux/features/appointments';
-import { appointmentNumber, timeLabel } from './constants';
+import { appointmentNumber, STATUS_LABELS, timeLabel, VISIT_LABELS } from './constants';
 
 const HOUR_HEIGHT = 56;
 const ENTRY_HEIGHT = 44;
@@ -163,7 +163,21 @@ function TimeGrid({
                       }}
                       title={`${entry.patient?.name ?? ''} · ${timeLabel(entry.timeFrom)} – ${timeLabel(entry.timeTo)}`}
                     >
-                      <div className="truncate font-medium">{entry.patient?.name}</div>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate font-medium">{entry.patient?.name}</span>
+                        <span
+                          className={cn(
+                            'shrink-0 rounded-full border bg-card px-1.5 py-px text-[10px] leading-none font-medium',
+                            entry.repeatNo
+                              ? 'border-warning/40 text-warning-soft-foreground'
+                              : entry.visitType === 'followup'
+                                ? 'border-info/40 text-info-soft-foreground'
+                                : 'border-success/40 text-success-soft-foreground',
+                          )}
+                        >
+                          {entry.repeatNo ? 'Repeat' : VISIT_LABELS[entry.visitType]}
+                        </span>
+                      </div>
                       <div className="truncate opacity-80">
                         {timeLabel(entry.timeFrom)} · #{appointmentNumber(entry)}
                         {entry.mode === 'online' ? ' · online' : ''}
@@ -411,6 +425,16 @@ export function AppointmentCalendar({
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-4 py-2 text-xs text-muted-foreground">
+        <span>Card colour shows the status:</span>
+        {(['booked', 'completed', 'cancelled'] as const).map((status) => (
+          <span key={status} className="inline-flex items-center gap-1.5">
+            <span className={cn('size-3 rounded-sm border', STATUS_STYLES[status])} />
+            {STATUS_LABELS[status]}
+          </span>
+        ))}
+        <span className="sm:ml-auto">The badge shows the visit: New, Follow up or Repeat</span>
       </div>
       {calendar.isLoading ? (
         <div className="space-y-3 p-4">

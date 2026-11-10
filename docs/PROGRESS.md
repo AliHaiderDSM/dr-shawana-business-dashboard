@@ -15,7 +15,7 @@
 ## Appointment calendar: own column, no overlaps (2026-11-10)
 
 - A doctor's calendar shows only their own column in the day view.
-- Day and week views grow an hour when it holds short or many appointments, so every slot is tall enough to read, and appointments at the same time sit side by side instead of on top of each other. Hovering shows the patient and the full time.
+- Day and week views grow an hour when it holds short or many appointments, so every slot is tall enough to read, and appointments at the same time sit side by side instead of on top of each other. Hovering shows the patient and the full time. Each appointment in the day and week views carries a New, Follow up or Repeat badge, as in the list. A legend under the toolbar explains that the card colour is the status (booked, completed, cancelled) and the badge is the visit type.
 
 ## Prescription date follows the visit (2026-11-10)
 
