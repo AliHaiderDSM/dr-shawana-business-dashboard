@@ -20,6 +20,8 @@ import type {
   AppointmentPayment,
   AppointmentPaymentProofUrl,
   AppointmentReceivingAccounts,
+  AppointmentSummary,
+  AppointmentSummaryQuery,
   AppointmentUpdate,
   BookAppointmentArg,
   ChangeAppointmentStatusArg,
@@ -49,6 +51,13 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
       queryFn: (query) =>
         fromApi<AppointmentCalendar>(() =>
           unwrap(api.GET('/branch/appointments/calendar', { params: { query } })).then((r) => r.data),
+        ),
+      providesTags: ['appointments'],
+    }),
+    getAppointmentSummary: build.query<AppointmentSummary, AppointmentSummaryQuery>({
+      queryFn: (query) =>
+        fromApi<AppointmentSummary>(() =>
+          unwrap(api.GET('/branch/appointments/summary', { params: { query } })).then((r) => r.data),
         ),
       providesTags: ['appointments'],
     }),
@@ -202,6 +211,7 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
 export const {
   useGetAppointmentListQuery,
   useGetAppointmentCalendarQuery,
+  useGetAppointmentSummaryQuery,
   useBookAppointmentMutation,
   useChangeAppointmentStatusMutation,
   useSaveAppointmentPaymentMutation,
@@ -214,6 +224,10 @@ export const {
 
 export function useAppointmentList(query: Record<string, unknown>) {
   return useGetAppointmentListQuery(query);
+}
+
+export function useAppointmentSummary(query: AppointmentSummaryQuery) {
+  return useGetAppointmentSummaryQuery(query);
 }
 
 export function useAppointmentCalendar(query: AppointmentCalendarQuery) {

@@ -21,6 +21,7 @@ import { SECTIONS } from '@/features/consultations/clinical-fields';
 import { CATEGORY_LABELS } from '@/features/prescriptions/constants';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
 import { patientRecordFileUrl } from '@redux/features/patients';
+import { appointmentNumber } from '@/features/appointments/constants';
 
 interface TimelineEvent {
   id: string;
@@ -82,7 +83,7 @@ function buildEvents(timeline: PatientTimeline): TimelineEvent[] {
       icon: Stethoscope,
       title: (
         <span className="flex items-center gap-2">
-          Consultation #{c.appointment?.appointmentNo}
+          Consultation #{c.appointment ? appointmentNumber(c.appointment) : ''}
           <StatusBadge status={c.status} />
         </span>
       ),

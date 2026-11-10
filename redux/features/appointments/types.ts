@@ -12,6 +12,13 @@ export type AppointmentStatus = Appointment['status'];
 
 export type AppointmentListPage = ClinicGetResponse<'/branch/appointments'>;
 export type AppointmentCalendar = ClinicGetResponse<'/branch/appointments/calendar'>['data'];
+export type AppointmentSummary = Schemas['AppointmentSummary'];
+
+export interface AppointmentSummaryQuery {
+  from: string;
+  to: string;
+  doctorId?: string;
+}
 export type AppointmentAttachmentUrl =
   ClinicGetResponse<'/branch/appointments/{id}/attachments/{attachmentId}/url'>['data'];
 export type AppointmentMedicalRecordUrl =

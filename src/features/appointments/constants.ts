@@ -10,6 +10,10 @@ export const MODE_LABELS: Record<Appointment['mode'], string> = { online: 'Onlin
 export const VISIT_LABELS: Record<Appointment['visitType'], string> = { new: 'New', followup: 'Follow up' };
 export const METHOD_LABELS: Record<AppointmentPayment['method'], string> = { cash: 'Cash', online: 'Online' };
 
+export function appointmentNumber(a: { appointmentNo: number; repeatNo?: number | null }) {
+  return a.repeatNo ? `${a.appointmentNo}.${a.repeatNo}` : String(a.appointmentNo);
+}
+
 export function timeLabel(value: string) {
   const [hours = '0', minutes = '00'] = value.split(':');
   const h = Number(hours);

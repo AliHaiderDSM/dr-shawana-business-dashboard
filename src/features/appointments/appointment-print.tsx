@@ -3,7 +3,7 @@ import { Letterhead, PrintField, PrintPage, PrintTable } from '@/components/shar
 import { doctorsApi } from '@redux/features/doctors';
 import { formatDate, formatMoney } from '@/lib/format';
 import { appointmentsApi } from '@redux/features/appointments';
-import { METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
+import { appointmentNumber, METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
 
 export function AppointmentPrint() {
   const { id = '' } = useParams();
@@ -32,7 +32,7 @@ export function AppointmentPrint() {
               <PrintField label="Doctor" value={a.doctor?.name} />
               <PrintField label="Phone" value={doctor?.phone} />
             </div>
-            <h2 className="text-center text-xl font-semibold">Appointment No #{a.appointmentNo}</h2>
+            <h2 className="text-center text-xl font-semibold">Appointment No #{appointmentNumber(a)}</h2>
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <PrintField label="Name" value={a.patient?.name} />
               <PrintField label="Phone" value={a.patient?.phone} />

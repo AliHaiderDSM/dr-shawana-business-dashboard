@@ -20,10 +20,10 @@ import {
   type Appointment,
   type AppointmentStatus,
 } from '@redux/features/appointments';
-import { STATUS_LABELS } from './constants';
+import { appointmentNumber, STATUS_LABELS } from './constants';
 
 export interface StatusChange {
-  appointment: Pick<Appointment, 'id' | 'appointmentNo' | 'remark'>;
+  appointment: Pick<Appointment, 'id' | 'appointmentNo' | 'repeatNo' | 'remark'>;
   status: AppointmentStatus;
   remarks?: boolean;
 }
@@ -84,8 +84,8 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
       .then(() => {
         toast.success(
           change.remarks
-            ? `Remark saved for appointment #${change.appointment.appointmentNo}`
-            : `Appointment #${change.appointment.appointmentNo} ${STATUS_LABELS[status].toLowerCase()}`,
+            ? `Remark saved for appointment #${appointmentNumber(change.appointment)}`
+            : `Appointment #${appointmentNumber(change.appointment)} ${STATUS_LABELS[status].toLowerCase()}`,
         );
         onClose();
       })
@@ -96,7 +96,7 @@ function StatusDialogBody({ change, onClose }: { change: StatusChange; onClose: 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {copy.title} #{change.appointment.appointmentNo}
+            {copy.title} #{appointmentNumber(change.appointment)}
           </DialogTitle>
           <DialogDescription>{copy.description}</DialogDescription>
         </DialogHeader>

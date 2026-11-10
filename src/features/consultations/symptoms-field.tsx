@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FieldDef, FormValues } from './clinical-fields';
+import { appointmentNumber } from '@/features/appointments/constants';
 
 export interface PreviousSymptoms {
   appointmentNo: number;
+  repeatNo?: number | null;
   date: string;
   symptoms: string[];
   severity: Record<string, number>;
@@ -79,7 +81,7 @@ export function SymptomsField({
           {previous ? (
             <span className="inline-flex items-center gap-1 rounded-full border bg-muted/50 px-2.5 py-1 text-muted-foreground">
               <History className="size-3" />
-              Last visit APP#{previous.appointmentNo} · {formatDate(previous.date)}
+              Last visit APP#{appointmentNumber(previous)} · {formatDate(previous.date)}
             </span>
           ) : null}
         </div>

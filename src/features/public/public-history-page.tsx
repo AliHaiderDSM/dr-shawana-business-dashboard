@@ -7,6 +7,7 @@ import { usePublicPatientHistory } from '@redux/features/public';
 import { formatDate } from '@/lib/format';
 import logo from '@/assets/logo-hd.png';
 import { Downloads, IntakeForms } from './public-intake';
+import { appointmentNumber } from '@/features/appointments/constants';
 
 export function PublicHistoryPage() {
   const { token = '' } = useParams();
@@ -51,7 +52,9 @@ export function PublicHistoryPage() {
                   <span>
                     Name: <span className="font-semibold">{data.patient.name}</span>
                   </span>
-                  {data.form ? <span className="font-semibold">APP#{data.form.appointmentNo}</span> : null}
+                  {data.form ? (
+                    <span className="font-semibold">APP#{appointmentNumber(data.form)}</span>
+                  ) : null}
                 </div>
                 <div className="rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground">
                   WhatsApp: <span className="font-semibold tabular-nums">{data.phone ?? '—'}</span>

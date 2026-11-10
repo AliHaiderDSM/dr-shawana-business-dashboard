@@ -11551,6 +11551,7 @@ export interface paths {
                                 /** Format: uuid */
                                 appointmentId: string;
                                 appointmentNo: number;
+                                repeatNo: number | null;
                                 /** @example 10:00:00 */
                                 timeFrom: string;
                                 /** @example 10:30:00 */
@@ -12002,6 +12003,8 @@ export interface paths {
                     createdBy?: string;
                     /** @description Booking date (posSoft "appointment date" filter) */
                     createdOn?: string;
+                    /** @description true: only repeat visits, false: only main appointments */
+                    repeat?: "true" | "false";
                 };
                 header?: never;
                 path?: never;
@@ -12149,6 +12152,94 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/appointments/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts for a period: main appointments, repeat visits and new patients (cancelled left out) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                    doctorId?: string;
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AppointmentSummary"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -20728,6 +20819,7 @@ export interface paths {
                                     /** Format: uuid */
                                     id: string;
                                     appointmentNo: number;
+                                    repeatNo: number | null;
                                     /** Format: date */
                                     date: string;
                                     timeFrom: string;
@@ -21438,6 +21530,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21447,6 +21540,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21456,6 +21550,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21465,6 +21560,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21474,6 +21570,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21483,6 +21580,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21492,6 +21590,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21501,6 +21600,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -21510,6 +21610,7 @@ export interface paths {
                                         /** Format: uuid */
                                         consultationId: string;
                                         appointmentNo: number;
+                                        repeatNo: number | null;
                                         date: string;
                                         data: {
                                             [key: string]: unknown;
@@ -32806,6 +32907,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     appointmentNo: number;
+                    repeatNo: number | null;
                     /** Format: date */
                     date: string;
                     timeFrom: string;
@@ -32825,6 +32927,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     appointmentNo: number;
+                    repeatNo: number | null;
                     /** Format: date */
                     date: string;
                     timeFrom: string;
@@ -33016,6 +33119,11 @@ export interface components {
             };
             /** @default [] */
             payments: components["schemas"]["AppointmentPaymentInput"][];
+            /**
+             * Format: uuid
+             * @description Book a repeat visit of an earlier completed appointment of the same patient. It is numbered APP#<number>.<repeat>, its fee is 0 and it takes no payments.
+             */
+            repeatOfId?: string;
         };
         UpdateAppointment: {
             /** Format: uuid */
@@ -33059,6 +33167,14 @@ export interface components {
             senderBank?: string | null;
             senderAccountTitle?: string | null;
             senderAccountNo?: string | null;
+        };
+        AppointmentSummary: {
+            /** @description Main appointments, repeats left out */
+            appointments: number;
+            /** @description Repeat visits like APP#4.1 */
+            repeats: number;
+            /** @description Patients whose first visit falls in the period */
+            newPatients: number;
         };
         AppointmentRefundInput: {
             /** @example 1250.50 */
@@ -33114,6 +33230,13 @@ export interface components {
             id: string;
             /** @description Shown as APP#<number> */
             appointmentNo: number;
+            /** @description Set on a repeat visit, shown as APP#<appointmentNo>.<repeatNo> */
+            repeatNo: number | null;
+            /**
+             * Format: uuid
+             * @description The appointment this visit repeats
+             */
+            repeatOfId: string | null;
             /** Format: uuid */
             branchId: string;
             /** Format: uuid */
@@ -33204,6 +33327,13 @@ export interface components {
             id: string;
             /** @description Shown as APP#<number> */
             appointmentNo: number;
+            /** @description Set on a repeat visit, shown as APP#<appointmentNo>.<repeatNo> */
+            repeatNo: number | null;
+            /**
+             * Format: uuid
+             * @description The appointment this visit repeats
+             */
+            repeatOfId: string | null;
             /** Format: uuid */
             branchId: string;
             /** Format: uuid */
@@ -33295,6 +33425,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             appointmentNo: number;
+            repeatNo: number | null;
             /** Format: date */
             date: string;
             timeFrom: string;
@@ -33320,6 +33451,7 @@ export interface components {
             /** Format: uuid */
             appointmentId: string;
             appointmentNo: number;
+            repeatNo: number | null;
             /** Format: date */
             date: string;
             timeFrom: string;
@@ -33366,6 +33498,7 @@ export interface components {
             /** @description The intake form of the linked appointment; null for history-only links */
             form?: {
                 appointmentNo: number;
+                repeatNo: number | null;
                 /** Format: date */
                 date: string;
                 /** @description Patient name, age, city and country to prefill the basic information */
@@ -33384,6 +33517,7 @@ export interface components {
             expiresAt: string;
             appointments: {
                 appointmentNo: number;
+                repeatNo: number | null;
                 /** Format: date */
                 date: string;
                 timeFrom: string;
@@ -33960,6 +34094,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 appointmentNo: number;
+                repeatNo: number | null;
                 /** Format: date */
                 date: string;
                 timeFrom: string;
@@ -34762,6 +34897,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 appointmentNo: number;
+                repeatNo: number | null;
                 /** Format: date */
                 date: string;
                 timeFrom: string;
@@ -34831,6 +34967,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 appointmentNo: number;
+                repeatNo: number | null;
                 /** Format: date */
                 date: string;
                 visitType: string;
@@ -34855,6 +34992,7 @@ export interface components {
             }[];
             previousSymptoms: {
                 appointmentNo: number;
+                repeatNo: number | null;
                 /** Format: date */
                 date: string;
                 symptoms: string[];

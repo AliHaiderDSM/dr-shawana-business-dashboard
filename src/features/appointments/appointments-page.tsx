@@ -10,6 +10,8 @@ import {
   LayoutList,
   CalendarDays,
   Link2,
+  Repeat,
+  UserPlus,
   MessageSquareText,
   Pencil,
   Printer,
@@ -25,6 +27,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
+import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -34,14 +37,22 @@ import { patientsApi } from '@redux/features/patients';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMoney, isoDate } from '@/lib/format';
 import {
   appointmentsApi,
   patientLink,
   useAppointmentList,
+  useAppointmentSummary,
   type Appointment,
 } from '@redux/features/appointments';
-import { MODE_LABELS, STATUS_LABELS, timeLabel, timeRange, VISIT_LABELS } from './constants';
+import {
+  appointmentNumber,
+  MODE_LABELS,
+  STATUS_LABELS,
+  timeLabel,
+  timeRange,
+  VISIT_LABELS,
+} from './constants';
 import { AppointmentCalendar } from './appointment-calendar';
 import { AppointmentFormSheet } from './appointment-form-sheet';
 import { ClinicalSheet, type ClinicalTarget } from './clinical-sheet';
@@ -61,6 +72,20 @@ export function AppointmentsPage() {
     [list.query],
   );
   const query = useAppointmentList(listQuery);
+  const today = isoDate();
+  const summaryFrom = list.filters.from ?? `${today.slice(0, 7)}-01`;
+  const summaryTo = list.filters.to ?? list.filters.from ?? today;
+  const summary = useAppointmentSummary({
+    from: summaryFrom,
+    to: summaryTo,
+    ...(list.filters.doctorId ? { doctorId: list.filters.doctorId } : {}),
+  });
+  const summaryPeriod = list.filters.from
+    ? summaryFrom === summaryTo
+      ? formatDate(summaryFrom)
+      : `${formatDate(summaryFrom)} – ${formatDate(summaryTo)}`
+    : `This month, ${formatDate(summaryFrom, 'MMMM yyyy')}`;
+  const [repeatOf, setRepeatOf] = useState<Appointment | null>(null);
   const doctors = doctorsApi.useOptions();
   const [remove] = appointmentsApi.useRemove();
   const prefillPatientId = params.get('patientId') ?? undefined;
@@ -84,6 +109,7 @@ export function AppointmentsPage() {
 
   const openBooking = () => {
     setEditing(null);
+    setRepeatOf(null);
     setFormKey((k) => k + 1);
     setBooking(true);
   };
@@ -101,10 +127,15 @@ export function AppointmentsPage() {
     {
       id: 'appointmentNo',
       header: 'Appointment #',
-      accessorFn: (a) => `APP#${a.appointmentNo}`,
+      accessorFn: (a) => `APP#${appointmentNumber(a)}`,
       meta: { sortKey: 'appointmentNo' },
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap">APP#{row.original.appointmentNo}</span>
+        <div className="whitespace-nowrap">
+          <div className="font-medium">APP#{appointmentNumber(row.original)}</div>
+          {row.original.repeatNo ? (
+            <div className="text-xs text-muted-foreground">Repeat of APP#{row.original.appointmentNo}</div>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -269,6 +300,18 @@ export function AppointmentsPage() {
                 hidden: !can('appointments.update') || !open,
                 onSelect: () => {
                   setEditing(a);
+                  setRepeatOf(null);
+                  setFormKey((k) => k + 1);
+                  setBooking(true);
+                },
+              },
+              {
+                label: 'Repeat visit',
+                icon: Repeat,
+                hidden: !can('appointments.create') || a.status !== 'completed',
+                onSelect: () => {
+                  setEditing(null);
+                  setRepeatOf(a);
                   setFormKey((k) => k + 1);
                   setBooking(true);
                 },
@@ -340,6 +383,28 @@ export function AppointmentsPage() {
           </>
         }
       />
+      {view === 'calendar' ? null : (
+        <div className="mb-4 grid gap-3 sm:grid-cols-3">
+          <StatCard
+            label="Appointments"
+            icon={CalendarCheck}
+            value={summary.data?.appointments ?? '—'}
+            hint={`${summaryPeriod} · repeats and cancelled left out`}
+          />
+          <StatCard
+            label="Repeat visits"
+            icon={Repeat}
+            value={summary.data?.repeats ?? '—'}
+            hint="Like APP#4.1, no fee"
+          />
+          <StatCard
+            label="New patients"
+            icon={UserPlus}
+            value={summary.data?.newPatients ?? '—'}
+            hint="First visit in this period"
+          />
+        </div>
+      )}
       {view === 'calendar' ? (
         <AppointmentCalendar
           list={list}
@@ -396,6 +461,16 @@ export function AppointmentsPage() {
               />
               <FilterSelect
                 list={list}
+                name="repeat"
+                allLabel="With repeats"
+                className="w-40"
+                options={[
+                  { value: 'false', label: 'Main only' },
+                  { value: 'true', label: 'Repeat visits' },
+                ]}
+              />
+              <FilterSelect
+                list={list}
                 name="bhrtStatus"
                 allLabel="Any BHRT"
                 className="w-36"
@@ -408,13 +483,24 @@ export function AppointmentsPage() {
       <AppointmentFormSheet
         key={`${formKey}-${prefillPatient.data?.id ?? ''}`}
         appointment={editing}
-        defaults={{
-          patientId: prefillPatientId,
-          patientName: prefillPatient.data
-            ? `${prefillPatient.data.name} · ${prefillPatient.data.phone}`
-            : undefined,
-          doctorId: list.filters.doctorId,
-        }}
+        defaults={
+          repeatOf
+            ? {
+                patientId: repeatOf.patientId,
+                patientName: `${repeatOf.patient?.name ?? ''} · ${repeatOf.patient?.phone ?? ''}`,
+                repeatOf: {
+                  id: repeatOf.id,
+                  label: `APP#${appointmentNumber(repeatOf)} · ${formatDate(repeatOf.date)} · ${repeatOf.doctor?.name ?? ''}`,
+                },
+              }
+            : {
+                patientId: prefillPatientId,
+                patientName: prefillPatient.data
+                  ? `${prefillPatient.data.name} · ${prefillPatient.data.phone}`
+                  : undefined,
+                doctorId: list.filters.doctorId,
+              }
+        }
         open={booking}
         onOpenChange={closeBooking}
       />
@@ -423,7 +509,7 @@ export function AppointmentsPage() {
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}
-        title={`Delete appointment #${removing?.appointmentNo ?? ''}?`}
+        title={`Delete appointment #${removing ? appointmentNumber(removing) : ''}?`}
         description="The appointment and its payments are removed from reports. This cannot be undone here."
         confirmLabel="Delete"
         destructive

@@ -9,7 +9,14 @@ import { z } from 'zod';
 import { ChoiceField } from '@/components/shared/choice-field';
 import { Combobox } from '@/components/shared/combobox';
 import { FilePicker } from '@/components/shared/file-upload';
-import { FieldRow, FormSection, MoneyField, SelectField, TextField } from '@/components/shared/form-fields';
+import {
+  FieldRow,
+  FormSection,
+  MoneyField,
+  SelectField,
+  SwitchField,
+  TextField,
+} from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -31,12 +38,13 @@ import { optionalText, timeString } from '@/lib/validation';
 import {
   appointmentsApi,
   useBookAppointmentMutation,
+  useGetAppointmentListQuery,
   useSaveAppointmentPaymentMutation,
   type Appointment,
   type AppointmentPayment,
   type AppointmentInput,
 } from '@redux/features/appointments';
-import { METHOD_LABELS, MODE_LABELS, VISIT_LABELS } from './constants';
+import { appointmentNumber, METHOD_LABELS, MODE_LABELS, VISIT_LABELS } from './constants';
 import { DoctorSlots } from './doctor-slots';
 import { PaymentSheet } from './payment-sheet';
 import {
@@ -66,10 +74,14 @@ const schema = z
       .regex(/^(\d{1,10}(\.\d{1,2})?)?$/, 'Use an amount'),
     recordNote: optionalText(20000),
     payments: z.array(paymentSchema).max(10),
+    isRepeat: z.boolean(),
+    repeatOfId: z.string(),
   })
   .superRefine((v, ctx) => {
     if (v.timeFrom && v.timeTo && v.timeTo <= v.timeFrom)
       ctx.addIssue({ code: 'custom', path: ['timeTo'], message: 'Time to must be after time from' });
+    if (v.isRepeat && v.patientMode === 'existing' && !v.repeatOfId)
+      ctx.addIssue({ code: 'custom', path: ['repeatOfId'], message: 'Choose the appointment to repeat' });
     if (v.patientMode === 'existing') {
       if (!v.patientId) ctx.addIssue({ code: 'custom', path: ['patientId'], message: 'Choose a patient' });
       return;
@@ -91,6 +103,7 @@ export interface BookingDefaults {
   patientName?: string;
   doctorId?: string;
   date?: string;
+  repeatOf?: { id: string; label: string };
 }
 
 interface AppointmentFormSheetProps {
@@ -154,14 +167,32 @@ export function AppointmentFormSheet({
       fee: appointment ? String(Number(appointment.fee)) : '',
       recordNote: null,
       payments: [],
+      isRepeat: Boolean(defaults?.repeatOf),
+      repeatOfId: defaults?.repeatOf?.id ?? '',
     },
     resetOptions: { keepDirtyValues: true },
   });
   const payments = useFieldArray({ control: form.control, name: 'payments' });
-  const [patientMode, doctorId, date, timeFrom] = useWatch({
+  const [patientMode, doctorId, date, timeFrom, chosenPatientId, isRepeatValue] = useWatch({
     control: form.control,
-    name: ['patientMode', 'doctorId', 'date', 'timeFrom'],
+    name: ['patientMode', 'doctorId', 'date', 'timeFrom', 'patientId', 'isRepeat'],
   });
+  const repeatVisit = editing
+    ? Boolean(appointment?.repeatNo)
+    : Boolean(isRepeatValue) && patientMode === 'existing';
+  const repeatChoices = useGetAppointmentListQuery(
+    { patientId: chosenPatientId, status: 'completed', repeat: 'false', pageSize: 50, sort: '-date' },
+    { skip: !open || editing || !isRepeatValue || patientMode !== 'existing' || !chosenPatientId },
+  );
+  const repeatOptions = [
+    ...(defaults?.repeatOf && !(repeatChoices.data?.data ?? []).some((a) => a.id === defaults.repeatOf?.id)
+      ? [{ value: defaults.repeatOf.id, label: defaults.repeatOf.label }]
+      : []),
+    ...(repeatChoices.data?.data ?? []).map((a) => ({
+      value: a.id,
+      label: `APP#${appointmentNumber(a)} · ${formatDate(a.date)} · ${a.doctor?.name ?? ''}`,
+    })),
+  ];
   const doctorFee = doctors.data?.find((d) => d.id === doctorId)?.consultationFee ?? '';
   const [feeValue, paymentValues] = useWatch({ control: form.control, name: ['fee', 'payments'] });
   const totalFee = Number(feeValue || doctorFee || 0);
@@ -174,9 +205,9 @@ export function AppointmentFormSheet({
       timeFrom: values.timeFrom,
       timeTo: values.timeTo,
       mode: values.mode,
-      visitType: values.visitType,
+      visitType: repeatVisit ? ('followup' as const) : values.visitType,
       issues: values.issues,
-      ...(values.fee ? { fee: values.fee } : {}),
+      ...(values.fee && !repeatVisit ? { fee: values.fee } : {}),
     };
     if (appointment) {
       void update({ id: appointment.id, body: { ...visit, patientId: values.patientId } })
@@ -210,7 +241,8 @@ export function AppointmentFormSheet({
         ? { patientId: values.patientId }
         : { patient: toPatientInput(patientFieldsSchema.parse(values.patient)) }),
       ...(values.recordNote || recordFiles.length ? { medicalRecord: { note: values.recordNote } } : {}),
-      payments: values.payments.map((payment) => {
+      ...(repeatVisit && values.patientMode === 'existing' ? { repeatOfId: values.repeatOfId } : {}),
+      payments: (repeatVisit ? [] : values.payments).map((payment) => {
         const proof = payment.proofs[0];
         const proofIndex = proof ? proofs.push(proof) - 1 : undefined;
         return { ...toPaymentBody(payment), ...(proofIndex === undefined ? {} : { proofIndex }) };
@@ -220,7 +252,7 @@ export function AppointmentFormSheet({
       .unwrap()
       .then((created) => {
         submitKey.renew();
-        toast.success(`Appointment #${created.appointmentNo} booked`, {
+        toast.success(`Appointment #${appointmentNumber(created)} booked`, {
           action: { label: 'Print slip', onClick: () => void navigate(`/print/appointment/${created.id}`) },
         });
         setRecordFiles([]);
@@ -235,7 +267,13 @@ export function AppointmentFormSheet({
       <FormSheet
         open={open}
         onOpenChange={onOpenChange}
-        title={editing ? `Edit appointment #${appointment?.appointmentNo}` : 'Book appointment'}
+        title={
+          editing
+            ? `Edit appointment #${appointment ? appointmentNumber(appointment) : ''}`
+            : repeatVisit
+              ? 'Book repeat visit'
+              : 'Book appointment'
+        }
         description="Patient, doctor and time first, then payments, as in posSoft."
         onSubmit={submit}
         submitting={bookState.isLoading || updateState.isLoading || savePaymentState.isLoading}
@@ -324,6 +362,38 @@ export function AppointmentFormSheet({
               />
             </div>
           )}
+          {!editing && patientMode === 'existing' ? (
+            <SwitchField
+              control={form.control}
+              name="isRepeat"
+              label="Repeat visit"
+              description="The patient comes back after a completed appointment, for example to show reports. It gets the same number with .1, .2 and has no fee."
+            />
+          ) : null}
+          {!editing && patientMode === 'existing' && isRepeatValue ? (
+            <SelectField
+              control={form.control}
+              name="repeatOfId"
+              label="Repeat of"
+              required
+              disabled={!chosenPatientId}
+              placeholder={
+                !chosenPatientId
+                  ? 'Choose the patient first'
+                  : repeatChoices.isFetching
+                    ? 'Loading…'
+                    : repeatOptions.length
+                      ? 'Choose a completed appointment'
+                      : 'No completed appointment of this patient'
+              }
+              options={repeatOptions}
+            />
+          ) : null}
+          {editing && appointment?.repeatNo ? (
+            <p className="rounded-lg border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
+              Repeat visit of APP#{appointment.appointmentNo}. It has no fee.
+            </p>
+          ) : null}
         </FormSection>
 
         <FormSection title="Visit">
@@ -387,24 +457,28 @@ export function AppointmentFormSheet({
               label="Online / physical"
               options={(['physical', 'online'] as const).map((m) => ({ value: m, label: MODE_LABELS[m] }))}
             />
-            <ChoiceField
-              control={form.control}
-              name="visitType"
-              label="Type"
-              options={(['new', 'followup'] as const).map((v) => ({ value: v, label: VISIT_LABELS[v] }))}
-            />
+            {repeatVisit ? null : (
+              <ChoiceField
+                control={form.control}
+                name="visitType"
+                label="Type"
+                options={(['new', 'followup'] as const).map((v) => ({ value: v, label: VISIT_LABELS[v] }))}
+              />
+            )}
           </FieldRow>
-          <MoneyField
-            control={form.control}
-            name="fee"
-            label="Appointment fee"
-            placeholder={doctorFee ? String(Number(doctorFee)) : '0'}
-            description={
-              doctorFee
-                ? `Leave empty for the doctor's fee (${formatMoney(doctorFee)}).`
-                : 'The total to be paid for this visit.'
-            }
-          />
+          {repeatVisit ? null : (
+            <MoneyField
+              control={form.control}
+              name="fee"
+              label="Appointment fee"
+              placeholder={doctorFee ? String(Number(doctorFee)) : '0'}
+              description={
+                doctorFee
+                  ? `Leave empty for the doctor's fee (${formatMoney(doctorFee)}).`
+                  : 'The total to be paid for this visit.'
+              }
+            />
+          )}
         </FormSection>
 
         {editing ? null : (
@@ -413,7 +487,7 @@ export function AppointmentFormSheet({
           </FormSection>
         )}
 
-        {canPay ? (
+        {canPay && !repeatVisit ? (
           <FormSection title="Payments" description="Add one line per payment received.">
             <ReceivingAccountsNotice error={accounts.error} />
             {existingPayments.map((payment) => (

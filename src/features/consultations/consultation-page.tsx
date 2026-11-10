@@ -21,7 +21,7 @@ import { DetailSkeleton } from '@/components/shared/skeletons';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { appointmentsApi, type AppointmentDetail } from '@redux/features/appointments';
-import { MODE_LABELS, timeRange, VISIT_LABELS } from '@/features/appointments/constants';
+import { appointmentNumber, MODE_LABELS, timeRange, VISIT_LABELS } from '@/features/appointments/constants';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
@@ -130,7 +130,7 @@ function PatientHeader({
             <span>Last visit {lastVisit ? formatDate(lastVisit) : '—'}</span>
           </div>
           <div className="text-xs text-muted-foreground">
-            Appointment #{consultation.appointment?.appointmentNo} ·{' '}
+            Appointment #{consultation.appointment ? appointmentNumber(consultation.appointment) : ''} ·{' '}
             {formatDate(consultation.appointment?.date)}
             {appointment ? ` · ${timeRange(appointment.timeFrom, appointment.timeTo)}` : ''} ·{' '}
             {consultation.appointment

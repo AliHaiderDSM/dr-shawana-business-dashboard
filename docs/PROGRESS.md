@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Repeat visits (2026-11-09)
+
+- Book appointment has a Repeat visit switch for an existing patient: choose one of the patient's completed appointments and the new one is numbered APP#4.1, 4.2, with no fee, no type choice and no payments. Completed appointments also get a Repeat visit action in the list and a button on the detail page.
+- Numbers read APP#4.1 everywhere (list, detail, calendar, print slip, status dialogs, consultation, visit history, patient profile, public history); the detail page links Repeat of APP#4. The appointments list shows Appointments, Repeat visits and New patients for the chosen dates (this month by default) and filters Main only or Repeat visits.
+
 ## Appointment payments: Bookings, Dues received and the paid breakdown (2026-11-09)
 
 - Bookings shows only appointments not completed yet; completed ones live in Completed appointments.

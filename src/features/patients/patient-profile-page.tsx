@@ -13,7 +13,7 @@ import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { timeRange } from '@/features/appointments/constants';
+import { appointmentNumber, timeRange } from '@/features/appointments/constants';
 import { useAppointmentList, type Appointment } from '@redux/features/appointments';
 import { BhrtPanel } from '@/features/clinical/bhrt-panel';
 import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
@@ -36,7 +36,7 @@ const appointmentColumns: ColumnDef<Appointment, unknown>[] = [
     id: 'appointmentNo',
     header: 'No',
     accessorKey: 'appointmentNo',
-    cell: ({ row }) => <span className="text-muted-foreground">#{row.original.appointmentNo}</span>,
+    cell: ({ row }) => <span className="text-muted-foreground">#{appointmentNumber(row.original)}</span>,
   },
   {
     id: 'date',
@@ -193,7 +193,6 @@ export function PatientProfilePage() {
 
   return (
     <>
-     
       <PageHeader
         title={
           <span className="flex items-center gap-3">

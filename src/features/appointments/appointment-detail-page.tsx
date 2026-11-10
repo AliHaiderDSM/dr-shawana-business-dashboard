@@ -7,6 +7,7 @@ import {
   Pencil,
   Plus,
   Printer,
+  Repeat,
   RotateCcw,
   Undo2,
   Stethoscope,
@@ -38,7 +39,7 @@ import {
   type AppointmentPayment,
   type AppointmentRefund,
 } from '@redux/features/appointments';
-import { METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
+import { appointmentNumber, METHOD_LABELS, MODE_LABELS, timeRange, VISIT_LABELS } from './constants';
 import { AppointmentFormSheet } from './appointment-form-sheet';
 import { PaymentSheet } from './payment-sheet';
 import { RefundSheet } from './refund-sheet';
@@ -56,6 +57,8 @@ export function AppointmentDetailPage() {
   const [removePayment] = useRemoveAppointmentPaymentMutation();
   const [removeAttachment] = useRemoveAppointmentAttachmentMutation();
   const [editOpen, setEditOpen] = useState(false);
+  const [repeatOpen, setRepeatOpen] = useState(false);
+  const [repeatKey, setRepeatKey] = useState(0);
   const [statusChange, setStatusChange] = useState<StatusChange | null>(null);
   const [payment, setPayment] = useState<AppointmentPayment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -173,7 +176,7 @@ export function AppointmentDetailPage() {
       <PageHeader
         title={
           <span className="flex items-center gap-3">
-            Appointment #{a.appointmentNo}
+            Appointment #{appointmentNumber(a)}
             <StatusBadge status={a.status} />
           </span>
         }
@@ -212,6 +215,18 @@ export function AppointmentDetailPage() {
                 Reopen
               </Button>
             ) : null}
+            {can('appointments.create') && a.status === 'completed' ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRepeatKey((k) => k + 1);
+                  setRepeatOpen(true);
+                }}
+              >
+                <Repeat />
+                Repeat visit
+              </Button>
+            ) : null}
             {can('consultations.view') && a.status !== 'cancelled' ? (
               <Button onClick={() => void navigate(`/appointments/${a.id}/consultation`)}>
                 <Stethoscope />
@@ -241,6 +256,18 @@ export function AppointmentDetailPage() {
                 { label: 'Doctor', value: a.doctor?.name },
                 { label: 'Online / physical', value: MODE_LABELS[a.mode] },
                 { label: 'Type', value: VISIT_LABELS[a.visitType] },
+                ...(a.repeatOfId
+                  ? [
+                      {
+                        label: 'Repeat of',
+                        value: (
+                          <Link to={`/appointments/${a.repeatOfId}`} className="text-primary hover:underline">
+                            APP#{a.appointmentNo}
+                          </Link>
+                        ),
+                      },
+                    ]
+                  : []),
                 {
                   label: 'Booked',
                   value: `${formatDateTime(a.createdAt)}${a.source === 'app' ? ' · app' : ''}`,
@@ -269,7 +296,7 @@ export function AppointmentDetailPage() {
                   · {formatMoney(a.receivedAmount)} received
                 </span>
               </h2>
-              {can('appointmentPayments.create') ? (
+              {can('appointmentPayments.create') && !a.repeatNo ? (
                 <Button size="sm" variant="outline" onClick={() => openPayment(null)}>
                   <Plus />
                   Add payment
@@ -279,8 +306,10 @@ export function AppointmentDetailPage() {
             <DataTable
               columns={paymentColumns}
               data={a.payments}
-              emptyTitle="No payments yet"
-              emptyDescription="Record cash or online payments for this visit."
+              emptyTitle={a.repeatNo ? 'No fee' : 'No payments yet'}
+              emptyDescription={
+                a.repeatNo ? 'A repeat visit has no fee.' : 'Record cash or online payments for this visit.'
+              }
             />
           </div>
 
@@ -383,6 +412,19 @@ export function AppointmentDetailPage() {
       </div>
 
       <AppointmentFormSheet appointment={a} open={editOpen} onOpenChange={setEditOpen} />
+      <AppointmentFormSheet
+        key={`repeat-${repeatKey}`}
+        defaults={{
+          patientId: a.patientId,
+          patientName: `${a.patient?.name ?? ''} · ${a.patient?.phone ?? ''}`,
+          repeatOf: {
+            id: a.id,
+            label: `APP#${appointmentNumber(a)} · ${formatDate(a.date)} · ${a.doctor?.name ?? ''}`,
+          },
+        }}
+        open={repeatOpen}
+        onOpenChange={setRepeatOpen}
+      />
       <StatusDialog change={statusChange} onClose={() => setStatusChange(null)} />
       <PaymentSheet
         key={paymentKey}

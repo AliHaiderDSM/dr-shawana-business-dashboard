@@ -5,6 +5,7 @@ import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@/lib/format';
 import type { ConsultationHistory } from '@redux/features/consultations';
+import { appointmentNumber } from '@/features/appointments/constants';
 
 function PrescriptionLinks({
   title,
@@ -69,7 +70,7 @@ export function VisitHistory({
             history.visits.map((visit) => (
               <article key={visit.id} className="space-y-1 border-b pb-4 last:border-b-0 last:pb-0">
                 <h4 className="text-sm font-semibold">
-                  APP#{visit.appointmentNo} : Date: {formatDate(visit.date, 'dd-MM-yyyy')}
+                  APP#{appointmentNumber(visit)} : Date: {formatDate(visit.date, 'dd-MM-yyyy')}
                   <span className="ml-2 text-xs font-normal text-muted-foreground">
                     {visit.visitType === 'followup' ? 'Follow up' : 'New'}
                     {visit.doctor ? ` · ${visit.doctor}` : ''}

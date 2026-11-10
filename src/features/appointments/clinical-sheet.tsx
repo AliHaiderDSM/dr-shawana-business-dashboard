@@ -3,11 +3,12 @@ import { BhrtPanel } from '@/features/clinical/bhrt-panel';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { useAuth } from '@/lib/auth/auth-context';
 import type { Appointment } from '@redux/features/appointments';
+import { appointmentNumber } from './constants';
 
 export type ClinicalView = 'bhrt' | 'records';
 
 export interface ClinicalTarget {
-  appointment: Pick<Appointment, 'id' | 'appointmentNo' | 'patientId' | 'patient'>;
+  appointment: Pick<Appointment, 'id' | 'appointmentNo' | 'repeatNo' | 'patientId' | 'patient'>;
   view: ClinicalView;
 }
 
@@ -26,7 +27,7 @@ export function ClinicalSheet({ target, onClose }: { target: ClinicalTarget | nu
             <SheetHeader className="border-b px-6 py-5">
               <SheetTitle>{TITLES[target.view]}</SheetTitle>
               <SheetDescription>
-                {[a.patient?.name, a.patient?.phone, `Appointment #${a.appointmentNo}`]
+                {[a.patient?.name, a.patient?.phone, `Appointment #${appointmentNumber(a)}`]
                   .filter(Boolean)
                   .join(' · ')}
               </SheetDescription>

@@ -32,6 +32,7 @@ import { isVisible, sectionResolver, toApiData, toFormValues } from './clinical-
 import { SymptomsField } from './symptoms-field';
 import { FamilyField } from './family-field';
 import { FieldHistoryButton, PreviousVisitsProvider, type PreviousEntry } from './field-history';
+import { appointmentNumber } from '@/features/appointments/constants';
 
 export type FieldControl = Control<FormValues>;
 
@@ -732,7 +733,7 @@ export function SectionForm({
           <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary-soft/40 px-3 py-2 text-sm">
             <History className="mt-0.5 size-4 shrink-0 text-primary" />
             <span>
-              Filled in from the last visit, #{prefilledFrom.appointmentNo} on{' '}
+              Filled in from the last visit, #{appointmentNumber(prefilledFrom)} on{' '}
               {formatDate(prefilledFrom.date)}. Change what is different today, then save.
             </span>
           </div>

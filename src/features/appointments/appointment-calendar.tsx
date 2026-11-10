@@ -20,7 +20,7 @@ import type { ListState } from '@/hooks/use-list-state';
 import { isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAppointmentCalendar, type CalendarEntry } from '@redux/features/appointments';
-import { timeLabel } from './constants';
+import { appointmentNumber, timeLabel } from './constants';
 
 const HOUR_HEIGHT = 56;
 const ALL = '__all__';
@@ -114,7 +114,7 @@ function TimeGrid({
                   >
                     <div className="truncate font-medium">{entry.patient?.name}</div>
                     <div className="truncate opacity-80">
-                      {timeLabel(entry.timeFrom)} · #{entry.appointmentNo}
+                      {timeLabel(entry.timeFrom)} · #{appointmentNumber(entry)}
                       {entry.mode === 'online' ? ' · online' : ''}
                     </div>
                   </button>
