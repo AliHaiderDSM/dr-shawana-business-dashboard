@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { normalizeSerial } from '@/features/inventory/constants';
+import { earlierBatchProblem, normalizeSerial } from '@/features/inventory/constants';
 import { findItemBySerial } from '@redux/features/inventory';
 import { toastError } from '@/lib/api/errors';
 import { formatDate, formatQuantity, isoDate } from '@/lib/format';
@@ -69,6 +69,14 @@ export function BulkDispatchDialog({ orders, onClose }: { orders: DeliveryOrder[
       }
       if (piece.status !== 'in_stock') {
         toast.error(`${piece.serial} is ${ITEM_STATUS[piece.status].label.toLowerCase()}`);
+        return;
+      }
+      const earlier = earlierBatchProblem(
+        piece,
+        pieces.map((p) => p.serial),
+      );
+      if (earlier) {
+        toast.error(earlier);
         return;
       }
       const target = orders.find(

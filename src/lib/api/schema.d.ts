@@ -32064,6 +32064,13 @@ export interface components {
             /** Format: uuid */
             patientId: string | null;
             patientName: string | null;
+            /** @description An in-stock piece only: the earlier batch (sooner expiry, then older) that must go out first, with the in-stock labels of every earlier batch */
+            firstBatch: {
+                batchNo: string;
+                /** Format: date */
+                expiryDate: string | null;
+                serials: string[];
+            } | null;
             history: {
                 /** Format: uuid */
                 id: string;

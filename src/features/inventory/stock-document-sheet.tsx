@@ -35,7 +35,7 @@ import {
   useCreateStockDocument,
   useStockBalances,
 } from '@redux/features/inventory';
-import { isSerial, STOCK_DESTINATIONS } from './constants';
+import { earlierBatchProblem, isSerial, STOCK_DESTINATIONS } from './constants';
 import type { StockKindConfig } from './stock-config';
 
 const lineSchema = z.object({
@@ -349,6 +349,14 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
     const current = form.getValues('items');
     if (current.some((line) => line.serials.includes(piece.serial))) {
       toast.error(`${piece.serial} is already on this entry`);
+      return;
+    }
+    const earlier = earlierBatchProblem(
+      piece,
+      current.flatMap((line) => line.serials),
+    );
+    if (earlier) {
+      toast.error(earlier);
       return;
     }
     const index = current.findIndex((line) => line.productId === piece.productId);

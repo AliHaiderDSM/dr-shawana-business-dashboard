@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useReceivingAccounts } from '@redux/features/appointments';
 import { productsApi } from '@redux/features/catalog';
-import { normalizeSerial } from '@/features/inventory/constants';
+import { earlierBatchProblem, normalizeSerial } from '@/features/inventory/constants';
 import { findItemBySerial } from '@redux/features/inventory';
 import { ITEM_STATUS } from '@/features/inventory/item-status';
 import { useStockHolds } from '@redux/features/stock-holds';
@@ -113,6 +113,14 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
       }
       if (scannedFor(piece.productId).length >= line.qty) {
         toast.error(`All ${line.qty} ${line.name} are already scanned`);
+        return;
+      }
+      const earlier = earlierBatchProblem(
+        piece,
+        pieces.map((p) => p.serial),
+      );
+      if (earlier) {
+        toast.error(earlier);
         return;
       }
       setPieces((current) => [...current, { serial: piece.serial, productId: piece.productId }]);

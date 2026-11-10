@@ -60,6 +60,7 @@ import {
   type DiscountRequest,
 } from '@redux/features/discount-requests';
 import { findItemBySerial } from '@redux/features/inventory';
+import { earlierBatchProblem } from '@/features/inventory/constants';
 
 const lineSchema = z.object({
   kind: z.enum(['product', 'bundle']),
@@ -417,6 +418,14 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
       }
       if (form.getValues('pieces').some((p) => p.serial === piece.serial)) {
         toast.error(`${piece.serial} is already in the cart`);
+        return;
+      }
+      const earlier = earlierBatchProblem(
+        piece,
+        form.getValues('pieces').map((p) => p.serial),
+      );
+      if (earlier) {
+        toast.error(earlier);
         return;
       }
       form.setValue('pieces', [

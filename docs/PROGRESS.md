@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Earliest batch first while scanning (2026-11-10)
+
+- The counter sale, the dispatch dialog, bulk dispatch and the stock out sheet (stock request sending) refuse a label of a later batch at scan time and name the batch to use first, counting the labels already scanned in the same entry.
+
 ## Defaults: GDN All, doctor home and calendar, appointment boxes (2026-11-10)
 
 - GDN report opens on All for the Super Admin (Online and Office stay one click away).

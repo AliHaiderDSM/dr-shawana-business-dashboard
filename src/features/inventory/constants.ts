@@ -25,6 +25,21 @@ export function isSerial(code: string) {
   return SERIAL_PATTERN.test(code.trim());
 }
 
+export function earlierBatchProblem(
+  piece: {
+    serial: string;
+    batchNo?: string | null;
+    firstBatch?: { batchNo: string; expiryDate: string | null; serials: string[] } | null;
+  },
+  scanned: string[],
+) {
+  if (!piece.firstBatch) return null;
+  const left = piece.firstBatch.serials.filter((s) => !scanned.includes(s));
+  if (left.length === 0) return null;
+  const expiry = piece.firstBatch.expiryDate ? `, expires ${piece.firstBatch.expiryDate}` : '';
+  return `${piece.serial} is batch ${piece.batchNo ?? 'without a batch'}. Use batch ${piece.firstBatch.batchNo}${expiry} first: ${left.length} in stock (${left.slice(0, 3).join(', ')}${left.length > 3 ? ', …' : ''})`;
+}
+
 export function normalizeSerial(code: string) {
   const match = /^(?:DSM-?)?(\d+)$/i.exec(code.trim());
   return match ? `DSM-${match[1]!.padStart(6, '0')}` : code.trim().toUpperCase();
