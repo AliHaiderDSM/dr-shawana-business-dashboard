@@ -408,7 +408,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own entry. Entries of the same appointment share a colour. Entry: Completed once the doctor completed the visit, Booking until then. Status shows the payment state after that entry. Bookings: appointments booked and not completed yet. Advance: payments that left the fee part paid. Dues received: every payment that made the fee fully paid, in one go or after an advance; click Fully paid to see every payment of that appointment. GDN: only visits the doctor completed, paid or not, for the chosen period, plus dues of earlier completed visits received in it. Completed appointments: one line per completed visit, paid or not."
+        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings are not completed yet, Advance left the fee part paid, Dues received cleared it (click Fully paid for the breakdown), GDN is the completed visits and their dues."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup

@@ -12173,6 +12173,13 @@ export interface paths {
                     to: string;
                     doctorId?: string;
                     branchId?: string;
+                    /** @description Cancelled are left out unless asked */
+                    status?: "booked" | "completed" | "cancelled";
+                    mode?: "online" | "physical";
+                    visitType?: "new" | "followup";
+                    bhrtStatus?: "none" | "on" | "off" | "recommended";
+                    repeat?: "true" | "false";
+                    search?: string;
                 };
                 header?: never;
                 path?: never;

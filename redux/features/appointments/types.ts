@@ -1,3 +1,4 @@
+import type { paths } from '@/lib/api/schema';
 import type { Schemas } from '@/lib/api/types';
 import type { ClinicGetResponse } from '@redux/features/patients/types';
 
@@ -14,11 +15,9 @@ export type AppointmentListPage = ClinicGetResponse<'/branch/appointments'>;
 export type AppointmentCalendar = ClinicGetResponse<'/branch/appointments/calendar'>['data'];
 export type AppointmentSummary = Schemas['AppointmentSummary'];
 
-export interface AppointmentSummaryQuery {
-  from: string;
-  to: string;
-  doctorId?: string;
-}
+export type AppointmentSummaryQuery = NonNullable<
+  paths['/branch/appointments/summary']['get']['parameters']['query']
+>;
 export type AppointmentAttachmentUrl =
   ClinicGetResponse<'/branch/appointments/{id}/attachments/{attachmentId}/url'>['data'];
 export type AppointmentMedicalRecordUrl =

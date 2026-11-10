@@ -15,6 +15,8 @@
 ## Repeat visits (2026-11-09)
 
 - Book appointment has a Repeat visit switch for an existing patient: choose one of the patient's completed appointments and the new one is numbered APP#4.1, 4.2, with no fee, no type choice and no payments. Completed appointments also get a Repeat visit action in the list and a button on the detail page.
+- The appointments list now sorts by number, newest first (APP#13.1 above APP#13), cuts long patient names with a tooltip, and its three boxes follow every filter (doctor, status, online/physical, type, BHRT, repeat, search) and the dates; cancelled count only when the status filter asks for them.
+- The appointment payments page description is shortened to two lines.
 - Numbers read APP#4.1 everywhere (list, detail, calendar, print slip, status dialogs, consultation, visit history, patient profile, public history); the detail page links Repeat of APP#4. The appointments list shows Appointments, Repeat visits and New patients for the chosen dates (this month by default) and filters Main only or Repeat visits.
 
 ## Appointment payments: Bookings, Dues received and the paid breakdown (2026-11-09)

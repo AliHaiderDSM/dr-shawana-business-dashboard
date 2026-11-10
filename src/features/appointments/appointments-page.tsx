@@ -31,6 +31,7 @@ import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { doctorsApi } from '@redux/features/doctors';
 import { BHRT_LABELS } from '@/features/patients/constants';
 import { patientsApi } from '@redux/features/patients';
@@ -44,6 +45,7 @@ import {
   useAppointmentList,
   useAppointmentSummary,
   type Appointment,
+  type AppointmentSummaryQuery,
 } from '@redux/features/appointments';
 import {
   appointmentNumber,
@@ -59,13 +61,36 @@ import { ClinicalSheet, type ClinicalTarget } from './clinical-sheet';
 import { StatusDialog, type StatusChange } from './status-dialog';
 
 const CALENDAR_KEYS = new Set(['view', 'span', 'day']);
+const SUMMARY_KEYS = new Set(['doctorId', 'status', 'mode', 'visitType', 'bhrtStatus', 'repeat', 'search']);
+
+function PatientName({ name }: { name: string | undefined }) {
+  const [open, setOpen] = useState(false);
+  const [cut, setCut] = useState(false);
+  const measure = (el: HTMLElement) => setCut(el.scrollWidth > el.clientWidth);
+  return (
+    <Tooltip open={open && cut} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <div
+          className="max-w-40 truncate font-medium"
+          onMouseEnter={(e) => measure(e.currentTarget)}
+          onFocus={(e) => measure(e.currentTarget)}
+        >
+          {name}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start">
+        {name}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function AppointmentsPage() {
   const navigate = useNavigate();
   const { me, can, isSuperAdmin } = useAuth();
   const isDoctor = me?.role === 'doctor';
   const [params, setParams] = useSearchParams();
-  const list = useListState({ defaultSort: '-date' });
+  const list = useListState({ defaultSort: '-appointmentNo' });
   const view = list.filters.view === 'calendar' ? 'calendar' : 'list';
   const listQuery = useMemo(
     () => Object.fromEntries(Object.entries(list.query).filter(([key]) => !CALENDAR_KEYS.has(key))),
@@ -78,7 +103,9 @@ export function AppointmentsPage() {
   const summary = useAppointmentSummary({
     from: summaryFrom,
     to: summaryTo,
-    ...(list.filters.doctorId ? { doctorId: list.filters.doctorId } : {}),
+    ...(Object.fromEntries(
+      Object.entries(listQuery).filter(([key, value]) => SUMMARY_KEYS.has(key) && value),
+    ) as Omit<AppointmentSummaryQuery, 'from' | 'to'>),
   });
   const summaryPeriod = list.filters.from
     ? summaryFrom === summaryTo
@@ -168,8 +195,8 @@ export function AppointmentsPage() {
       meta: { hideable: false },
       cell: ({ row }) => (
         <div className="min-w-0">
-          <div className="font-medium">{row.original.patient?.name}</div>
-          <div className="text-xs text-muted-foreground tabular-nums">
+          <PatientName name={row.original.patient?.name} />
+          <div className="max-w-40 truncate text-xs text-muted-foreground tabular-nums">
             {row.original.patient?.phone}
             {row.original.patientCity ? ` · ${row.original.patientCity}` : ''}
           </div>
@@ -389,7 +416,7 @@ export function AppointmentsPage() {
             label="Appointments"
             icon={CalendarCheck}
             value={summary.data?.appointments ?? '—'}
-            hint={`${summaryPeriod} · repeats and cancelled left out`}
+            hint={`${summaryPeriod} · repeats not counted`}
           />
           <StatCard
             label="Repeat visits"
