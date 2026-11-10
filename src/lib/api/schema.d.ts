@@ -34499,7 +34499,7 @@ export interface components {
             /** @default [] */
             familyRelatives: ("mother" | "father" | "sister" | "close_family")[];
             /** @default [] */
-            familyConditions: ("breast_cancer" | "ovarian_cancer" | "endometrial_cancer" | "osteoporosis" | "hip_fracture" | "heart_disease" | "diabetes" | "early_menopause" | "dementia" | "other")[];
+            familyConditions: ("breast_cancer" | "ovarian_cancer" | "endometrial_cancer" | "osteoporosis" | "hip_fracture" | "heart_disease" | "hypertension" | "diabetes" | "early_menopause" | "dementia" | "other")[];
             /** @default null */
             familyOther: string | null;
             /**
@@ -34512,7 +34512,7 @@ export interface components {
                 /** @default null */
                 who: string | null;
                 /** @default [] */
-                conditions: ("breast_cancer" | "ovarian_cancer" | "endometrial_cancer" | "osteoporosis" | "hip_fracture" | "heart_disease" | "diabetes" | "early_menopause" | "dementia" | "other")[];
+                conditions: ("breast_cancer" | "ovarian_cancer" | "endometrial_cancer" | "osteoporosis" | "hip_fracture" | "heart_disease" | "hypertension" | "diabetes" | "early_menopause" | "dementia" | "other")[];
                 /** @default null */
                 other: string | null;
             }[];

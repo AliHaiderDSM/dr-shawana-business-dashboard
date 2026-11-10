@@ -441,6 +441,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
           'osteoporosis:Osteoporosis',
           'hip_fracture:Hip Fracture',
           'heart_disease:Heart Disease',
+          'hypertension:Hypertension',
           'diabetes:Diabetes',
           'early_menopause:Early Menopause',
           'dementia:Dementia',

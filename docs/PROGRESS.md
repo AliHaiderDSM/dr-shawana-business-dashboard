@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Prescription logo, family Hypertension (2026-11-10)
+
+- The printed prescription carries the Dr Shawana DSM logo (src/assets/logo-hd.png) beside the doctor's name in the letterhead.
+- Medical history, Family history: Hypertension added to the conditions.
+
 ## Prescription doctor, doctor calendar, None surgery (2026-11-10)
 
 - New prescription: when the doctor cannot be changed (from a consultation, an existing prescription or a doctor's own login) the doctor shows as read-only text, so the name appears at once instead of an empty disabled list that needed a refresh.

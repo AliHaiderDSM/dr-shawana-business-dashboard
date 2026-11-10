@@ -12,9 +12,10 @@ interface LetterheadProps {
   title: ReactNode;
   subtitle?: ReactNode;
   organization?: { name: string; lines?: (string | null | undefined)[]; logoUrl?: string | null };
+  logoClassName?: string;
 }
 
-export function Letterhead({ title, subtitle, organization }: LetterheadProps) {
+export function Letterhead({ title, subtitle, organization, logoClassName }: LetterheadProps) {
   const { me } = useAuth();
   const name = organization?.name ?? 'DSM Clinic';
   const lines = organization?.lines ?? [me?.branch ? `${me.branch.name}, ${me.branch.city}` : null];
@@ -22,7 +23,7 @@ export function Letterhead({ title, subtitle, organization }: LetterheadProps) {
     <header className="flex items-start justify-between gap-6 border-b-2 border-primary pb-4">
       <div className="flex items-center gap-3">
         {organization?.logoUrl ? (
-          <img src={organization.logoUrl} alt="" className="h-12 w-auto" />
+          <img src={organization.logoUrl} alt="" className={cn('h-12 w-auto', logoClassName)} />
         ) : (
           <div className="flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Activity className="size-5" strokeWidth={2.5} />
