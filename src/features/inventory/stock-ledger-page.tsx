@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, Printer, Tags } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Layers, Printer, Tags, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
@@ -12,12 +12,16 @@ import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { productsApi } from '@redux/features/catalog';
 import { formatDate, formatQuantity, titleCase } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import {
+  useBatches,
   useProductLedger,
   useSerialSummary,
   type ItemStatus,
+  type ProductBatch,
   type ProductLedger,
 } from '@redux/features/inventory';
+import { BatchStatusBadge } from './batches-page';
 import { ITEM_STATUS } from './item-status';
 import { RegisterLabelsDialog } from './labels-page';
 
@@ -167,6 +171,101 @@ const columns: ColumnDef<Movement, unknown>[] = [
   },
 ];
 
+const inStock = (b: ProductBatch) => Number(b.quantity) > 0;
+
+const byFirstOut = (a: ProductBatch, b: ProductBatch) =>
+  Number(inStock(b)) - Number(inStock(a)) ||
+  (a.expiryDate ?? '9999-12-31').localeCompare(b.expiryDate ?? '9999-12-31') ||
+  a.createdAt.localeCompare(b.createdAt);
+
+function BatchesPanel({
+  batches,
+  loading,
+  unit,
+  selected,
+  onSelect,
+  className,
+}: {
+  batches: ProductBatch[];
+  loading: boolean;
+  unit: string;
+  selected: string | null;
+  onSelect: (batchNo: string | null) => void;
+  className?: string;
+}) {
+  const sorted = [...batches].sort(byFirstOut);
+  const first = sorted.find((b) => inStock(b) && b.status !== 'expired');
+  const stocked = sorted.filter(inStock).length;
+  return (
+    <Panel
+      className={className}
+      title="Batches"
+      description={
+        loading
+          ? 'Loading…'
+          : batches.length
+            ? `${batches.length} batch${batches.length === 1 ? '' : 'es'}, ${stocked} in stock. Click one to see only its movements.`
+            : 'No batch recorded for this product.'
+      }
+    >
+      {sorted.length ? (
+        <ul className="-mx-2 max-h-72 divide-y overflow-y-auto">
+          {sorted.map((b) => {
+            const active = selected === b.batchNo;
+            return (
+              <li key={b.id}>
+                <div
+                  className={cn(
+                    'flex items-center gap-3 rounded-md px-2 py-2 transition-colors',
+                    active ? 'bg-primary-soft' : 'hover:bg-muted/50',
+                    !inStock(b) && !active && 'opacity-60',
+                  )}
+                >
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onSelect(active ? null : b.batchNo)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-none"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-semibold">{b.batchNo}</span>
+                        {first?.id === b.id ? (
+                          <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                            Goes out first
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {b.expiryDate ? `Expires ${formatDate(b.expiryDate)}` : 'No expiry'}
+                        {b.manufacturingDate ? ` · Mfg ${formatDate(b.manufacturingDate)}` : ''}
+                      </span>
+                    </span>
+                    <span className="text-right">
+                      <span className="block text-sm font-semibold tabular-nums">
+                        {formatQuantity(b.quantity)} {unit}
+                      </span>
+                      <span className="block text-xs text-muted-foreground tabular-nums">
+                        of {formatQuantity(b.received)}
+                      </span>
+                    </span>
+                    <BatchStatusBadge status={b.status} />
+                  </button>
+                  <Button asChild variant="ghost" size="icon" className="size-7 shrink-0">
+                    <Link to={`/inventory/batches/${b.id}`} aria-label={`Open batch ${b.batchNo}`}>
+                      <ArrowUpRight />
+                    </Link>
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </Panel>
+  );
+}
+
 export function StockLedgerPage() {
   const { productId = '' } = useParams();
   const serials = useSerialSummary(productId);
@@ -182,6 +281,10 @@ export function StockLedgerPage() {
   const ledger = useProductLedger(productId, range);
   const unit = product.data?.unit ?? '';
   const data = ledger.data;
+  const batches = useBatches({ productId, pageSize: 100 }, Boolean(productId));
+  const [batchNo, setBatchNo] = useState<string | null>(null);
+  const movements = batchNo ? data?.movements.filter((m) => m.batchNo === batchNo) : data?.movements;
+  const showLabels = tracked || unlabelled > 0;
 
   return (
     <>
@@ -206,66 +309,83 @@ export function StockLedgerPage() {
         <StatCard label="Total out" value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'} />
         <StatCard label="Closing" value={data ? `${formatQuantity(data.closing)} ${unit}` : '…'} />
       </div>
-      {tracked || unlabelled > 0 ? (
-        <Panel
-          className="mb-6"
-          title="Labels"
-          description={
-            tracked
-              ? 'Every piece of this product carries a DSM label. Sales, stock out and returns scan it.'
-              : 'This product is not labelled yet.'
-          }
-          actions={
+      <div className={cn('mb-6 grid items-start gap-6', showLabels && 'lg:grid-cols-2')}>
+        {showLabels ? (
+          <Panel
+            title="Labels"
+            description={
+              tracked
+                ? 'Every piece of this product carries a DSM label. Sales, stock out and returns scan it.'
+                : 'This product is not labelled yet.'
+            }
+            actions={
+              <div className="flex flex-wrap gap-2">
+                {tracked ? (
+                  <>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/inventory/labels?productId=${productId}`}>
+                        <Tags />
+                        View labels
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/print/labels?productId=${productId}`}>
+                        <Printer />
+                        Print in-stock labels
+                      </Link>
+                    </Button>
+                  </>
+                ) : null}
+                {unlabelled > 0 ? (
+                  <Button size="sm" onClick={() => setRegistering(true)}>
+                    <Tags />
+                    Register labels
+                  </Button>
+                ) : null}
+              </div>
+            }
+          >
             <div className="flex flex-wrap gap-2">
-              {tracked ? (
-                <>
-                  <Button asChild variant="outline" size="sm">
-                    <Link to={`/inventory/labels?productId=${productId}`}>
-                      <Tags />
-                      View labels
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm">
-                    <Link to={`/print/labels?productId=${productId}`}>
-                      <Printer />
-                      Print in-stock labels
-                    </Link>
-                  </Button>
-                </>
-              ) : null}
-              {unlabelled > 0 ? (
-                <Button size="sm" onClick={() => setRegistering(true)}>
-                  <Tags />
-                  Register labels
-                </Button>
-              ) : null}
+              {(Object.entries(serials.data?.byStatus ?? {}) as [ItemStatus, number][]).map(
+                ([status, count]) => (
+                  <StatusBadge key={status} tone={ITEM_STATUS[status].tone}>
+                    {ITEM_STATUS[status].label}: {count}
+                  </StatusBadge>
+                ),
+              )}
             </div>
-          }
-        >
-          <div className="flex flex-wrap gap-2">
-            {(Object.entries(serials.data?.byStatus ?? {}) as [ItemStatus, number][]).map(
-              ([status, count]) => (
-                <StatusBadge key={status} tone={ITEM_STATUS[status].tone}>
-                  {ITEM_STATUS[status].label}: {count}
-                </StatusBadge>
-              ),
-            )}
-          </div>
-          {tracked && unlabelled > 0 ? (
-            <p className="mt-3 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
-              {formatQuantity(unlabelled)} {unit} in stock have no label yet and cannot be sold until their
-              labels are registered.
-            </p>
-          ) : null}
-        </Panel>
-      ) : null}
+            {tracked && unlabelled > 0 ? (
+              <p className="mt-3 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
+                {formatQuantity(unlabelled)} {unit} in stock have no label yet and cannot be sold until their
+                labels are registered.
+              </p>
+            ) : null}
+          </Panel>
+        ) : null}
+        <BatchesPanel
+          batches={batches.data?.data ?? []}
+          loading={batches.isLoading}
+          unit={unit}
+          selected={batchNo}
+          onSelect={setBatchNo}
+        />
+      </div>
       {registering ? (
         <RegisterLabelsDialog productId={productId} onClose={() => setRegistering(false)} />
       ) : null}
-      <h2 className="mb-3 text-sm font-semibold">Movements and batches</h2>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <h2 className="text-sm font-semibold">Movements and batches</h2>
+        {batchNo ? (
+          <Button variant="secondary" size="sm" className="h-7" onClick={() => setBatchNo(null)}>
+            <Layers />
+            Batch {batchNo}
+            <X />
+          </Button>
+        ) : null}
+      </div>
       <DataTable
         columns={columns}
-        data={data?.movements}
+        data={movements}
         isLoading={ledger.isLoading}
         isFetching={ledger.isFetching}
         error={ledger.error}
