@@ -1,4 +1,4 @@
-import logo from '@/assets/logo-hd.png';
+import logo from '@/assets/mainLogo.png';
 import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { useParams } from 'react-router';
 import { Letterhead, PrintField, PrintPage, SignatureLine } from '@/components/shared/print-document';
@@ -53,7 +53,7 @@ export function PrescriptionPrint() {
             <Letterhead
               title="Prescription"
               subtitle={`No ${rx.prescriptionNo}`}
-              logoClassName="-my-3 h-24"
+              logoClassName="h-14"
               organization={{
                 logoUrl: logo,
                 name: data.doctor.name,

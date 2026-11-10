@@ -12,9 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Consultation starts in one click (2026-11-10)
+
+- Opening a visit's consultation for the first time starts it straight away (for anyone who may create consultations), so Start consultation on the appointment no longer leads to a second Start button. The empty page with its button stays only when the start fails, the visit is cancelled or the user cannot create one.
+
 ## Prescription logo, family Hypertension (2026-11-10)
 
-- The printed prescription carries the Dr Shawana DSM logo (src/assets/logo-hd.png) beside the doctor's name in the letterhead.
+- The printed prescription carries the DSM logo (src/assets/mainLogo.png) beside the doctor's name in the letterhead.
 - Medical history, Family history: Hypertension added to the conditions.
 
 ## Prescription doctor, doctor calendar, None surgery (2026-11-10)

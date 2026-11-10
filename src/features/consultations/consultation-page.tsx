@@ -488,8 +488,24 @@ export function ConsultationPage() {
   const appointment = appointmentsApi.useDetail(id);
   const consultation = useAppointmentConsultation(id);
   const [startConsultation, start] = useStartConsultationMutation();
+  const canStart = can('consultations.create');
+  const autoStarted = useRef(false);
+  const missing = !consultation.isLoading && !consultation.error && !consultation.data;
+  const startable =
+    missing && canStart && appointment.data !== undefined && appointment.data.status !== 'cancelled';
 
-  if (consultation.isLoading) return <DetailSkeleton />;
+  useEffect(() => {
+    if (!startable || autoStarted.current) return;
+    autoStarted.current = true;
+    void startConsultation(id).unwrap().catch(toastError);
+  }, [startable, id, startConsultation]);
+
+  if (
+    consultation.isLoading ||
+    (missing && canStart && appointment.isLoading) ||
+    (startable && !start.isError)
+  )
+    return <DetailSkeleton />;
   if (consultation.error)
     return <ErrorState error={consultation.error} onRetry={() => void consultation.refetch()} />;
 
