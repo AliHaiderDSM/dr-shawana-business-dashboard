@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import {
   Bar,
   BarChart,
@@ -28,11 +28,15 @@ import {
 } from 'recharts';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { ErrorState } from '@/components/shared/error-state';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCompactMoney, formatCount, formatDate, formatMoney } from '@/lib/format';
+import { appointmentNumber, timeLabel } from '@/features/appointments/constants';
+import { useAuth } from '@/lib/auth/auth-context';
+import { formatCompactMoney, formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { useAppointmentList, type Appointment } from '@redux/features/appointments';
 import { useDashboard, type DashboardData } from '@redux/features/home';
 import { isCustomPeriod, periodLabel } from './constants';
 import { BranchComparison, PendingDeliveries, StockAlerts, TopProducts } from './dashboard-insights';
@@ -467,7 +471,69 @@ function BranchRevenue({ rows, label }: { rows: NonNullable<DashboardData['byBra
   );
 }
 
+function TodayAppointments() {
+  const today = isoDate();
+  const list = useAppointmentList({ from: today, to: today, sort: 'date', pageSize: 50 });
+  const rows: Appointment[] = list.data?.data ?? [];
+  const waiting = rows.filter((a) => a.status === 'booked').length;
+  return (
+    <ChartCard
+      title="Today's appointments"
+      description={
+        list.isLoading
+          ? formatDate(today, 'EEEE, dd MMM')
+          : `${formatDate(today, 'EEEE, dd MMM')} · ${rows.length} booked, ${waiting} still waiting`
+      }
+      className="xl:col-span-2"
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to={`/appointments?view=list&from=${today}&to=${today}`}>Open</Link>
+        </Button>
+      }
+    >
+      {list.isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      ) : list.error ? (
+        <ErrorState error={list.error} onRetry={() => void list.refetch()} />
+      ) : rows.length === 0 ? (
+        <div className="flex h-full min-h-48 items-center justify-center text-sm text-muted-foreground">
+          No appointments today
+        </div>
+      ) : (
+        <ul className="max-h-80 divide-y overflow-y-auto">
+          {rows.map((a) => (
+            <li key={a.id}>
+              <Link
+                to={`/appointments/${a.id}`}
+                className="flex items-center gap-4 rounded-md px-2 py-2.5 hover:bg-muted/50"
+              >
+                <span className="w-20 shrink-0 text-sm font-semibold tabular-nums">
+                  {timeLabel(a.timeFrom)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{a.patient?.name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    APP#{appointmentNumber(a)} · {a.mode === 'online' ? 'Online' : 'Physical'} ·{' '}
+                    {a.repeatNo ? 'Repeat visit' : a.visitType === 'followup' ? 'Follow up' : 'New'}
+                  </span>
+                </span>
+                <StatusBadge status={a.status} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </ChartCard>
+  );
+}
+
 export function DashboardOverview() {
+  const { me } = useAuth();
+  const isDoctor = me?.role === 'doctor';
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);
   const [params, setParams] = useSearchParams();
@@ -536,7 +602,15 @@ export function DashboardOverview() {
         </Button>
       </div>
       <KpiRow data={data} />
-      {hasCharts ? (
+      {isDoctor ? (
+        <>
+          <div className="grid gap-6 xl:grid-cols-3">
+            <TodayAppointments />
+            {hasCharts ? <RevenueSplit data={data} /> : null}
+          </div>
+          {hasCharts ? <RevenueChart data={data} year={year} years={years} onYearChange={setYear} /> : null}
+        </>
+      ) : hasCharts ? (
         <div className="grid gap-6 xl:grid-cols-3">
           <RevenueChart data={data} year={year} years={years} onYearChange={setYear} />
           <RevenueSplit data={data} />

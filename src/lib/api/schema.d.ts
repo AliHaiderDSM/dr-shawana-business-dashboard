@@ -12168,9 +12168,10 @@ export interface paths {
         /** Counts for a period: main appointments, repeat visits and new patients (cancelled left out) */
         get: {
             parameters: {
-                query: {
-                    from: string;
-                    to: string;
+                query?: {
+                    /** @description Left out with to: every date */
+                    from?: string;
+                    to?: string;
                     doctorId?: string;
                     branchId?: string;
                     /** @description Cancelled are left out unless asked */

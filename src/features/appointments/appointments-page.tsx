@@ -38,7 +38,7 @@ import { patientsApi } from '@redux/features/patients';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatMoney, isoDate } from '@/lib/format';
+import { formatDate, formatMoney } from '@/lib/format';
 import {
   appointmentsApi,
   patientLink,
@@ -91,27 +91,29 @@ export function AppointmentsPage() {
   const isDoctor = me?.role === 'doctor';
   const [params, setParams] = useSearchParams();
   const list = useListState({ defaultSort: '-appointmentNo' });
-  const view = list.filters.view === 'calendar' ? 'calendar' : 'list';
+  const defaultView = isDoctor ? 'calendar' : 'list';
+  const view =
+    list.filters.view === 'calendar' || list.filters.view === 'list' ? list.filters.view : defaultView;
   const listQuery = useMemo(
     () => Object.fromEntries(Object.entries(list.query).filter(([key]) => !CALENDAR_KEYS.has(key))),
     [list.query],
   );
   const query = useAppointmentList(listQuery);
-  const today = isoDate();
-  const summaryFrom = list.filters.from ?? `${today.slice(0, 7)}-01`;
-  const summaryTo = list.filters.to ?? list.filters.from ?? today;
+  const summaryFrom = list.filters.from;
+  const summaryTo = list.filters.to ?? list.filters.from;
   const summary = useAppointmentSummary({
-    from: summaryFrom,
-    to: summaryTo,
+    ...(summaryFrom ? { from: summaryFrom } : {}),
+    ...(summaryTo ? { to: summaryTo } : {}),
     ...(Object.fromEntries(
       Object.entries(listQuery).filter(([key, value]) => SUMMARY_KEYS.has(key) && value),
-    ) as Omit<AppointmentSummaryQuery, 'from' | 'to'>),
+    ) as AppointmentSummaryQuery),
   });
-  const summaryPeriod = list.filters.from
-    ? summaryFrom === summaryTo
-      ? formatDate(summaryFrom)
-      : `${formatDate(summaryFrom)} – ${formatDate(summaryTo)}`
-    : `This month, ${formatDate(summaryFrom, 'MMMM yyyy')}`;
+  const summaryPeriod =
+    summaryFrom && summaryTo
+      ? summaryFrom === summaryTo
+        ? formatDate(summaryFrom)
+        : `${formatDate(summaryFrom)} – ${formatDate(summaryTo)}`
+      : 'All dates';
   const [repeatOf, setRepeatOf] = useState<Appointment | null>(null);
   const doctors = doctorsApi.useOptions();
   const [remove] = appointmentsApi.useRemove();
@@ -389,7 +391,7 @@ export function AppointmentsPage() {
               variant="outline"
               value={view}
               onValueChange={(value) =>
-                value && list.setFilter('view', value === 'calendar' ? 'calendar' : undefined)
+                value && list.setFilter('view', value === defaultView ? undefined : value)
               }
             >
               <ToggleGroupItem value="list" className="h-9 px-3" aria-label="List view">
@@ -437,6 +439,7 @@ export function AppointmentsPage() {
           list={list}
           doctors={(doctors.data ?? []).map((d) => ({ id: d.id, name: d.name }))}
           lockDoctor={isDoctor}
+          defaultSpan={isDoctor ? 'month' : 'day'}
         />
       ) : (
         <DataTable

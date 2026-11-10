@@ -222,10 +222,18 @@ interface AppointmentCalendarProps {
   list: ListState;
   doctors: { id: string; name: string }[];
   lockDoctor?: boolean;
+  defaultSpan?: 'day' | 'week' | 'month';
 }
 
-export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCalendarProps) {
-  const view = list.filters.span === 'week' ? 'week' : list.filters.span === 'month' ? 'month' : 'day';
+export function AppointmentCalendar({
+  list,
+  doctors,
+  lockDoctor,
+  defaultSpan = 'day',
+}: AppointmentCalendarProps) {
+  const span = list.filters.span;
+  const view = span === 'week' || span === 'month' || span === 'day' ? span : defaultSpan;
+  const spanFilter = (value: string) => (value === defaultSpan ? undefined : value);
   const anchor = list.filters.day ? parseISO(list.filters.day) : new Date();
   const start =
     view === 'month'
@@ -257,7 +265,7 @@ export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCa
       ),
     );
   const openDay = (day: Date) => {
-    list.setFilters({ span: undefined, day: isoDate(day) });
+    list.setFilters({ span: spanFilter('day'), day: isoDate(day) });
   };
 
   const visibleDoctors = doctorId ? doctors.filter((d) => d.id === doctorId) : doctors;
@@ -338,7 +346,7 @@ export function AppointmentCalendar({ list, doctors, lockDoctor }: AppointmentCa
             type="single"
             variant="outline"
             value={view}
-            onValueChange={(value) => value && list.setFilter('span', value === 'day' ? undefined : value)}
+            onValueChange={(value) => value && list.setFilter('span', spanFilter(value))}
           >
             <ToggleGroupItem value="day" className="h-9 px-3">
               Day

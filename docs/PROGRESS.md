@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Defaults: GDN All, doctor home and calendar, appointment boxes (2026-11-10)
+
+- GDN report opens on All for the Super Admin (Online and Office stay one click away).
+- Doctor home: Today's appointments (time, patient, number, type, status, links to each visit) takes the place of Monthly revenue next to the revenue split, and Monthly revenue moves below at full width.
+- My appointments opens for doctors in the calendar, month view; List and Day stay one click away. Other roles keep the list.
+- The three boxes on Appointments count every date until a date range is picked (they no longer default to this month).
+
 ## Repeat visits (2026-11-09)
 
 - Book appointment has a Repeat visit switch for an existing patient: choose one of the patient's completed appointments and the new one is numbered APP#4.1, 4.2, with no fee, no type choice and no payments. Completed appointments also get a Repeat visit action in the list and a button on the detail page.

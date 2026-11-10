@@ -184,8 +184,11 @@ export function GdnReportPage() {
       : (params.get('branch') ?? dispatchBranch?.id ?? current?.id)
     : undefined;
   const typeParam = params.get('type');
-  const type: GdnReportType =
-    isSuperAdmin && (typeParam === 'office' || typeParam === 'all') ? typeParam : 'online';
+  const type: GdnReportType = isSuperAdmin
+    ? typeParam === 'office' || typeParam === 'online'
+      ? typeParam
+      : 'all'
+    : 'online';
   const report = useGdnReport(from, to, type, picked, (!isSuperAdmin || Boolean(picked)) && from <= to);
   const data = report.data;
   const [view, setView] = useState<View>('all');
@@ -364,7 +367,7 @@ export function GdnReportPage() {
             variant="outline"
             size="sm"
             value={type}
-            onValueChange={(v) => v && setParam('type', v === 'online' ? null : v)}
+            onValueChange={(v) => v && setParam('type', v === 'all' ? null : v)}
             aria-label="Sales to show"
           >
             {(Object.keys(TYPES) as GdnReportType[]).map((key) => (
