@@ -165,6 +165,7 @@ function Builder({
   const preset = !prescription && !consultationId;
   const presetPatientId = preset ? params.get('patientId') : null;
   const presetDoctorId = preset ? params.get('doctorId') : null;
+  const presetDate = preset ? params.get('date') : null;
   const presetPatient = patientsApi.useDetail(presetPatientId ?? undefined);
   const [patientSearch, setPatientSearch] = useState('');
   const patients = usePatientSearch(patientSearch, !prescription && !consultationId);
@@ -180,7 +181,7 @@ function Builder({
       patientId: prescription?.patientId ?? consultation.data?.patientId ?? presetPatientId ?? '',
       doctorId:
         prescription?.doctorId ?? consultation.data?.doctorId ?? myDoctor.data?.id ?? presetDoctorId ?? '',
-      date: prescription?.date ?? isoDate(),
+      date: prescription?.date ?? consultation.data?.appointment?.date ?? presetDate ?? isoDate(),
       diagnosis: prescription?.diagnosis ?? '',
       followupDate: prescription?.followupDate ?? '',
       planTreatment: prescription?.planTreatment ?? null,

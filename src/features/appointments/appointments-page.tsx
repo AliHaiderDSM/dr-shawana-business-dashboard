@@ -195,7 +195,6 @@ export function AppointmentsPage() {
       cell: ({ row }) => (
         <div className="min-w-0">
           <PatientName name={row.original.patient?.name} />
-         
         </div>
       ),
     },
@@ -278,7 +277,9 @@ export function AppointmentsPage() {
                 icon: FilePlus2,
                 hidden: !can('prescriptions.create'),
                 onSelect: () =>
-                  void navigate(`/prescriptions/new?patientId=${a.patientId}&doctorId=${a.doctorId}`),
+                  void navigate(
+                    `/prescriptions/new?patientId=${a.patientId}&doctorId=${a.doctorId}&date=${a.date}`,
+                  ),
               },
               { label: 'View', icon: Eye, onSelect: () => void navigate(`/appointments/${a.id}`) },
               {

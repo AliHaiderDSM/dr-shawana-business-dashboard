@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Prescription date follows the visit (2026-11-10)
+
+- A new prescription opened from a consultation, or from Add prescription on an appointment, starts on the appointment date instead of today; it can still be changed.
+
 ## Stock history: batches beside labels (2026-11-10)
 
 - The product stock page shows a Batches panel next to Labels (full width when the product has no labels): every batch once, in stock first and soonest expiry first, with expiry, mfg, quantity left of received and status; the batch that goes out first is marked. Clicking a batch filters Movements and batches to it (a chip clears it); the arrow opens the batch page. Uses the existing batches list, no new table.
