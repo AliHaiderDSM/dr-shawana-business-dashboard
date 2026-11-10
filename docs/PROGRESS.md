@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Appointment calendar: own column, no overlaps (2026-11-10)
+
+- A doctor's calendar shows only their own column in the day view.
+- Day and week views grow an hour when it holds short or many appointments, so every slot is tall enough to read, and appointments at the same time sit side by side instead of on top of each other. Hovering shows the patient and the full time.
+
 ## Prescription date follows the visit (2026-11-10)
 
 - A new prescription opened from a consultation, or from Add prescription on an appointment, starts on the appointment date instead of today; it can still be changed.

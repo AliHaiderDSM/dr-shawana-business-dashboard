@@ -23,6 +23,44 @@ import { useAppointmentCalendar, type CalendarEntry } from '@redux/features/appo
 import { appointmentNumber, timeLabel } from './constants';
 
 const HOUR_HEIGHT = 56;
+const ENTRY_HEIGHT = 44;
+
+function hourHeights(columns: Column[], startHour: number, endHour: number) {
+  const heights = Array.from({ length: endHour - startHour }, () => HOUR_HEIGHT);
+  for (const column of columns) {
+    for (const entry of column.entries) {
+      const from = minutes(entry.timeFrom);
+      const index = Math.floor(from / 60) - startHour;
+      if (index < 0 || index >= heights.length) continue;
+      const span = Math.min(Math.max(minutes(entry.timeTo) - from, 1), 60);
+      heights[index] = Math.max(heights[index]!, Math.ceil((ENTRY_HEIGHT * 60) / span));
+    }
+  }
+  return heights;
+}
+
+function lanesOf(entries: CalendarEntry[]) {
+  const sorted = [...entries].sort((a, b) => minutes(a.timeFrom) - minutes(b.timeFrom));
+  const placed = new Map<string, { lane: number; lanes: number }>();
+  let cluster: { entry: CalendarEntry; lane: number }[] = [];
+  let clusterEnd = -1;
+  const close = () => {
+    const lanes = Math.max(1, ...cluster.map((c) => c.lane + 1));
+    for (const c of cluster) placed.set(c.entry.id, { lane: c.lane, lanes });
+    cluster = [];
+  };
+  for (const entry of sorted) {
+    const from = minutes(entry.timeFrom);
+    if (from >= clusterEnd) close();
+    const busy = new Set(cluster.filter((c) => minutes(c.entry.timeTo) > from).map((c) => c.lane));
+    let lane = 0;
+    while (busy.has(lane)) lane++;
+    cluster.push({ entry, lane });
+    clusterEnd = Math.max(clusterEnd, minutes(entry.timeTo));
+  }
+  close();
+  return placed;
+}
 const ALL = '__all__';
 
 const STATUS_STYLES: Record<CalendarEntry['status'], string> = {
@@ -55,6 +93,13 @@ function TimeGrid({
 }) {
   const navigate = useNavigate();
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+  const heights = hourHeights(columns, startHour, endHour);
+  const offsets = heights.reduce<number[]>((acc, h, i) => [...acc, (acc[i] ?? 0) + h], [0]);
+  const y = (time: string) => {
+    const t = Math.min(Math.max(minutes(time) - startHour * 60, 0), hours.length * 60);
+    const index = Math.min(Math.floor(t / 60), hours.length - 1);
+    return (offsets[index] ?? 0) + ((t - index * 60) / 60) * (heights[index] ?? HOUR_HEIGHT);
+  };
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[44rem]">
@@ -80,48 +125,55 @@ function TimeGrid({
           style={{ gridTemplateColumns: `4rem repeat(${columns.length}, minmax(9rem, 1fr))` }}
         >
           <div>
-            {hours.map((hour) => (
+            {hours.map((hour, i) => (
               <div
                 key={hour}
                 className="pr-2 text-right text-xs text-muted-foreground"
-                style={{ height: HOUR_HEIGHT }}
+                style={{ height: heights[i] }}
               >
                 {timeLabel(`${hour}:00`)}
               </div>
             ))}
           </div>
-          {columns.map((column) => (
-            <div key={column.key} className="relative border-l">
-              {hours.map((hour) => (
-                <div key={hour} className="border-b border-dashed" style={{ height: HOUR_HEIGHT }} />
-              ))}
-              {column.entries.map((entry) => {
-                const top = ((minutes(entry.timeFrom) - startHour * 60) / 60) * HOUR_HEIGHT;
-                const height = Math.max(
-                  ((minutes(entry.timeTo) - minutes(entry.timeFrom)) / 60) * HOUR_HEIGHT,
-                  24,
-                );
-                return (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    onClick={() => void navigate(`/appointments/${entry.id}`)}
-                    className={cn(
-                      'absolute inset-x-1 overflow-hidden rounded-md border px-2 py-1 text-left text-xs shadow-xs transition-shadow hover:shadow-md',
-                      STATUS_STYLES[entry.status],
-                    )}
-                    style={{ top, height }}
-                  >
-                    <div className="truncate font-medium">{entry.patient?.name}</div>
-                    <div className="truncate opacity-80">
-                      {timeLabel(entry.timeFrom)} · #{appointmentNumber(entry)}
-                      {entry.mode === 'online' ? ' · online' : ''}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+          {columns.map((column) => {
+            const lanes = lanesOf(column.entries);
+            return (
+              <div key={column.key} className="relative border-l">
+                {hours.map((hour, i) => (
+                  <div key={hour} className="border-b border-dashed" style={{ height: heights[i] }} />
+                ))}
+                {column.entries.map((entry) => {
+                  const top = y(entry.timeFrom) + 1;
+                  const height = Math.max(y(entry.timeTo) - y(entry.timeFrom) - 2, 22);
+                  const { lane, lanes: count } = lanes.get(entry.id) ?? { lane: 0, lanes: 1 };
+                  return (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      onClick={() => void navigate(`/appointments/${entry.id}`)}
+                      className={cn(
+                        'absolute overflow-hidden rounded-md border px-2 py-1 text-left text-xs shadow-xs transition-shadow hover:z-10 hover:shadow-md',
+                        STATUS_STYLES[entry.status],
+                      )}
+                      style={{
+                        top,
+                        height,
+                        left: `calc(${(lane / count) * 100}% + 4px)`,
+                        width: `calc(${100 / count}% - 8px)`,
+                      }}
+                      title={`${entry.patient?.name ?? ''} · ${timeLabel(entry.timeFrom)} – ${timeLabel(entry.timeTo)}`}
+                    >
+                      <div className="truncate font-medium">{entry.patient?.name}</div>
+                      <div className="truncate opacity-80">
+                        {timeLabel(entry.timeFrom)} · #{appointmentNumber(entry)}
+                        {entry.mode === 'online' ? ' · online' : ''}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

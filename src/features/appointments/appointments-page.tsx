@@ -32,7 +32,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { doctorsApi } from '@redux/features/doctors';
+import { doctorsApi, useMyDoctorProfile } from '@redux/features/doctors';
 import { BHRT_LABELS } from '@/features/patients/constants';
 import { patientsApi } from '@redux/features/patients';
 import { useListState } from '@/hooks/use-list-state';
@@ -116,6 +116,7 @@ export function AppointmentsPage() {
       : 'All dates';
   const [repeatOf, setRepeatOf] = useState<Appointment | null>(null);
   const doctors = doctorsApi.useOptions();
+  const myDoctor = useMyDoctorProfile(isDoctor);
   const [remove] = appointmentsApi.useRemove();
   const prefillPatientId = params.get('patientId') ?? undefined;
   const prefillPatient = patientsApi.useDetail(params.get('new') === '1' ? prefillPatientId : undefined);
@@ -432,7 +433,9 @@ export function AppointmentsPage() {
       {view === 'calendar' ? (
         <AppointmentCalendar
           list={list}
-          doctors={(doctors.data ?? []).map((d) => ({ id: d.id, name: d.name }))}
+          doctors={(doctors.data ?? [])
+            .filter((d) => !isDoctor || d.id === myDoctor.data?.id)
+            .map((d) => ({ id: d.id, name: d.name }))}
           lockDoctor={isDoctor}
           defaultSpan={isDoctor ? 'month' : 'day'}
         />
