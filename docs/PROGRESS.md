@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Lab records read by AI on upload (2026-11-11)
+
+- Uploading a lab record, or adding files to one, reads it with AI straight away: a toast shows the progress and how many values went to Blood work for which dates. If AI fails the record stays saved and the toast says why. The manual Read report (AI) buttons stay for re-reading.
+
 ## Consultation starts in one click (2026-11-10)
 
 - Opening a visit's consultation for the first time starts it straight away (for anyone who may create consultations), so Start consultation on the appointment no longer leads to a second Start button. The empty page with its button stays only when the start fails, the visit is cancelled or the user cannot create one.

@@ -70,6 +70,14 @@ export interface RemoveMedicalRecordArg {
   recordId: string;
 }
 
+export type MedicalRecordScan = Schemas['MedicalRecordScan'];
+
+export interface ScanMedicalRecordArg {
+  patientId: string;
+  recordId: string;
+  fileIds?: string[];
+}
+
 export interface AddMedicalRecordFilesArg {
   patientId: string;
   recordId: string;

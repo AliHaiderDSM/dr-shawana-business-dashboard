@@ -28,6 +28,7 @@ import {
   type MedicalRecord,
 } from '@redux/features/clinical';
 import { RECORD_TYPE_LABELS } from './constants';
+import { useAutoScan } from './auto-scan';
 import { READABLE_RECORD_TYPES, useReportSelection } from './report-selection';
 
 const schema = z.object({
@@ -65,6 +66,7 @@ function RecordSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const [createRecord, create] = useCreateMedicalRecordMutation();
+  const autoScan = useAutoScan(patientId);
   const [files, setFiles] = useState<File[]>([]);
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -78,11 +80,12 @@ function RecordSheet({
     }
     void createRecord({ patientId, body: { ...values, appointmentId: appointmentId ?? null }, files })
       .unwrap()
-      .then(() => {
+      .then((record) => {
         toast.success('Record saved');
         setFiles([]);
         form.reset();
         onOpenChange(false);
+        void autoScan(record);
       })
       .catch((error) => applyServerErrors(form, error));
   });
@@ -128,6 +131,7 @@ function RecordCard({
   canEdit: boolean;
 }) {
   const [addRecordFiles, addFiles] = useAddMedicalRecordFilesMutation();
+  const autoScan = useAutoScan(patientId);
   const [removeFile] = useRemoveMedicalRecordFileMutation();
   const [files, setFiles] = useState<File[]>([]);
   const [adding, setAdding] = useState(false);
@@ -181,10 +185,13 @@ function RecordCard({
                 onClick={() =>
                   addRecordFiles({ patientId, recordId: record.id, files })
                     .unwrap()
-                    .then(() => {
+                    .then((updated) => {
                       toast.success('Files added');
                       setFiles([]);
                       setAdding(false);
+                      const before = new Set(record.files.map((f) => f.id));
+                      const added = updated.files.filter((f) => !before.has(f.id)).map((f) => f.id);
+                      if (added.length) void autoScan(updated, added);
                     })
                     .catch(toastError)
                 }

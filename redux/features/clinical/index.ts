@@ -10,6 +10,7 @@ import type {
   CreateMedicalRecordArg,
   MedicalRecord,
   MedicalRecordList,
+  MedicalRecordScan,
   MedicalRecordsArg,
   MedicalRecordType,
   PatientTimeline,
@@ -18,6 +19,7 @@ import type {
   RemoveBloodWorkArg,
   RemoveMedicalRecordArg,
   RemoveMedicalRecordFileArg,
+  ScanMedicalRecordArg,
   RemoveReportSummaryArg,
   ReportSummaries,
   ReportSummaryFileArg,
@@ -140,6 +142,19 @@ export const clinicalApi = baseApi.injectEndpoints({
         }),
       invalidatesTags: (_r, error, { patientId }) => (error ? [] : patientTags(patientId)),
     }),
+    scanMedicalRecord: build.mutation<MedicalRecordScan, ScanMedicalRecordArg>({
+      queryFn: ({ patientId, recordId, fileIds }) =>
+        toApi<MedicalRecordScan>(() =>
+          unwrap(
+            api.POST('/branch/patients/{id}/medical-records/{recordId}/scan', {
+              params: { path: { id: patientId, recordId } },
+              body: fileIds ? { fileIds } : {},
+            }),
+          ).then((r) => r.data),
+        ),
+      invalidatesTags: (_r, error, { patientId }) =>
+        error ? [] : [...patientTags(patientId), summariesTag(patientId)],
+    }),
     removeMedicalRecordFile: build.mutation<unknown, RemoveMedicalRecordFileArg>({
       queryFn: ({ patientId, recordId, fileId }) =>
         toApi<unknown>(() =>
@@ -216,6 +231,7 @@ export const {
   useCreateMedicalRecordMutation,
   useRemoveMedicalRecordMutation,
   useAddMedicalRecordFilesMutation,
+  useScanMedicalRecordMutation,
   useRemoveMedicalRecordFileMutation,
   useGetPatientTimelineQuery,
   useReadBloodReportMutation,
