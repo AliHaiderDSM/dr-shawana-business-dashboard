@@ -236,7 +236,7 @@ function ScannedCell({
   if (serials.length === 0)
     return <span className="flex h-9 items-center text-xs text-muted-foreground">Not scanned</span>;
   return (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
           <Tags className="size-3.5" />

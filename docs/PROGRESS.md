@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-12 — Slip file name and scroll in sheet dropdowns
+
+- Prescription print and the public slip set the page title to "<patient name> - Prescription slip", so Save as PDF suggests that file name (`useDocumentTitle`).
+- `Combobox` popover is modal, so the list scrolls with mouse wheel and touchpad inside sheets (Book appointment patient picker). Same for the scanned labels popover in the stock document sheet.
+
 ## Lab records read by AI on upload (2026-11-11)
 
 - Uploading a lab record, or adding files to one, reads it with AI straight away: a toast shows the progress and how many values went to Blood work for which dates. If AI fails the record stays saved and the toast says why. The manual Read report (AI) buttons stay for re-reading.

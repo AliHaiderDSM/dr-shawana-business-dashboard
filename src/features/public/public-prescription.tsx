@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PrintLayout } from '@/components/shared/print-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CATEGORY_LABELS } from '@/features/prescriptions/constants';
+import { prescriptionFileName, useDocumentTitle } from '@/hooks/use-document-title';
 import type { Schemas } from '@/lib/api/types';
 import { formatDate, titleCase } from '@/lib/format';
 import { usePublicPatientHistory } from '@redux/features/public';
@@ -16,6 +17,7 @@ export function PublicPrescriptionPage() {
   const { token = '', id = '' } = useParams();
   const history = usePublicPatientHistory(token);
   const rx = history.data?.prescriptions.find((p) => p.id === id);
+  useDocumentTitle(rx ? prescriptionFileName(history.data?.patient.name) : null);
 
   useEffect(() => {
     if (!rx) return;

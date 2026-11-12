@@ -2,6 +2,7 @@ import logo from '@/assets/mainLogo.png';
 import { RichTextView, richTextIsEmpty } from '@/components/shared/rich-text';
 import { useParams } from 'react-router';
 import { Letterhead, PrintField, PrintPage, SignatureLine } from '@/components/shared/print-document';
+import { prescriptionFileName, useDocumentTitle } from '@/hooks/use-document-title';
 import { formatDate } from '@/lib/format';
 import {
   usePrescriptionPrint,
@@ -40,6 +41,7 @@ function ItemLine({ item, withInstructions }: { item: Item; withInstructions: bo
 export function PrescriptionPrint() {
   const { id = '' } = useParams();
   const query = usePrescriptionPrint(id);
+  useDocumentTitle(prescriptionFileName(query.data?.patient.name));
 
   return (
     <PrintPage isLoading={query.isLoading} error={query.error} onRetry={() => void query.refetch()}>
