@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-12 — Repeat visits only behind their filter
+
+- Appointments table shows main appointments only by default (`repeat=false`), so the count matches the paid visits used for tax.
+- The filter has one option, "Repeat visits", which lists only APP#x.y visits (fee 0, booked from a completed appointment). The calendar still shows every visit.
+
 ## 2026-11-12 — Slip file name and scroll in sheet dropdowns
 
 - Prescription print and the public slip set the page title to "<patient name> - Prescription slip", so Save as PDF suggests that file name (`useDocumentTitle`).

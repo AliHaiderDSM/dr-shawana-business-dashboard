@@ -98,7 +98,8 @@ export function AppointmentsPage() {
     () => Object.fromEntries(Object.entries(list.query).filter(([key]) => !CALENDAR_KEYS.has(key))),
     [list.query],
   );
-  const query = useAppointmentList(listQuery);
+  const showRepeats = list.filters.repeat === 'true';
+  const query = useAppointmentList({ ...listQuery, repeat: showRepeats ? 'true' : 'false' });
   const summaryFrom = list.filters.from;
   const summaryTo = list.filters.to ?? list.filters.from;
   const summary = useAppointmentSummary({
@@ -452,8 +453,12 @@ export function AppointmentsPage() {
           searchPlaceholder="Patient, phone or number"
           exportFileName="appointments"
           onRowClick={(a) => void navigate(`/appointments/${a.id}`)}
-          emptyTitle="No appointments"
-          emptyDescription="Book the first appointment for this branch."
+          emptyTitle={showRepeats ? 'No repeat visits' : 'No appointments'}
+          emptyDescription={
+            showRepeats
+              ? 'Repeat visits like APP#4.1 are booked from a completed appointment.'
+              : 'Book the first appointment for this branch.'
+          }
           toolbar={
             <>
               <DateRangeFilter list={list} />
@@ -490,12 +495,9 @@ export function AppointmentsPage() {
               <FilterSelect
                 list={list}
                 name="repeat"
-                allLabel="With repeats"
+                allLabel="Appointments"
                 className="w-40"
-                options={[
-                  { value: 'false', label: 'Main only' },
-                  { value: 'true', label: 'Repeat visits' },
-                ]}
+                options={[{ value: 'true', label: 'Repeat visits' }]}
               />
               <FilterSelect
                 list={list}
