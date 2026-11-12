@@ -65,6 +65,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
   sale: 'Sold',
   sale_return: 'Returned',
   sale_edit_adjust: 'Sale edited',
+  replacement: 'Replacement',
   manufacturing_in: 'Produced',
   adjustment: 'Write-off',
 };

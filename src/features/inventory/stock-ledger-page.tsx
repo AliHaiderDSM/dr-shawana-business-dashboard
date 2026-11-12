@@ -34,6 +34,7 @@ const MOVEMENT_TONES: Record<Movement['type'], Tone> = {
   sale: 'info',
   sale_return: 'success',
   sale_edit_adjust: 'neutral',
+  replacement: 'warning',
   manufacturing_in: 'primary',
   adjustment: 'neutral',
 };

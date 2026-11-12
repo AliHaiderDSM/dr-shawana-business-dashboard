@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, PackageOpen, Undo2 } from 'lucide-react';
+import { Eye, PackageOpen, PackagePlus, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
@@ -8,12 +8,14 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListState } from '@/hooks/use-list-state';
 import { productsApi } from '@redux/features/catalog';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { useReturns, type SaleReturn } from '@redux/features/returns';
 import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
+import { ReplacementsTable } from './replacement-parts';
 import { ReturnFormSheet } from './return-form-sheet';
 
 export function ReturnStatusBadge({ record }: { record: Pick<SaleReturn, 'status' | 'items'> }) {
@@ -22,24 +24,12 @@ export function ReturnStatusBadge({ record }: { record: Pick<SaleReturn, 'status
   return <StatusBadge tone="warning">{`${waiting} awaiting inspection`}</StatusBadge>;
 }
 
-export function ReturnsPage() {
+function ReturnsTab({ onCreate }: { onCreate: () => void }) {
   const navigate = useNavigate();
   const { can } = useAuth();
   const list = useListState({ defaultSort: '-date' });
   const query = useReturns(list.query);
   const products = productsApi.useOptions();
-  const [params, setParams] = useSearchParams();
-  const [creating, setCreating] = useState(params.get('new') === '1');
-  const presetSale = params.get('saleId');
-  const presetLabel = params.get('saleLabel');
-
-  const closeSheet = (open: boolean) => {
-    setCreating(open);
-    if (!open && params.has('new')) {
-      for (const key of ['new', 'saleId', 'saleLabel']) params.delete(key);
-      setParams(params, { replace: true });
-    }
-  };
 
   const mergeItems = (items: SaleReturn['items']) => {
     const merged = new Map<string, number>();
@@ -143,10 +133,98 @@ export function ReturnsPage() {
   ];
 
   return (
+    <DataTable
+      columns={columns}
+      data={query.data?.data}
+      meta={query.data?.meta}
+      list={list}
+      isLoading={query.isLoading}
+      isFetching={query.isFetching}
+      error={query.error}
+      onRetry={() => void query.refetch()}
+      searchPlaceholder="Return no, invoice or patient"
+      exportFileName="returns"
+      onRowClick={(r) => void navigate(`/returns/${r.id}`)}
+      emptyTitle="No returns"
+      emptyDescription="Returned deliveries and counter returns appear here."
+      emptyAction={
+        can('returns.create') ? (
+          <Button size="sm" onClick={onCreate}>
+            <PackageOpen />
+            Receive return
+          </Button>
+        ) : null
+      }
+      toolbar={
+        <>
+          <FilterSelect
+            list={list}
+            name="productId"
+            allLabel="All products"
+            className="w-48"
+            options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
+          />
+          <FilterSelect
+            list={list}
+            name="status"
+            allLabel="All statuses"
+            className="w-48"
+            options={[
+              { value: 'pending', label: 'Awaiting inspection' },
+              { value: 'completed', label: 'Inspected' },
+            ]}
+          />
+          <FilterSelect
+            list={list}
+            name="stage"
+            allLabel="Any step"
+            className="w-48"
+            options={[
+              { value: 'inspect', label: 'To check' },
+              { value: 'approve', label: 'Waiting for approval' },
+            ]}
+          />
+          <FilterSelect
+            list={list}
+            name="disposition"
+            allLabel="Any outcome"
+            className="w-44"
+            options={enumOptions(['restocked', 'damaged', 'supplier'] as const, DISPOSITION_LABELS)}
+          />
+          <FilterSelect
+            list={list}
+            name="reason"
+            allLabel="All reasons"
+            options={enumOptions(Object.keys(REASON_LABELS) as (keyof typeof REASON_LABELS)[], REASON_LABELS)}
+          />
+          <DateRangeFilter list={list} />
+        </>
+      }
+    />
+  );
+}
+
+export function ReturnsPage() {
+  const { can } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'replacements' ? 'replacements' : 'returns';
+  const [creating, setCreating] = useState(params.get('new') === '1');
+  const presetSale = params.get('saleId');
+  const presetLabel = params.get('saleLabel');
+
+  const closeSheet = (open: boolean) => {
+    setCreating(open);
+    if (!open && params.has('new')) {
+      for (const key of ['new', 'saleId', 'saleLabel']) params.delete(key);
+      setParams(params, { replace: true });
+    }
+  };
+
+  return (
     <>
       <PageHeader
         title="Returns"
-        description="Products that came back. Inspect each item: back into stock, damaged, or sent to the supplier."
+        description="Products that came back. Inspect each item: back into stock, damaged, or sent to the supplier. Damaged or expired on arrival? Send a free replacement from the return."
         actions={
           can('returns.create') ? (
             <Button onClick={() => setCreating(true)}>
@@ -156,77 +234,29 @@ export function ReturnsPage() {
           ) : null
         }
       />
-      <DataTable
-        columns={columns}
-        data={query.data?.data}
-        meta={query.data?.meta}
-        list={list}
-        isLoading={query.isLoading}
-        isFetching={query.isFetching}
-        error={query.error}
-        onRetry={() => void query.refetch()}
-        searchPlaceholder="Return no, invoice or patient"
-        exportFileName="returns"
-        onRowClick={(r) => void navigate(`/returns/${r.id}`)}
-        emptyTitle="No returns"
-        emptyDescription="Returned deliveries and counter returns appear here."
-        emptyAction={
-          can('returns.create') ? (
-            <Button size="sm" onClick={() => setCreating(true)}>
-              <PackageOpen />
-              Receive return
-            </Button>
-          ) : null
+      <Tabs
+        value={tab}
+        onValueChange={(value) =>
+          setParams(value === 'replacements' ? { tab: 'replacements' } : {}, { replace: true })
         }
-        toolbar={
-          <>
-            <FilterSelect
-              list={list}
-              name="productId"
-              allLabel="All products"
-              className="w-48"
-              options={(products.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
-            />
-            <FilterSelect
-              list={list}
-              name="status"
-              allLabel="All statuses"
-              className="w-48"
-              options={[
-                { value: 'pending', label: 'Awaiting inspection' },
-                { value: 'completed', label: 'Inspected' },
-              ]}
-            />
-            <FilterSelect
-              list={list}
-              name="stage"
-              allLabel="Any step"
-              className="w-48"
-              options={[
-                { value: 'inspect', label: 'To check' },
-                { value: 'approve', label: 'Waiting for approval' },
-              ]}
-            />
-            <FilterSelect
-              list={list}
-              name="disposition"
-              allLabel="Any outcome"
-              className="w-44"
-              options={enumOptions(['restocked', 'damaged', 'supplier'] as const, DISPOSITION_LABELS)}
-            />
-            <FilterSelect
-              list={list}
-              name="reason"
-              allLabel="All reasons"
-              options={enumOptions(
-                Object.keys(REASON_LABELS) as (keyof typeof REASON_LABELS)[],
-                REASON_LABELS,
-              )}
-            />
-            <DateRangeFilter list={list} />
-          </>
-        }
-      />
+      >
+        <TabsList className="mb-4">
+          <TabsTrigger value="returns">
+            <Undo2 />
+            Returns
+          </TabsTrigger>
+          <TabsTrigger value="replacements">
+            <PackagePlus />
+            Replacements
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="returns">
+          <ReturnsTab onCreate={() => setCreating(true)} />
+        </TabsContent>
+        <TabsContent value="replacements">
+          <ReplacementsTable />
+        </TabsContent>
+      </Tabs>
       <ReturnFormSheet
         key={presetSale ?? 'blank'}
         open={creating}

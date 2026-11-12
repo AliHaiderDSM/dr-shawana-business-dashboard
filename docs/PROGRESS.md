@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-12 — Replacements on returns
+
+- Return form offers "Damaged on arrival" and "Expired on arrival".
+- Return detail has a Replacement panel: Send replacement (branch admin, dispatcher, super admin) with quantities up to what came back, label scan for office sales, note and date; pending ones can be sent or deleted.
+- Returns page has tabs Returns / Replacements; the Replacements list shows status and lets the dispatcher send waiting ones.
+- Stock ledger and batches show the new movement type "Replacement".
+
 ## 2026-11-12 — Repeat visits only behind their filter
 
 - Appointments table shows main appointments only by default (`repeat=false`), so the count matches the paid visits used for tax.

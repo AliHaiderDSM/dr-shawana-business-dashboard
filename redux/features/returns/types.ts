@@ -29,3 +29,17 @@ export interface SetReturnRefundArgs {
   returnId: string;
   refund: RefundInput | null;
 }
+
+export type SaleReplacement = Schemas['SaleReplacement'];
+export type ReplacementStatus = SaleReplacement['status'];
+
+export type CreateReplacementArgs = Schemas['CreateSaleReplacement'] & {
+  returnId: string;
+  idempotencyKey?: string;
+};
+
+export interface SendReplacementArgs {
+  replacementId: string;
+  date?: string;
+  serials?: string[];
+}

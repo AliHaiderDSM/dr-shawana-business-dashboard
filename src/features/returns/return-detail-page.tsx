@@ -63,6 +63,7 @@ import {
   type SaleReturn,
 } from '@redux/features/returns';
 import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
+import { ReturnReplacementsPanel } from './replacement-parts';
 import { ReturnStatusBadge } from './returns-page';
 
 type Outcome = Exclude<ReturnDisposition, 'pending'>;
@@ -591,6 +592,7 @@ export function ReturnDetailPage() {
               <p className="text-sm text-muted-foreground">No money was refunded.</p>
             )}
           </Panel>
+          <ReturnReplacementsPanel record={r} />
         </div>
       </div>
 

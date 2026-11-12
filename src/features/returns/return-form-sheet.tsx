@@ -37,6 +37,8 @@ import {
 import { REASON_LABELS } from './constants';
 
 const REASONS = [
+  'damaged',
+  'expired',
   'wrong_item',
   'customer_refused',
   'not_delivered',

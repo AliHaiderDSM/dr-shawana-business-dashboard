@@ -3,9 +3,11 @@ import { idempotencyHeaders } from '@/lib/api/idempotency';
 import type { TagType } from '@redux/api/tagTypes';
 import { api, unwrap } from '@/lib/api/client';
 import type {
+  CreateReplacementArgs,
   CreateReturnArgs,
   DecideReturnItemArgs,
   ResolveReturnItemArgs,
+  SendReplacementArgs,
   SetReturnRefundArgs,
 } from './types';
 
@@ -70,6 +72,29 @@ const requestSetReturnRefund = ({ returnId, refund }: SetReturnRefundArgs) =>
 const requestRemoveReturn = (id: string) =>
   unwrap(api.DELETE('/branch/returns/{id}', { params: { path: { id } } }));
 
+const requestReplacements = (query: Record<string, unknown>) =>
+  unwrap(api.GET('/branch/replacements', { params: { query } }));
+
+const requestReplacement = (id: string) =>
+  unwrap(api.GET('/branch/replacements/{id}', { params: { path: { id } } })).then((r) => r.data);
+
+const requestCreateReplacement = ({ returnId, idempotencyKey, ...body }: CreateReplacementArgs) =>
+  unwrap(
+    api.POST('/branch/returns/{id}/replacements', {
+      params: { path: { id: returnId } },
+      body,
+      headers: idempotencyHeaders(idempotencyKey),
+    }),
+  ).then((r) => r.data);
+
+const requestSendReplacement = ({ replacementId, ...body }: SendReplacementArgs) =>
+  unwrap(api.POST('/branch/replacements/{id}/send', { params: { path: { id: replacementId } }, body })).then(
+    (r) => r.data,
+  );
+
+const requestRemoveReplacement = (id: string) =>
+  unwrap(api.DELETE('/branch/replacements/{id}', { params: { path: { id } } }));
+
 type Result<F extends (...args: never[]) => Promise<unknown>> = Awaited<ReturnType<F>>;
 
 export const returnsApi = baseApi.injectEndpoints({
@@ -110,6 +135,26 @@ export const returnsApi = baseApi.injectEndpoints({
       queryFn: (id) => toApi(() => requestRemoveReturn(id)),
       invalidatesTags: invalidate,
     }),
+    getReplacements: build.query<Result<typeof requestReplacements>, Record<string, unknown>>({
+      queryFn: (query) => fromApi(() => requestReplacements(query)),
+      providesTags: ['returns'],
+    }),
+    getReplacement: build.query<Result<typeof requestReplacement>, string>({
+      queryFn: (id) => fromApi(() => requestReplacement(id)),
+      providesTags: ['returns'],
+    }),
+    createReplacement: build.mutation<Result<typeof requestCreateReplacement>, CreateReplacementArgs>({
+      queryFn: (args) => toApi(() => requestCreateReplacement(args)),
+      invalidatesTags: invalidate,
+    }),
+    sendReplacement: build.mutation<Result<typeof requestSendReplacement>, SendReplacementArgs>({
+      queryFn: (args) => toApi(() => requestSendReplacement(args)),
+      invalidatesTags: invalidate,
+    }),
+    removeReplacement: build.mutation<unknown, string>({
+      queryFn: (id) => toApi(() => requestRemoveReplacement(id)),
+      invalidatesTags: invalidate,
+    }),
   }),
   overrideExisting: false,
 });
@@ -124,7 +169,16 @@ export const {
   useDecideReturnItemMutation,
   useSetReturnRefundMutation,
   useRemoveReturnMutation,
+  useGetReplacementsQuery,
+  useGetReplacementQuery,
+  useCreateReplacementMutation,
+  useSendReplacementMutation,
+  useRemoveReplacementMutation,
 } = returnsApi;
+
+export function useReplacements(query: Record<string, unknown>, skip = false) {
+  return useGetReplacementsQuery(query, { skip });
+}
 
 export function useReturns(query: Record<string, unknown>) {
   return useGetReturnsQuery(query);

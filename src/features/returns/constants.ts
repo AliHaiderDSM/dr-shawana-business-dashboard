@@ -1,8 +1,8 @@
 import type { ReturnDisposition, ReturnReason } from '@redux/features/returns/types';
 
 export const REASON_LABELS: Record<ReturnReason, string> = {
-  damaged: 'Damaged',
-  expired: 'Expired',
+  damaged: 'Damaged on arrival',
+  expired: 'Expired on arrival',
   wrong_item: 'Wrong item',
   customer_refused: 'Customer refused',
   not_delivered: 'Not delivered',
