@@ -68,7 +68,7 @@ export function LoginPage() {
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-sm">
             <div className="mb-8 space-y-2">
-              <h1 className="text-2xl font-semibold">Welcome back</h1>
+              <h1 className="text-2xl font-semibold">Welcome backs</h1>
               <p className="text-sm text-muted-foreground">Sign in with your staff username or email.</p>
             </div>
             <Form {...form}>
