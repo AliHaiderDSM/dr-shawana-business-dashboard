@@ -41,6 +41,7 @@ import {
 } from '@/features/appointments/payment-fields';
 import { useReceivingAccounts } from '@redux/features/appointments';
 import { useReturns, type SaleReturn } from '@redux/features/returns';
+import { SaleReplacementsPanel } from '@/features/returns/replacement-parts';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useInDispatch } from '@/lib/auth/branches';
@@ -661,6 +662,7 @@ export function SaleDetailPage() {
               Receive a return for this sale
             </Button>
           ) : null}
+          {can('returns.view') ? <SaleReplacementsPanel sale={s} /> : null}
         </div>
       </div>
 

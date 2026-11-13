@@ -40,8 +40,9 @@ const OVERVIEW_PATHS = [
   '/branch/discount-requests',
   '/branch/staff',
   '/branch/returns',
+  '/branch/replacements',
 ];
-const OVERVIEW_PREFIXES = ['/branch/returns/', '/branch/trace/'];
+const OVERVIEW_PREFIXES = ['/branch/returns/', '/branch/replacements/', '/branch/trace/'];
 
 const COOKIE_ROUTES = ['/auth/login', '/auth/refresh', '/auth/logout'];
 const TRANSPORT_HEADER = 'X-Auth-Transport';

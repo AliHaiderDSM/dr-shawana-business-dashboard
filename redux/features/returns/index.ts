@@ -1,10 +1,13 @@
 import { baseApi, fromApi, toApi } from '@redux/api/baseApi';
 import { idempotencyHeaders } from '@/lib/api/idempotency';
 import type { TagType } from '@redux/api/tagTypes';
-import { api, unwrap } from '@/lib/api/client';
+import { api, jsonFormData, unwrap, uploadForm } from '@/lib/api/client';
 import type {
   CreateReplacementArgs,
   CreateReturnArgs,
+  CreateSaleReplacementArgs,
+  DecideReplacementArgs,
+  SaleReplacement,
   DecideReturnItemArgs,
   ResolveReturnItemArgs,
   SendReplacementArgs,
@@ -78,14 +81,47 @@ const requestReplacements = (query: Record<string, unknown>) =>
 const requestReplacement = (id: string) =>
   unwrap(api.GET('/branch/replacements/{id}', { params: { path: { id } } })).then((r) => r.data);
 
-const requestCreateReplacement = ({ returnId, idempotencyKey, ...body }: CreateReplacementArgs) =>
+const requestCreateReplacement = ({ returnId, idempotencyKey, files, ...body }: CreateReplacementArgs) =>
+  uploadForm<SaleReplacement>(
+    `/branch/returns/${returnId}/replacements`,
+    jsonFormData(body, { files }),
+    'POST',
+    idempotencyHeaders(idempotencyKey),
+  );
+
+const requestCreateSaleReplacement = ({
+  saleId,
+  idempotencyKey,
+  files,
+  ...body
+}: CreateSaleReplacementArgs) =>
+  uploadForm<SaleReplacement>(
+    `/branch/sales/${saleId}/replacements`,
+    jsonFormData(body, { files }),
+    'POST',
+    idempotencyHeaders(idempotencyKey),
+  );
+
+const requestReplaceable = (saleId: string) =>
+  unwrap(api.GET('/branch/sales/{id}/replaceable', { params: { path: { id: saleId } } })).then((r) => r.data);
+
+const requestDecideReplacement = ({ replacementId, approve, note }: DecideReplacementArgs) =>
   unwrap(
-    api.POST('/branch/returns/{id}/replacements', {
-      params: { path: { id: returnId } },
-      body,
-      headers: idempotencyHeaders(idempotencyKey),
-    }),
+    approve
+      ? api.POST('/admin/replacements/{id}/approve', {
+          params: { path: { id: replacementId } },
+          body: { note },
+        })
+      : api.POST('/admin/replacements/{id}/reject', {
+          params: { path: { id: replacementId } },
+          body: { note },
+        }),
   ).then((r) => r.data);
+
+export const replacementFileUrl = (id: string, fileId: string) =>
+  unwrap(api.GET('/branch/replacements/{id}/files/{fileId}/url', { params: { path: { id, fileId } } })).then(
+    (r) => r.data,
+  );
 
 const requestSendReplacement = ({ replacementId, ...body }: SendReplacementArgs) =>
   unwrap(api.POST('/branch/replacements/{id}/send', { params: { path: { id: replacementId } }, body })).then(
@@ -147,6 +183,21 @@ export const returnsApi = baseApi.injectEndpoints({
       queryFn: (args) => toApi(() => requestCreateReplacement(args)),
       invalidatesTags: invalidate,
     }),
+    createSaleReplacement: build.mutation<
+      Result<typeof requestCreateSaleReplacement>,
+      CreateSaleReplacementArgs
+    >({
+      queryFn: (args) => toApi(() => requestCreateSaleReplacement(args)),
+      invalidatesTags: invalidate,
+    }),
+    getReplaceable: build.query<Result<typeof requestReplaceable>, string>({
+      queryFn: (saleId) => fromApi(() => requestReplaceable(saleId)),
+      providesTags: ['returns'],
+    }),
+    decideReplacement: build.mutation<Result<typeof requestDecideReplacement>, DecideReplacementArgs>({
+      queryFn: (args) => toApi(() => requestDecideReplacement(args)),
+      invalidatesTags: invalidate,
+    }),
     sendReplacement: build.mutation<Result<typeof requestSendReplacement>, SendReplacementArgs>({
       queryFn: (args) => toApi(() => requestSendReplacement(args)),
       invalidatesTags: invalidate,
@@ -172,6 +223,9 @@ export const {
   useGetReplacementsQuery,
   useGetReplacementQuery,
   useCreateReplacementMutation,
+  useCreateSaleReplacementMutation,
+  useGetReplaceableQuery,
+  useDecideReplacementMutation,
   useSendReplacementMutation,
   useRemoveReplacementMutation,
 } = returnsApi;

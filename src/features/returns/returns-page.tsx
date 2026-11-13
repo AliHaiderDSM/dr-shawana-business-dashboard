@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, PackageOpen, PackagePlus, Undo2 } from 'lucide-react';
+import { Eye, PackageOpen, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
@@ -8,14 +8,12 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListState } from '@/hooks/use-list-state';
 import { productsApi } from '@redux/features/catalog';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { useReturns, type SaleReturn } from '@redux/features/returns';
 import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
-import { ReplacementsTable } from './replacement-parts';
 import { ReturnFormSheet } from './return-form-sheet';
 
 export function ReturnStatusBadge({ record }: { record: Pick<SaleReturn, 'status' | 'items'> }) {
@@ -207,7 +205,6 @@ function ReturnsTab({ onCreate }: { onCreate: () => void }) {
 export function ReturnsPage() {
   const { can } = useAuth();
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') === 'replacements' ? 'replacements' : 'returns';
   const [creating, setCreating] = useState(params.get('new') === '1');
   const presetSale = params.get('saleId');
   const presetLabel = params.get('saleLabel');
@@ -224,7 +221,7 @@ export function ReturnsPage() {
     <>
       <PageHeader
         title="Returns"
-        description="Products that came back. Inspect each item: back into stock, damaged, or sent to the supplier. Damaged or expired on arrival? Send a free replacement from the return."
+        description="Products that came back. Inspect each item: back into stock, damaged, or sent to the supplier. Damaged or expired on arrival? Request a free replacement from the return."
         actions={
           can('returns.create') ? (
             <Button onClick={() => setCreating(true)}>
@@ -234,29 +231,7 @@ export function ReturnsPage() {
           ) : null
         }
       />
-      <Tabs
-        value={tab}
-        onValueChange={(value) =>
-          setParams(value === 'replacements' ? { tab: 'replacements' } : {}, { replace: true })
-        }
-      >
-        <TabsList className="mb-4">
-          <TabsTrigger value="returns">
-            <Undo2 />
-            Returns
-          </TabsTrigger>
-          <TabsTrigger value="replacements">
-            <PackagePlus />
-            Replacements
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="returns">
-          <ReturnsTab onCreate={() => setCreating(true)} />
-        </TabsContent>
-        <TabsContent value="replacements">
-          <ReplacementsTable />
-        </TabsContent>
-      </Tabs>
+      <ReturnsTab onCreate={() => setCreating(true)} />
       <ReturnFormSheet
         key={presetSale ?? 'blank'}
         open={creating}

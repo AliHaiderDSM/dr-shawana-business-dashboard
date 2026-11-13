@@ -272,6 +272,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'any',
   },
   {
+    path: 'replacements',
+    element: page(() => import('@/features/returns/replacement-parts'), 'ReplacementsPage'),
+    anyOf: ['returns.view'],
+    scope: 'any',
+  },
+  {
     path: 'returns/:id',
     element: page(() => import('@/features/returns/return-detail-page'), 'ReturnDetailPage'),
     anyOf: ['returns.view'],

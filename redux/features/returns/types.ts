@@ -36,7 +36,24 @@ export type ReplacementStatus = SaleReplacement['status'];
 export type CreateReplacementArgs = Schemas['CreateSaleReplacement'] & {
   returnId: string;
   idempotencyKey?: string;
+  files?: File[];
 };
+
+export type ReplacementReason = Schemas['CreateDirectSaleReplacement']['reason'];
+
+export type CreateSaleReplacementArgs = Schemas['CreateDirectSaleReplacement'] & {
+  saleId: string;
+  idempotencyKey?: string;
+  files?: File[];
+};
+
+export interface DecideReplacementArgs {
+  replacementId: string;
+  approve: boolean;
+  note?: string | null;
+}
+
+export type SaleReplaceable = Schemas['SaleReplaceable'];
 
 export interface SendReplacementArgs {
   replacementId: string;

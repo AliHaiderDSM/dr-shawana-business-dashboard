@@ -29073,7 +29073,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Branch Admin or dispatcher sends the same products again, free, for a damaged or expired return (up to the returned quantity). Office sale: the stock leaves now with its labels. Online sale: it waits for the Dispatch Department. Not a sale: no payment, no revenue. */
+        /** Branch Admin or dispatcher asks to send the returned products again, free (up to the returned quantity). It waits for the Super Admin. Numbered on the sale: <invoice>.1, .2 */
         post: {
             parameters: {
                 query?: {
@@ -29088,6 +29088,12 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": components["schemas"]["CreateSaleReplacement"];
+                    "multipart/form-data": {
+                        /** @description JSON payload */
+                        data: string;
+                        /** @description Optional photos or PDFs as proof (up to 5) */
+                        files?: string[];
+                    };
                 };
             };
             responses: {
@@ -29155,6 +29161,190 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/sales/{id}/replacements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Branch Admin or dispatcher asks to replace products of a sale without a return (up to sold minus returned minus already replaced). It waits for the Super Admin. */
+        post: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateDirectSaleReplacement"];
+                    "multipart/form-data": {
+                        /** @description JSON payload */
+                        data: string;
+                        /** @description Optional photos or PDFs as proof (up to 5) */
+                        files?: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReplacement"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/sales/{id}/replaceable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Products of a sale that can still be replaced without a return */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Replaceable */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReplaceable"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/replacements": {
         parameters: {
             query?: never;
@@ -29169,8 +29359,9 @@ export interface paths {
                     page?: number;
                     pageSize?: number;
                     search?: string;
-                    sort?: "date" | "-date" | "createdAt" | "-createdAt" | "replacementSeq" | "-replacementSeq";
-                    status?: "pending" | "sent";
+                    sort?: "date" | "-date" | "createdAt" | "-createdAt" | "replacementNo" | "-replacementNo";
+                    status?: "pending_approval" | "approved" | "rejected" | "sent";
+                    kind?: "with_return" | "without_return";
                     saleId?: string;
                     saleReturnId?: string;
                     from?: string;
@@ -29331,7 +29522,7 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /** Delete a replacement that is still waiting to be sent */
+        /** Delete a replacement that is still waiting for approval */
         delete: {
             parameters: {
                 query?: {
@@ -29404,6 +29595,275 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/replacements/{id}/files/{fileId}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Short-lived link to a proof file */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Signed URL */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                url: string;
+                                expiresIn: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/replacements/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Super Admin approves a replacement; then it can be sent */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DecideSaleReplacement"];
+                };
+            };
+            responses: {
+                /** @description Approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReplacement"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/replacements/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Super Admin rejects a replacement; a note is required */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DecideSaleReplacement"];
+                };
+            };
+            responses: {
+                /** @description Rejected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReplacement"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/replacements/{id}/send": {
         parameters: {
             query?: never;
@@ -29413,7 +29873,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Dispatch Department sends a waiting online replacement: scans the labels and the stock leaves */
+        /** Send an approved replacement: the stock branch scans the labels and the stock leaves (office: the selling branch; online: the Dispatch Department) */
         post: {
             parameters: {
                 query?: {
@@ -36431,10 +36891,10 @@ export interface components {
              */
             date?: string;
             /**
-             * @description Why the customer returned it. damaged / expired: it reached the customer damaged or expired; send a replacement from the return.
+             * @description Why the customer returned it. damaged: it reached the customer damaged; send a replacement from the return. expired is kept only on old returns.
              * @enum {string}
              */
-            reason: "damaged" | "expired" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
+            reason: "damaged" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
             note?: string | null;
             items: {
                 /** Format: uuid */
@@ -37296,6 +37756,7 @@ export interface components {
             writeOffs: number;
             observations: number;
             discountRequests: number;
+            replacements: number;
             returns: number;
             stockReceipts: number;
             patientRequests: number;
@@ -37392,8 +37853,25 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
             }[];
-            /** @description Office sale: labels of the new pieces handed over now. Online sale: leave out, the Dispatch Department scans them when it sends the replacement. */
-            serials?: string[];
+        };
+        CreateDirectSaleReplacement: {
+            /**
+             * Format: date
+             * @example 2026-09-30
+             */
+            date?: string;
+            /** @enum {string} */
+            reason: "damaged" | "wrong_item" | "other";
+            note?: string | null;
+            items: {
+                /** Format: uuid */
+                productId: string;
+                /** @example 10.000 */
+                qty: string;
+            }[];
+        };
+        DecideSaleReplacement: {
+            note?: string | null;
         };
         SendSaleReplacement: {
             /**
@@ -37409,11 +37887,15 @@ export interface components {
             id: string;
             /** Format: uuid */
             branchId: string;
+            /** @description Number of the replacement on its sale */
             replacementSeq: number;
-            /** @description e.g. LHR-REP-000001 */
+            /** @description Sale invoice number and the replacement number, e.g. LHR-000123.1 */
             replacementNo: string;
-            /** Format: uuid */
-            saleReturnId: string;
+            /**
+             * Format: uuid
+             * @description null: a replacement without a return
+             */
+            saleReturnId: string | null;
             returnNo: string | null;
             /** Format: uuid */
             saleId: string;
@@ -37433,12 +37915,19 @@ export interface components {
                 } | null;
             } | null;
             date: string;
+            /** @enum {string} */
+            reason: "damaged" | "expired" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
             note: string | null;
             /**
-             * @description pending: online, waiting for the Dispatch Department; sent: the new pieces left the stock
+             * @description pending_approval: waiting for the Super Admin; approved: waiting to be sent; rejected: refused by the Super Admin; sent: the new pieces left the stock
              * @enum {string}
              */
-            status: "pending" | "sent";
+            status: "pending_approval" | "approved" | "rejected" | "sent";
+            /** Format: uuid */
+            decidedBy: string | null;
+            /** Format: date-time */
+            decidedAt: string | null;
+            decisionNote: string | null;
             sentOn: string | null;
             /** Format: uuid */
             sentBy: string | null;
@@ -37456,6 +37945,13 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
             }[];
+            files: {
+                /** Format: uuid */
+                id: string;
+                originalName: string;
+                contentType: string;
+                sizeBytes: number;
+            }[];
             /** @description Labels sent (detail only) */
             serials?: string[];
             /** @example 10.000 */
@@ -37466,6 +37962,28 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        SaleReplaceable: {
+            /** Format: uuid */
+            saleId: string;
+            invoiceNo: string;
+            items: {
+                /** Format: uuid */
+                productId: string;
+                name: string;
+                barcode: string | null;
+                /** @example 10.000 */
+                sold: string;
+                /** @example 10.000 */
+                returned: string;
+                /**
+                 * @description Already replaced without a return, still active
+                 * @example 10.000
+                 */
+                replaced: string;
+                /** @example 10.000 */
+                replaceable: string;
+            }[];
         };
         CreateJournalEntry: {
             /**

@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-13 — Replacement approvals and replacements without a return
+
+- New Replacements page (`/replacements`, sidebar item with badge) replaces the Returns page tab: filters status and with/without return, row actions Approve / Reject (Super Admin), Send (stock branch), Open sale, Open return, Delete.
+- Sale detail: Replacements panel with "Replacement request" (products of the sale, reason, note, optional photos). Return detail: "Request replacement".
+- Cards show number (`<invoice>.1`), status, reason, return link, files and the Super Admin note. Label scanning moved to Send.
+
 ## 2026-11-12 — Replacements on returns
 
 - Return form offers "Damaged on arrival" and "Expired on arrival".

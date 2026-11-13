@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Truck,
   type LucideIcon,
+  PackagePlus,
   Undo2,
   UserCog,
   Users,
@@ -71,6 +72,7 @@ export interface MenuItem {
     | 'observations'
     | 'discountRequests'
     | 'returns'
+    | 'replacements'
     | 'stockReceipts'
     | 'patientRequests'
     | 'patientMessages';
@@ -105,6 +107,7 @@ const DISPATCHER_KEYS = new Set([
   'delivery',
   'gdn-report',
   'returns',
+  'replacements',
   'write-offs',
   'under-observation',
   'stock',
@@ -289,6 +292,16 @@ export const MENU: MenuGroup[] = [
         label: 'Returns',
         path: '/returns',
         icon: Undo2,
+        anyOf: ['returns.view'],
+        scope: 'any',
+        showInWarehouse: true,
+      },
+      {
+        key: 'replacements',
+        badge: 'replacements',
+        label: 'Replacements',
+        path: '/replacements',
+        icon: PackagePlus,
         anyOf: ['returns.view'],
         scope: 'any',
         showInWarehouse: true,
