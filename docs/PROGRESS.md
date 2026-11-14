@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — View Sales: Net amount shows the money received
+
+- Net amount now comes from the API as received minus refunds: a sale of 9,000 paid 8,500 shows 8,500 with Remaining 500. Types regenerated.
+
 ## 2026-11-14 — Sales payment-method filter, GDN pieces and money received
 
 - View Sales: new "Cash & online" filter (`method`), next to the payment status filter.

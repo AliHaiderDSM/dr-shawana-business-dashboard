@@ -23970,7 +23970,7 @@ export interface paths {
                                  */
                                 refund: string;
                                 /**
-                                 * @description Total after discounts minus refunds
+                                 * @description Money received minus refunds
                                  * @example 1250.50
                                  */
                                 netAmount: string;
