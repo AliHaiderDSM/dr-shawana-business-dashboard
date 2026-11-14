@@ -27,6 +27,9 @@ import { SalePaymentSheet } from './sale-detail-page';
 
 const OWN_ONLY = new Set(['front_desk', 'team_manager']);
 
+const returnLabel = (s: SaleListItem) =>
+  Number(s.returnedQty) >= Number(s.totalQty) ? 'Returned' : `${formatQuantity(s.returnedQty)} returned`;
+
 export function useCanChangeSale() {
   const { me, can } = useAuth();
   return (sale: Pick<SaleListItem, 'createdBy'>, action: 'update' | 'delete') =>
@@ -180,12 +183,26 @@ export function SalesPage() {
     },
     {
       id: 'refund',
-      header: 'Refund',
-      accessorKey: 'refund',
-      meta: { align: 'right' },
+      header: 'Return',
+      accessorFn: (s) =>
+        s.returns > 0
+          ? `${returnLabel(s)}${Number(s.refund) > 0 ? ` · ${s.refund} refunded` : ' · no refund'}`
+          : '',
       cell: ({ row }) =>
-        Number(row.original.refund) > 0 ? (
-          <span className="text-destructive tabular-nums">−{formatAmount(row.original.refund)}</span>
+        row.original.returns > 0 ? (
+          <div className="flex flex-col items-start gap-0.5">
+            <StatusBadge tone="danger">{returnLabel(row.original)}</StatusBadge>
+            <span
+              className={cn(
+                'text-xs whitespace-nowrap tabular-nums',
+                Number(row.original.refund) > 0 ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {Number(row.original.refund) > 0
+                ? `${formatAmount(row.original.refund)} refunded`
+                : 'No refund'}
+            </span>
+          </div>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),

@@ -7,6 +7,8 @@ export type SaleListItem = Omit<Sale, 'items' | 'payments'> & {
   grossAmount: string;
   discountTotal: string;
   refund: string;
+  returns: number;
+  returnedQty: string;
   netAmount: string;
 };
 export type SaleInput = Schemas['CreateSale'];

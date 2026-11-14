@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — View Sales: Return column
+
+- The Refund column is now Return: a sale with a return shows "Returned" (or "N returned" when only part came back) and under it the money refunded, or "No refund". The footer still totals the refunds. Types regenerated.
+
 ## 2026-11-14 — GDN report: Received column
 
 - The GDN table has its own Received column next to Amount: the money received, with what is still left in red under it; the footer totals it the same way. Amount shows only the order total and its payment badge.

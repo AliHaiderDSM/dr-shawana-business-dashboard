@@ -23969,6 +23969,13 @@ export interface paths {
                                  * @example 1250.50
                                  */
                                 refund: string;
+                                /** @description Returns recorded on this sale */
+                                returns: number;
+                                /**
+                                 * @description Pieces brought back on those returns
+                                 * @example 10.000
+                                 */
+                                returnedQty: string;
                                 /**
                                  * @description Money received on the sale; refunds are shown apart and are not taken off
                                  * @example 1250.50
