@@ -12,6 +12,26 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — Appointment money report: tabs follow the current state
+
+- New tab **Remaining due**: one row per completed appointment that still owes part of its fee.
+- **Bookings** shows only bookings with no payment yet; once money comes in they leave this tab.
+- **Advance** shows only advances whose visit is not completed yet; completed ones live in Completed, GDN and Remaining due.
+- **Advance** shows every payment of an appointment that is not completed yet (a visit date that passed without being marked completed stays here); a payment that cleared the fee reads "Paid in advance".
+- New tab **Paid on visit day**: money taken on the visit date.
+- **Received from previous visits** (was Dues received) and **Paid on visit day** count only completed appointments; Received from previous visits is every payment after the visit date, part or full.
+- **Completed appointments** shows only completed appointments whose visit date is in the period (services delivered).
+- Summary cards are unchanged and still count the money received in the period.
+
+## 2026-11-14 — Calendar boxes across the hour and all appointments by default
+
+- Calendar (day and week): a short appointment that crosses the hour (e.g. 6:57–7:07 PM) now gets its full box; every hour it touches is stretched, not only the first.
+- Appointments list shows main appointments and repeat visits together by default. The filter offers All appointments, Main appointments and Repeat visits.
+
+## 2026-11-14 — GDN tab: Due instead of Advance paid
+
+- Appointment money report, GDN tab: a completed visit that is partly paid shows **Due** (the rest is owed by the patient) instead of Advance paid, on screen and in the Excel export. Other tabs keep Advance paid. Rows are unchanged.
+
 ## 2026-11-13 — Replacement approvals and replacements without a return
 
 - New Replacements page (`/replacements`, sidebar item with badge) replaces the Returns page tab: filters status and with/without return, row actions Approve / Reject (Super Admin), Send (stock branch), Open sale, Open return, Delete.

@@ -99,7 +99,7 @@ export function AppointmentsPage() {
     [list.query],
   );
   const showRepeats = list.filters.repeat === 'true';
-  const query = useAppointmentList({ ...listQuery, repeat: showRepeats ? 'true' : 'false' });
+  const query = useAppointmentList(listQuery);
   const summaryFrom = list.filters.from;
   const summaryTo = list.filters.to ?? list.filters.from;
   const summary = useAppointmentSummary({
@@ -495,9 +495,12 @@ export function AppointmentsPage() {
               <FilterSelect
                 list={list}
                 name="repeat"
-                allLabel="Appointments"
-                className="w-40"
-                options={[{ value: 'true', label: 'Repeat visits' }]}
+                allLabel="All appointments"
+                className="w-44"
+                options={[
+                  { value: 'false', label: 'Main appointments' },
+                  { value: 'true', label: 'Repeat visits' },
+                ]}
               />
               <FilterSelect
                 list={list}

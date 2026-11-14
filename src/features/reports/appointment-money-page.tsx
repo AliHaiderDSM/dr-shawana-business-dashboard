@@ -58,6 +58,17 @@ const entryOf = (r: AppointmentMoneyEntry): { label: string; tone: Tone } =>
       ? { label: 'Completed', tone: 'success' }
       : { label: 'Booking', tone: 'neutral' };
 
+const DUE = { label: 'Due', tone: 'warning' as Tone };
+
+const PAID_AHEAD = { label: 'Paid in advance', tone: 'success' as Tone };
+const AFTER_VISIT_TABS: Tab[] = ['gdn', 'completed', 'due', 'sameDay', 'dues'];
+
+const stateIn = (r: AppointmentMoneyEntry, tab: Tab) => {
+  if (tab === 'advance' && r.stateAfter === 'paid') return PAID_AHEAD;
+  if (AFTER_VISIT_TABS.includes(tab) && isCompleted(r) && r.stateAfter === 'advance') return DUE;
+  return STATE[r.stateAfter];
+};
+
 type Group = 'booked' | 'advance' | 'sale' | 'refund';
 const groupOf = (r: AppointmentMoneyEntry): Group =>
   r.kind === 'balance' || r.kind === 'advance'
@@ -71,7 +82,13 @@ const groupOf = (r: AppointmentMoneyEntry): Group =>
 interface TabContext {
   completed: Set<number>;
   gdn: Set<number>;
+  due: Set<number>;
 }
+
+const hasPayment = (r: AppointmentMoneyEntry) => r.appointment.history.some((m) => m.kind === 'payment');
+const owedNow = (r: AppointmentMoneyEntry) =>
+  Number(r.appointment.fee) -
+  r.appointment.history.reduce((sum, m) => (m.kind === 'payment' ? sum + Number(m.amount) : sum), 0);
 
 function latestPerAppointment(rows: AppointmentMoneyEntry[], keep: (r: AppointmentMoneyEntry) => boolean) {
   const latest = new Map<string, AppointmentMoneyEntry>();
@@ -84,8 +101,9 @@ function latestPerAppointment(rows: AppointmentMoneyEntry[], keep: (r: Appointme
 }
 
 const isDues = (r: AppointmentMoneyEntry) => r.kind === 'balance' && r.date > r.appointment.visitDate;
-const isDuesCleared = (r: AppointmentMoneyEntry) =>
-  (r.kind === 'balance' || r.kind === 'advance') && r.stateAfter === 'paid' && r.fullyPaidHere;
+const isSameDay = (r: AppointmentMoneyEntry) => r.kind === 'balance' && r.date === r.appointment.visitDate;
+const isAheadOfVisit = (r: AppointmentMoneyEntry) =>
+  (r.kind === 'advance' || r.kind === 'balance') && r.appointment.status !== 'completed';
 
 function tabContext(
   rows: AppointmentMoneyEntry[],
@@ -97,12 +115,20 @@ function tabContext(
     (r) => isCompleted(r) && (inPeriod(r.appointment.visitDate) || isDues(r)),
   );
   return {
-    completed: new Set(latestPerAppointment([...rows, ...visits], isCompleted).map((r) => r.sr)),
+    completed: new Set(
+      latestPerAppointment(
+        [...rows, ...visits],
+        (r) => isCompleted(r) && inPeriod(r.appointment.visitDate),
+      ).map((r) => r.sr),
+    ),
     gdn: new Set(gdn.map((r) => r.sr)),
+    due: new Set(
+      latestPerAppointment([...rows, ...visits], (r) => isCompleted(r) && owedNow(r) > 0).map((r) => r.sr),
+    ),
   };
 }
 
-type Tab = 'all' | Group | 'dues' | 'completed' | 'gdn';
+type Tab = 'all' | Group | 'sameDay' | 'dues' | 'completed' | 'gdn' | 'due';
 const TABS: {
   key: Tab;
   label: string;
@@ -113,19 +139,21 @@ const TABS: {
   {
     key: 'booked',
     label: 'Bookings',
-    match: (r) => r.kind === 'booked' && r.appointment.status !== 'completed',
+    match: (r) => r.kind === 'booked' && r.appointment.status !== 'completed' && !hasPayment(r),
   },
-  { key: 'advance', label: 'Advance', match: (r) => groupOf(r) === 'advance' },
   {
-    key: 'dues',
-    label: 'Dues received',
-    match: isDuesCleared,
+    key: 'advance',
+    label: 'Advance',
+    match: isAheadOfVisit,
   },
+  { key: 'sameDay', label: 'Paid on visit day', match: (r) => isCompleted(r) && isSameDay(r) },
+  { key: 'dues', label: 'Received from previous visits', match: (r) => isCompleted(r) && isDues(r) },
   {
     key: 'completed',
     label: 'Completed appointments',
     match: (r, ctx) => ctx.completed.has(r.sr),
   },
+  { key: 'due', label: 'Remaining due', match: (r, ctx) => ctx.due.has(r.sr) },
   { key: 'refund', label: 'Refunds', match: (r) => r.kind === 'refund' },
 ];
 const matchOf = (tab: Tab, ctx: TabContext) => (r: AppointmentMoneyEntry) =>
@@ -285,6 +313,7 @@ function exportRows(
   rows: AppointmentMoneyEntry[],
   title: string,
   allBranches: boolean,
+  tab: Tab,
 ) {
   const link = linksOf([...data.rows, ...(data.visits ?? [])]);
   return [
@@ -328,7 +357,7 @@ function exportRows(
       Number(r.appointment.fee),
       Number(r.paidAfter),
       Number(r.remainingAfter),
-      STATE[r.stateAfter].label,
+      stateIn(r, tab).label,
     ]),
     [],
     ['Advance (not yet fully paid)', totalOf(data.rows, 'advance')],
@@ -408,7 +437,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings are not completed yet, Advance left the fee part paid, Dues received cleared it (click Fully paid for the breakdown), GDN is the completed visits and their dues."
+        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Received from previous visits is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is the completed visits with their money lines."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
@@ -488,7 +517,7 @@ export function AppointmentMoneyPage() {
             onClick={() =>
               data &&
               downloadXlsx(
-                exportRows(data, rows, title, allBranches),
+                exportRows(data, rows, title, allBranches, tab),
                 view === 'all' ? 'appointment-payments-all' : `appointment-payments-${from}`,
                 'Payments',
               )
@@ -707,8 +736,8 @@ export function AppointmentMoneyPage() {
                                     />
                                   </button>
                                 ) : (
-                                  <StatusBadge tone={STATE[r.stateAfter].tone}>
-                                    {STATE[r.stateAfter].label}
+                                  <StatusBadge tone={stateIn(r, tab).tone}>
+                                    {stateIn(r, tab).label}
                                   </StatusBadge>
                                 )}
                               </td>
