@@ -203,7 +203,12 @@ export function SalesPage() {
       accessorKey: 'paymentStatus',
       cell: ({ row }) =>
         row.original.paymentStatus === 'partial' ? (
-          <StatusBadge tone="warning">Remaining</StatusBadge>
+          <div className="flex flex-col items-start gap-0.5">
+            <StatusBadge tone="success">Paid</StatusBadge>
+            <span className="text-xs whitespace-nowrap text-destructive tabular-nums">
+              {formatAmount(row.original.remaining)} due
+            </span>
+          </div>
         ) : (
           <StatusBadge status={row.original.paymentStatus} />
         ),

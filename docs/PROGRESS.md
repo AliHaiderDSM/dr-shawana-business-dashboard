@@ -15,6 +15,7 @@
 ## 2026-11-14 — View Sales: Net amount shows the money received
 
 - Net amount now comes from the API as received minus refunds: a sale of 9,000 paid 8,500 shows 8,500 with Remaining 500. Types regenerated.
+- The Payment column shows a partly paid sale as Paid with the amount still due under it (for example "500 due"). The sale itself stays partly paid, so it still counts as pending and in the dues lists.
 
 ## 2026-11-14 — Sales payment-method filter, GDN pieces and money received
 
