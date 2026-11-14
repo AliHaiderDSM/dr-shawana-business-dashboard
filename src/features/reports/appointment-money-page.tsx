@@ -95,8 +95,7 @@ function latestPerAppointment(rows: AppointmentMoneyEntry[], keep: (r: Appointme
 }
 
 const isDues = (r: AppointmentMoneyEntry) => r.kind === 'balance' && r.date > r.appointment.visitDate;
-const isDuesCleared = (r: AppointmentMoneyEntry) =>
-  (r.kind === 'balance' || r.kind === 'advance') && r.stateAfter === 'paid' && r.fullyPaidHere;
+const isSameDay = (r: AppointmentMoneyEntry) => r.kind === 'balance' && r.date === r.appointment.visitDate;
 
 function tabContext(
   rows: AppointmentMoneyEntry[],
@@ -108,7 +107,12 @@ function tabContext(
     (r) => isCompleted(r) && (inPeriod(r.appointment.visitDate) || isDues(r)),
   );
   return {
-    completed: new Set(latestPerAppointment([...rows, ...visits], isCompleted).map((r) => r.sr)),
+    completed: new Set(
+      latestPerAppointment(
+        [...rows, ...visits],
+        (r) => isCompleted(r) && inPeriod(r.appointment.visitDate),
+      ).map((r) => r.sr),
+    ),
     gdn: new Set(gdn.map((r) => r.sr)),
     due: new Set(
       latestPerAppointment([...rows, ...visits], (r) => isCompleted(r) && owedNow(r) > 0).map((r) => r.sr),
@@ -116,7 +120,7 @@ function tabContext(
   };
 }
 
-type Tab = 'all' | Group | 'dues' | 'completed' | 'gdn' | 'due';
+type Tab = 'all' | Group | 'sameDay' | 'dues' | 'completed' | 'gdn' | 'due';
 const TABS: {
   key: Tab;
   label: string;
@@ -132,13 +136,10 @@ const TABS: {
   {
     key: 'advance',
     label: 'Advance',
-    match: (r) => groupOf(r) === 'advance' && r.appointment.status !== 'completed',
+    match: (r) => r.kind === 'advance' && r.appointment.status !== 'completed',
   },
-  {
-    key: 'dues',
-    label: 'Dues received',
-    match: isDuesCleared,
-  },
+  { key: 'sameDay', label: 'Paid on visit day', match: isSameDay },
+  { key: 'dues', label: 'Dues received', match: isDues },
   {
     key: 'completed',
     label: 'Completed appointments',
@@ -428,7 +429,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings are not completed yet, Advance left the fee part paid, Dues received cleared it (click Fully paid for the breakdown), GDN is the completed visits and their dues."
+        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money received before a visit that has not happened yet, Paid on visit day is money taken on the visit date, Dues received is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is the completed visits with their money lines."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
