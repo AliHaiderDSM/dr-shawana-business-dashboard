@@ -76,7 +76,13 @@ const groupOf = (r: AppointmentMoneyEntry): Group =>
 interface TabContext {
   completed: Set<number>;
   gdn: Set<number>;
+  due: Set<number>;
 }
+
+const hasPayment = (r: AppointmentMoneyEntry) => r.appointment.history.some((m) => m.kind === 'payment');
+const owedNow = (r: AppointmentMoneyEntry) =>
+  Number(r.appointment.fee) -
+  r.appointment.history.reduce((sum, m) => (m.kind === 'payment' ? sum + Number(m.amount) : sum), 0);
 
 function latestPerAppointment(rows: AppointmentMoneyEntry[], keep: (r: AppointmentMoneyEntry) => boolean) {
   const latest = new Map<string, AppointmentMoneyEntry>();
@@ -104,10 +110,13 @@ function tabContext(
   return {
     completed: new Set(latestPerAppointment([...rows, ...visits], isCompleted).map((r) => r.sr)),
     gdn: new Set(gdn.map((r) => r.sr)),
+    due: new Set(
+      latestPerAppointment([...rows, ...visits], (r) => isCompleted(r) && owedNow(r) > 0).map((r) => r.sr),
+    ),
   };
 }
 
-type Tab = 'all' | Group | 'dues' | 'completed' | 'gdn';
+type Tab = 'all' | Group | 'dues' | 'completed' | 'gdn' | 'due';
 const TABS: {
   key: Tab;
   label: string;
@@ -118,9 +127,13 @@ const TABS: {
   {
     key: 'booked',
     label: 'Bookings',
-    match: (r) => r.kind === 'booked' && r.appointment.status !== 'completed',
+    match: (r) => r.kind === 'booked' && r.appointment.status !== 'completed' && !hasPayment(r),
   },
-  { key: 'advance', label: 'Advance', match: (r) => groupOf(r) === 'advance' },
+  {
+    key: 'advance',
+    label: 'Advance',
+    match: (r) => groupOf(r) === 'advance' && r.appointment.status !== 'completed',
+  },
   {
     key: 'dues',
     label: 'Dues received',
@@ -131,6 +144,7 @@ const TABS: {
     label: 'Completed appointments',
     match: (r, ctx) => ctx.completed.has(r.sr),
   },
+  { key: 'due', label: 'Remaining due', match: (r, ctx) => ctx.due.has(r.sr) },
   { key: 'refund', label: 'Refunds', match: (r) => r.kind === 'refund' },
 ];
 const matchOf = (tab: Tab, ctx: TabContext) => (r: AppointmentMoneyEntry) =>
@@ -494,7 +508,13 @@ export function AppointmentMoneyPage() {
             onClick={() =>
               data &&
               downloadXlsx(
-                exportRows(data, rows, title, allBranches, tab === 'gdn' || tab === 'completed'),
+                exportRows(
+                  data,
+                  rows,
+                  title,
+                  allBranches,
+                  tab === 'gdn' || tab === 'completed' || tab === 'due',
+                ),
                 view === 'all' ? 'appointment-payments-all' : `appointment-payments-${from}`,
                 'Payments',
               )
@@ -713,8 +733,12 @@ export function AppointmentMoneyPage() {
                                     />
                                   </button>
                                 ) : (
-                                  <StatusBadge tone={stateIn(r, tab === 'gdn' || tab === 'completed').tone}>
-                                    {stateIn(r, tab === 'gdn' || tab === 'completed').label}
+                                  <StatusBadge
+                                    tone={
+                                      stateIn(r, tab === 'gdn' || tab === 'completed' || tab === 'due').tone
+                                    }
+                                  >
+                                    {stateIn(r, tab === 'gdn' || tab === 'completed' || tab === 'due').label}
                                   </StatusBadge>
                                 )}
                               </td>

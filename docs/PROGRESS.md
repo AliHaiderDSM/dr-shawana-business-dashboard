@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — Appointment money report: tabs follow the current state
+
+- New tab **Remaining due**: one row per completed appointment that still owes part of its fee.
+- **Bookings** shows only bookings with no payment yet; once money comes in they leave this tab.
+- **Advance** shows only advances whose visit is not completed yet; completed ones live in Completed, GDN and Remaining due.
+- Summary cards are unchanged and still count the money received in the period.
+
 ## 2026-11-14 — Calendar boxes across the hour and all appointments by default
 
 - Calendar (day and week): a short appointment that crosses the hour (e.g. 6:57–7:07 PM) now gets its full box; every hour it touches is stretched, not only the first.
