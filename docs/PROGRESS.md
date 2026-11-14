@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — GDN report: Received column
+
+- The GDN table has its own Received column next to Amount: the money received, with what is still left in red under it; the footer totals it the same way. Amount shows only the order total and its payment badge.
+
 ## 2026-11-14 — View Sales keeps the full sale after a return
 
 - Net amount no longer drops after a refund: it shows the money received, and the refund stays in the Refund column and in Returns. The refund leaves the account picked in the return form ("Paid from", any receiving account of the branch). Types regenerated.

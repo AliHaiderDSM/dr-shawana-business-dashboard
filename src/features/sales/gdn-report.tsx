@@ -757,6 +757,7 @@ export function GdnReportPage() {
                       <th className="px-3 py-2 text-center font-medium">City · booked at</th>
                       <th className="px-3 py-2 text-center font-medium">Items</th>
                       <th className="px-3 py-2 text-center font-medium">Amount</th>
+                      <th className="px-3 py-2 text-center font-medium">Received</th>
                       <th className="px-3 py-2 text-center font-medium">Today</th>
                     </tr>
                   </thead>
@@ -832,10 +833,12 @@ export function GdnReportPage() {
                             <div className="mt-0.5 print:hidden">
                               <StatusBadge tone={pay.tone}>{pay.label}</StatusBadge>
                             </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-center whitespace-nowrap tabular-nums">
+                            <div className="font-medium">{formatAmount(o.received)}</div>
                             {Number(o.remaining) > 0 ? (
-                              <div className="mt-0.5 text-xs text-muted-foreground">
-                                Received {formatAmount(o.received)} · Left{' '}
-                                <span className="text-destructive">{formatAmount(o.remaining)}</span>
+                              <div className="mt-0.5 text-xs text-destructive">
+                                {formatAmount(o.remaining)} left
                               </div>
                             ) : null}
                           </td>
@@ -855,17 +858,14 @@ export function GdnReportPage() {
                           ? ` · ${formatCount(rows.reduce((sum, o) => sum + units(o), 0))} × ${product}`
                           : ''}
                       </td>
+                      <td className="px-3 py-2 text-center tabular-nums">{formatAmount(total)}</td>
                       <td className="px-3 py-2 text-center tabular-nums">
-                        <div>{formatAmount(total)}</div>
-                        <div className="text-xs font-normal text-muted-foreground">
-                          Received {formatAmount(received)}
-                          {remaining > 0 ? (
-                            <>
-                              {' '}
-                              · Left <span className="text-destructive">{formatAmount(remaining)}</span>
-                            </>
-                          ) : null}
-                        </div>
+                        <div>{formatAmount(received)}</div>
+                        {remaining > 0 ? (
+                          <div className="text-xs font-normal text-destructive">
+                            {formatAmount(remaining)} left
+                          </div>
+                        ) : null}
                       </td>
                       <td />
                     </tr>
