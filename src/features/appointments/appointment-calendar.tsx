@@ -30,10 +30,14 @@ function hourHeights(columns: Column[], startHour: number, endHour: number) {
   for (const column of columns) {
     for (const entry of column.entries) {
       const from = minutes(entry.timeFrom);
-      const index = Math.floor(from / 60) - startHour;
-      if (index < 0 || index >= heights.length) continue;
-      const span = Math.min(Math.max(minutes(entry.timeTo) - from, 1), 60);
-      heights[index] = Math.max(heights[index]!, Math.ceil((ENTRY_HEIGHT * 60) / span));
+      const to = Math.max(minutes(entry.timeTo), from + 1);
+      const span = Math.min(to - from, 60);
+      const needed = Math.ceil((ENTRY_HEIGHT * 60) / span);
+      for (let hour = Math.floor(from / 60); hour <= Math.floor((to - 1) / 60); hour++) {
+        const index = hour - startHour;
+        if (index < 0 || index >= heights.length) continue;
+        heights[index] = Math.max(heights[index]!, needed);
+      }
     }
   }
   return heights;
