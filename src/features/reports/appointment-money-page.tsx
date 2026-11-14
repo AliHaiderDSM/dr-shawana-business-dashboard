@@ -58,6 +58,11 @@ const entryOf = (r: AppointmentMoneyEntry): { label: string; tone: Tone } =>
       ? { label: 'Completed', tone: 'success' }
       : { label: 'Booking', tone: 'neutral' };
 
+const DUE = { label: 'Due', tone: 'warning' as Tone };
+
+const stateIn = (r: AppointmentMoneyEntry, gdn: boolean) =>
+  gdn && isCompleted(r) && r.stateAfter === 'advance' ? DUE : STATE[r.stateAfter];
+
 type Group = 'booked' | 'advance' | 'sale' | 'refund';
 const groupOf = (r: AppointmentMoneyEntry): Group =>
   r.kind === 'balance' || r.kind === 'advance'
@@ -285,6 +290,7 @@ function exportRows(
   rows: AppointmentMoneyEntry[],
   title: string,
   allBranches: boolean,
+  gdn: boolean,
 ) {
   const link = linksOf([...data.rows, ...(data.visits ?? [])]);
   return [
@@ -328,7 +334,7 @@ function exportRows(
       Number(r.appointment.fee),
       Number(r.paidAfter),
       Number(r.remainingAfter),
-      STATE[r.stateAfter].label,
+      stateIn(r, gdn).label,
     ]),
     [],
     ['Advance (not yet fully paid)', totalOf(data.rows, 'advance')],
@@ -488,7 +494,7 @@ export function AppointmentMoneyPage() {
             onClick={() =>
               data &&
               downloadXlsx(
-                exportRows(data, rows, title, allBranches),
+                exportRows(data, rows, title, allBranches, tab === 'gdn'),
                 view === 'all' ? 'appointment-payments-all' : `appointment-payments-${from}`,
                 'Payments',
               )
@@ -707,8 +713,8 @@ export function AppointmentMoneyPage() {
                                     />
                                   </button>
                                 ) : (
-                                  <StatusBadge tone={STATE[r.stateAfter].tone}>
-                                    {STATE[r.stateAfter].label}
+                                  <StatusBadge tone={stateIn(r, tab === 'gdn').tone}>
+                                    {stateIn(r, tab === 'gdn').label}
                                   </StatusBadge>
                                 )}
                               </td>

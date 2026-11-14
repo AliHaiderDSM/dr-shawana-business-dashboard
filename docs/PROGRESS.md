@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — GDN tab: Due instead of Advance paid
+
+- Appointment money report, GDN tab: a completed visit that is partly paid shows **Due** (the rest is owed by the patient) instead of Advance paid, on screen and in the Excel export. Other tabs keep Advance paid. Rows are unchanged.
+
 ## 2026-11-13 — Replacement approvals and replacements without a return
 
 - New Replacements page (`/replacements`, sidebar item with badge) replaces the Returns page tab: filters status and with/without return, row actions Approve / Reject (Super Admin), Send (stock branch), Open sale, Open return, Delete.
