@@ -147,7 +147,7 @@ const TABS: {
     match: isAheadOfVisit,
   },
   { key: 'sameDay', label: 'Paid on visit day', match: (r) => isCompleted(r) && isSameDay(r) },
-  { key: 'dues', label: 'Dues received', match: (r) => isCompleted(r) && isDues(r) },
+  { key: 'dues', label: 'Received from previous visits', match: (r) => isCompleted(r) && isDues(r) },
   {
     key: 'completed',
     label: 'Completed appointments',
@@ -437,7 +437,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Dues received is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is the completed visits with their money lines."
+        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Received from previous visits is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is the completed visits with their money lines."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup

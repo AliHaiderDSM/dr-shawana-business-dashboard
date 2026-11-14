@@ -19,7 +19,7 @@
 - **Advance** shows only advances whose visit is not completed yet; completed ones live in Completed, GDN and Remaining due.
 - **Advance** shows every payment of an appointment that is not completed yet (a visit date that passed without being marked completed stays here); a payment that cleared the fee reads "Paid in advance".
 - New tab **Paid on visit day**: money taken on the visit date.
-- **Dues received** and **Paid on visit day** count only completed appointments; Dues received is every payment after the visit date, part or full.
+- **Received from previous visits** (was Dues received) and **Paid on visit day** count only completed appointments; Received from previous visits is every payment after the visit date, part or full.
 - **Completed appointments** shows only completed appointments whose visit date is in the period (services delivered).
 - Summary cards are unchanged and still count the money received in the period.
 
