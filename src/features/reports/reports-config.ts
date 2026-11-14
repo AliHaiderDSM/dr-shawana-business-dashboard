@@ -122,7 +122,8 @@ export const REPORTS: ReportDef[] = [
   {
     key: 'sale-products',
     title: 'Sale products',
-    description: 'Monthly sale report of completed sales only.',
+    description:
+      'Monthly sale report of handed-over sales that are paid or partly paid; Remaining shows what is still owed.',
     icon: Receipt,
     group: 'Sales',
     allowed: permission('sales.view'),

@@ -31342,7 +31342,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Sale products (posSoft Monthly Sale Products): one row per completed sale (paid and approved, handed over) with its products, discount, received and remaining. Add format=csv to download. super_admin without branchId gets every branch with a branch breakdown. */
+        /** Sale products (posSoft Monthly Sale Products): one row per handed-over sale that is paid or partly paid (approved; its remaining shows what is still owed) with its products, discount, received and remaining. Add format=csv to download. super_admin without branchId gets every branch with a branch breakdown. */
         get: {
             parameters: {
                 query?: {
