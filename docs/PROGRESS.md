@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — View Sales keeps the full sale after a return
+
+- Net amount no longer drops after a refund: it shows the money received, and the refund stays in the Refund column and in Returns. The refund leaves the account picked in the return form ("Paid from", any receiving account of the branch). Types regenerated.
+
 ## 2026-11-14 — Sale products report includes partly paid sales
 
 - The monthly Sale products report now also shows partly paid sales (backend change); the report description says so.

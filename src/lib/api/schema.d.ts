@@ -23970,7 +23970,7 @@ export interface paths {
                                  */
                                 refund: string;
                                 /**
-                                 * @description Money received minus refunds
+                                 * @description Money received on the sale; refunds are shown apart and are not taken off
                                  * @example 1250.50
                                  */
                                 netAmount: string;
