@@ -228,6 +228,8 @@ export function GdnReportPage() {
     );
   };
 
+  const pieces = (list: GdnOrder[]) =>
+    list.reduce((sum, o) => sum + o.items.reduce((n, i) => n + Number(i.qty), 0), 0);
   const products = [...new Set((data?.orders ?? []).flatMap((o) => o.items.map((i) => i.name)))].sort(
     (a, b) => a.localeCompare(b),
   );
@@ -281,7 +283,10 @@ export function GdnReportPage() {
           'City',
           'Booked at',
           'Items',
+          'Pieces',
           'Amount',
+          'Received',
+          'Remaining',
           'Payment',
           single ? 'Today' : 'Status',
           'Days since booking',
@@ -302,7 +307,10 @@ export function GdnReportPage() {
             o.city,
             o.bookedAt?.name ?? o.bookedAt?.code ?? null,
             o.items.map((i) => `${i.name} x ${i.qty}`).join(', '),
+            pieces([o]),
             Number(o.total),
+            Number(o.received),
+            Number(o.remaining),
             (PAYMENT[o.paymentStatus] ?? { label: o.paymentStatus }).label,
             o.saleType === 'office'
               ? 'Handed over'
@@ -315,13 +323,32 @@ export function GdnReportPage() {
           ];
         }),
         [],
-        ['Total', null, null, null, null, null, null, null, null, null, null, null, total],
+        [
+          'Total',
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          pieces(rows),
+          total,
+          received,
+          remaining,
+        ],
       ],
       single ? `gdn-report-${from}` : `gdn-report-${from}-to-${to}`,
       'GDN',
     );
   };
   const total = rows.reduce((sum, o) => sum + Number(o.total), 0);
+  const received = rows.reduce((sum, o) => sum + Number(o.received), 0);
+  const remaining = rows.reduce((sum, o) => sum + Number(o.remaining), 0);
   const next = formatDate(shift(to, 1), 'dd MMM');
   const amount = (list: GdnOrder[]) => list.reduce((sum, o) => sum + Number(o.total), 0);
   const earlier = orders.filter((o) => o.fromBefore);
@@ -805,6 +832,12 @@ export function GdnReportPage() {
                             <div className="mt-0.5 print:hidden">
                               <StatusBadge tone={pay.tone}>{pay.label}</StatusBadge>
                             </div>
+                            {Number(o.remaining) > 0 ? (
+                              <div className="mt-0.5 text-xs text-muted-foreground">
+                                Received {formatAmount(o.received)} · Left{' '}
+                                <span className="text-destructive">{formatAmount(o.remaining)}</span>
+                              </div>
+                            ) : null}
                           </td>
                           <td className="px-3 py-2.5 text-center">
                             <Status order={o} />
@@ -816,12 +849,24 @@ export function GdnReportPage() {
                   <tfoot className="print:table-row-group">
                     <tr className="border-t bg-muted/30 font-semibold">
                       <td className="py-2 pr-3 pl-5" colSpan={6}>
-                        {rows.length} order{rows.length === 1 ? '' : 's'}
+                        {rows.length} order{rows.length === 1 ? '' : 's'} · {formatCount(pieces(rows))} piece
+                        {pieces(rows) === 1 ? '' : 's'}
                         {product
                           ? ` · ${formatCount(rows.reduce((sum, o) => sum + units(o), 0))} × ${product}`
                           : ''}
                       </td>
-                      <td className="px-3 py-2 text-center tabular-nums">{formatAmount(total)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums">
+                        <div>{formatAmount(total)}</div>
+                        <div className="text-xs font-normal text-muted-foreground">
+                          Received {formatAmount(received)}
+                          {remaining > 0 ? (
+                            <>
+                              {' '}
+                              · Left <span className="text-destructive">{formatAmount(remaining)}</span>
+                            </>
+                          ) : null}
+                        </div>
+                      </td>
                       <td />
                     </tr>
                   </tfoot>

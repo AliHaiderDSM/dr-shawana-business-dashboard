@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-14 — Sales payment-method filter, GDN pieces and money received
+
+- View Sales: new "Cash & online" filter (`method`), next to the payment status filter.
+- GDN report: the footer shows the pieces (total quantity of every item) next to the order count, and the amount column shows Received and Left. A partly paid order shows what was received and what is left; the Excel export adds Pieces, Received and Remaining.
+
 ## 2026-11-14 — Appointment money report: tabs follow the current state
 
 - New tab **Remaining due**: one row per completed appointment that still owes part of its fee.

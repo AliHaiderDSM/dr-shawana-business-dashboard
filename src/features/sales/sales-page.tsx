@@ -462,6 +462,16 @@ export function SalesPage() {
             />
             <FilterSelect
               list={list}
+              name="method"
+              allLabel="Cash & online"
+              className="w-36"
+              options={[
+                { value: 'cash', label: 'Cash' },
+                { value: 'online', label: 'Online' },
+              ]}
+            />
+            <FilterSelect
+              list={list}
               name="deliveryStatus"
               allLabel="Any delivery"
               className="w-36"

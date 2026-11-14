@@ -165,6 +165,8 @@ export interface GdnOrder {
   waitingDays: number;
   paymentStatus: string;
   total: string;
+  received: string;
+  remaining: string;
   city: string | null;
   customer: { name: string | null; phone: string | null };
   bookedAt: { code: string; name: string | null } | null;
