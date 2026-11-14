@@ -17,9 +17,9 @@
 - New tab **Remaining due**: one row per completed appointment that still owes part of its fee.
 - **Bookings** shows only bookings with no payment yet; once money comes in they leave this tab.
 - **Advance** shows only advances whose visit is not completed yet; completed ones live in Completed, GDN and Remaining due.
-- **Advance** now includes an advance that already cleared the fee, as long as the visit is still ahead.
+- **Advance** shows every payment of an appointment that is not completed yet (a visit date that passed without being marked completed stays here); a payment that cleared the fee reads "Paid in advance".
 - New tab **Paid on visit day**: money taken on the visit date.
-- **Dues received** shows every payment after the visit date, part or full.
+- **Dues received** and **Paid on visit day** count only completed appointments; Dues received is every payment after the visit date, part or full.
 - **Completed appointments** shows only completed appointments whose visit date is in the period (services delivered).
 - Summary cards are unchanged and still count the money received in the period.
 
