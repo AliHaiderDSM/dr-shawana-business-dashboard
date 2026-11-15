@@ -19,7 +19,7 @@ import { useInventoryReport, type InventoryReport } from '@redux/features/invent
 
 type ReportRow = InventoryReport['rows'][number] & { isTotal?: boolean };
 type QuantityKey = keyof InventoryReport['totals'];
-type BranchPart = 'sent' | 'sold' | 'booked' | 'returned' | 'inBranch';
+type BranchPart = 'sent' | 'sold' | 'booked' | 'returned' | 'writtenOff' | 'inBranch';
 
 const QUANTITY_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockIn', label: 'Stock in' },
@@ -36,7 +36,9 @@ const SUPER_ADMIN_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockOut', label: 'Sent to branches' },
   { key: 'branchSold', label: 'Sold in branches' },
   { key: 'branchReturned', label: 'Returned in branches' },
+  { key: 'branchWrittenOff', label: 'Written off in branches' },
   { key: 'inBranch', label: 'Now in branches' },
+  { key: 'adjusted', label: 'Written off (Super Admin)' },
   { key: 'closing', label: 'Super Admin stock' },
   { key: 'total', label: 'Total' },
 ];
@@ -45,6 +47,7 @@ const BRANCH_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockOut', label: 'Stock out' },
   { key: 'branchSold', label: 'Sale qty' },
   { key: 'branchReturned', label: 'Returned' },
+  { key: 'branchWrittenOff', label: 'Written off' },
   { key: 'inBranch', label: 'In branch (offices qty)' },
 ];
 
@@ -63,13 +66,17 @@ const SHOW: { value: string; label: string; keep: (r: InventoryReport['rows'][nu
     label: 'Returned',
     keep: (r) => Number(r.returned) > 0 || Number(r.branchReturned) > 0,
   },
-  { value: 'writtenOff', label: 'Written off', keep: (r) => Number(r.adjusted) < 0 },
+  {
+    value: 'writtenOff',
+    label: 'Written off',
+    keep: (r) => Number(r.adjusted) < 0 || Number(r.branchWrittenOff) > 0,
+  },
   { value: 'replaced', label: 'Replaced', keep: (r) => Number(r.replaced) > 0 },
   { value: 'inStock', label: 'In stock', keep: (r) => Number(r.closing) > 0 },
   { value: 'outOfStock', label: 'Out of stock', keep: (r) => Number(r.closing) <= 0 },
 ];
 
-const OUTGOING = new Set<QuantityKey>(['stockOut', 'sold', 'branchSold', 'replaced']);
+const OUTGOING = new Set<QuantityKey>(['stockOut', 'sold', 'branchSold', 'replaced', 'branchWrittenOff']);
 
 function signedValue(outgoing: boolean, value: string | number) {
   const n = Number(value) || 0;
@@ -158,6 +165,7 @@ function BranchSplitSheet({
     { part: 'sold', label: 'Sold', outgoing: true },
     { part: 'booked', label: 'Booked', outgoing: false },
     { part: 'returned', label: 'Returned', outgoing: false },
+    { part: 'writtenOff', label: 'Written off', outgoing: true },
     { part: 'inBranch', label: 'Now in branch', outgoing: false },
   ];
   return (

@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Inventory report: write-off columns for the Super Admin
+
+- Super Admin view: Written off in branches and Written off (Super Admin) next to the other columns, so Stock in − Sent − written off = Super Admin stock and Sent − Sold + Returned − written off = Now in branches. A branch view and the per-branch sheet show Written off too; the Show: Written off filter covers both.
+
 ## 2026-11-15 — View Sales: Entry by column
 
 - New Entry by column, as posSoft: the time the sale was entered and who entered it. Date stays the day the money came in.

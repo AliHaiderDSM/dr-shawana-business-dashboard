@@ -34048,6 +34048,11 @@ export interface components {
                  */
                 branchReturned: string;
                 /**
+                 * @description Written off (approved) at the toBranchId branch, or at every branch for the Super Admin stock
+                 * @example 10.000
+                 */
+                branchWrittenOff: string;
+                /**
                  * @description In online orders booked and not dispatched yet (by the toBranchId branch, or every branch)
                  * @example 10.000
                  */
@@ -34067,6 +34072,8 @@ export interface components {
                     sold: string;
                     /** @example 10.000 */
                     returned: string;
+                    /** @example 10.000 */
+                    writtenOff: string;
                     /** @example 10.000 */
                     inBranch: string;
                     /** @example 10.000 */
@@ -34115,6 +34122,11 @@ export interface components {
                  * @example 10.000
                  */
                 branchReturned: string;
+                /**
+                 * @description Written off (approved) at the toBranchId branch, or at every branch for the Super Admin stock
+                 * @example 10.000
+                 */
+                branchWrittenOff: string;
                 /**
                  * @description In online orders booked and not dispatched yet (by the toBranchId branch, or every branch)
                  * @example 10.000
