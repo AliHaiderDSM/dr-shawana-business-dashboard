@@ -3,6 +3,7 @@ import { Gavel, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/shared/data-table';
+import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { PageHeader } from '@/components/shared/page-header';
 import { DetailList } from '@/components/shared/panel';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -54,7 +55,19 @@ const DECISIONS: { value: StockHoldDecision; label: string; hint: string }[] = [
   { value: 'supplier_return', label: 'Send to supplier', hint: 'Takes it out of the stock as sent back.' },
 ];
 
-const REASONS = Object.keys(HOLD_REASON_LABELS) as StockHoldReason[];
+const REASONS = (Object.keys(HOLD_REASON_LABELS) as StockHoldReason[]).filter((r) => r !== 'expired');
+
+const STATUS_TABS: { value: StockHoldStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'open', label: 'Under observation' },
+  { value: 'released', label: 'Released' },
+  { value: 'sent_back', label: 'Sent back' },
+  { value: 'written_off', label: 'Written off' },
+  { value: 'supplier_returned', label: 'Sent to supplier' },
+];
+
+const ACTIVE_TAB =
+  'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm';
 const ALL = 'all';
 
 const roleLabel = (role?: string) => (role ? (ROLE_LABELS[role as Role] ?? role.replace(/_/g, ' ')) : '');
@@ -252,7 +265,7 @@ function HoldSheet({
 
 export function UnderObservationPage() {
   const { isSuperAdmin, me } = useAuth();
-  const [status, setStatus] = useState<StockHoldStatus | 'all'>('open');
+  const [status, setStatus] = useState<StockHoldStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [reason, setReason] = useState<StockHoldReason | typeof ALL>(ALL);
   const [productId, setProductId] = useState(ALL);
@@ -365,12 +378,11 @@ export function UnderObservationPage() {
           <>
             <Tabs value={status} onValueChange={(v) => setStatus(v as StockHoldStatus | 'all')}>
               <TabsList>
-                <TabsTrigger value="open">Under observation</TabsTrigger>
-                <TabsTrigger value="released">Released</TabsTrigger>
-                <TabsTrigger value="sent_back">Sent back</TabsTrigger>
-                <TabsTrigger value="written_off">Written off</TabsTrigger>
-                <TabsTrigger value="supplier_returned">Sent to supplier</TabsTrigger>
-                <TabsTrigger value="all">All</TabsTrigger>
+                {STATUS_TABS.map((t) => (
+                  <TabsTrigger key={t.value} value={t.value} className={ACTIVE_TAB}>
+                    {t.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
             <Input
@@ -405,21 +417,14 @@ export function UnderObservationPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Input
-              type="date"
-              aria-label="From"
-              className="h-9 w-40"
-              value={from}
-              max={to || undefined}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-            <Input
-              type="date"
-              aria-label="To"
-              className="h-9 w-40"
-              value={to}
-              min={from || undefined}
-              onChange={(e) => setTo(e.target.value)}
+            <DateRangePicker
+              from={from || undefined}
+              to={to || undefined}
+              onChange={(range) => {
+                setFrom(range.from ?? '');
+                setTo(range.to ?? '');
+              }}
+              placeholder="All dates"
             />
           </>
         }

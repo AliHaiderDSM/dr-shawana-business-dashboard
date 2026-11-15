@@ -11,7 +11,7 @@ export const REASON_LABELS: Record<ReturnReason, string> = {
 
 export const DISPOSITION_LABELS: Record<ReturnDisposition, string> = {
   pending: 'Awaiting inspection',
-  quarantined: 'Under observation',
+  quarantined: 'In quarantine',
   restocked: 'Back in stock',
   damaged: 'Damaged',
   expired: 'Expired',

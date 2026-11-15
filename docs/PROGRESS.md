@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Under observation: every branch for the Super Admin
+
+- /branch/stock-holds is an overview path: the Super Admin sees and decides the held pieces of every branch whichever branch is picked (before, a Multan piece was hidden while another branch was selected).
+- The page opens on All, the active tab is filled with the primary colour, Expired is gone from the reason filter, and one date-range picker replaces the two date boxes.
+- A return item in quarantine now reads "In quarantine" so it is not mixed up with the Under observation page.
+
 ## 2026-11-15 — Return outcomes and Warehouse Keeper write-offs
 
 - Return inspection: Expired removed from Other; Send to lab and Remove from inventory show only on returns whose reason is Damaged.

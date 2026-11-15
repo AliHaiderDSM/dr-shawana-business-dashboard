@@ -41,8 +41,15 @@ const OVERVIEW_PATHS = [
   '/branch/staff',
   '/branch/returns',
   '/branch/replacements',
+  '/branch/stock-holds',
+  '/branch/stock-holds/open-count',
 ];
-const OVERVIEW_PREFIXES = ['/branch/returns/', '/branch/replacements/', '/branch/trace/'];
+const OVERVIEW_PREFIXES = [
+  '/branch/returns/',
+  '/branch/replacements/',
+  '/branch/trace/',
+  '/branch/stock-holds/',
+];
 
 const COOKIE_ROUTES = ['/auth/login', '/auth/refresh', '/auth/logout'];
 const TRANSPORT_HEADER = 'X-Auth-Transport';
