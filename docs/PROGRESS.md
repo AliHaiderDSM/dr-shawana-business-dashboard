@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Product stock page: Stock in apart from returns
+
+- The cards are now Stock in (matches the Stock in list), Returned & other in, Out and Closing, instead of Total in / Total out. Each counts the net of its movement types, so an edited stock in or sale does not count twice; the hints list what each card is made of.
+
 ## 2026-11-15 — Inventory: every movement explained
 
 - Inventory report shows Written off and Replaced next to Returned, so Stock in − Stock out − Sold + Returned + Written off − Replaced adds up to Total stock.

@@ -39,15 +39,25 @@ const MOVEMENT_TONES: Record<Movement['type'], Tone> = {
   adjustment: 'neutral',
 };
 
-function breakdown(movements: Movement[] | undefined, side: 'in' | 'out') {
-  const byType = new Map<string, number>();
-  for (const m of movements ?? []) {
-    const qty = Number(m[side]);
-    if (qty > 0) byType.set(m.type, (byType.get(m.type) ?? 0) + qty);
-  }
-  return [...byType.entries()]
-    .map(([type, qty]) => `${formatQuantity(String(qty))} ${(MOVEMENT_LABELS[type] ?? type).toLowerCase()}`)
-    .join(' · ');
+const RECEIVED_TYPES = new Set<string>(['stock_in', 'purchase_in', 'manufacturing_in']);
+
+function netByType(movements: Movement[] | undefined) {
+  const net = new Map<string, number>();
+  for (const m of movements ?? []) net.set(m.type, (net.get(m.type) ?? 0) + Number(m.in) - Number(m.out));
+  return [...net.entries()];
+}
+
+function flow(movements: Movement[] | undefined, pick: (type: string, qty: number) => boolean) {
+  const parts = netByType(movements).filter(([type, qty]) => pick(type, qty));
+  return {
+    qty: parts.reduce((sum, [, qty]) => sum + Math.abs(qty), 0),
+    hint: parts
+      .map(
+        ([type, qty]) =>
+          `${formatQuantity(String(Math.abs(qty)))} ${(MOVEMENT_LABELS[type] ?? type).toLowerCase()}`,
+      )
+      .join(' · '),
+  };
 }
 
 function documentIds(movements: Movement[] | undefined, kind: 'stock_in' | 'stock_out') {
@@ -293,6 +303,9 @@ export function StockLedgerPage() {
   const ledger = useProductLedger(productId, range);
   const unit = product.data?.unit ?? '';
   const data = ledger.data;
+  const received = flow(data?.movements, (type) => RECEIVED_TYPES.has(type));
+  const cameBack = flow(data?.movements, (type, qty) => !RECEIVED_TYPES.has(type) && qty > 0);
+  const wentOut = flow(data?.movements, (type, qty) => !RECEIVED_TYPES.has(type) && qty < 0);
   const batches = useBatches({ productId, pageSize: 100 }, Boolean(productId));
   const [batchNo, setBatchNo] = useState<string | null>(null);
   const movements = batchNo ? data?.movements.filter((m) => m.batchNo === batchNo) : data?.movements;
@@ -316,16 +329,21 @@ export function StockLedgerPage() {
           </>
         }
       />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total in"
-          value={data ? `${formatQuantity(data.totalIn)} ${unit}` : '…'}
-          hint={breakdown(data?.movements, 'in') || undefined}
+          label="Stock in"
+          value={data ? `${formatQuantity(String(received.qty))} ${unit}` : '…'}
+          hint="Received into this stock, as in the Stock in list"
         />
         <StatCard
-          label="Total out"
-          value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'}
-          hint={breakdown(data?.movements, 'out') || undefined}
+          label="Returned & other in"
+          value={data ? `${formatQuantity(String(cameBack.qty))} ${unit}` : '…'}
+          hint={cameBack.hint || 'Nothing came back'}
+        />
+        <StatCard
+          label="Out"
+          value={data ? `${formatQuantity(String(wentOut.qty))} ${unit}` : '…'}
+          hint={wentOut.hint || 'Nothing went out'}
         />
         <StatCard label="Closing" value={data ? `${formatQuantity(data.closing)} ${unit}` : '…'} />
       </div>
