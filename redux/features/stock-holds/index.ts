@@ -12,6 +12,10 @@ const invalidate = (_result: unknown, error: unknown) => (error ? [] : INVALIDAT
 const clean = (query: StockHoldsQuery) =>
   Object.fromEntries(Object.entries(query).filter(([, v]) => v !== null && v !== undefined && v !== '')) as {
     status?: StockHold['status'];
+    reason?: StockHold['reason'];
+    productId?: string;
+    from?: string;
+    to?: string;
     saleId?: string;
     stockRequestId?: string;
     search?: string;
@@ -26,9 +30,9 @@ export const stockHoldsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['stock-holds'],
     }),
-    reportStockHold: build.mutation<StockHold, ReportStockHoldInput>({
+    reportStockHold: build.mutation<StockHold[], ReportStockHoldInput>({
       queryFn: (body) =>
-        toApi<StockHold>(() => unwrap(api.POST('/branch/stock-holds', { body })).then((r) => r.data)),
+        toApi<StockHold[]>(() => unwrap(api.POST('/branch/stock-holds', { body })).then((r) => r.data)),
       invalidatesTags: invalidate,
     }),
     decideStockHold: build.mutation<StockHold, DecideStockHoldArgs>({

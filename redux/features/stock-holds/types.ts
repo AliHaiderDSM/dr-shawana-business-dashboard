@@ -8,6 +8,10 @@ export type StockHoldDecision = Schemas['DecideStockHold']['decision'];
 
 export interface StockHoldsQuery {
   status?: StockHoldStatus | null;
+  reason?: StockHoldReason | null;
+  productId?: string | null;
+  from?: string | null;
+  to?: string | null;
   saleId?: string | null;
   stockRequestId?: string | null;
   search?: string | null;

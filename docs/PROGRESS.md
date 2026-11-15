@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Receive by count, under observation and write-off details
+
+- Incoming stock: "Count & receive" opens a dialog listing every label of the transfer; scan what arrived, mark the rest Missing or Damaged with a note. Receive is blocked until every piece is marked.
+- Put pieces under observation: scan several labels in one go; Expired is no longer a reason.
+- Under observation page: compact rows, a side sheet with every detail on row click, Decide for the Super Admin too, the new Back to Super Admin stock decision and Sent back tab, filters for reason, product and dates.
+- Write-offs page: compact rows and a side sheet with the full record, labels and the decision, with Approve/Reject for the Super Admin.
+
 ## 2026-11-15 — Damaged returns: send to lab or remove
 
 - Return inspection: "Send to lab" (new) and "Remove from inventory" (was Damaged). An item at the lab shows "At the lab · waiting for the lab to repair or remove it".

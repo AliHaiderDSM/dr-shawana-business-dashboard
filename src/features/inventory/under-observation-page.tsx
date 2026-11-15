@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
+import { DetailList } from '@/components/shared/panel';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +17,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { ROLE_LABELS } from '@/features/staff/constants';
@@ -25,28 +28,70 @@ import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { productsApi } from '@redux/features/catalog';
 import {
   useDecideStockHoldMutation,
   useStockHolds,
   type StockHold,
   type StockHoldDecision,
+  type StockHoldReason,
   type StockHoldStatus,
 } from '@redux/features/stock-holds';
 import { HOLD_REASON_LABELS, HOLD_REASON_TONES, HoldStatusBadge } from './under-observation';
 
 const DECISIONS: { value: StockHoldDecision; label: string; hint: string }[] = [
-  { value: 'release', label: 'Release to stock', hint: 'Checked and fine. It can be sold and sent again.' },
+  {
+    value: 'release',
+    label: 'Release to stock',
+    hint: 'Checked and fine. It can be sold and sent again here.',
+  },
+  {
+    value: 'send_back',
+    label: 'Back to Super Admin stock',
+    hint: 'It never reached the branch or belongs in the Super Admin stock. It moves back there.',
+  },
   { value: 'write_off', label: 'Write off', hint: 'Takes it out of the stock and shows it in Write-offs.' },
   { value: 'supplier_return', label: 'Send to supplier', hint: 'Takes it out of the stock as sent back.' },
 ];
 
+const REASONS = Object.keys(HOLD_REASON_LABELS) as StockHoldReason[];
+const ALL = 'all';
+
 const roleLabel = (role?: string) => (role ? (ROLE_LABELS[role as Role] ?? role.replace(/_/g, ' ')) : '');
+
+function sourceOf(h: StockHold) {
+  if (h.sale) {
+    return (
+      <>
+        Order <TraceNumber number={h.sale.invoiceNo} className="font-mono hover:underline" />
+      </>
+    );
+  }
+  if (h.transferNo) {
+    return (
+      <>
+        Received <TraceNumber number={h.transferNo} className="font-mono hover:underline" />
+      </>
+    );
+  }
+  if (h.stockRequest) {
+    return (
+      <>
+        Request <TraceNumber number={h.stockRequest.requestNo} className="font-mono hover:underline" /> for{' '}
+        {h.stockRequest.branchName}
+      </>
+    );
+  }
+  return 'From the shelf';
+}
 
 function DecideDialog({ hold, onClose }: { hold: StockHold; onClose: () => void }) {
   const [decide, state] = useDecideStockHoldMutation();
-  const [decision, setDecision] = useState<StockHoldDecision>('release');
+  const choices = DECISIONS.filter((d) => d.value !== 'send_back' || hold.canSendBack);
+  const [decision, setDecision] = useState<StockHoldDecision>(choices[0]!.value);
   const [note, setNote] = useState('');
   const busy = state.isLoading;
+  const chosen = choices.find((d) => d.value === decision)!;
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <DialogContent className="sm:max-w-lg">
@@ -61,7 +106,7 @@ function DecideDialog({ hold, onClose }: { hold: StockHold; onClose: () => void 
         </DialogHeader>
         <div className="space-y-4">
           <div role="radiogroup" aria-label="Decision" className="grid gap-2">
-            {DECISIONS.map((d) => (
+            {choices.map((d) => (
               <button
                 key={d.value}
                 type="button"
@@ -96,22 +141,20 @@ function DecideDialog({ hold, onClose }: { hold: StockHold; onClose: () => void 
             Cancel
           </Button>
           <Button
-            variant={decision === 'release' ? 'default' : 'destructive'}
+            variant={decision === 'release' || decision === 'send_back' ? 'default' : 'destructive'}
             disabled={!note.trim() || busy}
             onClick={() =>
               decide({ id: hold.id, body: { decision, note: note.trim() } })
                 .unwrap()
                 .then((done) => {
-                  toast.success(
-                    `${done.serial}: ${DECISIONS.find((d) => d.value === decision)!.label.toLowerCase()}`,
-                  );
+                  toast.success(`${done.serial}: ${chosen.label.toLowerCase()}`);
                   onClose();
                 })
                 .catch(toastError)
             }
           >
             {busy ? <Loader2 className="animate-spin" /> : <Gavel />}
-            {DECISIONS.find((d) => d.value === decision)!.label}
+            {chosen.label}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -119,13 +162,115 @@ function DecideDialog({ hold, onClose }: { hold: StockHold; onClose: () => void 
   );
 }
 
+function HoldSheet({
+  hold,
+  onOpenChange,
+  onDecide,
+}: {
+  hold: StockHold | null;
+  onOpenChange: (open: boolean) => void;
+  onDecide: (hold: StockHold) => void;
+}) {
+  return (
+    <Sheet open={Boolean(hold)} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+        {hold ? (
+          <>
+            <SheetHeader>
+              <SheetTitle className="font-mono">{hold.holdNo}</SheetTitle>
+              <SheetDescription>
+                {hold.product.name} · <span className="font-mono">{hold.serial}</span>
+              </SheetDescription>
+            </SheetHeader>
+            <div className="space-y-6 px-4 pb-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <HoldStatusBadge status={hold.status} />
+                <StatusBadge tone={HOLD_REASON_TONES[hold.reason]}>
+                  {HOLD_REASON_LABELS[hold.reason]}
+                </StatusBadge>
+              </div>
+              <DetailList
+                items={[
+                  { label: 'Label', value: <span className="font-mono">{hold.serial}</span> },
+                  { label: 'Product', value: hold.product.name },
+                  { label: 'Batch', value: hold.batchNo ?? 'No batch' },
+                  { label: 'Expiry', value: hold.expiryDate ? formatDate(hold.expiryDate) : '—' },
+                  { label: 'Where', value: hold.branch.name },
+                  { label: 'From', value: sourceOf(hold) },
+                  { label: 'Held on', value: formatDateTime(hold.createdAt) },
+                  {
+                    label: 'Reported by',
+                    value: hold.reportedBy
+                      ? `${hold.reportedBy.name} · ${roleLabel(hold.reportedBy.role)}`
+                      : '—',
+                  },
+                ]}
+              />
+              {hold.note ? (
+                <div className="space-y-1">
+                  <h3 className="text-xs text-muted-foreground">What was wrong</h3>
+                  <p className="text-sm whitespace-pre-wrap">{hold.note}</p>
+                </div>
+              ) : null}
+              {hold.decidedBy ? (
+                <div className="space-y-3 rounded-lg border p-3">
+                  <h3 className="text-sm font-semibold">Decision</h3>
+                  <DetailList
+                    items={[
+                      { label: 'Outcome', value: <HoldStatusBadge status={hold.status} /> },
+                      {
+                        label: 'Decided',
+                        value: hold.decidedAt ? formatDateTime(hold.decidedAt) : '—',
+                      },
+                      { label: 'By', value: `${hold.decidedBy.name} · ${roleLabel(hold.decidedBy.role)}` },
+                      { label: 'Write-off', value: hold.writeOffNo ?? '—' },
+                    ]}
+                  />
+                  {hold.decisionNote ? (
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{hold.decisionNote}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              {hold.canDecide ? (
+                <Button className="w-full" onClick={() => onDecide(hold)}>
+                  <Gavel />
+                  Decide
+                </Button>
+              ) : hold.status === 'open' ? (
+                <p className="text-sm text-muted-foreground">
+                  Waiting for the Super Admin, the Warehouse Keeper or the Dispatch Department admin to
+                  decide.
+                </p>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export function UnderObservationPage() {
   const { isSuperAdmin, me } = useAuth();
   const [status, setStatus] = useState<StockHoldStatus | 'all'>('open');
   const [search, setSearch] = useState('');
+  const [reason, setReason] = useState<StockHoldReason | typeof ALL>(ALL);
+  const [productId, setProductId] = useState(ALL);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [deciding, setDeciding] = useState<StockHold | null>(null);
-  const holds = useStockHolds({ status: status === 'all' ? null : status, search: search.trim() || null });
-  const decider = me?.role === 'warehouse_keeper' || me?.role === 'branch_admin';
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const products = productsApi.useOptions();
+  const holds = useStockHolds({
+    status: status === 'all' ? null : status,
+    search: search.trim() || null,
+    reason: reason === ALL ? null : reason,
+    productId: productId === ALL ? null : productId,
+    from: from || null,
+    to: to || null,
+  });
+  const selected = holds.data?.find((h) => h.id === selectedId) ?? null;
+  const decider = isSuperAdmin || me?.role === 'warehouse_keeper' || me?.role === 'branch_admin';
 
   const columns: ColumnDef<StockHold, unknown>[] = [
     {
@@ -133,88 +278,41 @@ export function UnderObservationPage() {
       header: 'Number',
       accessorKey: 'holdNo',
       cell: ({ row }) => (
-        <div>
-          <div className="font-mono font-medium whitespace-nowrap">{row.original.holdNo}</div>
-          <div className="text-xs whitespace-nowrap text-muted-foreground">
-            {formatDateTime(row.original.createdAt)}
-          </div>
-        </div>
+        <span className="font-mono font-medium whitespace-nowrap">{row.original.holdNo}</span>
       ),
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      accessorKey: 'createdAt',
+      cell: ({ row }) => <span className="whitespace-nowrap">{formatDate(row.original.createdAt)}</span>,
     },
     {
       id: 'serial',
       header: 'Label',
       accessorKey: 'serial',
-      cell: ({ row }) => (
-        <span className="font-mono font-medium whitespace-nowrap">{row.original.serial}</span>
-      ),
+      cell: ({ row }) => <span className="font-mono whitespace-nowrap">{row.original.serial}</span>,
     },
     {
       id: 'product',
       header: 'Product',
       accessorFn: (r) => r.product.name,
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.product.name}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.original.batchNo ? `Batch ${row.original.batchNo}` : 'No batch'}
-            {row.original.expiryDate ? ` · expires ${formatDate(row.original.expiryDate)}` : ''}
-          </div>
-        </div>
-      ),
+      cell: ({ row }) => <span className="font-medium">{row.original.product.name}</span>,
     },
     {
       id: 'where',
       header: 'Where',
       accessorFn: (r) => r.branch.name,
-      cell: ({ row }) => {
-        const h = row.original;
-        return (
-          <div>
-            <div className="whitespace-nowrap">{h.branch.name}</div>
-            <div className="text-xs whitespace-nowrap text-muted-foreground">
-              {h.sale ? (
-                <>
-                  Order <TraceNumber number={h.sale.invoiceNo} className="font-mono hover:underline" />
-                </>
-              ) : h.stockRequest ? (
-                <>
-                  Request{' '}
-                  <TraceNumber number={h.stockRequest.requestNo} className="font-mono hover:underline" /> for{' '}
-                  {h.stockRequest.branchName}
-                </>
-              ) : (
-                'From the shelf'
-              )}
-            </div>
-          </div>
-        );
-      },
+      cell: ({ row }) => <span className="whitespace-nowrap">{row.original.branch.name}</span>,
     },
     {
       id: 'reason',
       header: 'Why',
       accessorFn: (r) => HOLD_REASON_LABELS[r.reason],
       cell: ({ row }) => (
-        <div className="space-y-1">
-          <StatusBadge tone={HOLD_REASON_TONES[row.original.reason]}>
-            {HOLD_REASON_LABELS[row.original.reason]}
-          </StatusBadge>
-          {row.original.note ? (
-            <div className="max-w-64 text-xs text-muted-foreground">{row.original.note}</div>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      id: 'reportedBy',
-      header: 'Reported by',
-      accessorFn: (r) => r.reportedBy?.name ?? '',
-      cell: ({ row }) => (
-        <div>
-          <div className="whitespace-nowrap">{row.original.reportedBy?.name ?? '—'}</div>
-          <div className="text-xs text-muted-foreground">{roleLabel(row.original.reportedBy?.role)}</div>
-        </div>
+        <StatusBadge tone={HOLD_REASON_TONES[row.original.reason]}>
+          {HOLD_REASON_LABELS[row.original.reason]}
+        </StatusBadge>
       ),
     },
     {
@@ -225,24 +323,19 @@ export function UnderObservationPage() {
         const h = row.original;
         if (h.canDecide) {
           return (
-            <Button size="sm" onClick={() => setDeciding(h)}>
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeciding(h);
+              }}
+            >
               <Gavel />
               Decide
             </Button>
           );
         }
-        return (
-          <div className="space-y-1">
-            <HoldStatusBadge status={h.status} />
-            {h.decidedBy ? (
-              <div className="max-w-64 text-xs text-muted-foreground">
-                by {h.decidedBy.name}
-                {h.writeOffNo ? ` · ${h.writeOffNo}` : ''}
-                {h.decisionNote ? ` · “${h.decisionNote}”` : ''}
-              </div>
-            ) : null}
-          </div>
-        );
+        return <HoldStatusBadge status={h.status} />;
       },
     },
   ];
@@ -252,11 +345,9 @@ export function UnderObservationPage() {
       <PageHeader
         title="Under observation"
         description={
-          isSuperAdmin
-            ? 'Pieces the Warehouse Keeper or the Dispatch Department held back while sending. They cannot be sold or sent until the Warehouse Keeper or the Dispatch Department admin decides.'
-            : decider
-              ? 'Pieces held back while sending. Check each one and decide: release it to stock, write it off, or send it to the supplier.'
-              : 'Pieces held back while sending. The Warehouse Keeper or the Dispatch Department admin decides what happens to them.'
+          decider
+            ? 'Pieces held back while sending or receiving. Click a row for its details, then decide: release it, send it back to the Super Admin stock, write it off, or send it to the supplier.'
+            : 'Pieces held back while sending or receiving. The Super Admin, the Warehouse Keeper or the Dispatch Department admin decides what happens to them.'
         }
       />
       <DataTable
@@ -267,6 +358,7 @@ export function UnderObservationPage() {
         error={holds.error}
         onRetry={() => void holds.refetch()}
         getRowId={(r) => r.id}
+        onRowClick={(r) => setSelectedId(r.id)}
         exportFileName="under-observation"
         emptyTitle={status === 'open' ? 'Nothing under observation' : 'Nothing here'}
         toolbar={
@@ -275,6 +367,7 @@ export function UnderObservationPage() {
               <TabsList>
                 <TabsTrigger value="open">Under observation</TabsTrigger>
                 <TabsTrigger value="released">Released</TabsTrigger>
+                <TabsTrigger value="sent_back">Sent back</TabsTrigger>
                 <TabsTrigger value="written_off">Written off</TabsTrigger>
                 <TabsTrigger value="supplier_returned">Sent to supplier</TabsTrigger>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -286,8 +379,55 @@ export function UnderObservationPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            <Select value={reason} onValueChange={(v) => setReason(v as StockHoldReason | typeof ALL)}>
+              <SelectTrigger className="h-9 w-40" aria-label="Reason">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All reasons</SelectItem>
+                {REASONS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {HOLD_REASON_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={productId} onValueChange={setProductId}>
+              <SelectTrigger className="h-9 w-48" aria-label="Product">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All products</SelectItem>
+                {(products.data ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              aria-label="From"
+              className="h-9 w-40"
+              value={from}
+              max={to || undefined}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+            <Input
+              type="date"
+              aria-label="To"
+              className="h-9 w-40"
+              value={to}
+              min={from || undefined}
+              onChange={(e) => setTo(e.target.value)}
+            />
           </>
         }
+      />
+      <HoldSheet
+        hold={selected}
+        onOpenChange={(open) => !open && setSelectedId(null)}
+        onDecide={(hold) => setDeciding(hold)}
       />
       {deciding ? <DecideDialog key={deciding.id} hold={deciding} onClose={() => setDeciding(null)} /> : null}
     </>

@@ -510,7 +510,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
         open={open}
         onOpenChange={onOpenChange}
         title={`New ${config.title.toLowerCase()}`}
-        description="Each product line is saved as its own entry, as in posSoft."
+        description="Each product line is saved as its own entry."
         onSubmit={submit}
         submitting={createState.isLoading}
         submitLabel="Save entries"
@@ -531,7 +531,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
             <div className="text-xs text-muted-foreground">Request {prefill.requestNo} · send to</div>
             <div className="font-medium">{prefill.toBranchName}</div>
             <div className="mt-1 text-xs text-muted-foreground">
-              Only the approved products, up to the approved quantities. The branch admin receives it.
+              Only the approved products, up to the approved quantities.
             </div>
           </div>
         ) : transfer ? (
@@ -550,7 +550,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
           description={
             config.batched
               ? 'Choose products by hand or scan the product barcode. Labelled products need "Print new labels" or the first label already on the packs.'
-              : 'Scan the DSM label of every labelled piece that goes out: its batch comes from the label and the qty counts the scans. For other products the batch that expires first goes out first.'
+              : 'Scan the DSM label of every labelled piece that goes out.'
           }
         >
           <BarcodeScanInput onScan={addScanned} autoFocus />

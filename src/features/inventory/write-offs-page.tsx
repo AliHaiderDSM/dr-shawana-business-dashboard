@@ -8,6 +8,7 @@ import { Combobox } from '@/components/shared/combobox';
 import { DataTable } from '@/components/shared/data-table';
 import { MoneyInput } from '@/components/shared/money-input';
 import { PageHeader } from '@/components/shared/page-header';
+import { DetailList } from '@/components/shared/panel';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,7 +36,7 @@ import { ROLE_LABELS } from '@/features/staff/constants';
 import { toastError } from '@/lib/api/errors';
 import type { Role } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatQuantity } from '@/lib/format';
+import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
 import { findItemBySerial, useBatches, type ProductBatch } from '@redux/features/inventory';
 import { TraceNumber } from '@/features/trace/trace-page';
 import {
@@ -345,6 +346,104 @@ function DecideDialog({
   );
 }
 
+const personOf = (p: WriteOffRecord['createdBy']) =>
+  p ? `${p.name}${ROLE_LABELS[p.role as Role] ? ` · ${ROLE_LABELS[p.role as Role]}` : ''}` : '—';
+
+function WriteOffSheet({
+  record,
+  canDecide,
+  onOpenChange,
+  onDecide,
+}: {
+  record: WriteOffRecord | null;
+  canDecide: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDecide: (record: WriteOffRecord, approve: boolean) => void;
+}) {
+  return (
+    <Sheet open={Boolean(record)} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+        {record ? (
+          <>
+            <SheetHeader>
+              <SheetTitle className="font-mono">{record.writeOffNo}</SheetTitle>
+              <SheetDescription>
+                {record.productName} · −{formatQuantity(record.qty)} {record.unit}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="space-y-6 px-4 pb-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge tone={STATUS_TONES[record.status]}>{STATUS_LABELS[record.status]}</StatusBadge>
+                <StatusBadge tone={REASON_TONES[record.reason]}>
+                  {WRITE_OFF_LABELS[record.reason]}
+                </StatusBadge>
+              </div>
+              <DetailList
+                items={[
+                  { label: 'Date', value: formatDate(record.date) },
+                  { label: 'Branch', value: record.branch.name },
+                  { label: 'Product', value: record.productName },
+                  { label: 'Quantity', value: `${formatQuantity(record.qty)} ${record.unit}` },
+                  { label: 'Batch', value: record.batchNo ?? 'No batch' },
+                  { label: 'Expiry', value: record.expiryDate ? formatDate(record.expiryDate) : '—' },
+                  { label: 'Reported by', value: personOf(record.createdBy) },
+                  { label: 'Why', value: WRITE_OFF_LABELS[record.reason] },
+                ]}
+              />
+              {record.note ? (
+                <div className="space-y-1">
+                  <h3 className="text-xs text-muted-foreground">Note</h3>
+                  <p className="text-sm whitespace-pre-wrap">{record.note}</p>
+                </div>
+              ) : null}
+              {record.serials.length ? (
+                <div className="space-y-2">
+                  <h3 className="text-xs text-muted-foreground">Labels ({record.serials.length})</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {record.serials.map((serial) => (
+                      <TraceNumber
+                        key={serial}
+                        number={serial}
+                        className="rounded-md border bg-muted/40 px-2 py-0.5 font-mono text-xs hover:underline"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {record.decidedBy ? (
+                <div className="space-y-3 rounded-lg border p-3">
+                  <h3 className="text-sm font-semibold">Decision</h3>
+                  <DetailList
+                    items={[
+                      { label: 'By', value: personOf(record.decidedBy) },
+                      { label: 'On', value: record.decidedAt ? formatDateTime(record.decidedAt) : '—' },
+                    ]}
+                  />
+                  {record.decisionNote ? (
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{record.decisionNote}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              {canDecide && record.status === 'pending' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="destructive" onClick={() => onDecide(record, true)}>
+                    <Check />
+                    Approve
+                  </Button>
+                  <Button variant="outline" onClick={() => onDecide(record, false)}>
+                    <X />
+                    Reject
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export function WriteOffsPage() {
   const { isSuperAdmin, can, me } = useAuth();
   const canReport = can('stock.update') || me?.role === 'dispatcher';
@@ -352,11 +451,14 @@ export function WriteOffsPage() {
   const [search, setSearch] = useState('');
   const [reporting, setReporting] = useState(false);
   const [decision, setDecision] = useState<{ record: WriteOffRecord; approve: boolean } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const pending = usePendingWriteOffCount(isSuperAdmin);
   const list = useWriteOffs({
     ...(status === 'all' ? {} : { status }),
     ...(search.trim() ? { search: search.trim() } : {}),
   });
+
+  const selected = list.data?.find((r) => r.id === selectedId) ?? null;
 
   const columns: ColumnDef<WriteOffRecord, unknown>[] = [
     {
@@ -385,15 +487,7 @@ export function WriteOffsPage() {
       id: 'product',
       header: 'Product',
       accessorKey: 'productName',
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.productName}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.original.batchNo ? `Batch ${row.original.batchNo}` : 'No batch'}
-            {row.original.expiryDate ? ` · expires ${formatDate(row.original.expiryDate)}` : ''}
-          </div>
-        </div>
-      ),
+      cell: ({ row }) => <span className="font-medium">{row.original.productName}</span>,
     },
     {
       id: 'qty',
@@ -411,14 +505,9 @@ export function WriteOffsPage() {
       header: 'Why',
       accessorFn: (r) => WRITE_OFF_LABELS[r.reason],
       cell: ({ row }) => (
-        <div className="space-y-1">
-          <StatusBadge tone={REASON_TONES[row.original.reason]}>
-            {WRITE_OFF_LABELS[row.original.reason]}
-          </StatusBadge>
-          {row.original.note ? (
-            <div className="max-w-64 text-xs text-muted-foreground">{row.original.note}</div>
-          ) : null}
-        </div>
+        <StatusBadge tone={REASON_TONES[row.original.reason]}>
+          {WRITE_OFF_LABELS[row.original.reason]}
+        </StatusBadge>
       ),
     },
     {
@@ -439,14 +528,7 @@ export function WriteOffsPage() {
       id: 'createdBy',
       header: 'Reported by',
       accessorFn: (r) => r.createdBy?.name ?? '',
-      cell: ({ row }) => (
-        <div>
-          <div>{row.original.createdBy?.name ?? '—'}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.original.createdBy ? (ROLE_LABELS[row.original.createdBy.role as Role] ?? '') : ''}
-          </div>
-        </div>
-      ),
+      cell: ({ row }) => <span className="whitespace-nowrap">{row.original.createdBy?.name ?? '—'}</span>,
     },
     {
       id: 'status',
@@ -460,29 +542,29 @@ export function WriteOffsPage() {
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => setDecision({ record: r, approve: true })}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDecision({ record: r, approve: true });
+                }}
               >
                 <Check />
                 Approve
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setDecision({ record: r, approve: false })}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDecision({ record: r, approve: false });
+                }}
+              >
                 <X />
                 Reject
               </Button>
             </div>
           );
         }
-        return (
-          <div className="space-y-1">
-            <StatusBadge tone={STATUS_TONES[r.status]}>{STATUS_LABELS[r.status]}</StatusBadge>
-            {r.decidedBy ? (
-              <div className="text-xs text-muted-foreground">
-                by {r.decidedBy.name}
-                {r.decisionNote ? ` · “${r.decisionNote}”` : ''}
-              </div>
-            ) : null}
-          </div>
-        );
+        return <StatusBadge tone={STATUS_TONES[r.status]}>{STATUS_LABELS[r.status]}</StatusBadge>;
       },
     },
   ];
@@ -513,6 +595,7 @@ export function WriteOffsPage() {
         error={list.error}
         onRetry={() => void list.refetch()}
         getRowId={(r) => r.id}
+        onRowClick={(r) => setSelectedId(r.id)}
         exportFileName="write-offs"
         emptyTitle="Nothing here"
         toolbar={
@@ -535,6 +618,12 @@ export function WriteOffsPage() {
         }
       />
       <ReportSheet open={reporting} onOpenChange={setReporting} />
+      <WriteOffSheet
+        record={selected}
+        canDecide={isSuperAdmin}
+        onOpenChange={(open) => !open && setSelectedId(null)}
+        onDecide={(record, approve) => setDecision({ record, approve })}
+      />
       <DecideDialog
         key={decision?.record.id ?? 'none'}
         decision={decision}

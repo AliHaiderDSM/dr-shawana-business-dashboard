@@ -26497,7 +26497,11 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    status?: "open" | "released" | "written_off" | "supplier_returned";
+                    status?: "open" | "released" | "written_off" | "supplier_returned" | "sent_back";
+                    reason?: "damaged" | "expired" | "label_issue" | "other" | "missing";
+                    productId?: string;
+                    from?: string;
+                    to?: string;
                     saleId?: string;
                     stockRequestId?: string;
                     search?: string;
@@ -26568,7 +26572,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Put a labelled piece under observation while dispatching an order or sending a stock request. It can no longer be sold or sent until it is decided. */
+        /** Put one or more labelled pieces under observation while dispatching an order or sending a stock request (expired stock is never sent, so it is not a reason here). They can no longer be sold or sent until decided. */
         post: {
             parameters: {
                 query?: {
@@ -26591,7 +26595,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["StockHold"];
+                            data: components["schemas"]["StockHold"][];
                         };
                     };
                 };
@@ -26657,7 +26661,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Warehouse Keeper (any piece) or the Dispatch Department admin (its own pieces) decides: release back to stock, write off, or send back to the supplier */
+        /** Super Admin or Warehouse Keeper (any piece) or the Dispatch Department admin (its own pieces) decides: release back to stock, write off, send back to the supplier, or (a piece a branch held while receiving) send back to the Super Admin stock */
         post: {
             parameters: {
                 query?: never;
@@ -37753,10 +37757,15 @@ export interface components {
             createdAt: string;
         };
         ReportStockHold: {
-            /** @example DSM-000123 */
-            serial: string;
+            /**
+             * @example [
+             *       "DSM-000123",
+             *       "DSM-000124"
+             *     ]
+             */
+            serials: string[];
             /** @enum {string} */
-            reason: "damaged" | "expired" | "label_issue" | "other";
+            reason: "damaged" | "label_issue" | "other";
             note?: string | null;
             /**
              * Format: uuid
@@ -37771,7 +37780,7 @@ export interface components {
         };
         DecideStockHold: {
             /** @enum {string} */
-            decision: "release" | "write_off" | "supplier_return";
+            decision: "release" | "write_off" | "supplier_return" | "send_back";
             note: string;
         };
         StockHold: {
@@ -37779,9 +37788,9 @@ export interface components {
             id: string;
             holdNo: string;
             /** @enum {string} */
-            status: "open" | "released" | "written_off" | "supplier_returned";
+            status: "open" | "released" | "written_off" | "supplier_returned" | "sent_back";
             /** @enum {string} */
-            reason: "damaged" | "expired" | "label_issue" | "other";
+            reason: "damaged" | "expired" | "label_issue" | "other" | "missing";
             note: string | null;
             serial: string;
             itemStatus: string;
@@ -37825,7 +37834,9 @@ export interface components {
             decidedAt: string | null;
             decisionNote: string | null;
             writeOffNo: string | null;
+            transferNo: string | null;
             canDecide: boolean;
+            canSendBack: boolean;
             createdAt: string;
         };
         CreateStockRequest: {
@@ -37857,6 +37868,16 @@ export interface components {
              * @example 2026-09-30
              */
             date?: string;
+            /**
+             * @description Labels that did not arrive (missing) or arrived broken (damaged). They go under observation for the Super Admin; every other piece goes into stock.
+             * @default []
+             */
+            issues: {
+                serial: string;
+                /** @enum {string} */
+                reason: "missing" | "damaged";
+                note?: string | null;
+            }[];
         };
         StockRequest: {
             /** Format: uuid */
@@ -37912,10 +37933,10 @@ export interface components {
                 serial: string;
                 productName: string;
                 /** @enum {string} */
-                reason: "damaged" | "expired" | "label_issue" | "other";
+                reason: "damaged" | "expired" | "label_issue" | "other" | "missing";
                 note: string | null;
                 /** @enum {string} */
-                status: "open" | "released" | "written_off" | "supplier_returned";
+                status: "open" | "released" | "written_off" | "supplier_returned" | "sent_back";
                 decisionNote: string | null;
                 createdAt: string;
             }[];
@@ -37981,6 +38002,8 @@ export interface components {
                 qty: string;
                 received: boolean;
                 labels: number;
+                /** @description The DSM labels sent on this line */
+                serials: string[];
             }[];
         };
         SidebarBadges: {

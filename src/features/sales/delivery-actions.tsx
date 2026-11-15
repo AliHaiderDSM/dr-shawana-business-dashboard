@@ -298,7 +298,9 @@ function DispatchDialog({ order, onClose }: { order: OrderRef; onClose: () => vo
             context={{ title: `While dispatching ${order.invoiceNo}`, saleId: order.id }}
             serial={reporting.serial}
             onClose={() => setReporting(null)}
-            onReported={(hold) => setPieces((current) => current.filter((p) => p.serial !== hold.serial))}
+            onReported={(holds) =>
+              setPieces((current) => current.filter((p) => !holds.some((h) => h.serial === p.serial)))
+            }
           />
         ) : null}
         <DialogFooter>

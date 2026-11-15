@@ -19,11 +19,21 @@ export * from './types';
 
 const STOCK_REQUEST_TAGS: TagType[] = ['stock-requests', 'incoming-stock', 'stock', 'sidebar-badges'];
 
-function requestReceiveIncomingStock({ transferNo, date }: { transferNo: string; date: string }) {
+export type ReceiveIssue = Schemas['ReceiveStock']['issues'][number];
+
+function requestReceiveIncomingStock({
+  transferNo,
+  date,
+  issues,
+}: {
+  transferNo: string;
+  date: string;
+  issues: ReceiveIssue[];
+}) {
   return unwrap(
     api.POST('/branch/incoming-stock/{transferNo}/receive', {
       params: { path: { transferNo } },
-      body: { date },
+      body: { date, issues },
     }),
   ).then((r) => r.data);
 }
@@ -139,7 +149,7 @@ export const stockRequestsApi = baseApi.injectEndpoints({
     }),
     receiveIncomingStock: build.mutation<
       Awaited<ReturnType<typeof requestReceiveIncomingStock>>,
-      { transferNo: string; date: string }
+      { transferNo: string; date: string; issues: ReceiveIssue[] }
     >({
       queryFn: (args) => toApi(() => requestReceiveIncomingStock(args)),
       invalidatesTags: (_r, error) => (error ? [] : STOCK_REQUEST_TAGS),
