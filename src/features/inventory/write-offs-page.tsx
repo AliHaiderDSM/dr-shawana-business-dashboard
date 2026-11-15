@@ -69,7 +69,10 @@ const STATUS_LABELS: Record<WriteOffRecord['status'], string> = {
   rejected: 'Rejected',
 };
 
-const REASONS: WriteOffReason[] = ['expired', 'damaged', 'lost'];
+const REASONS: WriteOffReason[] = ['damaged', 'lost'];
+
+const pastExpiry = (expiryDate: string | null | undefined) =>
+  Boolean(expiryDate && expiryDate < new Date().toISOString().slice(0, 10));
 
 interface Line {
   key: number;
@@ -78,6 +81,7 @@ interface Line {
   available: string;
   qty: string;
   reason: WriteOffReason;
+  expired: boolean;
   note: string;
   serials: string[];
 }
@@ -134,10 +138,8 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
           label: `${piece.productName} · ${piece.batchNo ?? ''}`,
           available: '',
           qty: '1',
-          reason:
-            piece.expiryDate && piece.expiryDate < new Date().toISOString().slice(0, 10)
-              ? 'expired'
-              : 'damaged',
+          reason: pastExpiry(piece.expiryDate) ? 'expired' : 'damaged',
+          expired: pastExpiry(piece.expiryDate),
           note: '',
           serials: [piece.serial],
         });
@@ -152,7 +154,7 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
     <Sheet open={open} onOpenChange={(v) => !reportState.isLoading && close(v)}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader>
-          <SheetTitle>Report expired, damaged or lost stock</SheetTitle>
+          <SheetTitle>Report damaged or lost stock</SheetTitle>
           <SheetDescription>
             {isSuperAdmin
               ? 'Your report takes the stock out at once.'
@@ -172,6 +174,7 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
                 available: batch.quantity,
                 qty: '',
                 reason: batch.status === 'expired' ? 'expired' : 'damaged',
+                expired: batch.status === 'expired',
                 note: '',
                 serials: [],
               });
@@ -215,7 +218,7 @@ function ReportSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {REASONS.map((r) => (
+                        {(line.expired ? (['expired', ...REASONS] as WriteOffReason[]) : REASONS).map((r) => (
                           <SelectItem key={r} value={r}>
                             {WRITE_OFF_LABELS[r]}
                           </SelectItem>

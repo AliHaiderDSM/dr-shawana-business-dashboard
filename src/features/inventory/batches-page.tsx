@@ -263,7 +263,7 @@ function WriteOffDialog({ batch, onClose }: { batch: ProductBatchDetail; onClose
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {REASONS.map((r) => (
+                  {REASONS.filter((r) => r.value !== 'expired' || batch.status === 'expired').map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       {r.label}
                     </SelectItem>

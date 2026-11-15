@@ -16,10 +16,19 @@ import { useReturns, type SaleReturn } from '@redux/features/returns';
 import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
 import { ReturnFormSheet } from './return-form-sheet';
 
+const OPEN_LABELS = [
+  ['pending', 'awaiting inspection'],
+  ['quarantined', 'in quarantine'],
+  ['lab', 'at the lab'],
+] as const;
+
 export function ReturnStatusBadge({ record }: { record: Pick<SaleReturn, 'status' | 'items'> }) {
   if (record.status === 'completed') return <StatusBadge tone="success">Inspected</StatusBadge>;
-  const waiting = record.items.filter((i) => i.disposition === 'pending').length;
-  return <StatusBadge tone="warning">{`${waiting} awaiting inspection`}</StatusBadge>;
+  const parts = OPEN_LABELS.map(([disposition, label]) => {
+    const count = record.items.filter((i) => i.disposition === disposition).length;
+    return count ? `${count} ${label}` : null;
+  }).filter(Boolean);
+  return <StatusBadge tone="warning">{parts.join(' · ') || 'Awaiting inspection'}</StatusBadge>;
 }
 
 function ReturnsTab({ onCreate }: { onCreate: () => void }) {
@@ -193,7 +202,10 @@ function ReturnsTab({ onCreate }: { onCreate: () => void }) {
             list={list}
             name="reason"
             allLabel="All reasons"
-            options={enumOptions(Object.keys(REASON_LABELS) as (keyof typeof REASON_LABELS)[], REASON_LABELS)}
+            options={enumOptions(
+              (Object.keys(REASON_LABELS) as (keyof typeof REASON_LABELS)[]).filter((r) => r !== 'expired'),
+              REASON_LABELS,
+            )}
           />
           <DateRangeFilter list={list} />
         </>
@@ -221,7 +233,7 @@ export function ReturnsPage() {
     <>
       <PageHeader
         title="Returns"
-        description="Products that came back. Inspect each item: back into stock, damaged, or sent to the supplier. Damaged or expired on arrival? Request a free replacement from the return."
+        description="Products that came back. Inspect each item: back into stock, damaged, or sent to the supplier. Damaged on arrival? Request a free replacement from the return."
         actions={
           can('returns.create') ? (
             <Button onClick={() => setCreating(true)}>

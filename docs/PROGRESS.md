@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Expired only where it is true, return status in the list
+
+- Report write-offs and batch write-off: Expired shows only for a batch that is past its expiry date; otherwise Damaged and Lost (and stock count adjustment on the batch). Sheet title is "Report damaged or lost stock".
+- Returns list: Expired is gone from the reason filter and the page text; the status reads what is open, e.g. "1 in quarantine", "1 at the lab", "1 awaiting inspection".
+
 ## 2026-11-15 — Under observation: every branch for the Super Admin
 
 - /branch/stock-holds is an overview path: the Super Admin sees and decides the held pieces of every branch whichever branch is picked (before, a Multan piece was hidden while another branch was selected).
