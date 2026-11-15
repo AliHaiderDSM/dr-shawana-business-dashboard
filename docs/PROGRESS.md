@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Return outcomes and Warehouse Keeper write-offs
+
+- Return inspection: Expired removed from Other; Send to lab and Remove from inventory show only on returns whose reason is Damaged.
+- Warehouse Keeper sees Write-offs in the menu and can report stock to write off.
+
 ## 2026-11-15 — Receive by count, under observation and write-off details
 
 - Incoming stock: "Count & receive" opens a dialog listing every label of the transfer; scan what arrived, mark the rest Missing or Damaged with a note. Receive is blocked until every piece is marked.

@@ -446,7 +446,7 @@ function WriteOffSheet({
 
 export function WriteOffsPage() {
   const { isSuperAdmin, can, me } = useAuth();
-  const canReport = can('stock.update') || me?.role === 'dispatcher';
+  const canReport = can('stock.update') || me?.role === 'dispatcher' || me?.role === 'warehouse_keeper';
   const [status, setStatus] = useState<WriteOffRecord['status'] | 'all'>('all');
   const [search, setSearch] = useState('');
   const [reporting, setReporting] = useState(false);

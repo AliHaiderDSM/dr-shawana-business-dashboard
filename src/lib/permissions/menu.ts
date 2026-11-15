@@ -98,6 +98,7 @@ const LAB_OFFICER_KEYS = new Set([
 
 const WAREHOUSE_KEEPER_KEYS = new Set([
   'dashboard',
+  'write-offs',
   'store-receipts',
   'stock-requests',
   'stock-out',

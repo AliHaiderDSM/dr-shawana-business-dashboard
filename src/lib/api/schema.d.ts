@@ -37110,7 +37110,7 @@ export interface components {
         };
         ResolveReturnItem: {
             /** @enum {string} */
-            disposition: "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | "lab";
+            disposition: "quarantined" | "restocked" | "damaged" | "supplier" | "lab";
             note?: string | null;
         };
         LabReturnDecision: {

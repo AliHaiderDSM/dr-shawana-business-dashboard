@@ -16,7 +16,7 @@ export type Returnable = Schemas['ReturnableSale'];
 export interface ResolveReturnItemArgs {
   returnId: string;
   itemId: string;
-  disposition: Exclude<ReturnDisposition, 'pending'>;
+  disposition: Schemas['ResolveReturnItem']['disposition'];
   note: string | null;
 }
 

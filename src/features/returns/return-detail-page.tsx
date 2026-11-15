@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   Ban,
-  CalendarX,
   Check,
   ChevronDown,
   ClipboardCheck,
@@ -67,7 +66,7 @@ import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
 import { ReturnReplacementsPanel } from './replacement-parts';
 import { ReturnStatusBadge } from './returns-page';
 
-type Outcome = Exclude<ReturnDisposition, 'pending'>;
+type Outcome = Exclude<ReturnDisposition, 'pending' | 'expired'>;
 
 const OUTCOMES: { value: Outcome; label: string; description: string; icon: typeof PackageCheck }[] = [
   {
@@ -90,12 +89,6 @@ const OUTCOMES: { value: Outcome; label: string; description: string; icon: type
     icon: Ban,
   },
   {
-    value: 'expired',
-    label: 'Expired',
-    description: 'Past its expiry date. Written off, never back in stock.',
-    icon: CalendarX,
-  },
-  {
     value: 'supplier',
     label: 'Send to supplier',
     description: 'Kept out of stock and sent back to the supplier.',
@@ -108,6 +101,8 @@ const OUTCOMES: { value: Outcome; label: string; description: string; icon: type
     icon: ShieldAlert,
   },
 ];
+
+const DAMAGED_ONLY = new Set<Outcome>(['lab', 'damaged']);
 
 const OUTCOME_TONES: Record<ReturnDisposition, Tone> = {
   pending: 'warning',
@@ -383,7 +378,9 @@ export function ReturnDetailPage() {
                 const open = item.disposition === 'pending' || item.disposition === 'quarantined';
                 const others = OUTCOMES.filter(
                   (o) =>
-                    o.value !== 'restocked' && (item.disposition === 'pending' || o.value !== 'quarantined'),
+                    o.value !== 'restocked' &&
+                    (item.disposition === 'pending' || o.value !== 'quarantined') &&
+                    (r.reason === 'damaged' || !DAMAGED_ONLY.has(o.value)),
                 );
                 return (
                   <TableRow key={item.id} className="align-top hover:bg-transparent">
@@ -520,9 +517,7 @@ export function ReturnDetailPage() {
                               {others.map((o) => (
                                 <DropdownMenuItem
                                   key={o.value}
-                                  variant={
-                                    o.value === 'damaged' || o.value === 'expired' ? 'destructive' : 'default'
-                                  }
+                                  variant={o.value === 'damaged' ? 'destructive' : 'default'}
                                   onSelect={() => setInspecting({ item, outcome: o.value })}
                                 >
                                   <o.icon />
