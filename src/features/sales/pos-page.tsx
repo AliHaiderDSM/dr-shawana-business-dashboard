@@ -356,6 +356,13 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
     });
     return () => sub.unsubscribe();
   }, [form, sale, hasDispatch, replaceLines]);
+  const paidOn = (values.payments ?? [])
+    .map((p) => p.date)
+    .filter(Boolean)
+    .sort()[0];
+  useEffect(() => {
+    if (!sale && paidOn && form.getValues('date') !== paidOn) form.setValue('date', paidOn);
+  }, [form, sale, paidOn]);
   const patientMode = values.patientMode;
   const saving = createState.isLoading || updateState.isLoading;
   const shortProducts = new Set(shortages.map((s) => s.productId));
@@ -738,7 +745,16 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                 }
               />
             )}
-            <TextField control={form.control} name="date" label="Date" type="date" required />
+            <TextField
+              control={form.control}
+              name="date"
+              label="Sale date"
+              type="date"
+              required
+              description={
+                !editing ? 'Set from the payment date: a sale is dated the day its money came in.' : undefined
+              }
+            />
           </section>
 
           <section className="rounded-xl border bg-card shadow-xs">

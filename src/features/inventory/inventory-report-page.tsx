@@ -53,6 +53,22 @@ const BOOKED_COLUMN: { key: QuantityKey; label: string } = {
   label: 'Booked (not dispatched)',
 };
 
+const SHOW: { value: string; label: string; keep: (r: InventoryReport['rows'][number]) => boolean }[] = [
+  { value: 'booked', label: 'Booked orders (not dispatched)', keep: (r) => Number(r.booked) > 0 },
+  { value: 'stockIn', label: 'Stock in', keep: (r) => Number(r.stockIn) > 0 },
+  { value: 'stockOut', label: 'Stock out', keep: (r) => Number(r.stockOut) > 0 },
+  { value: 'sold', label: 'Sold', keep: (r) => Number(r.sold) > 0 || Number(r.branchSold) > 0 },
+  {
+    value: 'returned',
+    label: 'Returned',
+    keep: (r) => Number(r.returned) > 0 || Number(r.branchReturned) > 0,
+  },
+  { value: 'writtenOff', label: 'Written off', keep: (r) => Number(r.adjusted) < 0 },
+  { value: 'replaced', label: 'Replaced', keep: (r) => Number(r.replaced) > 0 },
+  { value: 'inStock', label: 'In stock', keep: (r) => Number(r.closing) > 0 },
+  { value: 'outOfStock', label: 'Out of stock', keep: (r) => Number(r.closing) <= 0 },
+];
+
 const OUTGOING = new Set<QuantityKey>(['stockOut', 'sold', 'branchSold', 'replaced']);
 
 function signedValue(outgoing: boolean, value: string | number) {
@@ -269,15 +285,16 @@ export function InventoryReportPage() {
   const branches = useBranchOptions(inWarehouse);
   const targetBranch = (branches.data ?? []).find((b) => b.id === list.filters.toBranchId);
   const perBranch = Boolean(report.data?.perBranch);
-  const bookedOnly = list.filters.booked === 'true';
+  const show = SHOW.find((o) => o.value === list.filters.show);
+  const bookedOnly = show?.value === 'booked';
   const baseColumns = targetBranch ? BRANCH_COLUMNS : perBranch ? SUPER_ADMIN_COLUMNS : QUANTITY_COLUMNS;
   const columns = columnsFor(bookedOnly ? [BOOKED_COLUMN, ...baseColumns] : baseColumns, { from, to });
   const month = list.filters.from?.slice(0, 7) ?? '';
   const history = (productId: string) => void navigate(`/stock/${productId}${rangeQuery({ from, to })}`);
 
-  const shown = (report.data?.rows ?? []).filter((r) => !bookedOnly || Number(r.booked) > 0);
+  const shown = (report.data?.rows ?? []).filter((r) => !show || show.keep(r));
   const totals = report.data
-    ? bookedOnly
+    ? show
       ? (Object.fromEntries(
           Object.keys(report.data.totals).map((key) => [
             key,
@@ -331,7 +348,13 @@ export function InventoryReportPage() {
         exportFileName={
           from || to ? `inventory-report-${from ?? 'start'}-to-${to ?? 'today'}` : 'inventory-report-all'
         }
-        emptyTitle={bookedOnly ? 'No booked orders waiting' : 'No stock in this period'}
+        emptyTitle={
+          bookedOnly
+            ? 'No booked orders waiting'
+            : show
+              ? `No product matches "${show.label}"`
+              : 'No stock in this period'
+        }
         toolbar={
           <>
             <Input
@@ -348,10 +371,10 @@ export function InventoryReportPage() {
             <DateRangeFilter list={list} placeholder="All dates" />
             <FilterSelect
               list={list}
-              name="booked"
-              allLabel="All products"
+              name="show"
+              allLabel="Show: every product"
               className="w-56"
-              options={[{ value: 'true', label: 'Booked orders (not dispatched)' }]}
+              options={SHOW.map(({ value, label }) => ({ value, label }))}
             />
             {inWarehouse ? (
               <FilterSelect
