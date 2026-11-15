@@ -23386,6 +23386,7 @@ export interface paths {
             parameters: {
                 query?: {
                     reason?: "expired" | "damaged" | "lost" | "adjustment";
+                    productId?: string;
                     status?: "pending" | "approved" | "rejected";
                     from?: string;
                     to?: string;
@@ -38004,6 +38005,13 @@ export interface components {
                 labels: number;
                 /** @description The DSM labels sent on this line */
                 serials: string[];
+                /** @description Pieces the branch held while receiving (missing or damaged) */
+                issues: {
+                    serial: string;
+                    reason: string;
+                    status: string;
+                    holdNo: string;
+                }[];
             }[];
         };
         SidebarBadges: {

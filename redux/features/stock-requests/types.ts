@@ -37,6 +37,8 @@ export type IncomingStockStatus = 'waiting' | 'received';
 
 export interface WriteOffsQuery {
   reason?: WriteOffReason;
+  productId?: string;
+  branchId?: string;
   status?: WriteOffRecord['status'];
   from?: string;
   to?: string;

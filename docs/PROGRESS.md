@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Received transfers show arrived pieces; write-off filters
+
+- A received transfer shows Sent, Arrived (sent minus held) and the missing or damaged labels, linking to Under observation.
+- Write-offs page filters: reason, product, branch (Super Admin) and a date range, next to the status tabs and search.
+
 ## 2026-11-15 — Expired only where it is true, return status in the list
 
 - Report write-offs and batch write-off: Expired shows only for a batch that is past its expiry date; otherwise Damaged and Lost (and stock count adjustment on the batch). Sheet title is "Report damaged or lost stock".

@@ -39,6 +39,9 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
 import { findItemBySerial, useBatches, type ProductBatch } from '@redux/features/inventory';
 import { TraceNumber } from '@/features/trace/trace-page';
+import { DateRangePicker } from '@/components/shared/date-range-picker';
+import { useBranchOptions } from '@/lib/auth/branches';
+import { productsApi } from '@redux/features/catalog';
 import {
   useDecideWriteOffMutation,
   usePendingWriteOffCount,
@@ -455,10 +458,21 @@ export function WriteOffsPage() {
   const [reporting, setReporting] = useState(false);
   const [decision, setDecision] = useState<{ record: WriteOffRecord; approve: boolean } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reason, setReason] = useState<WriteOffReason | 'all'>('all');
+  const [productId, setProductId] = useState('all');
+  const [branchId, setBranchId] = useState('all');
+  const [range, setRange] = useState<{ from?: string; to?: string }>({});
+  const products = productsApi.useOptions();
+  const branches = useBranchOptions(isSuperAdmin);
   const pending = usePendingWriteOffCount(isSuperAdmin);
   const list = useWriteOffs({
     ...(status === 'all' ? {} : { status }),
     ...(search.trim() ? { search: search.trim() } : {}),
+    ...(reason === 'all' ? {} : { reason }),
+    ...(productId === 'all' ? {} : { productId }),
+    ...(branchId === 'all' ? {} : { branchId }),
+    ...(range.from ? { from: range.from } : {}),
+    ...(range.to ? { to: range.to } : {}),
   });
 
   const selected = list.data?.find((r) => r.id === selectedId) ?? null;
@@ -617,6 +631,48 @@ export function WriteOffsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            <Select value={reason} onValueChange={(v) => setReason(v as WriteOffReason | 'all')}>
+              <SelectTrigger className="h-9 w-40" aria-label="Reason">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All reasons</SelectItem>
+                {(['damaged', 'lost', 'adjustment'] as WriteOffReason[]).map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {WRITE_OFF_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={productId} onValueChange={setProductId}>
+              <SelectTrigger className="h-9 w-48" aria-label="Product">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All products</SelectItem>
+                {(products.data ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isSuperAdmin ? (
+              <Select value={branchId} onValueChange={setBranchId}>
+                <SelectTrigger className="h-9 w-44" aria-label="Branch">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All branches</SelectItem>
+                  {(branches.data ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <DateRangePicker from={range.from} to={range.to} onChange={setRange} placeholder="All dates" />
           </>
         }
       />

@@ -271,8 +271,13 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
         <thead className="bg-muted/40 text-xs text-muted-foreground">
           <tr>
             <th className="px-4 py-2 text-left font-medium">Product</th>
-            <th className="px-4 py-2 text-right font-medium">Qty</th>
-            <th className="px-4 py-2 text-right font-medium">Labelled pieces</th>
+            <th className="px-4 py-2 text-right font-medium">Sent</th>
+            <th className="px-4 py-2 text-right font-medium">
+              {transfer.received ? 'Arrived' : 'Labelled pieces'}
+            </th>
+            {transfer.received ? (
+              <th className="px-4 py-2 text-left font-medium">Missing or damaged</th>
+            ) : null}
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -287,9 +292,39 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
               <td className="px-4 py-2 text-right tabular-nums">
                 {formatQuantity(item.qty)} {item.unit}
               </td>
-              <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
-                {item.labels || '—'}
+              <td
+                className={cn(
+                  'px-4 py-2 text-right tabular-nums',
+                  transfer.received && item.issues.length
+                    ? 'font-semibold text-warning-soft-foreground'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {transfer.received
+                  ? `${formatQuantity(String(Number(item.qty) - item.issues.length))} ${item.unit}`
+                  : item.labels || '—'}
               </td>
+              {transfer.received ? (
+                <td className="px-4 py-2">
+                  {item.issues.length ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.issues.map((issue) => (
+                        <Link
+                          key={issue.serial}
+                          to="/under-observation"
+                          className="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-destructive-soft px-1.5 py-0.5 text-xs text-destructive-soft-foreground hover:underline"
+                          title={issue.holdNo}
+                        >
+                          <span className="font-mono">{issue.serial}</span>
+                          <span>· {issue.reason === 'missing' ? 'Missing' : 'Damaged'}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
