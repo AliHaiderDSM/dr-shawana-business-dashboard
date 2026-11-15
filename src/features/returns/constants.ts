@@ -16,4 +16,5 @@ export const DISPOSITION_LABELS: Record<ReturnDisposition, string> = {
   damaged: 'Damaged',
   expired: 'Expired',
   supplier: 'Sent to supplier',
+  lab: 'At the lab',
 };

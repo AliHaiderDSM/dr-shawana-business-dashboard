@@ -62,6 +62,7 @@ const EVENT_LABELS: Record<InventoryItemDetail['history'][number]['type'], strin
   dispatched: 'Sent out',
   dispatch_cancelled: 'Stock out cancelled',
   written_off: 'Written off',
+  sent_to_lab: 'Sent to the lab',
 };
 
 function referencePath(type: string | null, id: string | null) {

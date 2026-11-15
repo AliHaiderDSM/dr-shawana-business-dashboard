@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Damaged returns: send to lab or remove
+
+- Return inspection: "Send to lab" (new) and "Remove from inventory" (was Damaged). An item at the lab shows "At the lab · waiting for the lab to repair or remove it".
+- New page Returns at the Lab (/lab-returns) for the Lab Officer and the Super Admin in warehouse mode, with a badge: Waiting and Done tabs, Repaired (back to the branch stock) or Cannot fix (removed), each with a note.
+- Labels show the new At the lab status and Sent to the lab event. Types regenerated.
+
 ## 2026-11-15 — Sale date from the payment, inventory Show filter
 
 - POS: a new sale's "Sale date" follows the payment date (the earliest payment), so a sale entered today for money received earlier is dated that day; the entry time still shows as Entry date.

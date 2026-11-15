@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   ClipboardCheck,
+  FlaskConical,
   Loader2,
   PackageCheck,
   Pencil,
@@ -76,9 +77,16 @@ const OUTCOMES: { value: Outcome; label: string; description: string; icon: type
     icon: PackageCheck,
   },
   {
+    value: 'lab',
+    label: 'Send to lab',
+    description:
+      'Damaged but may be repaired. The lab decides: repaired back into this stock, or removed from inventory.',
+    icon: FlaskConical,
+  },
+  {
     value: 'damaged',
-    label: 'Damaged',
-    description: 'Written off. It never returns to stock.',
+    label: 'Remove from inventory',
+    description: 'Damaged and cannot be used. It is removed now and never returns to stock.',
     icon: Ban,
   },
   {
@@ -108,6 +116,7 @@ const OUTCOME_TONES: Record<ReturnDisposition, Tone> = {
   damaged: 'danger',
   expired: 'danger',
   supplier: 'info',
+  lab: 'info',
 };
 
 function InspectDialog({
@@ -301,7 +310,7 @@ export function ReturnDetailPage() {
   const untouched = r.items.every((i) => i.disposition === 'pending');
 
   const decided = r.items.filter(
-    (i) => i.disposition !== 'pending' && i.disposition !== 'quarantined',
+    (i) => i.disposition !== 'pending' && i.disposition !== 'quarantined' && i.disposition !== 'lab',
   ).length;
   const backInStock = r.items
     .filter((i) => i.disposition === 'restocked')
@@ -433,6 +442,11 @@ export function ReturnDetailPage() {
                           {item.proposalNote ? (
                             <div className="mt-0.5 whitespace-pre-wrap">{item.proposalNote}</div>
                           ) : null}
+                        </div>
+                      ) : null}
+                      {item.disposition === 'lab' ? (
+                        <div className="mt-1 text-xs text-info">
+                          Waiting for the lab to repair or remove it
                         </div>
                       ) : null}
                       {item.resolutionNote ? (

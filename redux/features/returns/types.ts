@@ -1,5 +1,8 @@
 import type { Schemas } from '@/lib/api/types';
 
+export type LabReturnItem = Schemas['LabReturnItem'];
+export type LabDecisionArgs = Schemas['LabReturnDecision'] & { itemId: string };
+
 export type SaleReturn = Schemas['SaleReturn'];
 export type ReturnItem = SaleReturn['items'][number];
 export type ReturnReason = SaleReturn['reason'];

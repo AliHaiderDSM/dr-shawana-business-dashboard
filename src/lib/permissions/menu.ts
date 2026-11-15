@@ -63,6 +63,7 @@ export interface MenuItem {
   dispatchOnly?: boolean;
   dispatchOrSuperAdmin?: boolean;
   observersOnly?: boolean;
+  labOrSuperAdmin?: boolean;
   notInDispatch?: boolean;
   roleLabels?: Partial<Record<Role, string>>;
   badge?:
@@ -75,7 +76,8 @@ export interface MenuItem {
     | 'replacements'
     | 'stockReceipts'
     | 'patientRequests'
-    | 'patientMessages';
+    | 'patientMessages'
+    | 'labReturns';
 }
 
 export interface MenuGroup {
@@ -85,7 +87,14 @@ export interface MenuGroup {
   notInDispatch?: boolean;
 }
 
-const LAB_OFFICER_KEYS = new Set(['dashboard', 'stock-in', 'store-receipts', 'labels', 'inventory-report']);
+const LAB_OFFICER_KEYS = new Set([
+  'dashboard',
+  'stock-in',
+  'store-receipts',
+  'lab-returns',
+  'labels',
+  'inventory-report',
+]);
 
 const WAREHOUSE_KEEPER_KEYS = new Set([
   'dashboard',
@@ -396,6 +405,17 @@ export const MENU: MenuGroup[] = [
         warehouseOnly: true,
       },
       {
+        key: 'lab-returns',
+        badge: 'labReturns',
+        label: 'Returns at the Lab',
+        path: '/lab-returns',
+        icon: FlaskConical,
+        anyOf: ['stock.view'],
+        scope: 'any',
+        warehouseOnly: true,
+        labOrSuperAdmin: true,
+      },
+      {
         key: 'stock-out',
         label: 'Stock Out',
         path: '/stock-out',
@@ -630,6 +650,7 @@ export function visibleMenu(
             dispatch.inDispatch ||
             role === 'dispatcher') &&
           (!item.superAdminOnly || isSuperAdmin) &&
+          (!item.labOrSuperAdmin || isSuperAdmin || role === 'lab_officer') &&
           (!item.doctorOnly || role === 'doctor') &&
           (!item.warehouseOnly || inWarehouse) &&
           (!(inWarehouse && group.notInWarehouse) || item.showInWarehouse) &&

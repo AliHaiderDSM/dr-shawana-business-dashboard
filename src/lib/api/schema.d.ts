@@ -5313,7 +5313,7 @@ export interface paths {
                     /** @description Only pieces that have no batch */
                     withoutBatch?: "true" | "false";
                     saleId?: string;
-                    status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                    status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off" | "at_lab";
                     /** @description Same groups as the label batch counts: in stock here, in stock at branches it was sent to, sold, or anything else */
                     group?: "in_stock" | "in_branches" | "sold" | "other";
                     source?: "stock_in" | "production" | "labelled";
@@ -5416,7 +5416,7 @@ export interface paths {
                     productId?: string;
                     batchId?: string;
                     /** @description Only batches that have pieces in this status */
-                    status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                    status?: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off" | "at_lab";
                     branchId?: string;
                 };
                 header?: never;
@@ -23918,7 +23918,7 @@ export interface paths {
                                     /** Format: uuid */
                                     productId: string;
                                     /** @enum {string} */
-                                    status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                                    status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off" | "at_lab";
                                 }[];
                                 /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
                                 batches?: components["schemas"]["AllocatedBatch"][];
@@ -28111,6 +28111,181 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/lab-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lab Officer and Super Admin: damaged return items sent to the lab from every branch (waiting), or the ones the lab has decided (done) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description waiting: still at the lab; done: the lab has decided */
+                    status?: "waiting" | "done";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Items */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["LabReturnItem"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/lab-returns/{itemId}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lab Officer and Super Admin: repaired (restocked into the stock the sale came from) or cannot be fixed (damaged, removed) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["LabReturnDecision"];
+                };
+            };
+            responses: {
+                /** @description Updated return */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SaleReturn"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/returns": {
         parameters: {
             query?: never;
@@ -28128,7 +28303,7 @@ export interface paths {
                     sort?: "date" | "-date" | "createdAt" | "-createdAt" | "returnSeq" | "-returnSeq";
                     status?: "pending" | "completed";
                     reason?: "damaged" | "expired" | "wrong_item" | "customer_refused" | "not_delivered" | "other";
-                    disposition?: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
+                    disposition?: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | "lab";
                     /** @description inspect: items nobody checked yet; approve: online return items waiting for the Super Admin */
                     stage?: "inspect" | "approve";
                     productId?: string;
@@ -28533,7 +28708,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Inspection result of one item: restocked (back into sellable stock), damaged (written off) or supplier (sent back) */
+        /** Inspection result of one item: restocked (back into sellable stock), damaged (removed from inventory), lab (sent to the lab, which repairs it back into stock or removes it) or supplier (sent back) */
         post: {
             parameters: {
                 query?: {
@@ -33438,7 +33613,7 @@ export interface components {
             id: string;
             serial: string;
             /** @enum {string} */
-            status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+            status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off" | "at_lab";
             /** Format: uuid */
             productId: string;
             productName: string;
@@ -33464,7 +33639,7 @@ export interface components {
             id: string;
             serial: string;
             /** @enum {string} */
-            status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+            status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off" | "at_lab";
             /** Format: uuid */
             productId: string;
             productName: string;
@@ -33502,7 +33677,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
-                type: "received" | "produced" | "labelled" | "sold" | "sale_edited" | "sale_deleted" | "returned" | "return_cancelled" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "dispatch_cancelled" | "written_off";
+                type: "received" | "produced" | "labelled" | "sold" | "sale_edited" | "sale_deleted" | "returned" | "return_cancelled" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "dispatch_cancelled" | "written_off" | "sent_to_lab";
                 referenceType: string | null;
                 /** Format: uuid */
                 referenceId: string | null;
@@ -36931,8 +37106,43 @@ export interface components {
         };
         ResolveReturnItem: {
             /** @enum {string} */
-            disposition: "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
+            disposition: "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | "lab";
             note?: string | null;
+        };
+        LabReturnDecision: {
+            /**
+             * @description restocked: repaired, goes back into the stock it came from; damaged: cannot be fixed, removed
+             * @enum {string}
+             */
+            outcome: "restocked" | "damaged";
+            note?: string | null;
+        };
+        LabReturnItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            returnId: string;
+            returnNo: string;
+            /** Format: date */
+            returnDate: string;
+            reason: string;
+            invoiceNo: string;
+            branch: {
+                code: string;
+                name: string;
+            };
+            product: string;
+            qty: string;
+            serials: string[];
+            customer: string | null;
+            /** @enum {string} */
+            disposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | "lab";
+            note: string | null;
+            /** Format: date-time */
+            sentAt: string;
+            sentBy: string | null;
+            /** Format: date-time */
+            decidedAt: string | null;
         };
         SetReturnRefund: {
             refund: components["schemas"]["ReturnRefundInput"] | null;
@@ -36994,7 +37204,7 @@ export interface components {
                 /** @example 10.000 */
                 qty: string;
                 /** @enum {string} */
-                disposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier";
+                disposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | "lab";
                 /** Format: date-time */
                 resolvedAt: string | null;
                 /** Format: uuid */
@@ -37004,7 +37214,7 @@ export interface components {
                  * @description Online returns: what the dispatcher found, waiting for the Super Admin
                  * @enum {string|null}
                  */
-                proposedDisposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | null;
+                proposedDisposition: "pending" | "quarantined" | "restocked" | "damaged" | "expired" | "supplier" | "lab" | null;
                 /** Format: uuid */
                 proposedBy: string | null;
                 /** Format: date-time */
@@ -37358,7 +37568,7 @@ export interface components {
                 /** Format: uuid */
                 productId: string;
                 /** @enum {string} */
-                status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off";
+                status: "in_stock" | "sold" | "returned" | "quarantined" | "damaged" | "expired" | "supplier_returned" | "dispatched" | "written_off" | "at_lab";
             }[];
             /** @description Batches the sold stock was taken from (FEFO). Only on GET /branch/sales/{id}. */
             batches?: components["schemas"]["AllocatedBatch"][];
@@ -37784,6 +37994,7 @@ export interface components {
             stockReceipts: number;
             patientRequests: number;
             patientMessages: number;
+            labReturns: number;
         };
         Trace: {
             /** @enum {string} */

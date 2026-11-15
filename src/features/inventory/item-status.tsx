@@ -11,6 +11,7 @@ export const ITEM_STATUS: Record<ItemStatus, { label: string; tone: Tone }> = {
   supplier_returned: { label: 'Sent to supplier', tone: 'neutral' },
   dispatched: { label: 'Sent out', tone: 'neutral' },
   written_off: { label: 'Written off', tone: 'danger' },
+  at_lab: { label: 'At the lab', tone: 'info' },
 };
 
 export function ItemStatusBadge({ status }: { status: ItemStatus }) {

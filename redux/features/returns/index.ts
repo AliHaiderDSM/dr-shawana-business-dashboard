@@ -9,6 +9,7 @@ import type {
   DecideReplacementArgs,
   SaleReplacement,
   DecideReturnItemArgs,
+  LabDecisionArgs,
   ResolveReturnItemArgs,
   SendReplacementArgs,
   SetReturnRefundArgs,
@@ -131,6 +132,14 @@ const requestSendReplacement = ({ replacementId, ...body }: SendReplacementArgs)
 const requestRemoveReplacement = (id: string) =>
   unwrap(api.DELETE('/branch/replacements/{id}', { params: { path: { id } } }));
 
+const requestLabReturns = (status: 'waiting' | 'done') =>
+  unwrap(api.GET('/branch/lab-returns', { params: { query: { status } } })).then((r) => r.data);
+
+const requestLabDecision = ({ itemId, ...body }: LabDecisionArgs) =>
+  unwrap(api.POST('/branch/lab-returns/{itemId}/decide', { params: { path: { itemId } }, body })).then(
+    (r) => r.data,
+  );
+
 type Result<F extends (...args: never[]) => Promise<unknown>> = Awaited<ReturnType<F>>;
 
 export const returnsApi = baseApi.injectEndpoints({
@@ -206,6 +215,14 @@ export const returnsApi = baseApi.injectEndpoints({
       queryFn: (id) => toApi(() => requestRemoveReplacement(id)),
       invalidatesTags: invalidate,
     }),
+    getLabReturns: build.query<Result<typeof requestLabReturns>, 'waiting' | 'done'>({
+      queryFn: (status) => fromApi(() => requestLabReturns(status)),
+      providesTags: ['returns'],
+    }),
+    decideLabReturn: build.mutation<Result<typeof requestLabDecision>, LabDecisionArgs>({
+      queryFn: (args) => toApi(() => requestLabDecision(args)),
+      invalidatesTags: invalidate,
+    }),
   }),
   overrideExisting: false,
 });
@@ -228,6 +245,8 @@ export const {
   useDecideReplacementMutation,
   useSendReplacementMutation,
   useRemoveReplacementMutation,
+  useGetLabReturnsQuery,
+  useDecideLabReturnMutation,
 } = returnsApi;
 
 export function useReplacements(query: Record<string, unknown>, skip = false) {
