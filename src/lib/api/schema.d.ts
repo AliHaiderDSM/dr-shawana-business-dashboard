@@ -24310,6 +24310,8 @@ export interface paths {
                                  * @example 1250.50
                                  */
                                 refund: string;
+                                /** @description Staff who entered the sale */
+                                enteredBy: string | null;
                                 /** @description Returns recorded on this sale */
                                 returns: number;
                                 /**

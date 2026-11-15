@@ -19,7 +19,14 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { branchStore } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { TraceNumber } from '@/features/trace/trace-page';
-import { formatAmount, formatCount, formatDate, formatMoney, formatQuantity } from '@/lib/format';
+import {
+  formatAmount,
+  formatCount,
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatQuantity,
+} from '@/lib/format';
 import { salesApi, useApproveSalePaymentsMutation, useSales, type SaleListItem } from '@redux/features/sales';
 import { DELIVERY_LABELS, PAYMENT_STATUS_LABELS, SALE_TYPE_LABELS } from './constants';
 import { DeliveryBadge, useOrderActions } from './delivery-actions';
@@ -213,6 +220,17 @@ export function SalesPage() {
       accessorKey: 'netAmount',
       meta: { align: 'right' },
       cell: ({ row }) => <span className="font-medium">{formatAmount(row.original.netAmount)}</span>,
+    },
+    {
+      id: 'enteredBy',
+      header: 'Entry by',
+      accessorFn: (s) => `${formatDateTime(s.createdAt)} ${s.enteredBy ?? ''}`,
+      cell: ({ row }) => (
+        <div className="whitespace-nowrap">
+          <div className="tabular-nums">{formatDateTime(row.original.createdAt)}</div>
+          <div className="text-xs text-muted-foreground">{row.original.enteredBy ?? '—'}</div>
+        </div>
+      ),
     },
     {
       id: 'payment',

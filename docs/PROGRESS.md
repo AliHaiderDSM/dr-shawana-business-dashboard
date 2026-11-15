@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — View Sales: Entry by column
+
+- New Entry by column, as posSoft: the time the sale was entered and who entered it. Date stays the day the money came in.
+
 ## 2026-11-15 — POS: sale date cannot be typed for a new sale
 
 - A new sale shows its Sale date read-only, taken from the payment date; to change it, change the payment date. Editing a saved sale still allows the date.
