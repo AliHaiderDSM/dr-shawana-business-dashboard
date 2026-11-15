@@ -745,16 +745,19 @@ function PosForm({ sale, bundles }: { sale?: Sale; bundles: Bundle[] }) {
                 }
               />
             )}
-            <TextField
-              control={form.control}
-              name="date"
-              label="Sale date"
-              type="date"
-              required
-              description={
-                !editing ? 'Set from the payment date: a sale is dated the day its money came in.' : undefined
-              }
-            />
+            {editing ? (
+              <TextField control={form.control} name="date" label="Sale date" type="date" required />
+            ) : (
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Sale date</div>
+                <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
+                  {paidOn ? formatDate(paidOn) : 'Comes from the payment date'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A sale is dated the day its money came in. Change the date on the payment below.
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="rounded-xl border bg-card shadow-xs">

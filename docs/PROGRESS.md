@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — POS: sale date cannot be typed for a new sale
+
+- A new sale shows its Sale date read-only, taken from the payment date; to change it, change the payment date. Editing a saved sale still allows the date.
+
 ## 2026-11-15 — Count by label at the store; receipts print what was missing
 
 - Store receipts: Count & confirm lists every label of a Lab Officer entry; scan what arrived, mark the rest Missing or Damaged (they go under observation); unlabelled lines keep the received quantity. Confirmed receipts show the held labels.
