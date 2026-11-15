@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TraceNumber } from '@/features/trace/trace-page';
@@ -27,6 +28,7 @@ import type { Schemas } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, formatQuantity, isoDate } from '@/lib/format';
 import { useConfirmStoreReceiptMutation, useStoreReceipts } from '@redux/features/inventory';
+import { cn } from '@/lib/utils';
 import { normalizeSerial } from './constants';
 import { GrnEditRequests, GrnEditSheet } from './grn-edit';
 
@@ -36,51 +38,208 @@ type Line = Receipt['lines'][number];
 interface Count {
   received: string;
   note: string;
-  missing: string[];
 }
+
+type PieceState = 'waiting' | 'arrived' | 'missing' | 'damaged';
+
+const PIECE_LABELS: Record<PieceState, string> = {
+  waiting: 'Not scanned',
+  arrived: 'Arrived',
+  missing: 'Missing',
+  damaged: 'Damaged',
+};
 
 function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
   const [confirm, confirmState] = useConfirmStoreReceiptMutation();
   const navigate = useNavigate();
   const [date, setDate] = useState(isoDate());
+  const plain = receipt.lines.filter((l) => l.serials.length === 0);
+  const labelled = receipt.lines.filter((l) => l.serials.length > 0);
   const [counts, setCounts] = useState<Record<string, Count>>(() =>
-    Object.fromEntries(
-      receipt.lines.map((l) => [l.id, { received: String(Number(l.qty)), note: '', missing: [] }]),
-    ),
+    Object.fromEntries(plain.map((l) => [l.id, { received: String(Number(l.qty)), note: '' }])),
   );
+  const [pieces, setPieces] = useState<Record<string, PieceState>>(() =>
+    Object.fromEntries(labelled.flatMap((l) => l.serials.map((serial) => [serial, 'waiting' as PieceState]))),
+  );
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const busy = confirmState.isLoading;
   const update = (id: string, change: Partial<Count>) =>
     setCounts((current) => ({ ...current, [id]: { ...current[id]!, ...change } }));
+  const setPiece = (serial: string, state: PieceState) =>
+    setPieces((current) => ({ ...current, [serial]: state }));
   const shortOf = (line: Line) => Number(line.qty) - (Number(counts[line.id]?.received) || 0);
-  const invalid = receipt.lines.some((l) => {
-    const c = counts[l.id];
-    const received = Number(c?.received);
-    if (!c || c.received === '' || received < 0 || received > Number(l.qty)) return true;
-    return l.labels > 0 && shortOf(l) !== c.missing.length;
-  });
+  const count = (state: PieceState) => Object.values(pieces).filter((p) => p === state).length;
+  const waiting = count('waiting');
+  const invalid =
+    waiting > 0 ||
+    plain.some((l) => {
+      const c = counts[l.id];
+      const received = Number(c?.received);
+      return !c || c.received === '' || received < 0 || received > Number(l.qty);
+    });
+
+  const submit = () =>
+    confirm({
+      grnNo: receipt.grnNo,
+      body: {
+        date,
+        lines: plain
+          .filter((l) => shortOf(l) > 0)
+          .map((l) => ({
+            id: l.id,
+            receivedQty: counts[l.id]!.received,
+            note: counts[l.id]!.note.trim() || null,
+          })),
+        issues: Object.entries(pieces)
+          .filter(([, state]) => state === 'missing' || state === 'damaged')
+          .map(([serial, state]) => ({
+            serial,
+            reason: state as 'missing' | 'damaged',
+            note: notes[serial]?.trim() || null,
+          })),
+      },
+    })
+      .unwrap()
+      .then(() => {
+        toast.success(`${receipt.grnNo} confirmed. It is in the Super Admin stock now.`);
+        onClose();
+        void navigate(`/print/store-receipt?grn=${encodeURIComponent(receipt.grnNo)}`);
+      })
+      .catch(toastError);
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !confirmState.isLoading && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Confirm {receipt.grnNo}</DialogTitle>
+          <DialogTitle>Count and confirm {receipt.grnNo}</DialogTitle>
           <DialogDescription>
-            Count what arrived. Change the received quantity of any line that is short and say why; for
-            labelled products, scan the labels that are missing. Only the received quantity becomes stock.
+            Scan every labelled piece that arrived and mark the rest Missing or Damaged: they go under
+            observation for the Super Admin. For a product without labels, change the received quantity if it
+            is short and say why.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="max-w-48 space-y-2">
-            <Label htmlFor="receipt-date">Date received</Label>
-            <Input
-              id="receipt-date"
-              type="date"
-              value={date}
-              min={receipt.date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+          <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
+            <div className="space-y-2">
+              <Label htmlFor="receipt-date">Date received</Label>
+              <Input
+                id="receipt-date"
+                type="date"
+                value={date}
+                min={receipt.date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+            {labelled.length ? (
+              <div className="space-y-2">
+                <Label>Scan what arrived</Label>
+                <BarcodeScanInput
+                  autoFocus
+                  placeholder="Scan a label"
+                  onScan={async (code) => {
+                    const serial = normalizeSerial(code);
+                    if (!(serial in pieces)) {
+                      toast.error(`${serial} is not on ${receipt.grnNo}`);
+                      return;
+                    }
+                    setPiece(serial, 'arrived');
+                  }}
+                />
+              </div>
+            ) : null}
           </div>
+          {labelled.length ? (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <StatusBadge tone="success">Arrived {count('arrived')}</StatusBadge>
+              <StatusBadge tone="danger">Missing {count('missing')}</StatusBadge>
+              <StatusBadge tone="warning">Damaged {count('damaged')}</StatusBadge>
+              <StatusBadge tone="neutral">Not scanned {waiting}</StatusBadge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto"
+                disabled={busy || waiting === 0}
+                onClick={() =>
+                  setPieces((current) =>
+                    Object.fromEntries(
+                      Object.entries(current).map(([serial, state]) => [
+                        serial,
+                        state === 'waiting' ? 'arrived' : state,
+                      ]),
+                    ),
+                  )
+                }
+              >
+                Mark the rest as arrived
+              </Button>
+            </div>
+          ) : null}
           <ul className="divide-y rounded-lg border">
             {receipt.lines.map((line) => {
+              const meta = (
+                <div className="text-xs text-muted-foreground">
+                  Entered {formatQuantity(line.qty)} {line.unit}
+                  {line.batch ? ` · batch ${line.batch}` : ''}
+                  {line.expiryDate ? ` · expires ${formatDate(line.expiryDate)}` : ''}
+                </div>
+              );
+              if (line.serials.length) {
+                const arrived = line.serials.filter((sn) => pieces[sn] === 'arrived').length;
+                return (
+                  <li key={line.id} className="space-y-2 px-3 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="font-medium">{line.productName}</div>
+                        {meta}
+                      </div>
+                      <span className="text-sm text-muted-foreground tabular-nums">
+                        {arrived} of {formatQuantity(line.qty)} {line.unit} arrived
+                      </span>
+                    </div>
+                    <ul className="divide-y rounded-md border">
+                      {line.serials.map((serial) => {
+                        const state = pieces[serial] ?? 'waiting';
+                        return (
+                          <li key={serial} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                            <span
+                              className={cn(
+                                'w-32 font-mono text-sm',
+                                state === 'arrived' && 'text-success',
+                                (state === 'missing' || state === 'damaged') && 'text-destructive',
+                              )}
+                            >
+                              {serial}
+                            </span>
+                            <Select value={state} onValueChange={(v) => setPiece(serial, v as PieceState)}>
+                              <SelectTrigger className="h-8 w-36" aria-label={`${serial} state`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(Object.keys(PIECE_LABELS) as PieceState[]).map((p) => (
+                                  <SelectItem key={p} value={p}>
+                                    {PIECE_LABELS[p]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {state === 'missing' || state === 'damaged' ? (
+                              <Input
+                                className="h-8 min-w-40 flex-1"
+                                placeholder="What happened?"
+                                maxLength={500}
+                                value={notes[serial] ?? ''}
+                                onChange={(e) =>
+                                  setNotes((current) => ({ ...current, [serial]: e.target.value }))
+                                }
+                              />
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              }
               const c = counts[line.id]!;
               const short = shortOf(line);
               return (
@@ -88,12 +247,7 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="min-w-40 flex-1">
                       <div className="font-medium">{line.productName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Entered {formatQuantity(line.qty)} {line.unit}
-                        {line.batch ? ` · batch ${line.batch}` : ''}
-                        {line.expiryDate ? ` · expires ${formatDate(line.expiryDate)}` : ''}
-                        {line.labels ? ` · ${line.labels} labels` : ''}
-                      </div>
+                      {meta}
                     </div>
                     <div className="flex items-center gap-2">
                       <Label htmlFor={`received-${line.id}`} className="text-xs text-muted-foreground">
@@ -105,7 +259,7 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
                         decimals={3}
                         className="h-9 w-24 text-right"
                         value={c.received}
-                        onChange={(e) => update(line.id, { received: e.target.value, missing: [] })}
+                        onChange={(e) => update(line.id, { received: e.target.value })}
                       />
                     </div>
                     {short > 0 ? (
@@ -122,70 +276,23 @@ function ConfirmDialog({ receipt, onClose }: { receipt: Receipt; onClose: () => 
                       onChange={(e) => update(line.id, { note: e.target.value })}
                     />
                   ) : null}
-                  {short > 0 && line.labels > 0 ? (
-                    <div className="space-y-1.5">
-                      <BarcodeScanInput
-                        placeholder={`Scan the ${short} missing label(s)`}
-                        onScan={async (code) => {
-                          const serial = normalizeSerial(code);
-                          if (c.missing.includes(serial)) return;
-                          if (c.missing.length >= short) {
-                            toast.error(`Only ${short} label(s) are missing`);
-                            return;
-                          }
-                          update(line.id, { missing: [...c.missing, serial] });
-                        }}
-                      />
-                      <div className="flex flex-wrap gap-1">
-                        {c.missing.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            className="rounded-md border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px] hover:line-through"
-                            onClick={() => update(line.id, { missing: c.missing.filter((x) => x !== s) })}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
                 </li>
               );
             })}
           </ul>
+          {waiting ? (
+            <p className="text-sm text-warning-soft-foreground">
+              {waiting} piece{waiting === 1 ? ' is' : 's are'} not scanned yet. Scan them, or mark each one as
+              Arrived, Missing or Damaged.
+            </p>
+          ) : null}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={confirmState.isLoading}>
+          <Button variant="outline" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button
-            disabled={invalid || confirmState.isLoading}
-            onClick={() =>
-              confirm({
-                grnNo: receipt.grnNo,
-                body: {
-                  date,
-                  lines: receipt.lines
-                    .filter((l) => shortOf(l) > 0)
-                    .map((l) => ({
-                      id: l.id,
-                      receivedQty: counts[l.id]!.received,
-                      note: counts[l.id]!.note.trim() || null,
-                      ...(counts[l.id]!.missing.length ? { missingSerials: counts[l.id]!.missing } : {}),
-                    })),
-                },
-              })
-                .unwrap()
-                .then(() => {
-                  toast.success(`${receipt.grnNo} confirmed. It is in the Super Admin stock now.`);
-                  onClose();
-                  void navigate(`/print/store-receipt?grn=${encodeURIComponent(receipt.grnNo)}`);
-                })
-                .catch(toastError)
-            }
-          >
-            {confirmState.isLoading ? <Loader2 className="animate-spin" /> : <PackageCheck />}
+          <Button disabled={invalid || busy} onClick={submit}>
+            {busy ? <Loader2 className="animate-spin" /> : <PackageCheck />}
             Confirm received
           </Button>
         </DialogFooter>
@@ -298,6 +405,21 @@ export function StoreReceiptsPage() {
                           <div className="font-medium">{l.productName}</div>
                           {l.receiptNote ? (
                             <div className="text-xs text-warning-soft-foreground">{l.receiptNote}</div>
+                          ) : null}
+                          {l.issues.length ? (
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              {l.issues.map((issue) => (
+                                <Link
+                                  key={issue.serial}
+                                  to="/under-observation"
+                                  title={issue.holdNo}
+                                  className="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-destructive-soft px-1.5 py-0.5 text-xs text-destructive-soft-foreground hover:underline"
+                                >
+                                  <span className="font-mono">{issue.serial}</span>
+                                  <span>· {issue.reason === 'missing' ? 'Missing' : 'Damaged'}</span>
+                                </Link>
+                              ))}
+                            </div>
                           ) : null}
                         </td>
                         <td className="px-4 py-2 text-right tabular-nums">

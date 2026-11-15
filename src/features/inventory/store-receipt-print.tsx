@@ -64,10 +64,27 @@ export function StoreReceiptPrint() {
                 '',
               ]}
             />
+            {r.lines.some((l) => l.issues.length) ? (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Missing or damaged pieces (under observation)</h3>
+                <PrintTable
+                  head={['Sr', 'Label', 'Product', 'Problem', 'Number']}
+                  rows={r.lines
+                    .flatMap((l) => l.issues.map((issue) => ({ ...issue, product: l.productName })))
+                    .map((issue, i) => [
+                      i + 1,
+                      issue.serial,
+                      issue.product,
+                      issue.reason === 'missing' ? 'Missing' : 'Damaged',
+                      issue.holdNo,
+                    ])}
+                />
+              </div>
+            ) : null}
             {r.note ? <p className="text-sm">Note: {r.note}</p> : null}
             <p className="text-xs text-muted-foreground">
-              Match the physical stock with this sheet. Only the received quantity is in the Super Admin
-              stock.
+              Match the physical stock with this sheet. Missing or damaged pieces wait under observation for
+              the Super Admin.
             </p>
             <div className="flex pt-10">
               <SignatureLine label="Entered by (Lab Officer)" />

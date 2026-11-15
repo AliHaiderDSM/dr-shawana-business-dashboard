@@ -9,6 +9,8 @@ import {
 import { formatDate, formatDateTime, formatQuantity } from '@/lib/format';
 import { useIncomingTransferByNo } from '@redux/features/stock-requests';
 
+const ISSUE_LABELS: Record<string, string> = { missing: 'Missing', damaged: 'Damaged' };
+
 export function TransferReceiptPrint() {
   const [params] = useSearchParams();
   const transferNo = (params.get('transfer') ?? '').toUpperCase();
@@ -19,8 +21,12 @@ export function TransferReceiptPrint() {
       {() => {
         const t = query.data;
         if (!t) return <p className="text-sm">No transfer has the number {transferNo}.</p>;
-        const total = t.items.reduce((sum, i) => sum + Number(i.qty), 0);
-        const labels = t.items.reduce((sum, i) => sum + i.labels, 0);
+        const arrivedOf = (item: (typeof t.items)[number]) => Number(item.qty) - item.issues.length;
+        const sent = t.items.reduce((sum, i) => sum + Number(i.qty), 0);
+        const arrived = t.items.reduce((sum, i) => sum + arrivedOf(i), 0);
+        const issues = t.items.flatMap((item) =>
+          item.issues.map((issue) => ({ ...issue, product: item.productName })),
+        );
         return (
           <div className="space-y-6">
             <Letterhead title="Stock Receiving Receipt" subtitle={t.transferNo} />
@@ -35,19 +41,43 @@ export function TransferReceiptPrint() {
               <PrintField label="Received by" value={t.receivedBy?.name ?? '—'} />
             </div>
             <PrintTable
-              head={['Sr', 'Product', 'Qty', 'Labelled pieces', 'Received']}
+              head={['Sr', 'Product', 'Sent', 'Arrived', 'Missing', 'Damaged']}
               rows={t.items.map((item, i) => [
                 i + 1,
                 item.productName,
                 `${formatQuantity(item.qty)} ${item.unit}`,
-                item.labels || '—',
-                item.received ? 'Yes' : 'No',
+                t.received ? `${formatQuantity(String(arrivedOf(item)))} ${item.unit}` : '—',
+                item.issues.filter((x) => x.reason === 'missing').length || '—',
+                item.issues.filter((x) => x.reason === 'damaged').length || '—',
               ])}
-              foot={[<span key="t">Total</span>, '', formatQuantity(String(total)), labels || '—', '']}
+              foot={[
+                <span key="t">Total</span>,
+                '',
+                formatQuantity(String(sent)),
+                t.received ? formatQuantity(String(arrived)) : '—',
+                issues.filter((x) => x.reason === 'missing').length || '—',
+                issues.filter((x) => x.reason === 'damaged').length || '—',
+              ]}
             />
+            {issues.length ? (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Missing or damaged pieces (under observation)</h3>
+                <PrintTable
+                  head={['Sr', 'Label', 'Product', 'Problem', 'Number']}
+                  rows={issues.map((issue, i) => [
+                    i + 1,
+                    issue.serial,
+                    issue.product,
+                    ISSUE_LABELS[issue.reason] ?? issue.reason,
+                    issue.holdNo,
+                  ])}
+                />
+              </div>
+            ) : null}
             {t.note ? <p className="text-sm">Note: {t.note}</p> : null}
             <p className="text-xs text-muted-foreground">
-              Match the physical stock with this sheet. The received stock is in the branch Stock In.
+              Match the physical stock with this sheet. Only the arrived pieces are in the branch stock;
+              missing or damaged pieces wait under observation for the Super Admin.
             </p>
             <div className="flex pt-10">
               <SignatureLine label="Sent by (Warehouse Keeper)" />

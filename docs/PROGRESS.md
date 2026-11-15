@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Count by label at the store; receipts print what was missing
+
+- Store receipts: Count & confirm lists every label of a Lab Officer entry; scan what arrived, mark the rest Missing or Damaged (they go under observation); unlabelled lines keep the received quantity. Confirmed receipts show the held labels.
+- Transfer receiving receipt and store receipt print: Sent/Arrived/Missing/Damaged per product and a table of the held labels with their observation numbers.
+
 ## 2026-11-15 — Received transfers show arrived pieces; write-off filters
 
 - A received transfer shows Sent, Arrived (sent minus held) and the missing or damaged labels, linking to Under observation.
