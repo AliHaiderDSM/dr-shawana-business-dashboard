@@ -26,6 +26,8 @@ const QUANTITY_COLUMNS: { key: QuantityKey; label: string }[] = [
   { key: 'stockOut', label: 'Stock out' },
   { key: 'sold', label: 'Sold' },
   { key: 'returned', label: 'Returned' },
+  { key: 'adjusted', label: 'Written off' },
+  { key: 'replaced', label: 'Replaced' },
   { key: 'closing', label: 'Total stock' },
 ];
 
@@ -51,7 +53,7 @@ const BOOKED_COLUMN: { key: QuantityKey; label: string } = {
   label: 'Booked (not dispatched)',
 };
 
-const OUTGOING = new Set<QuantityKey>(['stockOut', 'sold', 'branchSold']);
+const OUTGOING = new Set<QuantityKey>(['stockOut', 'sold', 'branchSold', 'replaced']);
 
 function signedValue(outgoing: boolean, value: string | number) {
   const n = Number(value) || 0;

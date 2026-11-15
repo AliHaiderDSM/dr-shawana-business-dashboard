@@ -33838,8 +33838,16 @@ export interface components {
                 sold: string;
                 /** @example 10.000 */
                 returned: string;
-                /** @example 10.000 */
+                /**
+                 * @description Write-offs and sale edits (negative when stock left)
+                 * @example 10.000
+                 */
                 adjusted: string;
+                /**
+                 * @description Sent out as free replacements
+                 * @example 10.000
+                 */
+                replaced: string;
                 /** @example 10.000 */
                 closing: string;
                 /**
@@ -33898,8 +33906,16 @@ export interface components {
                 sold: string;
                 /** @example 10.000 */
                 returned: string;
-                /** @example 10.000 */
+                /**
+                 * @description Write-offs and sale edits (negative when stock left)
+                 * @example 10.000
+                 */
                 adjusted: string;
+                /**
+                 * @description Sent out as free replacements
+                 * @example 10.000
+                 */
+                replaced: string;
                 /** @example 10.000 */
                 closing: string;
                 /**

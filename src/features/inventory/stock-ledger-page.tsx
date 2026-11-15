@@ -21,7 +21,7 @@ import {
   type ProductBatch,
   type ProductLedger,
 } from '@redux/features/inventory';
-import { BatchStatusBadge } from './batches-page';
+import { BatchStatusBadge, MOVEMENT_LABELS } from './batches-page';
 import { ITEM_STATUS } from './item-status';
 import { RegisterLabelsDialog } from './labels-page';
 
@@ -38,6 +38,17 @@ const MOVEMENT_TONES: Record<Movement['type'], Tone> = {
   manufacturing_in: 'primary',
   adjustment: 'neutral',
 };
+
+function breakdown(movements: Movement[] | undefined, side: 'in' | 'out') {
+  const byType = new Map<string, number>();
+  for (const m of movements ?? []) {
+    const qty = Number(m[side]);
+    if (qty > 0) byType.set(m.type, (byType.get(m.type) ?? 0) + qty);
+  }
+  return [...byType.entries()]
+    .map(([type, qty]) => `${formatQuantity(String(qty))} ${(MOVEMENT_LABELS[type] ?? type).toLowerCase()}`)
+    .join(' · ');
+}
 
 function documentIds(movements: Movement[] | undefined, kind: 'stock_in' | 'stock_out') {
   const list = (movements ?? []).filter((m) => m.type === kind && m.referenceType === kind);
@@ -306,8 +317,16 @@ export function StockLedgerPage() {
         }
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total in" value={data ? `${formatQuantity(data.totalIn)} ${unit}` : '…'} />
-        <StatCard label="Total out" value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'} />
+        <StatCard
+          label="Total in"
+          value={data ? `${formatQuantity(data.totalIn)} ${unit}` : '…'}
+          hint={breakdown(data?.movements, 'in') || undefined}
+        />
+        <StatCard
+          label="Total out"
+          value={data ? `${formatQuantity(data.totalOut)} ${unit}` : '…'}
+          hint={breakdown(data?.movements, 'out') || undefined}
+        />
         <StatCard label="Closing" value={data ? `${formatQuantity(data.closing)} ${unit}` : '…'} />
       </div>
       <div className={cn('mb-6 grid items-start gap-6', showLabels && 'lg:grid-cols-2')}>

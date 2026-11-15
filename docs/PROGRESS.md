@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-15 — Inventory: every movement explained
+
+- Inventory report shows Written off and Replaced next to Returned, so Stock in − Stock out − Sold + Returned + Written off − Replaced adds up to Total stock.
+- On a product's stock page, Total in and Total out list what they are made of (for example "11 received · 2 returned" and "4 sold · 2 write-off").
+
 ## 2026-11-14 — View Sales: Return column
 
 - The Refund column is now Return: a sale with a return shows "Returned" (or "N returned" when only part came back) and under it the money refunded, or "No refund". The footer still totals the refunds. Types regenerated.

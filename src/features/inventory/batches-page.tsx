@@ -58,7 +58,7 @@ const REASONS: { value: WriteOffInput['reason']; label: string }[] = [
   { value: 'adjustment', label: 'Stock count adjustment' },
 ];
 
-const MOVEMENT_LABELS: Record<string, string> = {
+export const MOVEMENT_LABELS: Record<string, string> = {
   purchase_in: 'Purchase',
   stock_in: 'Received',
   stock_out: 'Stock out',
