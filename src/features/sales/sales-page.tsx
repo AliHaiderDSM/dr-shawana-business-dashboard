@@ -267,8 +267,8 @@ export function SalesPage() {
           <div>
             <DeliveryBadge status={row.original.deliveryStatus} />
             {row.original.dispatchedOn ? (
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                dispatched {formatDate(row.original.dispatchedOn)}
+              <div className="mt-0.5 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+                {formatDate(row.original.dispatchedOn)}
               </div>
             ) : null}
           </div>

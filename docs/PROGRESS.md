@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-16 — Cleaner returned GDN rows, dispatch date, inventory Sr.
+
+- GDN report: a returned order is a muted row with a grey edge, a small RETURNED tag under the invoice, the amount and received struck through, and "Not counted in totals" under the status; the line across the row is gone.
+- View Sales: under the Dispatched badge only the date shows.
+- Inventory report: Sr. column (the total row has none).
+
 ## 2026-11-16 — C-Section count fix, clearer returned GDN rows, returns filter
 
 - C-Section keeps its own cell width; How many can be cleared and retyped (it commits when the number is 1–10).

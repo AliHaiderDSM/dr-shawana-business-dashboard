@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Clock,
   History,
+  Undo2,
   PackagePlus,
   Printer,
   Download,
@@ -792,7 +793,7 @@ export function GdnReportPage() {
                             'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
                             o.status === 'cancelled' && 'text-muted-foreground',
                             o.returned &&
-                              'bg-muted-foreground/25 text-muted-foreground [&>td]:bg-[linear-gradient(to_bottom,transparent_calc(50%-1px),var(--muted-foreground)_calc(50%-1px),var(--muted-foreground)_calc(50%+1px),transparent_calc(50%+1px))]',
+                              'bg-muted/60 text-muted-foreground [&>td:not(:last-child)]:opacity-60',
                             !onPage(index) && 'hidden',
                           )}
                           style={o.returned ? undefined : tint(o.date, 5)}
@@ -800,7 +801,9 @@ export function GdnReportPage() {
                         >
                           <td
                             className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
-                            style={{ borderLeft: `4px solid ${dayColor(o.date)}` }}
+                            style={{
+                              borderLeft: `4px solid ${o.returned ? 'var(--muted-foreground)' : dayColor(o.date)}`,
+                            }}
                           >
                             {srOf.get(o.id)}
                           </td>
@@ -824,7 +827,15 @@ export function GdnReportPage() {
                               {ago(o.waitingDays)}
                             </div>
                           </td>
-                          <td className="px-3 py-2.5 font-medium whitespace-nowrap">{o.invoiceNo}</td>
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            <div className="font-medium">{o.invoiceNo}</div>
+                            {o.returned ? (
+                              <span className="mt-1 inline-flex items-center gap-1 rounded border border-muted-foreground/40 px-1.5 py-px text-[11px] font-medium tracking-wide uppercase">
+                                <Undo2 className="size-3" />
+                                Returned
+                              </span>
+                            ) : null}
+                          </td>
                           <td className="px-3 py-2.5">
                             <TruncatedText text={o.customer.name} className="font-medium" maxWidth="10rem" />
                           </td>
@@ -847,13 +858,17 @@ export function GdnReportPage() {
                             </ul>
                           </td>
                           <td className="px-3 py-2.5 text-center whitespace-nowrap tabular-nums">
-                            <div className="font-medium">{formatAmount(o.total)}</div>
+                            <div className={cn('font-medium', o.returned && 'line-through')}>
+                              {formatAmount(o.total)}
+                            </div>
                             <div className="mt-0.5 print:hidden">
                               <StatusBadge tone={pay.tone}>{pay.label}</StatusBadge>
                             </div>
                           </td>
                           <td className="px-3 py-2.5 text-center whitespace-nowrap tabular-nums">
-                            <div className="font-medium">{formatAmount(o.received)}</div>
+                            <div className={cn('font-medium', o.returned && 'line-through')}>
+                              {formatAmount(o.received)}
+                            </div>
                             {Number(o.remaining) > 0 ? (
                               <div className="mt-0.5 text-xs text-destructive">
                                 {formatAmount(o.remaining)} left
@@ -863,10 +878,8 @@ export function GdnReportPage() {
                           <td className="px-3 py-2.5 text-center">
                             <Status order={o} />
                             {o.returned ? (
-                              <div className="mt-1">
-                                <span className="inline-flex rounded-md bg-muted-foreground px-2 py-0.5 text-xs font-medium text-background">
-                                  Returned · not counted
-                                </span>
+                              <div className="mt-1.5 text-xs text-muted-foreground">
+                                Not counted in totals
                               </div>
                             ) : null}
                           </td>

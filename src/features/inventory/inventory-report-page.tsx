@@ -105,6 +105,16 @@ const columnsFor = (
   range: { from?: string; to?: string },
 ): ColumnDef<ReportRow, unknown>[] => [
   {
+    id: 'sr',
+    header: 'Sr.',
+    meta: { hideable: false },
+    accessorFn: (r, index) => (r.isTotal ? '' : index + 1),
+    cell: ({ row }) =>
+      row.original.isTotal ? null : (
+        <span className="text-muted-foreground tabular-nums">{row.index + 1}</span>
+      ),
+  },
+  {
     id: 'name',
     header: 'Product',
     accessorKey: 'name',
