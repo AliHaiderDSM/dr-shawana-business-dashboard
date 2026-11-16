@@ -1,5 +1,5 @@
 import { CheckCircle2, Circle, History, Loader2, Save } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode, useState } from 'react';
 import { useForm, useFormContext, useWatch, type Control } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ChoiceField } from '@/components/shared/choice-field';
@@ -277,7 +277,6 @@ function SurgeriesField({
                     className={cn(
                       'flex flex-wrap items-center gap-3 rounded-md border px-3 py-2 text-sm',
                       entry && 'border-primary/50 bg-primary-soft/50',
-                      entry && value === 'c_section' && 'sm:col-span-2',
                     )}
                   >
                     <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
@@ -304,16 +303,10 @@ function SurgeriesField({
                     {entry && value === 'c_section' ? (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">How many</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={10}
-                          aria-label="How many C-Sections"
-                          className="h-8 w-16 rounded-md border bg-background px-2 text-sm"
-                          disabled={disabled}
+                        <CountInput
                           value={entry.years?.length || 1}
-                          onChange={(e) => {
-                            const count = Math.min(10, Math.max(1, Number(e.target.value) || 1));
+                          disabled={disabled}
+                          onChange={(count) => {
                             const current = entry.years?.length ? entry.years : [entry.year ?? ''];
                             setYears(
                               value,
@@ -362,6 +355,36 @@ function SurgeriesField({
           </FormItem>
         );
       }}
+    />
+  );
+}
+
+function CountInput({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  disabled?: boolean;
+  onChange: (count: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="number"
+      min={1}
+      max={10}
+      aria-label="How many C-Sections"
+      className="h-8 w-16 rounded-md border bg-background px-2 text-sm"
+      disabled={disabled}
+      value={draft ?? String(value)}
+      onChange={(e) => {
+        const text = e.target.value;
+        setDraft(text);
+        const count = Number(text);
+        if (Number.isInteger(count) && count >= 1 && count <= 10) onChange(count);
+      }}
+      onBlur={() => setDraft(null)}
     />
   );
 }

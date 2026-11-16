@@ -196,6 +196,7 @@ export function GdnReportPage() {
   const [day, setDay] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const product = params.get('product');
+  const returnsView = params.get('returns');
 
   const setParam = (key: string, value: string | null) =>
     setParams(
@@ -236,6 +237,7 @@ export function GdnReportPage() {
   );
   const orders = [...(data?.orders ?? [])]
     .filter((o) => !product || o.items.some((i) => i.name === product))
+    .filter((o) => (returnsView === 'returned' ? o.returned : returnsView === 'normal' ? !o.returned : true))
     .sort(
       (a, b) =>
         a.date.localeCompare(b.date) ||
@@ -429,6 +431,19 @@ export function GdnReportPage() {
             </SelectContent>
           </Select>
         ) : null}
+        <Select
+          value={returnsView ?? 'all'}
+          onValueChange={(v) => setParam('returns', v === 'all' ? null : v)}
+        >
+          <SelectTrigger className="w-44" aria-label="Returns">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All orders</SelectItem>
+            <SelectItem value="normal">Without returns</SelectItem>
+            <SelectItem value="returned">Returned only</SelectItem>
+          </SelectContent>
+        </Select>
         {isSuperAdmin && choices.length && !onDispatch ? (
           <Select value={picked ?? ''} onValueChange={(id) => setParam('branch', id)}>
             <SelectTrigger className="w-48" aria-label="Branch">
@@ -777,7 +792,7 @@ export function GdnReportPage() {
                             'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
                             o.status === 'cancelled' && 'text-muted-foreground',
                             o.returned &&
-                              'bg-muted text-muted-foreground line-through decoration-muted-foreground/40',
+                              'bg-muted-foreground/25 text-muted-foreground [&>td]:bg-[linear-gradient(to_bottom,transparent_calc(50%-1px),var(--muted-foreground)_calc(50%-1px),var(--muted-foreground)_calc(50%+1px),transparent_calc(50%+1px))]',
                             !onPage(index) && 'hidden',
                           )}
                           style={o.returned ? undefined : tint(o.date, 5)}
@@ -848,8 +863,10 @@ export function GdnReportPage() {
                           <td className="px-3 py-2.5 text-center">
                             <Status order={o} />
                             {o.returned ? (
-                              <div className="mt-1 no-underline">
-                                <StatusBadge tone="neutral">Returned · not counted</StatusBadge>
+                              <div className="mt-1">
+                                <span className="inline-flex rounded-md bg-muted-foreground px-2 py-0.5 text-xs font-medium text-background">
+                                  Returned · not counted
+                                </span>
                               </div>
                             ) : null}
                           </td>

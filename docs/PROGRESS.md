@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-16 — C-Section count fix, clearer returned GDN rows, returns filter
+
+- C-Section keeps its own cell width; How many can be cleared and retyped (it commits when the number is 1–10).
+- GDN report: a returned order has a darker grey row with one line through the middle of the whole row and a dark Returned · not counted badge; a new filter shows All orders, Without returns or Returned only.
+
 ## 2026-11-16 — Medical history: how many C-Sections
 
 - Ticking C-Section asks How many (1–10) and shows one Year box per C-Section; other surgeries keep one checkbox and one year.
