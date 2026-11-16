@@ -36239,6 +36239,8 @@ export interface components {
                 date: string | null;
                 /** @default null */
                 year: number | null;
+                /** @default [] */
+                years: (number | null)[];
             }[];
             /** @default null */
             otherSurgery: string | null;

@@ -12,6 +12,7 @@ interface ScanValue {
 interface SurgeryValue {
   type: string;
   year: string;
+  years?: string[];
 }
 
 const isInput = (field: FieldDef): field is InputField => field.kind !== 'heading' && field.kind !== 'bmi';
@@ -91,10 +92,13 @@ export function toFormValues(
       }
       case 'surgeries':
         values[field.key] = Array.isArray(raw)
-          ? (raw as { type: string; date: string | null; year?: number | null }[]).map((s) => ({
-              type: s.type,
-              year: s.year ? String(s.year) : (s.date ?? '').slice(0, 4),
-            }))
+          ? (
+              raw as { type: string; date: string | null; year?: number | null; years?: (number | null)[] }[]
+            ).map((s) => {
+              const year = s.year ? String(s.year) : (s.date ?? '').slice(0, 4);
+              const years = (s.years ?? []).map((y) => (y ? String(y) : ''));
+              return { type: s.type, year, years: years.length ? years : year ? [year] : [] };
+            })
           : [];
         break;
       default:
@@ -153,11 +157,16 @@ export function toApiData(section: SectionDef, values: FormValues) {
         }));
         break;
       case 'surgeries':
-        data[field.key] = (raw as SurgeryValue[]).map((s) => ({
-          type: s.type,
-          date: null,
-          year: s.year ? Number(s.year) : null,
-        }));
+        data[field.key] = (raw as SurgeryValue[]).map((s) => {
+          const years = s.type === 'c_section' ? (s.years ?? []).map((y) => (y ? Number(y) : null)) : [];
+          const first = s.type === 'c_section' ? (years.find((y) => y !== null) ?? null) : null;
+          return {
+            type: s.type,
+            date: null,
+            year: s.type === 'c_section' ? first : s.year ? Number(s.year) : null,
+            years,
+          };
+        });
         break;
       default:
         data[field.key] = visible ? nullable(raw) : null;

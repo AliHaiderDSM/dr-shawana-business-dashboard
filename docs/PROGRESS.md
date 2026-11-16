@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-16 — Medical history: how many C-Sections
+
+- Ticking C-Section asks How many (1–10) and shows one Year box per C-Section; other surgeries keep one checkbox and one year.
+
 ## 2026-11-16 — Returned GDN rows, Sr. on sales, truncated names
 
 - GDN report: an order with a return stays in the list, greyed and struck through with "Returned · not counted", and is left out of the order, piece and money totals (screen and Excel).

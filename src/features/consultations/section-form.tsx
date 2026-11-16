@@ -245,8 +245,26 @@ function SurgeriesField({
       control={control}
       name={field.key}
       render={({ field: f }) => {
-        const list = (f.value as { type: string; year: string }[] | undefined) ?? [];
+        const list = (f.value as { type: string; year: string; years?: string[] }[] | undefined) ?? [];
         const find = (type: string) => list.find((s) => s.type === type);
+        const setYears = (type: string, years: string[]) =>
+          f.onChange(list.map((s) => (s.type === type ? { ...s, years, year: years[0] ?? '' } : s)));
+        const yearSelect = (label: string, value: string, onPick: (year: string) => void) => (
+          <select
+            aria-label={label}
+            className="h-8 w-28 rounded-md border bg-background px-2 text-sm"
+            disabled={disabled}
+            value={value}
+            onChange={(e) => onPick(e.target.value)}
+          >
+            <option value="">Year</option>
+            {SURGERY_YEARS.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        );
         return (
           <FormItem>
             <FormLabel>{field.label}</FormLabel>
@@ -257,8 +275,9 @@ function SurgeriesField({
                   <div
                     key={value}
                     className={cn(
-                      'flex items-center gap-3 rounded-md border px-3 py-2 text-sm',
+                      'flex flex-wrap items-center gap-3 rounded-md border px-3 py-2 text-sm',
                       entry && 'border-primary/50 bg-primary-soft/50',
+                      entry && value === 'c_section' && 'sm:col-span-2',
                     )}
                   >
                     <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
@@ -272,7 +291,9 @@ function SurgeriesField({
                                   ...list.filter((s) =>
                                     value === 'no_surgery' ? false : s.type !== 'no_surgery',
                                   ),
-                                  { type: value, year: '' },
+                                  value === 'c_section'
+                                    ? { type: value, year: '', years: [''] }
+                                    : { type: value, year: '' },
                                 ]
                               : list.filter((s) => s.type !== value),
                           )
@@ -280,7 +301,43 @@ function SurgeriesField({
                       />
                       <span className="truncate">{label}</span>
                     </label>
-                    {entry && value !== 'no_surgery' ? (
+                    {entry && value === 'c_section' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">How many</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          aria-label="How many C-Sections"
+                          className="h-8 w-16 rounded-md border bg-background px-2 text-sm"
+                          disabled={disabled}
+                          value={entry.years?.length || 1}
+                          onChange={(e) => {
+                            const count = Math.min(10, Math.max(1, Number(e.target.value) || 1));
+                            const current = entry.years?.length ? entry.years : [entry.year ?? ''];
+                            setYears(
+                              value,
+                              Array.from({ length: count }, (_, i) => current[i] ?? ''),
+                            );
+                          }}
+                        />
+                      </div>
+                    ) : null}
+                    {entry && value === 'c_section' ? (
+                      <div className="flex basis-full flex-wrap gap-2">
+                        {(entry.years?.length ? entry.years : [entry.year ?? '']).map((year, index, all) => (
+                          <div key={index} className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">{index + 1}.</span>
+                            {yearSelect(`C-Section ${index + 1} year`, year, (picked) =>
+                              setYears(
+                                value,
+                                all.map((y, i) => (i === index ? picked : y)),
+                              ),
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : entry && value !== 'no_surgery' ? (
                       <select
                         aria-label={`${label} year`}
                         className="h-8 w-28 rounded-md border bg-background px-2 text-sm"
