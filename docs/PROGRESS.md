@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-16 — Scan targets, branch codes, all sales in the return picker, write off on returns
+
+- Stock out for a request: each line shows "N of M scanned" against the approved quantity, before and after the first scan (green when complete).
+- Branch columns (Sales, Staff, Stock requests, Discount requests, Write-offs, Patient requests) show only the branch code; the name is in the tooltip.
+- Receive a return: the sale picker loads 25 sales at a time and loads more as you scroll, instead of stopping at 10 (Combobox gained onEndReached / loadingMore).
+- Return inspection: every return can be written off (removed from inventory). Damaged returns keep Send to lab and Remove from inventory; other returns show Write off.
+
 ## 2026-11-15 — Inventory report: write-off columns for the Super Admin
 
 - Super Admin view: Written off in branches and Written off (Super Admin) next to the other columns, so Stock in − Sent − written off = Super Admin stock and Sent − Sold + Returned − written off = Now in branches. A branch view and the per-branch sheet show Written off too; the Show: Written off filter covers both.

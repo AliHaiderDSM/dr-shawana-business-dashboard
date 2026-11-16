@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { baseApi, fromApi, toApi } from '@redux/api/baseApi';
 import { idempotencyHeaders } from '@/lib/api/idempotency';
 import type { TagType } from '@redux/api/tagTypes';
@@ -32,12 +33,14 @@ const requestReturnable = (saleId: string) =>
     (r) => r.data,
   );
 
-const requestSaleSearch = (term: string) =>
+const SALE_PAGE = 25;
+
+const requestSaleSearch = ({ term, page }: { term: string; page: number }) =>
   unwrap(
     api.GET('/branch/sales', {
-      params: { query: { pageSize: 10, sort: '-date', ...(term ? { search: term } : {}) } },
+      params: { query: { page, pageSize: SALE_PAGE, sort: '-date', ...(term ? { search: term } : {}) } },
     }),
-  ).then((r) => r.data);
+  ).then((r) => ({ items: r.data, hasMore: page * SALE_PAGE < (r.meta?.total ?? 0) }));
 
 const requestCreateReturn = ({ idempotencyKey, ...body }: CreateReturnArgs) =>
   unwrap(api.POST('/branch/returns', { body, headers: idempotencyHeaders(idempotencyKey) })).then(
@@ -156,8 +159,15 @@ export const returnsApi = baseApi.injectEndpoints({
       queryFn: (saleId) => fromApi(() => requestReturnable(saleId)),
       providesTags: ['returns'],
     }),
-    searchSalesForReturn: build.query<Result<typeof requestSaleSearch>, string>({
-      queryFn: (term) => fromApi(() => requestSaleSearch(term)),
+    searchSalesForReturn: build.query<Result<typeof requestSaleSearch>, { term: string; page: number }>({
+      queryFn: (args) => fromApi(() => requestSaleSearch(args)),
+      serializeQueryArgs: ({ queryArgs }) => queryArgs.term,
+      merge: (cached, incoming, { arg }) =>
+        arg.page === 1
+          ? incoming
+          : { items: [...cached.items, ...incoming.items], hasMore: incoming.hasMore },
+      forceRefetch: ({ currentArg, previousArg }) =>
+        currentArg?.page !== previousArg?.page || currentArg?.term !== previousArg?.term,
       providesTags: ['sales'],
     }),
     createReturn: build.mutation<Result<typeof requestCreateReturn>, CreateReturnArgs>({
@@ -266,5 +276,17 @@ export function useReturnable(saleId: string | null) {
 }
 
 export function useSaleSearch(search: string, enabled: boolean) {
-  return useSearchSalesForReturnQuery(search.trim(), { skip: !enabled });
+  const term = search.trim();
+  const [paging, setPaging] = useState({ term, page: 1 });
+  const page = paging.term === term ? paging.page : 1;
+  const query = useSearchSalesForReturnQuery({ term, page }, { skip: !enabled });
+  const result = query.data;
+  return {
+    data: result?.items,
+    isFetching: query.isFetching,
+    hasMore: Boolean(result?.hasMore),
+    loadMore: () => {
+      if (!query.isFetching && result?.hasMore) setPaging({ term, page: page + 1 });
+    },
+  };
 }

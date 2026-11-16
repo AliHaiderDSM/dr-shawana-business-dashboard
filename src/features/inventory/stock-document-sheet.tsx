@@ -226,21 +226,35 @@ function LabelsCell({ control, index }: { control: Control<Values>; index: numbe
 
 function ScannedCell({
   serials,
+  target,
   onRemove,
   onClear,
 }: {
   serials: string[];
+  target: number | null;
   onRemove: (serial: string) => void;
   onClear: () => void;
 }) {
+  const of = target ? ` of ${target}` : '';
+  const done = target !== null && target > 0 && serials.length >= target;
   if (serials.length === 0)
-    return <span className="flex h-9 items-center text-xs text-muted-foreground">Not scanned</span>;
+    return (
+      <span className="flex h-9 items-center text-xs text-muted-foreground">
+        {target ? `0 of ${target} scanned` : 'Not scanned'}
+      </span>
+    );
   return (
     <Popover modal>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn('h-9 gap-1.5 text-xs', done && 'border-success/40 text-success')}
+        >
           <Tags className="size-3.5" />
-          {serials.length} scanned
+          {serials.length}
+          {of} scanned
           <ChevronDown className="size-3.5 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
@@ -636,6 +650,7 @@ export function StockDocumentSheet({ config, open, onOpenChange, prefill }: Stoc
                     <ScannedCell
                       key="labels"
                       serials={items[index]?.serials ?? []}
+                      target={items[index]?.productId ? approvedFor(items[index].productId) : null}
                       onRemove={(serial) => {
                         const rest = (items[index]?.serials ?? []).filter((x) => x !== serial);
                         form.setValue(`items.${index}.serials`, rest, { shouldDirty: true });

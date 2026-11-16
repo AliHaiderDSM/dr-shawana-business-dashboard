@@ -191,7 +191,15 @@ export function PatientRequestsPage() {
     {
       id: 'branch',
       header: 'Branch',
-      accessorFn: (r) => r.branch.name,
+      accessorFn: (r) => r.branch.code,
+      cell: ({ row }) => (
+        <span
+          title={row.original.branch.name}
+          className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-primary-soft-foreground"
+        >
+          {row.original.branch.code}
+        </span>
+      ),
     },
     {
       id: 'category',

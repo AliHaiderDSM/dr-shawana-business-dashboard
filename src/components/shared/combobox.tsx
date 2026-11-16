@@ -37,6 +37,8 @@ export interface ComboboxProps {
   footer?: (close: () => void) => ReactNode;
   className?: string;
   listClassName?: string;
+  onEndReached?: () => void;
+  loadingMore?: boolean;
   'aria-label'?: string;
 }
 
@@ -57,6 +59,8 @@ export function Combobox({
   footer,
   className,
   listClassName,
+  onEndReached,
+  loadingMore,
   'aria-label': ariaLabel,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -113,7 +117,17 @@ export function Combobox({
             placeholder={searchPlaceholder}
             onValueChange={serverSearch ? typeSearch : undefined}
           />
-          <CommandList className={listClassName}>
+          <CommandList
+            className={listClassName}
+            onScroll={
+              onEndReached
+                ? (e) => {
+                    const el = e.currentTarget;
+                    if (el.scrollHeight - el.scrollTop - el.clientHeight < 48) onEndReached();
+                  }
+                : undefined
+            }
+          >
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
@@ -152,6 +166,12 @@ export function Combobox({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {loadingMore ? (
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" />
+                Loading more…
+              </div>
+            ) : null}
           </CommandList>
           {footer ? <div className="border-t p-1">{footer(() => setOpen(false))}</div> : null}
         </Command>

@@ -267,6 +267,8 @@ export function ReturnFormSheet({
             selectedLabel={saleLabel}
             onSearchChange={setSearch}
             loading={sales.isFetching && !sales.data}
+            onEndReached={sales.loadMore}
+            loadingMore={sales.isFetching && Boolean(sales.data?.length)}
             placeholder="Search invoice no, patient or phone"
             searchPlaceholder="Invoice, patient or phone…"
             emptyText="No sale found."

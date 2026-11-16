@@ -84,14 +84,14 @@ export function SalesPage() {
           {
             id: 'branch',
             header: 'Branch',
-            accessorFn: (r: SaleListItem) => r.branch?.name ?? '',
+            accessorFn: (r: SaleListItem) => r.branch?.code ?? '',
             cell: ({ row }: { row: { original: SaleListItem } }) =>
               row.original.branch ? (
-                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                  <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">
-                    {row.original.branch.code}
-                  </span>
-                  {row.original.branch.name}
+                <span
+                  title={row.original.branch.name}
+                  className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-primary-soft-foreground"
+                >
+                  {row.original.branch.code}
                 </span>
               ) : (
                 '—'

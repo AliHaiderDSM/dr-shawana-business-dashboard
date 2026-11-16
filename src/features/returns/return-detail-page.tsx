@@ -102,7 +102,18 @@ const OUTCOMES: { value: Outcome; label: string; description: string; icon: type
   },
 ];
 
-const DAMAGED_ONLY = new Set<Outcome>(['lab', 'damaged']);
+const WRITE_OFF: (typeof OUTCOMES)[number] = {
+  value: 'damaged',
+  label: 'Write off',
+  description:
+    'Not fit to sell again (opened, used or spoiled). It is removed from inventory now and never returns to stock.',
+  icon: Ban,
+};
+
+const outcomesFor = (reason: SaleReturn['reason']) =>
+  reason === 'damaged'
+    ? OUTCOMES
+    : OUTCOMES.map((o) => (o.value === 'damaged' ? WRITE_OFF : o)).filter((o) => o.value !== 'lab');
 
 const OUTCOME_TONES: Record<ReturnDisposition, Tone> = {
   pending: 'warning',
@@ -128,7 +139,7 @@ function InspectDialog({
   const [resolve, resolveState] = useResolveReturnItemMutation();
   const { isSuperAdmin, me } = useAuth();
   const [note, setNote] = useState('');
-  const choice = OUTCOMES.find((o) => o.value === outcome);
+  const choice = outcomesFor(record.reason).find((o) => o.value === outcome);
   const sellerAdmin = me?.role === 'branch_admin' && me.branch?.id === record.branchId;
   const proposing = record.sale?.saleType === 'online' && !isSuperAdmin && !sellerAdmin;
   return (
@@ -376,11 +387,9 @@ export function ReturnDetailPage() {
             <TableBody>
               {r.items.map((item) => {
                 const open = item.disposition === 'pending' || item.disposition === 'quarantined';
-                const others = OUTCOMES.filter(
+                const others = outcomesFor(r.reason).filter(
                   (o) =>
-                    o.value !== 'restocked' &&
-                    (item.disposition === 'pending' || o.value !== 'quarantined') &&
-                    (r.reason === 'damaged' || !DAMAGED_ONLY.has(o.value)),
+                    o.value !== 'restocked' && (item.disposition === 'pending' || o.value !== 'quarantined'),
                 );
                 return (
                   <TableRow key={item.id} className="align-top hover:bg-transparent">
