@@ -33,6 +33,14 @@ export function TransferReceiptPrint() {
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
               <PrintField label="Transfer No" value={t.transferNo} />
               <PrintField label="Request No" value={t.request?.requestNo ?? '—'} />
+              <PrintField
+                label="Sent from"
+                value={
+                  t.fromBranch.kind === 'warehouse'
+                    ? 'Super Admin stock'
+                    : `${t.fromBranch.name} · ${t.fromBranch.code}`
+                }
+              />
               <PrintField label="Received by branch" value={`${t.toBranch.name} · ${t.toBranch.code}`} />
               <PrintField label="Status" value={t.received ? 'Received' : 'Waiting for the branch admin'} />
               <PrintField label="Sent on" value={formatDate(t.date, 'dd-MM-yyyy')} />

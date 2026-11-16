@@ -63,14 +63,28 @@ export const stockRequestsApi = baseApi.injectEndpoints({
         ),
       providesTags: ['stock-requests'],
     }),
-    getStockRequestCatalog: build.query<StockRequestsGetData<'/branch/stock-requests/catalog'>, string>({
-      queryFn: (search) =>
+    getStockRequestCatalog: build.query<
+      StockRequestsGetData<'/branch/stock-requests/catalog'>,
+      { search: string; fromBranchId: string | null }
+    >({
+      queryFn: ({ search, fromBranchId }) =>
         fromApi<StockRequestsGetData<'/branch/stock-requests/catalog'>>(() =>
           unwrap(
-            api.GET('/branch/stock-requests/catalog', { params: { query: search ? { search } : {} } }),
+            api.GET('/branch/stock-requests/catalog', {
+              params: {
+                query: { ...(search ? { search } : {}), ...(fromBranchId ? { fromBranchId } : {}) },
+              },
+            }),
           ).then((r) => r.data),
         ),
       providesTags: ['stock-requests'],
+    }),
+    getStockRequestSources: build.query<StockRequestsGetData<'/branch/stock-requests/sources'>, void>({
+      queryFn: () =>
+        fromApi<StockRequestsGetData<'/branch/stock-requests/sources'>>(() =>
+          unwrap(api.GET('/branch/stock-requests/sources')).then((r) => r.data),
+        ),
+      providesTags: ['branches'],
     }),
     getStockRequestCounts: build.query<StockRequestsGetData<'/admin/stock-requests/pending-count'>, void>({
       queryFn: () =>
@@ -192,6 +206,7 @@ export const stockRequestsApi = baseApi.injectEndpoints({
 export const {
   useGetStockRequestsQuery,
   useGetStockRequestCatalogQuery,
+  useGetStockRequestSourcesQuery,
   useGetStockRequestCountsQuery,
   useAskStockMutation,
   useWithdrawStockRequestMutation,
@@ -210,8 +225,12 @@ export function useStockRequests(status?: StockRequestStatus) {
   return useGetStockRequestsQuery(status ?? null);
 }
 
-export function useStockRequestCatalog(search: string, enabled: boolean) {
-  return useGetStockRequestCatalogQuery(search, { skip: !enabled });
+export function useStockRequestCatalog(search: string, fromBranchId: string | null, enabled: boolean) {
+  return useGetStockRequestCatalogQuery({ search, fromBranchId }, { skip: !enabled });
+}
+
+export function useStockRequestSources(enabled: boolean) {
+  return useGetStockRequestSourcesQuery(undefined, { skip: !enabled });
 }
 
 export function useStockRequestCounts(enabled: boolean) {

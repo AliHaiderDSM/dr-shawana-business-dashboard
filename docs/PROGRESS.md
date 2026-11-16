@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-16 — Branch to branch stock requests
+
+- New request sheet has "Ask stock from": the Super Admin stock or any other branch; the catalog and availability follow the choice.
+- The requests list shows the asking branch and From columns. The source branch admin sees the request and sends it with Send stock after approval; only the asking branch can edit or withdraw.
+- Incoming stock and the receiving receipt show where the stock was sent from.
+
 ## 2026-11-16 — Cleaner returned GDN rows, dispatch date, inventory Sr.
 
 - GDN report: a returned order is a muted row with a grey edge, a small RETURNED tag under the invoice, the amount and received struck through, and "Not counted in totals" under the status; the line across the row is gone.

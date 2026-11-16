@@ -11,6 +11,7 @@ import { StatusBadge, type Tone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -34,6 +35,7 @@ import {
   useUpdateStockRequestMutation,
   useStockRequestCatalog,
   useStockRequestCounts,
+  useStockRequestSources,
   useStockRequests,
   useWithdrawStockRequestMutation,
   type StockRequest,
@@ -53,6 +55,23 @@ export const STOCK_REQUEST_TONES: Record<StockRequestStatus, Tone> = {
   sent: 'info',
   received: 'success',
 };
+
+const SUPER_ADMIN_STOCK = 'super-admin';
+
+function BranchCode({ branch }: { branch: { name: string; code: string } | null }) {
+  return branch ? (
+    <span
+      title={branch.name}
+      className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-primary-soft-foreground"
+    >
+      {branch.code}
+    </span>
+  ) : (
+    <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-muted-foreground">
+      Super Admin
+    </span>
+  );
+}
 
 const roleLabel = (role?: string) => (role ? (ROLE_LABELS[role as Role] ?? role.replace(/_/g, ' ')) : '');
 
@@ -78,7 +97,14 @@ function NewRequestSheet({
   const [update, updateState] = useUpdateStockRequestMutation();
   const saving = askState.isLoading || updateState.isLoading;
   const [search, setSearch] = useState('');
-  const catalog = useStockRequestCatalog(search, open);
+  const [from, setFrom] = useState(editing?.fromBranch?.id ?? SUPER_ADMIN_STOCK);
+  const fromBranchId = from === SUPER_ADMIN_STOCK ? null : from;
+  const sources = useStockRequestSources(open && !editing);
+  const sourceName =
+    fromBranchId === null
+      ? 'Super Admin'
+      : (editing?.fromBranch?.name ?? sources.data?.find((b) => b.id === fromBranchId)?.name ?? 'the branch');
+  const catalog = useStockRequestCatalog(search, fromBranchId, open);
   const [lines, setLines] = useState<DraftLine[]>(() =>
     (editing?.items ?? []).map((i, index) => ({
       key: index + 1,
@@ -96,7 +122,7 @@ function NewRequestSheet({
     .map((p) => ({
       value: p.id,
       label: p.name,
-      hint: `${formatQuantity(p.available)} ${p.unit} at Super Admin${p.batchNo ? ` · ${p.batchNo}` : ''}`,
+      hint: `${formatQuantity(p.available)} ${p.unit} at ${sourceName}${p.batchNo ? ` · ${p.batchNo}` : ''}`,
     }));
   const over = (l: (typeof lines)[number]) => Number(l.qty) > Number(l.available);
   const ready = lines.length > 0 && lines.every((l) => Number(l.qty) > 0 && !over(l));
@@ -105,6 +131,7 @@ function NewRequestSheet({
     if (!value) {
       setLines([]);
       setNote('');
+      setFrom(SUPER_ADMIN_STOCK);
     }
     onOpenChange(value);
   };
@@ -113,14 +140,44 @@ function NewRequestSheet({
     <Sheet open={open} onOpenChange={(v) => !saving && close(v)}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
-          <SheetTitle>{editing ? `Edit ${editing.requestNo}` : 'Ask the Super Admin for stock'}</SheetTitle>
+          <SheetTitle>{editing ? `Edit ${editing.requestNo}` : 'Ask for stock'}</SheetTitle>
           <SheetDescription>
             {editing
-              ? 'Fix the products, quantities or note. You can change the request until the Super Admin answers it.'
-              : 'Pick the products and how many you need. The request gets its own number; the Super Admin approves it and sends the stock, and your branch admin receives it.'}
+              ? `Fix the products, quantities or note. You can change the request until the Super Admin answers it. It asks ${sourceName}.`
+              : 'Ask the Super Admin stock or another branch. The Super Admin approves every request; then the stock is sent and your branch admin checks and receives it.'}
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4">
+          {editing ? null : (
+            <div className="space-y-2">
+              <Label htmlFor="request-from">Ask stock from</Label>
+              <Select
+                value={from}
+                onValueChange={(value) => {
+                  setFrom(value);
+                  setLines([]);
+                  setSearch('');
+                }}
+              >
+                <SelectTrigger id="request-from" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SUPER_ADMIN_STOCK}>Super Admin stock</SelectItem>
+                  {(sources.data ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name} · {b.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {fromBranchId ? (
+                <p className="text-xs text-muted-foreground">
+                  After the Super Admin approves, the branch admin of {sourceName} scans and sends it.
+                </p>
+              ) : null}
+            </div>
+          )}
           <Combobox
             value={null}
             onChange={(value) => {
@@ -155,8 +212,8 @@ function NewRequestSheet({
                       className={over(line) ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}
                     >
                       {over(line)
-                        ? `Only ${formatQuantity(line.available)} at Super Admin. Ask for less.`
-                        : `${formatQuantity(line.available)} at Super Admin`}
+                        ? `Only ${formatQuantity(line.available)} at ${sourceName}. Ask for less.`
+                        : `${formatQuantity(line.available)} at ${sourceName}`}
                     </div>
                   </div>
                   <MoneyInput
@@ -219,6 +276,7 @@ function NewRequestSheet({
             disabled={!ready || saving}
             onClick={() => {
               const body = {
+                fromBranchId,
                 note: note.trim() || null,
                 items: lines.map((l) => ({
                   productId: l.productId,
@@ -230,7 +288,9 @@ function NewRequestSheet({
                 .unwrap()
                 .then((saved) => {
                   toast.success(
-                    editing ? `${saved.requestNo} updated` : `${saved.requestNo} sent to the Super Admin`,
+                    editing
+                      ? `${saved.requestNo} updated`
+                      : `${saved.requestNo} sent to the Super Admin for approval`,
                   );
                   close(false);
                 })
@@ -257,14 +317,19 @@ function RequestSheet({
   onSend: (prefill: StockRequestPrefill) => void;
   onEdit: (request: StockRequest) => void;
 }) {
-  const { isSuperAdmin, me } = useAuth();
-  const sender = me?.role === 'warehouse_keeper';
+  const { isSuperAdmin, me, activeBranchId } = useAuth();
   const [decide, decideState] = useDecideStockRequestMutation();
   const [withdraw, withdrawState] = useWithdrawStockRequestMutation();
   const [approved, setApproved] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
   const [reporting, setReporting] = useState(false);
   if (!request) return null;
+  const fromBranch = request.fromBranch;
+  const sender = fromBranch
+    ? me?.role === 'branch_admin' && activeBranchId === fromBranch.id
+    : me?.role === 'warehouse_keeper';
+  const asker = !isSuperAdmin && activeBranchId === request.branch.id;
+  const stockLabel = fromBranch ? `At ${fromBranch.code}` : 'At Super Admin';
   const pending = request.status === 'pending';
   const choosing = isSuperAdmin && pending;
   const busy = decideState.isLoading;
@@ -313,8 +378,9 @@ function RequestSheet({
             </StatusBadge>
           </SheetTitle>
           <SheetDescription>
-            {request.branch.name} · asked by {request.requestedBy?.name ?? '—'} (
-            {roleLabel(request.requestedBy?.role)}) on {formatDateTime(request.createdAt)}
+            {request.branch.name} asks {fromBranch ? fromBranch.name : 'the Super Admin stock'} · by{' '}
+            {request.requestedBy?.name ?? '—'} ({roleLabel(request.requestedBy?.role)}) on{' '}
+            {formatDateTime(request.createdAt)}
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-4">
@@ -328,7 +394,9 @@ function RequestSheet({
                   <th className="px-3 py-2 text-right font-medium">Approved</th>
                   <th className="px-3 py-2 text-right font-medium">Sent</th>
                   <th className="px-3 py-2 text-right font-medium">Received</th>
-                  {sender ? <th className="px-3 py-2 text-right font-medium">At Super Admin</th> : null}
+                  {sender || isSuperAdmin ? (
+                    <th className="px-3 py-2 text-right font-medium">{stockLabel}</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -367,7 +435,7 @@ function RequestSheet({
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(i.sentQty)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatQuantity(i.receivedQty)}</td>
-                    {sender ? (
+                    {sender || isSuperAdmin ? (
                       <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">
                         {formatQuantity(i.available)}
                       </td>
@@ -456,7 +524,7 @@ function RequestSheet({
               </Button>
             </>
           ) : null}
-          {sender && (request.status === 'approved' || request.status === 'sent') ? (
+          {sender && !fromBranch && (request.status === 'approved' || request.status === 'sent') ? (
             <Button variant="outline" onClick={() => setReporting(true)}>
               <Eye />
               Report issue
@@ -478,13 +546,13 @@ function RequestSheet({
               Send stock
             </Button>
           ) : null}
-          {!isSuperAdmin && !sender && pending ? (
+          {asker && pending ? (
             <Button variant="outline" onClick={() => onEdit(request)}>
               <Pencil />
               Edit
             </Button>
           ) : null}
-          {!isSuperAdmin && pending ? (
+          {asker && pending ? (
             <Button
               variant="outline"
               disabled={withdrawState.isLoading}
@@ -547,23 +615,18 @@ export function StockRequestsPage() {
       accessorFn: (r) => formatDateTime(r.createdAt),
       cell: ({ row }) => <span className="whitespace-nowrap">{formatDateTime(row.original.createdAt)}</span>,
     },
-    ...(overview
-      ? ([
-          {
-            id: 'branch',
-            header: 'Branch',
-            accessorFn: (r) => r.branch.name,
-            cell: ({ row }) => (
-              <span
-                title={row.original.branch.name}
-                className="rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-primary-soft-foreground"
-              >
-                {row.original.branch.code}
-              </span>
-            ),
-          },
-        ] as ColumnDef<StockRequest, unknown>[])
-      : []),
+    {
+      id: 'branch',
+      header: overview ? 'Branch' : 'Asked by branch',
+      accessorFn: (r) => r.branch.name,
+      cell: ({ row }) => <BranchCode branch={row.original.branch} />,
+    },
+    {
+      id: 'from',
+      header: 'From',
+      accessorFn: (r) => r.fromBranch?.name ?? 'Super Admin',
+      cell: ({ row }) => <BranchCode branch={row.original.fromBranch} />,
+    },
     {
       id: 'requestedBy',
       header: 'Asked by',
@@ -613,10 +676,10 @@ export function StockRequestsPage() {
         title="Stock requests"
         description={
           isSuperAdmin
-            ? 'What the branches asked for. Approve a request; the Warehouse Keeper sends it and the branch admin receives it. Every request keeps its number from start to end.'
+            ? 'What the branches asked for, from the Super Admin stock or from another branch. Approve a request; the Warehouse Keeper (or the branch it was asked from) sends it and the branch admin receives it.'
             : me?.role === 'warehouse_keeper'
               ? 'Requests the Super Admin approved. Open one and use Send stock: scan the approved products only. The branch admin receives it.'
-              : 'Ask the Super Admin for stock. Approved requests come as a transfer that your branch admin receives under Incoming stock.'
+              : 'Ask the Super Admin stock or another branch for stock. The Super Admin approves every request. Requests other branches made to you show here too: open an approved one and use Send stock.'
         }
         actions={
           canAsk ? (

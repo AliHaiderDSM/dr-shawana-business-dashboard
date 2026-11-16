@@ -26908,7 +26908,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Ask the Super Admin for stock: which products and how many */
+        /** Ask for stock: which products and how many, from the Super Admin stock or another branch. The Super Admin approves it either way. */
         post: {
             parameters: {
                 query?: {
@@ -26995,11 +26995,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Products of the Super Admin stock a branch can ask for, with the stock there now */
+        /** Products a branch can ask for, with the stock there now: the Super Admin stock, or another branch with ?fromBranchId= */
         get: {
             parameters: {
                 query?: {
                     search?: string;
+                    fromBranchId?: string;
                     branchId?: string;
                 };
                 header?: never;
@@ -27024,6 +27025,97 @@ export interface paths {
                                 categoryName: string | null;
                                 /** @example 10.000 */
                                 available: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/branch/stock-requests/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Other active branches this branch can ask for stock */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Branches */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                name: string;
+                                code: string;
+                                kind: string;
                             }[];
                         };
                     };
@@ -37872,11 +37964,16 @@ export interface components {
             createdAt: string;
         };
         CreateStockRequest: {
+            /**
+             * Format: uuid
+             * @description Ask another branch instead of the Super Admin stock. Leave empty to ask the Super Admin stock. It cannot change after the request is made.
+             */
+            fromBranchId?: string | null;
             note?: string | null;
             items: {
                 /**
                  * Format: uuid
-                 * @description A product of the Super Admin stock
+                 * @description A product of the stock the request asks from
                  */
                 productId: string;
                 /** @example 10.000 */
@@ -37930,6 +38027,13 @@ export interface components {
                 code: string;
                 kind: string;
             };
+            /** @description The branch that sends this stock; null for the Super Admin stock */
+            fromBranch: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                code: string;
+            } | null;
             requestedBy: {
                 /** Format: uuid */
                 id: string;
@@ -38016,6 +38120,13 @@ export interface components {
                 id: string;
                 name: string;
                 code: string;
+            };
+            fromBranch: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                code: string;
+                kind: string;
             };
             request: {
                 /** Format: uuid */

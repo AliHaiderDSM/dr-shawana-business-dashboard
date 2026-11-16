@@ -245,7 +245,8 @@ function TransferCard({ transfer, canReceive }: { transfer: IncomingStock; canRe
             ) : null}
           </div>
           <div className="text-xs text-muted-foreground">
-            Sent {formatDate(transfer.date)} by {transfer.sentBy?.name ?? 'Super Admin'}
+            Sent {formatDate(transfer.date)} by {transfer.sentBy?.name ?? 'Super Admin'} from{' '}
+            {transfer.fromBranch.kind === 'warehouse' ? 'the Super Admin stock' : transfer.fromBranch.name}
             {overview ? ` · to ${transfer.toBranch.name}` : ''}
             {transfer.received && transfer.receivedAt
               ? ` · received ${formatDateTime(transfer.receivedAt)} by ${transfer.receivedBy?.name ?? '—'}`
@@ -352,8 +353,8 @@ export function IncomingStockPage() {
           outgoing
             ? 'Every transfer sent from the Super Admin stock: when it went, to which branch, and whether the branch has received it.'
             : canReceive
-              ? 'Stock the Super Admin sent. Count it piece by piece, then receive it: what arrived goes into your stock, missing or damaged pieces go under observation for the Super Admin. Received transfers keep a printable receipt.'
-              : 'Stock the Super Admin sent. Your branch admin checks and receives it.'
+              ? 'Stock sent to your branch, from the Super Admin stock or another branch. Count it piece by piece, then receive it: what arrived goes into your stock, missing or damaged pieces go under observation for the Super Admin. Received transfers keep a printable receipt.'
+              : 'Stock sent to your branch, from the Super Admin stock or another branch. Your branch admin checks and receives it.'
         }
       />
       <Tabs className="mb-4" value={status} onValueChange={(v) => setStatus(v as typeof status)}>
