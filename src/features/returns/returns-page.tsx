@@ -15,6 +15,7 @@ import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { useReturns, type SaleReturn } from '@redux/features/returns';
 import { DISPOSITION_LABELS, REASON_LABELS } from './constants';
 import { ReturnFormSheet } from './return-form-sheet';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 const OPEN_LABELS = [
   ['pending', 'awaiting inspection'],
@@ -69,7 +70,7 @@ function ReturnsTab({ onCreate }: { onCreate: () => void }) {
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.sale?.invoiceNo}</div>
-          <div className="text-xs text-muted-foreground">{row.original.sale?.patient?.name}</div>
+          <TruncatedText text={row.original.sale?.patient?.name} className="text-xs text-muted-foreground" />
         </div>
       ),
     },

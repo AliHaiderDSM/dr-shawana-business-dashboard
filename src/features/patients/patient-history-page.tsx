@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
 import { patientsApi, usePatientSearch } from '@redux/features/patients';
 import { PatientTimelineView } from './patient-timeline';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 type Row = ConsultationReportRow;
 
@@ -94,7 +95,7 @@ const historyColumns = (page: number, pageSize: number): ColumnDef<Row, unknown>
     meta: { hideable: false },
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.patient?.name}</div>
+        <TruncatedText text={row.original.patient?.name} className="font-medium" />
         <div className="text-xs text-muted-foreground tabular-nums">{row.original.patient?.phone}</div>
       </div>
     ),

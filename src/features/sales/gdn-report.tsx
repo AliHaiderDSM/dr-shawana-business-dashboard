@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageNumbers } from '@/components/shared/page-numbers';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge, type Tone } from '@/components/shared/status-badge';
+import { TruncatedText } from '@/components/shared/truncated-text';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -312,13 +313,13 @@ export function GdnReportPage() {
             Number(o.received),
             Number(o.remaining),
             (PAYMENT[o.paymentStatus] ?? { label: o.paymentStatus }).label,
-            o.saleType === 'office'
+            (o.saleType === 'office'
               ? 'Handed over'
               : o.status === 'dispatched'
                 ? 'Dispatched'
                 : o.status === 'cancelled'
                   ? 'Cancelled'
-                  : 'Waiting',
+                  : 'Waiting') + (o.returned ? ' · returned, not counted' : ''),
             o.waitingDays,
           ];
         }),
@@ -336,7 +337,7 @@ export function GdnReportPage() {
           null,
           null,
           null,
-          pieces(rows),
+          pieces(rows.filter((o) => !o.returned)),
           total,
           received,
           remaining,
@@ -346,9 +347,11 @@ export function GdnReportPage() {
       'GDN',
     );
   };
-  const total = rows.reduce((sum, o) => sum + Number(o.total), 0);
-  const received = rows.reduce((sum, o) => sum + Number(o.received), 0);
-  const remaining = rows.reduce((sum, o) => sum + Number(o.remaining), 0);
+  const counted = rows.filter((o) => !o.returned);
+  const returnedCount = rows.length - counted.length;
+  const total = counted.reduce((sum, o) => sum + Number(o.total), 0);
+  const received = counted.reduce((sum, o) => sum + Number(o.received), 0);
+  const remaining = counted.reduce((sum, o) => sum + Number(o.remaining), 0);
   const next = formatDate(shift(to, 1), 'dd MMM');
   const amount = (list: GdnOrder[]) => list.reduce((sum, o) => sum + Number(o.total), 0);
   const earlier = orders.filter((o) => o.fromBefore);
@@ -773,9 +776,12 @@ export function GdnReportPage() {
                           className={cn(
                             'border-b align-top last:border-b-0 print:table-row print:break-inside-avoid',
                             o.status === 'cancelled' && 'text-muted-foreground',
+                            o.returned &&
+                              'bg-muted text-muted-foreground line-through decoration-muted-foreground/40',
                             !onPage(index) && 'hidden',
                           )}
-                          style={tint(o.date, 5)}
+                          style={o.returned ? undefined : tint(o.date, 5)}
+                          title={o.returned ? 'Returned: not counted in the totals' : undefined}
                         >
                           <td
                             className="py-2.5 pr-2 pl-4 text-muted-foreground tabular-nums"
@@ -805,10 +811,7 @@ export function GdnReportPage() {
                           </td>
                           <td className="px-3 py-2.5 font-medium whitespace-nowrap">{o.invoiceNo}</td>
                           <td className="px-3 py-2.5">
-                            <div className="font-medium">{o.customer.name ?? '—'}</div>
-                            <div className="text-xs text-muted-foreground tabular-nums">
-                              {o.customer.phone}
-                            </div>
+                            <TruncatedText text={o.customer.name} className="font-medium" maxWidth="10rem" />
                           </td>
                           <td className="px-3 py-2.5 text-center">
                             <div>{o.city ?? '—'}</div>
@@ -844,6 +847,11 @@ export function GdnReportPage() {
                           </td>
                           <td className="px-3 py-2.5 text-center">
                             <Status order={o} />
+                            {o.returned ? (
+                              <div className="mt-1 no-underline">
+                                <StatusBadge tone="neutral">Returned · not counted</StatusBadge>
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       );
@@ -852,8 +860,15 @@ export function GdnReportPage() {
                   <tfoot className="print:table-row-group">
                     <tr className="border-t bg-muted/30 font-semibold">
                       <td className="py-2 pr-3 pl-5" colSpan={6}>
-                        {rows.length} order{rows.length === 1 ? '' : 's'} · {formatCount(pieces(rows))} piece
-                        {pieces(rows) === 1 ? '' : 's'}
+                        {counted.length} order{counted.length === 1 ? '' : 's'} ·{' '}
+                        {formatCount(pieces(counted))} piece
+                        {pieces(counted) === 1 ? '' : 's'}
+                        {returnedCount ? (
+                          <span className="font-normal text-muted-foreground">
+                            {' '}
+                            · {returnedCount} returned, not counted
+                          </span>
+                        ) : null}
                         {product
                           ? ` · ${formatCount(rows.reduce((sum, o) => sum + units(o), 0))} × ${product}`
                           : ''}

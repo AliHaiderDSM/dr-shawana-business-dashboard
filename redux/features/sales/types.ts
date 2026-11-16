@@ -170,6 +170,7 @@ export interface GdnOrder {
   total: string;
   received: string;
   remaining: string;
+  returned: boolean;
   city: string | null;
   customer: { name: string | null; phone: string | null };
   bookedAt: { code: string; name: string | null } | null;

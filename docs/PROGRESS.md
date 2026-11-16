@@ -12,6 +12,12 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-16 — Returned GDN rows, Sr. on sales, truncated names
+
+- GDN report: an order with a return stays in the list, greyed and struck through with "Returned · not counted", and is left out of the order, piece and money totals (screen and Excel).
+- View Sales: Sr. column, newest on top with the highest number; the Customer column shows only the name.
+- New shared TruncatedText (components/shared/truncated-text.tsx): cuts a long value with … and shows the full text in a tooltip only when it is cut. Used for customer and patient names in Sales, GDN, Returns, Replacements, Patient requests, Patient history and Prescriptions.
+
 ## 2026-11-16 — Scan targets, branch codes, all sales in the return picker, write off on returns
 
 - Stock out for a request: each line shows "N of M scanned" against the approved quantity, before and after the first scan (green when complete).

@@ -48,6 +48,7 @@ import {
   type SaleReturn,
 } from '@redux/features/returns';
 import { REASON_LABELS } from './constants';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 export const REPLACEMENT_STATUS_LABELS: Record<ReplacementStatus, string> = {
   pending_approval: 'Waiting for approval',
@@ -810,7 +811,7 @@ function ReplacementsTable() {
       accessorFn: (r) => r.sale?.patient?.name ?? '',
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.original.sale?.patient?.name}</div>
+          <TruncatedText text={row.original.sale?.patient?.name} className="font-medium" />
           <div className="text-xs text-muted-foreground">{row.original.sale?.patient?.phone}</div>
         </div>
       ),

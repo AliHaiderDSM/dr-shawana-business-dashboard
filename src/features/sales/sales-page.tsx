@@ -11,6 +11,7 @@ import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { TruncatedText } from '@/components/shared/truncated-text';
 import { Button } from '@/components/ui/button';
 import { useStaffList } from '@redux/features/staff';
 import { useListState } from '@/hooks/use-list-state';
@@ -71,7 +72,19 @@ export function SalesPage() {
   const byBranch = query.data?.meta.byBranch;
   const totals = query.data?.meta.totals;
 
+  const totalCount = query.data?.meta.total ?? 0;
+  const firstIndex = (list.page - 1) * list.pageSize;
+
   const columns: ColumnDef<SaleListItem, unknown>[] = [
+    {
+      id: 'sr',
+      header: 'Sr.',
+      meta: { hideable: false },
+      accessorFn: (_s, index) => totalCount - firstIndex - index,
+      cell: ({ row }) => (
+        <span className="text-muted-foreground tabular-nums">{totalCount - firstIndex - row.index}</span>
+      ),
+    },
     {
       id: 'invoiceNo',
       header: 'Invoice',
@@ -109,12 +122,9 @@ export function SalesPage() {
     {
       id: 'customer',
       header: 'Customer',
-      accessorFn: (s) => `${s.patient?.name ?? ''} ${s.patient?.phone ?? ''}`,
+      accessorFn: (s) => s.patient?.name ?? '',
       cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.patient?.name}</div>
-          <div className="text-xs text-muted-foreground tabular-nums">{row.original.patient?.phone}</div>
-        </div>
+        <TruncatedText text={row.original.patient?.name} className="font-medium" maxWidth="10rem" />
       ),
     },
     {

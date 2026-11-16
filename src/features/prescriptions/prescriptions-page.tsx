@@ -16,6 +16,7 @@ import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate } from '@/lib/format';
 import { prescriptionsApi, type Prescription } from '@redux/features/prescriptions';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 export function PrescriptionsPage() {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ export function PrescriptionsPage() {
       meta: { hideable: false },
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.original.patient?.name}</div>
+          <TruncatedText text={row.original.patient?.name} className="font-medium" />
           <div className="text-xs text-muted-foreground tabular-nums">{row.original.patient?.phone}</div>
         </div>
       ),

@@ -24,6 +24,7 @@ import {
   type PatientRequestStatus,
 } from '@redux/features/patient-requests';
 import { REQUEST_CATEGORY_LABELS, REQUEST_STATUS_LABELS } from './constants';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 export const REQUEST_TONES: Record<PatientRequestStatus, Tone> = {
   submitted: 'warning',
@@ -183,7 +184,7 @@ export function PatientRequestsPage() {
       accessorFn: (r) => `${r.patient.name} ${r.patient.phone}`,
       cell: ({ row }) => (
         <div className="min-w-0">
-          <div className="font-medium">{row.original.patient.name}</div>
+          <TruncatedText text={row.original.patient.name} className="font-medium" />
           <div className="text-xs text-muted-foreground">{row.original.patient.phone}</div>
         </div>
       ),
