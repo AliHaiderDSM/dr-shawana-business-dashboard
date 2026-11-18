@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-18 — Product images from the API
+
+- CSP img-src allows `https://api.dsmclinics.com` and `https://staging-api.dsmclinics.com`, where product images are served from R2.
+
 ## 2026-11-18 — R2 file links allowed
 
 - `vercel.json` CSP allows `https://*.r2.cloudflarestorage.com` in img, media, connect and frame sources so payment proofs, medical records and voice notes from Cloudflare R2 open in the dashboard.
