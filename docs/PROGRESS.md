@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-18 — R2 file links allowed
+
+- `vercel.json` CSP allows `https://*.r2.cloudflarestorage.com` in img, media, connect and frame sources so payment proofs, medical records and voice notes from Cloudflare R2 open in the dashboard.
+
 ## 2026-11-16 — Branch to branch stock requests
 
 - New request sheet has "Ask stock from": the Super Admin stock or any other branch; the catalog and availability follow the choice.
