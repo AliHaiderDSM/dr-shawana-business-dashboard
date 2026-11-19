@@ -21149,6 +21149,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/doctor/plan-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Active medicines (supplements, medicines, GLP, BHRT) and blood tests of the doctor’s branch that can be ticked on a plan of treatment */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Medicines and blood tests */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/doctor/push-token": {
         parameters: {
             query?: never;
@@ -36173,8 +36256,10 @@ export interface components {
             };
         };
         DoctorTreatmentPlan: {
-            /** @description Plan of treatment as HTML (bold, italic, lists) */
-            plan: string;
+            /** @description Plan of treatment as HTML (bold, italic, lists); may be empty when items are ticked */
+            plan: string | null;
+            /** @description Ticked medicines and blood tests from GET /doctor/plan-options; the whole list is replaced */
+            catalogItemIds: string[];
         };
         DoctorRemarks: {
             /** @description Clinical remarks as HTML (bold, italic, lists), the same as the dashboard */
