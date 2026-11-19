@@ -14,6 +14,10 @@
 
 ## 2026-11-19 — API types refreshed
 
+- `schema.d.ts` regenerated for the doctor app treatment plans; no screen changes.
+
+## 2026-11-19 — API types refreshed
+
 - `schema.d.ts` regenerated for the doctor app plan of treatment endpoint; no screen changes.
 
 ## 2026-11-18 — Product images from the API
