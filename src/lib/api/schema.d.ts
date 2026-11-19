@@ -20882,6 +20882,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/doctor/prescriptions/{prescriptionId}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Write the plan of treatment of the doctor’s own prescription; it shows on the printed prescription and in the patient app */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    prescriptionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DoctorPlanOfTreatment"];
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/doctor/push-token": {
         parameters: {
             query?: never;
@@ -35908,6 +35997,10 @@ export interface components {
         DoctorRemarks: {
             /** @description Clinical remarks as HTML (bold, italic, lists), the same as the dashboard */
             remarks: string | null;
+        };
+        DoctorPlanOfTreatment: {
+            /** @description Plan of treatment as HTML (bold, italic, lists), the same as the dashboard */
+            planTreatment: string | null;
         };
         DoctorPushToken: {
             token: string;

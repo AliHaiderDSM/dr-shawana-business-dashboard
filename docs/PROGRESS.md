@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-19 — API types refreshed
+
+- `schema.d.ts` regenerated for the doctor app plan of treatment endpoint; no screen changes.
+
 ## 2026-11-18 — Product images from the API
 
 - CSP img-src allows `https://api.dsmclinics.com` and `https://staging-api.dsmclinics.com`, where product images are served from R2.
