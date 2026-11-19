@@ -14,6 +14,10 @@
 
 ## 2026-11-19 — API types refreshed
 
+- `schema.d.ts` regenerated for the patient treatment plans endpoint; no screen changes.
+
+## 2026-11-19 — API types refreshed
+
 - `schema.d.ts` regenerated for plan medicines and blood tests; no screen changes.
 
 ## 2026-11-19 — API types refreshed
