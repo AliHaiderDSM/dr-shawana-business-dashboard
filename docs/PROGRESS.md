@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## 2026-11-19 — API types refreshed
+
+- `schema.d.ts` regenerated for `planId` on chat messages; no screen changes.
+
 ## 2026-11-19 — Plans tab on the patient profile
 
 - New **Plans** tab (for roles that see clinical records) shows the plans of treatment written in the doctor app: date, doctor, plan text, medicines with dose and blood tests, newest first, with an Updated badge when a plan was edited. Read only.

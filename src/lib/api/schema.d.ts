@@ -36202,6 +36202,11 @@ export interface components {
                     type: string;
                 } | null;
             } | null;
+            /**
+             * Format: uuid
+             * @description Set when the doctor app added or changed a plan of treatment; open it in My plan
+             */
+            planId: string | null;
             createdAt: string;
         };
         ChatConversation: {
