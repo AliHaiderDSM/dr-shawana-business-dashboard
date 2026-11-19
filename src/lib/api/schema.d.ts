@@ -14016,6 +14016,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branch/patients/{id}/treatment-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plans of treatment the doctors wrote in the doctor app for this patient in this branch, with medicines and blood tests, newest first */
+        get: {
+            parameters: {
+                query?: {
+                    branchId?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Plans of treatment */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["TreatmentPlan"][];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/patients/{id}/blood-work": {
         parameters: {
             query?: never;
@@ -35901,6 +35988,27 @@ export interface components {
             createdBy: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        TreatmentPlan: {
+            /** Format: uuid */
+            id: string;
+            date: string;
+            /** @description Plan of treatment as HTML */
+            plan: string | null;
+            doctor: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            medicines: {
+                name: string;
+                dose: string | null;
+                groupName: string;
+            }[];
+            bloodWork: {
+                name: string;
+                groupName: string;
+            }[];
         };
         LabReportSummary: {
             /** Format: uuid */

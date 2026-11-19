@@ -27,6 +27,7 @@ export type ReadBloodReport = Schemas['ReadBloodReport'];
 export type LabReportSummary = Schemas['LabReportSummary'];
 
 export type BloodWorkResponse = ClinicGetResponse<'/branch/patients/{id}/blood-work'>['data'];
+export type TreatmentPlan = Schemas['TreatmentPlan'];
 export type BhrtLog = ClinicGetResponse<'/branch/patients/{id}/bhrt'>['data'];
 export type MedicalRecordList = ClinicGetResponse<'/branch/patients/{id}/medical-records'>['data'];
 export type ReportSummaries = ClinicGetResponse<'/branch/patients/{id}/report-summaries'>['data'];

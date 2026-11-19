@@ -20,6 +20,7 @@ import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
+import { TreatmentPlansPanel } from '@/features/clinical/treatment-plans-panel';
 import { prescriptionsApi, type Prescription } from '@redux/features/prescriptions';
 import { SALE_TYPE_LABELS } from '@/features/sales/constants';
 import { useSales, type SaleListItem } from '@redux/features/sales';
@@ -288,6 +289,7 @@ export function PatientProfilePage() {
             {can('prescriptions.view') ? (
               <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
             ) : null}
+            {clinical ? <TabsTrigger value="plans">Plans</TabsTrigger> : null}
             {clinical ? <TabsTrigger value="records">Medical records</TabsTrigger> : null}
             {clinical ? <TabsTrigger value="bhrt">BHRT</TabsTrigger> : null}
           </TabsList>
@@ -311,6 +313,11 @@ export function PatientProfilePage() {
           {can('prescriptions.view') ? (
             <TabsContent value="prescriptions" className="mt-4">
               <PrescriptionsTab patientId={p.id} />
+            </TabsContent>
+          ) : null}
+          {clinical ? (
+            <TabsContent value="plans" className="mt-4">
+              <TreatmentPlansPanel patientId={p.id} />
             </TabsContent>
           ) : null}
           {clinical ? (

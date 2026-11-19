@@ -7,6 +7,7 @@ import type {
   AddMedicalRecordFilesArg,
   BhrtLog,
   BloodWorkResponse,
+  TreatmentPlan,
   CreateMedicalRecordArg,
   MedicalRecord,
   MedicalRecordList,
@@ -42,6 +43,15 @@ const summariesTag = (patientId: string) => ({
 
 export const clinicalApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    getTreatmentPlans: build.query<TreatmentPlan[], string>({
+      queryFn: (patientId) =>
+        fromApi<TreatmentPlan[]>(() =>
+          unwrap(
+            api.GET('/branch/patients/{id}/treatment-plans', { params: { path: { id: patientId } } }),
+          ).then((r) => r.data),
+        ),
+      providesTags: ['clinical'],
+    }),
     getBloodWork: build.query<BloodWorkResponse, string>({
       queryFn: (patientId) =>
         fromApi<BloodWorkResponse>(() =>
@@ -228,6 +238,7 @@ export const {
   useGetBhrtLogQuery,
   useAddBhrtMutation,
   useGetMedicalRecordsQuery,
+  useGetTreatmentPlansQuery,
   useCreateMedicalRecordMutation,
   useRemoveMedicalRecordMutation,
   useAddMedicalRecordFilesMutation,
@@ -241,6 +252,10 @@ export const {
 
 export function useBloodWork(patientId: string) {
   return useGetBloodWorkQuery(patientId, { skip: !patientId });
+}
+
+export function useTreatmentPlans(patientId: string) {
+  return useGetTreatmentPlansQuery(patientId, { skip: !patientId });
 }
 
 export function useBhrtLog(patientId: string) {
