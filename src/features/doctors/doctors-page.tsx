@@ -21,7 +21,8 @@ import { DoctorFormSheet } from './doctor-form-sheet';
 
 export function DoctorsPage() {
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, isSuperAdmin, activeBranchId } = useAuth();
+  const allBranches = isSuperAdmin && !activeBranchId;
   const list = useListState({ defaultSort: 'displayName' });
   const query = doctorsApi.useList(list.query);
   const [remove] = doctorsApi.useRemove();
@@ -91,6 +92,13 @@ export function DoctorsPage() {
         ),
     },
     {
+      id: 'branch',
+      header: 'Branch',
+      accessorFn: (d) => d.branch?.code ?? '',
+      cell: ({ row }) =>
+        row.original.branch ? <span className="font-mono text-sm">{row.original.branch.code}</span> : '—',
+    },
+    {
       id: 'createdAt',
       header: 'Added on',
       accessorKey: 'createdAt',
@@ -119,7 +127,7 @@ export function DoctorsPage() {
             {
               label: 'Edit',
               icon: Pencil,
-              hidden: !can('doctors.update'),
+              hidden: !can('doctors.update') || allBranches,
               onSelect: () => openSheet(row.original),
             },
             {
@@ -127,7 +135,7 @@ export function DoctorsPage() {
               icon: Trash2,
               destructive: true,
               separatorBefore: true,
-              hidden: !can('doctors.delete'),
+              hidden: !can('doctors.delete') || allBranches,
               onSelect: () => setRemoving(row.original),
             },
           ]}
@@ -142,7 +150,7 @@ export function DoctorsPage() {
         title="Doctors"
         description="Doctor profiles, fees and commission, each linked to a doctor sign-in."
         actions={
-          can('doctors.create') ? (
+          can('doctors.create') && !allBranches ? (
             <Button onClick={() => openSheet(null)}>
               <UserPlus />
               New doctor
@@ -161,7 +169,7 @@ export function DoctorsPage() {
         onRetry={() => void query.refetch()}
         searchPlaceholder="Search doctors"
         exportFileName="doctors"
-        onRowClick={can('doctors.update') ? openSheet : undefined}
+        onRowClick={can('doctors.update') && !allBranches ? openSheet : undefined}
         emptyTitle="No doctors yet"
         emptyAction={
           can('doctors.create') ? (

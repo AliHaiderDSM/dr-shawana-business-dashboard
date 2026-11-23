@@ -35311,6 +35311,12 @@ export interface components {
                 email: string;
                 status: string;
             } | null;
+            branch: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+            } | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */

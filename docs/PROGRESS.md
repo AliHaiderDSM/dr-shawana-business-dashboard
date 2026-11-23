@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Doctors page across all branches (2026-11-23)
+
+- The Doctors screen is now `scope: 'any'`, so a super admin opens it without picking a branch and sees every doctor with a new Branch (code) column. Create, edit and delete are hidden in that all-branches view (they need a branch); pick a branch to manage. A branch staff member still sees only their branch.
+
 ## Sr No. counts from the oldest (2026-11-23)
 
 - `serialColumn({ page, pageSize, total, newestFirst })`: when a list shows the newest first (the default sort), the oldest record is 1 and the newest has the highest number, so numbers stay with the record across pages. Other sorts number rows from the top.

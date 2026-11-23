@@ -221,7 +221,7 @@ export const screenRoutes: ScreenRoute[] = [
     path: 'doctors',
     element: page(() => import('@/features/doctors/doctors-page'), 'DoctorsPage'),
     anyOf: ['doctors.view'],
-    scope: 'branch',
+    scope: 'any',
   },
   {
     path: 'appointments',
