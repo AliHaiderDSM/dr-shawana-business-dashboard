@@ -12,6 +12,11 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Sr No. counts from the oldest (2026-11-23)
+
+- `serialColumn({ page, pageSize, total, newestFirst })`: when a list shows the newest first (the default sort), the oldest record is 1 and the newest has the highest number, so numbers stay with the record across pages. Other sorts number rows from the top.
+- Used on Customers and Employees (`-createdAt`), Bank & cash accounts (`-date`) and the Accounts balance report.
+
 ## Sr No. columns and report skeleton (2026-11-23)
 
 - New shared `serialColumn(list, skip?)` (`src/components/shared/serial-column.tsx`): a "Sr No." column that keeps counting across pages.

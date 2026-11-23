@@ -146,7 +146,11 @@ export function AccountSheetsPage() {
   };
 
   const columns: ColumnDef<AccountSheet, unknown>[] = [
-    serialColumn<AccountSheet>(list),
+    serialColumn<AccountSheet>({
+      ...list,
+      total: query.data?.meta.total,
+      newestFirst: list.sort === '-date' || list.sort === '-createdAt',
+    }),
     {
       id: 'accountName',
       header: 'Account',

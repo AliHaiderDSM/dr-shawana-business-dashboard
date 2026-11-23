@@ -138,7 +138,11 @@ export function StaffPage() {
     s.id !== me?.profile.id && (me?.role === 'super_admin' || s.role !== 'branch_admin');
 
   const columns: ColumnDef<Staff, unknown>[] = [
-    serialColumn<Staff>(list),
+    serialColumn<Staff>({
+      ...list,
+      total: query.data?.meta.total,
+      newestFirst: list.sort === '-createdAt',
+    }),
     {
       id: 'name',
       header: 'Employee',

@@ -43,7 +43,11 @@ export function PatientsPage() {
   };
 
   const columns: ColumnDef<Patient, unknown>[] = [
-    serialColumn<Patient>(list),
+    serialColumn<Patient>({
+      ...list,
+      total: query.data?.meta.total,
+      newestFirst: list.sort === '-createdAt',
+    }),
     {
       id: 'name',
       header: 'Patient',

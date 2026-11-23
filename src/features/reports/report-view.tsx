@@ -288,7 +288,14 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
             columns={
               data.data
                 ? [
-                    ...(report.serial ? [serialColumn<Row>(undefined, (row) => Boolean(row.__total))] : []),
+                    ...(report.serial
+                      ? [
+                          serialColumn<Row>(
+                            { page: 1, pageSize: 0, total: data.data.rows.length, newestFirst: true },
+                            (row) => Boolean(row.__total),
+                          ),
+                        ]
+                      : []),
                     ...columnsFor(data.data),
                   ]
                 : []
