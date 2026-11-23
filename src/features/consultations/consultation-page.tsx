@@ -171,12 +171,12 @@ function PatientHeader({
 
 const NOT_CARRIED: Partial<Record<SectionKey, string[]>> = { clinical_assessment: ['plan'] };
 
-function startFrom(key: SectionKey, saved: unknown, earlier: PreviousEntry[]) {
-  const last = saved ? null : (earlier[0] ?? null);
+function startFrom(key: SectionKey, saved: unknown, earlier: PreviousEntry[], isFollowup = false) {
+  const last = saved && !isFollowup ? null : (earlier[0] ?? null);
   if (!last) return { from: null, data: {} as FormValues };
   const skip = new Set(NOT_CARRIED[key] ?? []);
   return {
-    from: last,
+    from: saved ? null : last,
     data: Object.fromEntries(Object.entries(last.data).filter(([k]) => !skip.has(k))) as FormValues,
   };
 }
@@ -194,7 +194,12 @@ function ClinicalRemarks({
   onDirtyChange: (dirty: boolean) => void;
   onSaved: () => void;
 }) {
-  const start = startFrom('clinical_assessment', consultation.sections.clinical_assessment, earlier);
+  const start = startFrom(
+    'clinical_assessment',
+    consultation.sections.clinical_assessment,
+    earlier,
+    consultation.appointment?.visitType === 'followup',
+  );
   return (
     <SectionForm
       consultation={consultation}
@@ -278,7 +283,12 @@ function Workspace({
   };
 
   const sectionPanel = (key: SectionKey) => {
-    const start = startFrom(key, consultation.sections[key], earlier(key));
+    const start = startFrom(
+      key,
+      consultation.sections[key],
+      earlier(key),
+      consultation.appointment?.visitType === 'followup',
+    );
     return (
       <SectionForm
         key={`${key}-${patient.isSuccess}-${previous.isSuccess}`}

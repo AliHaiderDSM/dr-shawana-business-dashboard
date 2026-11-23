@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Follow-up carries the last visit (2026-11-23)
+
+- On a follow-up consultation, every section now starts from the patient's most recent previous visit (as editable form defaults), with the current visit's own values taking precedence per field. Before, the carry-over was skipped whenever a section already had any saved data, so follow-ups on imported visits showed their own sparse data instead of the earlier visit's. `startFrom` in `consultation-page.tsx` now pre-fills for follow-ups even over existing data; the clinical-remarks plan stays per-visit (`NOT_CARRIED`). On save, the filled-in values persist.
+
 ## Report pagination (2026-11-23)
 
 - Report tables (Patient history, Monthly sale / Sale products, and every other report) now paginate like the list tables: `DataTable` gained `clientPagination` (slices the already-loaded rows by the list's page/pageSize and shows the page controls) and `searchable` (reports hide the table's own search box, they have their own filters). The totals row moved to the persistent `totalsRow` footer so it shows on every page and stays out of the count. The Sr No. column now counts across pages.
