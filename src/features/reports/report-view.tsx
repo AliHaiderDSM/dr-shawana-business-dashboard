@@ -2,7 +2,7 @@ import { ReportCharts } from './report-charts';
 import { useBranchOptions } from '@/lib/auth/branches';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Combobox } from '@/components/shared/combobox';
 import { DataTable } from '@/components/shared/data-table';
@@ -175,6 +175,17 @@ function rowsWithTotals(data: ReportData): Row[] {
   return [...data.rows, { ...data.totals, __total: true }];
 }
 
+function totalsRowFor(data: ReportData): Partial<Record<string, ReactNode>> | undefined {
+  if (!data.totals || data.rows.length === 0) return undefined;
+  const row: Record<string, ReactNode> = {};
+  data.columns.forEach((column, index) => {
+    const total = data.totals?.[column.key];
+    if (index === 0) row[column.key] = 'Total';
+    else if (total != null) row[column.key] = displayValue(total);
+  });
+  return row;
+}
+
 function Summary({ data }: { data: ReportData }) {
   if (!data.summary) return null;
   const entries = Object.entries(data.summary).filter(([, v]) => typeof v !== 'object' || v === null);
@@ -291,7 +302,12 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
                     ...(report.serial
                       ? [
                           serialColumn<Row>(
-                            { page: 1, pageSize: 0, total: data.data.rows.length, newestFirst: true },
+                            {
+                              page: list.page,
+                              pageSize: list.pageSize,
+                              total: data.data.rows.length,
+                              newestFirst: true,
+                            },
                             (row) => Boolean(row.__total),
                           ),
                         ]
@@ -300,10 +316,13 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
                   ]
                 : []
             }
-            data={data.data ? rowsWithTotals(data.data) : undefined}
+            data={data.data?.rows}
+            totalsRow={data.data ? totalsRowFor(data.data) : undefined}
+            list={list}
+            clientPagination
+            searchable={false}
             isLoading={data.isLoading}
             isFetching={data.isFetching}
-            rowClassName={(row) => (row.__total ? 'bg-muted/50 hover:bg-muted/50' : undefined)}
             exportFileName={report.key}
             onExport={report.exportQuery ? exportFromServer : undefined}
             columnsMenu={report.columnsMenu}

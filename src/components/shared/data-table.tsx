@@ -70,6 +70,8 @@ interface DataTableProps<T> {
   footer?: ReactNode;
   totalsRow?: Partial<Record<string, ReactNode>>;
   dense?: boolean;
+  clientPagination?: boolean;
+  searchable?: boolean;
 }
 
 const PAGE_SIZES = [10, 20, 50, 100];
@@ -104,11 +106,28 @@ export function DataTable<T>({
   footer,
   totalsRow,
   dense,
+  clientPagination,
+  searchable = true,
 }: DataTableProps<T>) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
+  const clientMeta =
+    clientPagination && list && data
+      ? {
+          page: list.page,
+          pageSize: list.pageSize,
+          total: data.length,
+          totalPages: Math.max(1, Math.ceil(data.length / list.pageSize)),
+        }
+      : undefined;
+  const effectiveMeta = clientMeta ?? meta;
+  const pageData =
+    clientMeta && data && list
+      ? data.slice((list.page - 1) * list.pageSize, list.page * list.pageSize)
+      : data;
+
   const table = useReactTable({
-    data: data ?? [],
+    data: pageData ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -143,8 +162,9 @@ export function DataTable<T>({
 
   const rows = table.getRowModel().rows;
   const colCount = table.getVisibleLeafColumns().length;
-  const from = meta && meta.total > 0 ? (meta.page - 1) * meta.pageSize + 1 : 0;
-  const to = meta ? Math.min(meta.page * meta.pageSize, meta.total) : 0;
+  const from =
+    effectiveMeta && effectiveMeta.total > 0 ? (effectiveMeta.page - 1) * effectiveMeta.pageSize + 1 : 0;
+  const to = effectiveMeta ? Math.min(effectiveMeta.page * effectiveMeta.pageSize, effectiveMeta.total) : 0;
   const hasFilters = list && (Object.keys(list.filters).length > 0 || list.search);
 
   return (
@@ -152,7 +172,7 @@ export function DataTable<T>({
       {list || toolbar || quickFilters || actions || exportFileName ? (
         <div className="space-y-3 border-b p-3 print:hidden">
           <div className="flex flex-wrap items-center gap-2">
-            {list ? (
+            {list && searchable ? (
               <div className="relative w-full sm:w-72">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -371,12 +391,12 @@ export function DataTable<T>({
 
       {footer}
 
-      {meta && list ? (
+      {effectiveMeta && list ? (
         <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between print:hidden">
           <p className="text-muted-foreground tabular-nums">
-            {meta.total === 0
+            {effectiveMeta.total === 0
               ? 'No results'
-              : `Showing ${formatCount(from)}–${formatCount(to)} of ${formatCount(meta.total)}`}
+              : `Showing ${formatCount(from)}–${formatCount(to)} of ${formatCount(effectiveMeta.total)}`}
           </p>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -394,7 +414,11 @@ export function DataTable<T>({
                 </SelectContent>
               </Select>
             </div>
-            <PageNumbers page={meta.page} totalPages={meta.totalPages} onChange={list.setPage} />
+            <PageNumbers
+              page={effectiveMeta.page}
+              totalPages={effectiveMeta.totalPages}
+              onChange={list.setPage}
+            />
           </div>
         </div>
       ) : null}

@@ -12,6 +12,10 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Report pagination (2026-11-23)
+
+- Report tables (Patient history, Monthly sale / Sale products, and every other report) now paginate like the list tables: `DataTable` gained `clientPagination` (slices the already-loaded rows by the list's page/pageSize and shows the page controls) and `searchable` (reports hide the table's own search box, they have their own filters). The totals row moved to the persistent `totalsRow` footer so it shows on every page and stays out of the count. The Sr No. column now counts across pages.
+
 ## Doctors page across all branches (2026-11-23)
 
 - The Doctors screen is now `scope: 'any'`, so a super admin opens it without picking a branch and sees every doctor with a new Branch (code) column. Create, edit and delete are hidden in that all-branches view (they need a branch); pick a branch to manage. A branch staff member still sees only their branch.
