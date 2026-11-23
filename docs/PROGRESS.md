@@ -12,6 +12,13 @@
 | D7 — Accounts, reports and dashboards                          | Done   | 2026-10-01 |
 | D8 — Polish and deployment                                     | Next   |            |
 
+## Sr No. columns and report skeleton (2026-11-23)
+
+- New shared `serialColumn(list, skip?)` (`src/components/shared/serial-column.tsx`): a "Sr No." column that keeps counting across pages.
+- Added to Customers, Employees, Bank & cash accounts and the Accounts balance report (`serial: true` in `reports-config.ts`; the totals row gets no number).
+- Newest first by default: Employees sort by `-createdAt` for every role, Bank & cash accounts by `-date`. Customers already used `-createdAt`.
+- `DataTable` draws 6 skeleton columns while the columns are not known yet, so report pages (Sale products and the rest) show skeleton rows while loading.
+
 ## 2026-11-19 — API types refreshed
 
 - `schema.d.ts` regenerated for `planId` on chat messages; no screen changes.

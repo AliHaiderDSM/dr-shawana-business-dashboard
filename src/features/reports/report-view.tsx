@@ -9,6 +9,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { ErrorState } from '@/components/shared/error-state';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
+import { serialColumn } from '@/components/shared/serial-column';
 import { Panel } from '@/components/shared/panel';
 import { PrintPage, Letterhead, PrintTable } from '@/components/shared/print-document';
 import { Button } from '@/components/ui/button';
@@ -284,7 +285,14 @@ function ReportBody({ report, standalone }: { report: ReportDef; standalone?: bo
           {data.data ? <Summary data={data.data} /> : null}
           {data.data ? <ReportCharts data={data.data} /> : null}
           <DataTable
-            columns={data.data ? columnsFor(data.data) : []}
+            columns={
+              data.data
+                ? [
+                    ...(report.serial ? [serialColumn<Row>(undefined, (row) => Boolean(row.__total))] : []),
+                    ...columnsFor(data.data),
+                  ]
+                : []
+            }
             data={data.data ? rowsWithTotals(data.data) : undefined}
             isLoading={data.isLoading}
             isFetching={data.isFetching}

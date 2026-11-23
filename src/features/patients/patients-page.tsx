@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { serialColumn } from '@/components/shared/serial-column';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -42,6 +43,7 @@ export function PatientsPage() {
   };
 
   const columns: ColumnDef<Patient, unknown>[] = [
+    serialColumn<Patient>(list),
     {
       id: 'name',
       header: 'Patient',

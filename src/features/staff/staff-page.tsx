@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { serialColumn } from '@/components/shared/serial-column';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -114,7 +115,7 @@ const ROLE_TONES: Partial<Record<Staff['role'], Tone>> = {
 
 export function StaffPage() {
   const { me, can, isSuperAdmin } = useAuth();
-  const list = useListState({ defaultSort: isSuperAdmin ? '-createdAt' : 'firstName' });
+  const list = useListState({ defaultSort: '-createdAt' });
   const branchOptions = useBranchOptions(isSuperAdmin);
   const branchChoices = (branchOptions.data ?? []).filter(
     (b) => b.kind === 'branch' || b.kind === 'dispatch' || b.kind === 'warehouse',
@@ -137,6 +138,7 @@ export function StaffPage() {
     s.id !== me?.profile.id && (me?.role === 'super_admin' || s.role !== 'branch_admin');
 
   const columns: ColumnDef<Staff, unknown>[] = [
+    serialColumn<Staff>(list),
     {
       id: 'name',
       header: 'Employee',

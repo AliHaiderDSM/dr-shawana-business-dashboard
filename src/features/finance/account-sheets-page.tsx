@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { serialColumn } from '@/components/shared/serial-column';
 import { useListState } from '@/hooks/use-list-state';
 import { applyServerErrors, toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -132,7 +133,7 @@ function AccountSheetSheet({
 
 export function AccountSheetsPage() {
   const { isSuperAdmin } = useAuth();
-  const list = useListState({ defaultSort: 'accountName' });
+  const list = useListState({ defaultSort: '-date' });
   const query = accountSheetsApi.useList(list.query);
   const [remove] = accountSheetsApi.useRemove();
   const [editing, setEditing] = useState<AccountSheet | null>(null);
@@ -145,6 +146,7 @@ export function AccountSheetsPage() {
   };
 
   const columns: ColumnDef<AccountSheet, unknown>[] = [
+    serialColumn<AccountSheet>(list),
     {
       id: 'accountName',
       header: 'Account',

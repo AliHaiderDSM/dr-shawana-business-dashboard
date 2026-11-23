@@ -5,15 +5,7 @@ import {
   type ColumnDef,
   type VisibilityState,
 } from '@tanstack/react-table';
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsUpDown,
-  Download,
-  Search,
-  Settings2,
-  X,
-} from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Download, Search, Settings2, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { PageNumbers } from '@/components/shared/page-numbers';
 import { Button } from '@/components/ui/button';
@@ -301,7 +293,7 @@ export function DataTable<T>({
             {isLoading ? (
               Array.from({ length: 6 }, (_, i) => (
                 <TableRow key={i} className="hover:bg-transparent">
-                  {Array.from({ length: colCount }, (_, j) => (
+                  {Array.from({ length: colCount || 6 }, (_, j) => (
                     <TableCell key={j} className="py-3.5">
                       <Skeleton className={cn('h-4', j === 0 ? 'w-40' : 'w-20')} />
                     </TableCell>

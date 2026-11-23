@@ -35,6 +35,7 @@ export interface ReportDef {
   filters: ReportFilter[];
   path?: string;
   columnsMenu?: boolean;
+  serial?: boolean;
   exportQuery?: Record<string, string>;
 }
 
@@ -243,6 +244,7 @@ export const REPORTS: ReportDef[] = [
     icon: Scale,
     group: 'Finance',
     allowed: permission('accounts.view'),
+    serial: true,
     filters: [source('accountSheetId', 'Account', 'accounts')],
   },
   {
