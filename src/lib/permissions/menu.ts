@@ -111,6 +111,8 @@ const WAREHOUSE_KEEPER_KEYS = new Set([
   'materials',
   'material-categories',
   'lab-transfers',
+  'recipes',
+  'finished-goods',
   'material-report',
 ]);
 

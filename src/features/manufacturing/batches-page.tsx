@@ -371,13 +371,6 @@ function BatchesPage({ stage }: BatchesPageProps) {
       newestFirst: true,
     }),
     {
-      id: 'batchNo',
-      header: 'Batch no',
-      accessorKey: 'batchNo',
-      meta: { sortKey: 'batchNo', hideable: false },
-      cell: ({ row }) => <span className="font-medium">{row.original.batchNo}</span>,
-    },
-    {
       id: 'date',
       header: 'Date',
       accessorKey: 'date',
@@ -385,28 +378,33 @@ function BatchesPage({ stage }: BatchesPageProps) {
       cell: ({ row }) => formatDate(row.original.date),
     },
     {
-      id: 'materials',
-      header: 'Materials',
-      accessorFn: (b) => b.items.map((i) => `${i.materialName ?? ''} ${i.qty}`).join('; '),
+      id: 'batchNo',
+      header: 'Batch',
+      accessorKey: 'batchNo',
+      meta: { sortKey: 'batchNo', hideable: false },
+      cell: ({ row }) => <span className="font-medium">{row.original.batchNo}</span>,
+    },
+    {
+      id: 'quantity',
+      header: 'Quantity',
+      accessorKey: 'totalQty',
+      meta: { align: 'right' },
       cell: ({ row }) => (
-        <span className="line-clamp-1 max-w-md text-muted-foreground">
-          {row.original.items
-            .map((i) => `${i.materialName ?? 'Removed'} × ${formatQuantity(i.qty)}`)
-            .join(', ')}
+        <span>
+          {formatQuantity(row.original.totalQty)} <span className="text-muted-foreground">g</span>
         </span>
       ),
     },
     {
-      id: 'totalQty',
-      header: 'Total qty',
-      accessorKey: 'totalQty',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatQuantity(row.original.totalQty),
+      id: 'entryBy',
+      header: 'Entry By',
+      accessorKey: 'createdAt',
+      cell: ({ row }) => <span className="text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
     },
     ...(isLab ? [] : productionColumns),
     {
       id: 'actions',
-      header: '',
+      header: 'Action',
       meta: { align: 'right', hideable: false },
       cell: ({ row }) => (
         <RowActions

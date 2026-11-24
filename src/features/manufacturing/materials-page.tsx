@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatQuantity } from '@/lib/format';
+import { formatDate, formatQuantity } from '@/lib/format';
 import { materialCategoriesApi, materialsApi, type Material } from '@redux/features/manufacturing';
 import { MaterialFormSheet } from './material-form-sheet';
 
@@ -58,7 +58,7 @@ export function MaterialsPage() {
     }),
     {
       id: 'name',
-      header: 'Material',
+      header: 'Product Name',
       accessorKey: 'name',
       meta: { sortKey: 'name', hideable: false },
       cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
@@ -70,42 +70,21 @@ export function MaterialsPage() {
       cell: ({ row }) => row.original.category?.name ?? '—',
     },
     {
-      id: 'storeQuantity',
-      header: 'Store qty',
+      id: 'quantity',
+      header: 'Quantity',
       accessorKey: 'storeQuantity',
       meta: { align: 'right' },
       cell: ({ row }) => quantityCell(row.original.storeQuantity, row.original.unit),
     },
     {
-      id: 'labQuantity',
-      header: 'Lab qty',
-      accessorKey: 'labQuantity',
-      meta: { align: 'right' },
-      cell: ({ row }) => quantityCell(row.original.labQuantity, row.original.unit),
-    },
-    {
-      id: 'minimum',
-      header: 'Minimum',
-      accessorKey: 'minimum',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatQuantity(row.original.minimum),
-    },
-    {
-      id: 'bareMinimum',
-      header: 'Bare minimum',
-      accessorKey: 'bareMinimum',
-      meta: { align: 'right' },
-      cell: ({ row }) => formatQuantity(row.original.bareMinimum),
-    },
-    {
-      id: 'level',
-      header: 'Level',
-      accessorFn: (m) => m.storeQuantity,
-      cell: ({ row }) => <MaterialLevelBadge material={row.original} />,
+      id: 'entryBy',
+      header: 'Entry By',
+      accessorKey: 'createdAt',
+      cell: ({ row }) => <span className="text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
     },
     {
       id: 'actions',
-      header: '',
+      header: 'Action',
       meta: { align: 'right', hideable: false },
       cell: ({ row }) => (
         <RowActions
