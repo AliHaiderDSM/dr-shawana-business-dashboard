@@ -15,6 +15,7 @@ import { DateRangeFilter } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { DetailList } from '@/components/shared/panel';
 import { RowActions } from '@/components/shared/row-actions';
+import { serialColumn } from '@/components/shared/serial-column';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -363,6 +364,12 @@ function BatchesPage({ stage }: BatchesPageProps) {
   const [removing, setRemoving] = useState<Batch | null>(null);
 
   const columns: ColumnDef<Batch, unknown>[] = [
+    serialColumn<Batch>({
+      page: list.page,
+      pageSize: list.pageSize,
+      total: query.data?.meta?.total,
+      newestFirst: true,
+    }),
     {
       id: 'batchNo',
       header: 'Batch no',

@@ -1,14 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { endOfMonth, startOfMonth } from 'date-fns';
+import { Eye } from 'lucide-react';
 import { Link } from 'react-router';
+import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { PrintButton } from '@/components/shared/print-button';
+import { serialColumn } from '@/components/shared/serial-column';
 import { useInventoryReport, type InventoryReport } from '@redux/features/inventory';
 import { isoDate } from '@/lib/format';
-import { StatusBadge } from '@/components/shared/status-badge';
-import { useListState } from '@/hooks/use-list-state';
+import { useListState, type ListState } from '@/hooks/use-list-state';
 import { formatDate, formatQuantity } from '@/lib/format';
 import {
   materialsApi,
@@ -20,57 +22,54 @@ import {
 type MaterialReportRow = NonNullable<ReturnType<typeof useMaterialReport>['data']>[number];
 type FinishedGoodRow = NonNullable<ReturnType<typeof useFinishedGoods>['data']>[number];
 
-const ALERT_BADGES = {
-  ok: <StatusBadge tone="success">OK</StatusBadge>,
-  minimum: <StatusBadge tone="warning">Minimum</StatusBadge>,
-  bare_minimum: <StatusBadge tone="danger">Bare minimum</StatusBadge>,
-};
+const materialRowClass = (row: MaterialReportRow) =>
+  row.alert === 'bare_minimum'
+    ? 'bg-destructive-soft hover:bg-destructive-soft'
+    : row.alert === 'minimum'
+      ? 'bg-warning-soft hover:bg-warning-soft'
+      : undefined;
 
-const materialColumns: ColumnDef<MaterialReportRow, unknown>[] = [
+const materialColumns = (list: ListState, total: number | undefined): ColumnDef<MaterialReportRow, unknown>[] => [
+  serialColumn<MaterialReportRow>({ page: list.page, pageSize: list.pageSize, total, newestFirst: false }),
   {
     id: 'name',
-    header: 'Material',
+    header: 'Material Name',
     accessorKey: 'name',
     meta: { hideable: false },
     cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
-    id: 'category',
-    header: 'Category',
-    accessorFn: (r) => r.categoryName ?? '',
-    cell: ({ row }) => row.original.categoryName ?? '—',
-  },
-  { id: 'unit', header: 'Unit', accessorKey: 'unit' },
-  ...(['opening', 'in', 'out', 'closing'] as const).map<ColumnDef<MaterialReportRow, unknown>>((key) => ({
-    id: key,
-    header: key[0]?.toUpperCase() + key.slice(1),
-    accessorKey: key,
+    id: 'in',
+    header: 'Material In',
+    accessorKey: 'in',
     meta: { align: 'right' },
+    cell: ({ row }) => formatQuantity(row.original.in),
+  },
+  {
+    id: 'out',
+    header: 'Material Out',
+    accessorKey: 'out',
+    meta: { align: 'right' },
+    cell: ({ row }) => formatQuantity(row.original.out),
+  },
+  {
+    id: 'closing',
+    header: 'Remaining',
+    accessorKey: 'closing',
+    meta: { align: 'right' },
+    cell: ({ row }) => <span className="font-semibold">{formatQuantity(row.original.closing)}</span>,
+  },
+  {
+    id: 'actions',
+    header: 'Action',
+    meta: { align: 'right', hideable: false },
     cell: ({ row }) => (
-      <span className={key === 'closing' ? 'font-semibold' : undefined}>
-        {formatQuantity(row.original[key])}
-      </span>
+      <Button asChild variant="outline" size="icon-sm">
+        <Link to={`/materials/${row.original.materialId}`} aria-label="Open material">
+          <Eye className="size-4" />
+        </Link>
+      </Button>
     ),
-  })),
-  {
-    id: 'minimum',
-    header: 'Minimum',
-    accessorKey: 'minimum',
-    meta: { align: 'right' },
-    cell: ({ row }) => formatQuantity(row.original.minimum),
-  },
-  {
-    id: 'bareMinimum',
-    header: 'Bare minimum',
-    accessorKey: 'bareMinimum',
-    meta: { align: 'right' },
-    cell: ({ row }) => formatQuantity(row.original.bareMinimum),
-  },
-  {
-    id: 'alert',
-    header: 'Status',
-    accessorFn: (r) => r.alert ?? '',
-    cell: ({ row }) => (row.original.alert ? ALERT_BADGES[row.original.alert] : '—'),
   },
 ];
 
@@ -90,12 +89,16 @@ export function MaterialReportPage() {
     <>
       <PageHeader
         title="Material report"
-        description="Material in, out and closing quantity per location, with minimum alerts."
+        description="Material in, out and remaining quantity per material. Yellow is at minimum, red is below the bare minimum."
         actions={<PrintButton />}
       />
       <DataTable
-        columns={materialColumns}
+        columns={materialColumns(list, report.data?.length)}
         data={report.data}
+        list={list}
+        clientPagination
+        searchable={false}
+        rowClassName={materialRowClass}
         isLoading={report.isLoading}
         isFetching={report.isFetching}
         error={report.error}

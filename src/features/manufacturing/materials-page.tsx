@@ -8,6 +8,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
+import { serialColumn } from '@/components/shared/serial-column';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useListState } from '@/hooks/use-list-state';
@@ -29,7 +30,7 @@ export function MaterialLevelBadge({ material }: { material: Material }) {
 export function MaterialsPage() {
   const navigate = useNavigate();
   const { can } = useAuth();
-  const list = useListState({ defaultSort: 'name' });
+  const list = useListState({ defaultSort: '-createdAt' });
   const query = materialsApi.useList(list.query);
   const categories = materialCategoriesApi.useOptions();
   const [remove] = materialsApi.useRemove();
@@ -49,6 +50,12 @@ export function MaterialsPage() {
   );
 
   const columns: ColumnDef<Material, unknown>[] = [
+    serialColumn<Material>({
+      page: list.page,
+      pageSize: list.pageSize,
+      total: query.data?.meta?.total,
+      newestFirst: true,
+    }),
     {
       id: 'name',
       header: 'Material',

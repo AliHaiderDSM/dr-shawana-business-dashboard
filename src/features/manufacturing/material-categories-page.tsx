@@ -11,6 +11,7 @@ import { TextField } from '@/components/shared/form-fields';
 import { FormSheet } from '@/components/shared/form-sheet';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
+import { serialColumn } from '@/components/shared/serial-column';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useListState } from '@/hooks/use-list-state';
@@ -67,7 +68,7 @@ function CategorySheet({
 
 export function MaterialCategoriesPage() {
   const { can } = useAuth();
-  const list = useListState({ defaultSort: 'name' });
+  const list = useListState({ defaultSort: '-createdAt' });
   const query = materialCategoriesApi.useList(list.query);
   const [remove] = materialCategoriesApi.useRemove();
   const [editing, setEditing] = useState<MaterialCategory | null>(null);
@@ -80,6 +81,12 @@ export function MaterialCategoriesPage() {
   };
 
   const columns: ColumnDef<MaterialCategory, unknown>[] = [
+    serialColumn<MaterialCategory>({
+      page: list.page,
+      pageSize: list.pageSize,
+      total: query.data?.meta?.total,
+      newestFirst: true,
+    }),
     {
       id: 'name',
       header: 'Name',
