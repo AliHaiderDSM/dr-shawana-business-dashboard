@@ -165,6 +165,15 @@ export const MENU: MenuGroup[] = [
         superAdminOnly: true,
       },
       {
+        key: 'all-appointments',
+        label: 'All Appointments',
+        path: '/all-appointments',
+        icon: CalendarDays,
+        anyOf: ['appointments.view'],
+        scope: 'platform',
+        superAdminOnly: true,
+      },
+      {
         key: 'staff',
         label: 'Employees',
         path: '/staff',
@@ -195,15 +204,6 @@ export const MENU: MenuGroup[] = [
         anyOf: ['appointments.view'],
         scope: 'branch',
         roleLabels: { doctor: 'My Appointments' },
-      },
-      {
-        key: 'all-appointments',
-        label: 'All Appointments',
-        path: '/all-appointments',
-        icon: CalendarDays,
-        anyOf: ['appointments.view'],
-        scope: 'platform',
-        superAdminOnly: true,
       },
       {
         key: 'doctors',

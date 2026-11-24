@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { useNavigate } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
@@ -6,6 +7,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { doctorsApi } from '@redux/features/doctors';
 import { useBranchOptions } from '@redux/features/branches';
 import { useListState } from '@/hooks/use-list-state';
+import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useAllBranchesAppointments, type AllBranchesAppointment } from '@redux/features/appointments';
 import { appointmentNumber, MODE_LABELS, STATUS_LABELS, timeLabel, VISIT_LABELS } from './constants';
@@ -86,10 +88,17 @@ const columns: ColumnDef<AllBranchesAppointment, unknown>[] = [
 ];
 
 export function AllAppointmentsPage() {
+  const navigate = useNavigate();
+  const { setBranchId } = useAuth();
   const list = useListState({ defaultSort: '-date' });
   const query = useAllBranchesAppointments(list.query);
   const branches = useBranchOptions(true);
   const doctors = doctorsApi.useOptions();
+
+  const openAppointment = (a: AllBranchesAppointment) => {
+    if (a.branch) setBranchId(a.branch.id);
+    navigate(`/appointments/${a.id}`);
+  };
 
   return (
     <>
@@ -106,6 +115,7 @@ export function AllAppointmentsPage() {
         isFetching={query.isFetching}
         error={query.error}
         onRetry={() => void query.refetch()}
+        onRowClick={openAppointment}
         searchPlaceholder="Patient, phone or number"
         exportFileName="all-appointments"
         emptyTitle="No appointments match"
