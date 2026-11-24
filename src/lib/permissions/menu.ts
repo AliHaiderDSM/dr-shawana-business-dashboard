@@ -10,7 +10,6 @@ import {
   CalendarClock,
   CalendarDays,
   ClipboardList,
-  Factory,
   FileHeart,
   FlaskConical,
   FolderTree,
@@ -520,14 +519,6 @@ export const MENU: MenuGroup[] = [
         path: '/lab-transfers',
         icon: TestTubes,
         anyOf: ['labTransfers.view'],
-        scope: 'branch',
-      },
-      {
-        key: 'productions',
-        label: 'Production',
-        path: '/productions',
-        icon: Factory,
-        anyOf: ['production.view'],
         scope: 'branch',
       },
       {

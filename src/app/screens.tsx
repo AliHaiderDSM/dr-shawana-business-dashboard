@@ -182,12 +182,6 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
-    path: 'productions',
-    element: page(() => import('@/features/manufacturing/batches-page'), 'ProductionsPage'),
-    anyOf: ['production.view'],
-    scope: 'branch',
-  },
-  {
     path: 'finished-goods',
     element: page(() => import('@/features/manufacturing/manufacturing-reports'), 'FinishedGoodsPage'),
     anyOf: ['finishedGoods.view'],
