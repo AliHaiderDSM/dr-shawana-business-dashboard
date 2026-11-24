@@ -11996,6 +11996,7 @@ export interface paths {
                     status?: "booked" | "completed" | "cancelled";
                     mode?: "online" | "physical";
                     bhrtStatus?: "none" | "on" | "off" | "recommended";
+                    /** @description All-branches view: filter by one branch */
                     branchId?: string;
                     from?: string;
                     to?: string;
@@ -12152,6 +12153,110 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Super Admin: appointments across every branch, with a branch filter */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    sort?: "date" | "-date" | "createdAt" | "-createdAt" | "appointmentNo" | "-appointmentNo";
+                    doctorId?: string;
+                    patientId?: string;
+                    status?: "booked" | "completed" | "cancelled";
+                    mode?: "online" | "physical";
+                    bhrtStatus?: "none" | "on" | "off" | "recommended";
+                    /** @description All-branches view: filter by one branch */
+                    branchId?: string;
+                    from?: string;
+                    to?: string;
+                    visitType?: "new" | "followup";
+                    createdBy?: string;
+                    /** @description Booking date (posSoft "appointment date" filter) */
+                    createdOn?: string;
+                    /** @description true: only repeat visits, false: only main appointments */
+                    repeat?: "true" | "false";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AppointmentOverview"][];
+                            meta: components["schemas"]["PageMeta"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -35748,6 +35853,41 @@ export interface components {
             lastPaymentDate: string;
             /** @example 1250.50 */
             amount: string;
+        };
+        AppointmentOverview: {
+            /** Format: uuid */
+            id: string;
+            appointmentNo: number;
+            repeatNo: number | null;
+            date: string;
+            timeFrom: string;
+            timeTo: string;
+            /** @enum {string} */
+            status: "booked" | "completed" | "cancelled";
+            /** @enum {string} */
+            mode: "online" | "physical";
+            /** @enum {string} */
+            visitType: "new" | "followup";
+            /** @example 1250.50 */
+            fee: string;
+            patient: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                phone: string;
+                city: string | null;
+            } | null;
+            doctor: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            branch: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+            } | null;
         };
         PatientLink: {
             token: string;

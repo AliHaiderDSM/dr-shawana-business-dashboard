@@ -224,6 +224,12 @@ export const screenRoutes: ScreenRoute[] = [
     scope: 'branch',
   },
   {
+    path: 'all-appointments',
+    element: page(() => import('@/features/appointments/all-appointments-page'), 'AllAppointmentsPage'),
+    anyOf: ['appointments.view'],
+    scope: 'platform',
+  },
+  {
     path: 'appointments/:id',
     element: page(() => import('@/features/appointments/appointment-detail-page'), 'AppointmentDetailPage'),
     anyOf: ['appointments.view'],

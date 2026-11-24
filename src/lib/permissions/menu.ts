@@ -197,6 +197,15 @@ export const MENU: MenuGroup[] = [
         roleLabels: { doctor: 'My Appointments' },
       },
       {
+        key: 'all-appointments',
+        label: 'All Appointments',
+        path: '/all-appointments',
+        icon: CalendarDays,
+        anyOf: ['appointments.view'],
+        scope: 'platform',
+        superAdminOnly: true,
+      },
+      {
         key: 'doctors',
         label: 'Doctors',
         path: '/doctors',

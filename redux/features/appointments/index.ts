@@ -15,6 +15,7 @@ import type {
   AppointmentFileArg,
   AppointmentInput,
   AppointmentListPage,
+  AllBranchesAppointmentPage,
   AppointmentMedicalRecordUrl,
   AppointmentPatientLink,
   AppointmentPayment,
@@ -45,6 +46,13 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
     getAppointmentList: build.query<AppointmentListPage, Record<string, unknown>>({
       queryFn: (query) =>
         fromApi<AppointmentListPage>(() => unwrap(api.GET('/branch/appointments', { params: { query } }))),
+      providesTags: ['appointments'],
+    }),
+    getAllBranchesAppointments: build.query<AllBranchesAppointmentPage, Record<string, unknown>>({
+      queryFn: (query) =>
+        fromApi<AllBranchesAppointmentPage>(() =>
+          unwrap(api.GET('/admin/appointments', { params: { query } })),
+        ),
       providesTags: ['appointments'],
     }),
     getAppointmentCalendar: build.query<AppointmentCalendar, AppointmentCalendarQuery>({
@@ -210,6 +218,7 @@ export const appointmentsQueryApi = baseApi.injectEndpoints({
 
 export const {
   useGetAppointmentListQuery,
+  useGetAllBranchesAppointmentsQuery,
   useGetAppointmentCalendarQuery,
   useGetAppointmentSummaryQuery,
   useBookAppointmentMutation,
@@ -224,6 +233,10 @@ export const {
 
 export function useAppointmentList(query: Record<string, unknown>) {
   return useGetAppointmentListQuery(query);
+}
+
+export function useAllBranchesAppointments(query: Record<string, unknown>) {
+  return useGetAllBranchesAppointmentsQuery(query);
 }
 
 export function useAppointmentSummary(query: AppointmentSummaryQuery) {

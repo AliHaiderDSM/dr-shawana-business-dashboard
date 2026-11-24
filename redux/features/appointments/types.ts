@@ -12,6 +12,8 @@ export type CalendarEntry = Schemas['CalendarEntry'];
 export type AppointmentStatus = Appointment['status'];
 
 export type AppointmentListPage = ClinicGetResponse<'/branch/appointments'>;
+export type AllBranchesAppointmentPage = ClinicGetResponse<'/admin/appointments'>;
+export type AllBranchesAppointment = AllBranchesAppointmentPage['data'][number];
 export type AppointmentCalendar = ClinicGetResponse<'/branch/appointments/calendar'>['data'];
 export type AppointmentSummary = Schemas['AppointmentSummary'];
 
