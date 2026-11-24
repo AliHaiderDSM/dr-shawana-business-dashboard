@@ -25,6 +25,7 @@ export const RESOURCES: Record<string, { label: string; file: string }> = {
   liverDetox: { label: 'Liver Detox', file: '/resources/liver-detox.jpeg' },
   skinCareRoutine: { label: 'Skin Care Routine', file: '/resources/skin-care-routine.jpeg' },
   hairCareRoutine: { label: 'Hair Care Routine', file: '/resources/hair-care-routine.jpeg' },
+  pcos: { label: 'PCOS', file: '/resources/pcos.pdf' },
 };
 
 type PublicKey = 'basic_info' | 'medical_history' | 'additional_symptoms';

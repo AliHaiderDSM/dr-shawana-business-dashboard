@@ -35781,7 +35781,7 @@ export interface components {
                     } | null;
                 };
             } | null;
-            /** @description Educational resources ticked Yes: glpDietPlan, generalDietPlan, liverDetox, skinCareRoutine, hairCareRoutine */
+            /** @description Educational resources ticked Yes: glpDietPlan, generalDietPlan, liverDetox, skinCareRoutine, hairCareRoutine, pcos */
             resources?: string[];
             /** Format: date-time */
             expiresAt: string;
@@ -37300,6 +37300,11 @@ export interface components {
              * @enum {string|null}
              */
             hairCareRoutine: "yes" | "no" | null;
+            /**
+             * @default null
+             * @enum {string|null}
+             */
+            pcos: "yes" | "no" | null;
         };
         ConsultationReportRow: {
             /** Format: uuid */

@@ -846,6 +846,7 @@ export const SECTIONS: Record<SectionKey, SectionDef> = {
       yesNo('liverDetox', 'Liver detox?'),
       yesNo('skinCareRoutine', 'Skin care routine?'),
       yesNo('hairCareRoutine', 'Hair care routine?'),
+      yesNo('pcos', 'PCOS?'),
     ],
   },
 };
