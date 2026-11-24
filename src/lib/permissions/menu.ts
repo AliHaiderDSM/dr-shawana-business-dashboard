@@ -109,6 +109,10 @@ const WAREHOUSE_KEEPER_KEYS = new Set([
   'stock',
   'batches',
   'labels',
+  'materials',
+  'material-categories',
+  'lab-transfers',
+  'material-report',
 ]);
 
 const DISPATCHER_KEYS = new Set([
