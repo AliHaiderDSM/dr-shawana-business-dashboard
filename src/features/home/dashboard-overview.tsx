@@ -33,6 +33,12 @@ import { ErrorState } from '@/components/shared/error-state';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { appointmentNumber, timeLabel } from '@/features/appointments/constants';
@@ -519,26 +525,24 @@ function RevenueChart({
                 ))
               : null}
             {addable.length ? (
-              <Select
-                value=""
-                onValueChange={(m) => setCompares((c) => [...c.filter((x) => x !== primary), m])}
-              >
-                <SelectTrigger
-                  size="sm"
-                  className="h-7 gap-1 px-2.5 text-xs"
-                  aria-label="Add a month to compare"
-                >
-                  <Plus className="size-3.5" />
-                  Compare
-                </SelectTrigger>
-                <SelectContent>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 gap-1 px-2.5 text-xs">
+                    <Plus className="size-3.5" />
+                    Compare
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
                   {addable.map((m) => (
-                    <SelectItem key={m} value={m}>
+                    <DropdownMenuItem
+                      key={m}
+                      onSelect={() => setCompares((c) => [...c.filter((x) => x !== primary), m])}
+                    >
                       {monthName(m, 'MMM yyyy')}
-                    </SelectItem>
+                    </DropdownMenuItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
           </div>
         ) : null}
