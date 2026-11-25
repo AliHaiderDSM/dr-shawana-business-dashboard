@@ -33,7 +33,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { appointmentNumber, timeLabel } from '@/features/appointments/constants';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCompactMoney, formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
@@ -277,18 +276,21 @@ function ComparisonSummary({
   series,
   daily,
   previous,
+  days,
 }: {
   primary: string;
   compare: string;
   series: SeriesKey[];
   daily: Partial<Record<SeriesKey, string[]>>;
   previous: Partial<Record<SeriesKey, string[]>>;
+  days: number;
 }) {
+  const span = (month: string) => `1–${days} ${monthName(month, 'MMM yyyy')}`;
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       {series.map((key) => {
-        const now = sumOf(daily[key]);
-        const before = sumOf(previous[key]);
+        const now = sumOf(daily[key]?.slice(0, days));
+        const before = sumOf(previous[key]?.slice(0, days));
         return (
           <div key={key} className="rounded-lg border bg-muted/30 px-4 py-3">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -300,7 +302,7 @@ function ComparisonSummary({
               <Trend current={now} previous={before} />
             </div>
             <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-              {monthName(primary, 'MMM yyyy')} vs {monthName(compare, 'MMM yyyy')} · {formatMoney(before)}
+              {span(primary)} vs {span(compare)} · {formatMoney(before)}
             </div>
           </div>
         );
@@ -323,7 +325,6 @@ function RevenueChart({
   const [monthNo, setMonthNo] = useState('all');
   const [compare, setCompare] = useState('none');
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({ sales: true, appointments: true });
-  const [mode, setMode] = useState<'daily' | 'running'>('daily');
 
   const primary = monthNo === 'all' ? null : `${year}-${monthNo}`;
   const comparing = primary && compare !== 'none' ? compare : null;
@@ -348,12 +349,12 @@ function RevenueChart({
   const todayIso = isoDate();
   const thisMonth = todayIso.slice(0, 7);
   let points: RevenuePoint[];
-  const running = Boolean(primary) && mode === 'running';
+  const elapsed = (days: string[] | undefined) => (days ?? []).filter((d) => d <= todayIso).length;
+  const sharedDays = Math.min(elapsed(daily.data?.days), elapsed(previous.data?.days));
   if (primary) {
     const length = Math.max(daily.data?.days.length ?? 0, comparing ? (previous.data?.days.length ?? 0) : 0);
     const totals: Partial<Record<ValueKey, number>> = {};
     const add = (key: ValueKey, value: number) => {
-      if (!running) return value;
       totals[key] = (totals[key] ?? 0) + value;
       return totals[key];
     };
@@ -387,10 +388,10 @@ function RevenueChart({
 
   return (
     <ChartCard
-      title={running ? 'Running revenue' : primary ? 'Daily revenue' : 'Monthly revenue'}
+      title={primary ? 'Running revenue' : 'Monthly revenue'}
       description={
         primary
-          ? `${running ? 'Total received from the 1st up to each day' : 'Payments received per day'} · ${monthName(primary)}${comparing ? ` compared with ${monthName(comparing)}` : ''}`
+          ? `Total received from the 1st up to each day · ${monthName(primary)}${comparing ? ` compared with ${monthName(comparing)}` : ''}`
           : 'Payments received per month'
       }
       className="xl:col-span-2"
@@ -456,23 +457,6 @@ function RevenueChart({
               onChange={(checked) => setVisible((v) => ({ ...v, [key]: checked }))}
             />
           ))}
-          {primary ? (
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              size="sm"
-              value={mode}
-              onValueChange={(value) => value && setMode(value as 'daily' | 'running')}
-              aria-label="Chart view"
-            >
-              <ToggleGroupItem value="daily" className="h-7 px-3 text-xs">
-                Per day
-              </ToggleGroupItem>
-              <ToggleGroupItem value="running" className="h-7 px-3 text-xs">
-                Running total
-              </ToggleGroupItem>
-            </ToggleGroup>
-          ) : null}
         </div>
         {comparing ? (
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
@@ -514,7 +498,7 @@ function RevenueChart({
                 tick={AXIS_TICK}
                 tickLine={false}
                 axisLine={false}
-                width={64}
+                width={76}
                 tickFormatter={(v: number) => formatCompactMoney(v)}
                 domain={[0, (max: number) => Math.max(max, 1000)]}
               />
@@ -580,6 +564,7 @@ function RevenueChart({
           series={shown}
           daily={dailySeries}
           previous={previousSeries}
+          days={sharedDays}
         />
       ) : null}
     </ChartCard>
