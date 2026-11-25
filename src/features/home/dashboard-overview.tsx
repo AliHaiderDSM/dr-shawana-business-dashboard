@@ -1,12 +1,14 @@
 import {
   CalendarDays,
   PackageX,
+  Plus,
   RefreshCw,
   TrendingDown,
   TrendingUp,
   Truck,
   Users,
   Wallet,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -38,7 +40,13 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatCompactMoney, formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAppointmentList, type Appointment } from '@redux/features/appointments';
-import { useDailyRevenue, useDashboard, type DashboardData } from '@redux/features/home';
+import {
+  MAX_COMPARISONS,
+  useComparedRevenue,
+  useDailyRevenue,
+  useDashboard,
+  type DashboardData,
+} from '@redux/features/home';
 import { isCustomPeriod, periodLabel } from './constants';
 import { BranchComparison, PendingDeliveries, StockAlerts, TopProducts } from './dashboard-insights';
 
@@ -145,18 +153,23 @@ function ChartCard({
   );
 }
 
-const monthIndex = (data: DashboardData) => Number(data.month.slice(5, 7)) - 1;
-
-function monthlyRevenue(data: DashboardData, index: number) {
-  return Number(data.charts.salesAmount?.[index] ?? 0) + Number(data.charts.appointmentAmount?.[index] ?? 0);
+function previousMonth(month: string) {
+  const year = Number(month.slice(0, 4));
+  const no = Number(month.slice(5, 7));
+  return no === 1 ? `${year - 1}-12` : `${year}-${String(no - 1).padStart(2, '0')}`;
 }
 
 function KpiRow({ data }: { data: DashboardData }) {
-  const currentYear = Number(data.month.slice(0, 4)) === data.charts.year;
-  const index = monthIndex(data);
   const revenueNow = Number(data.sales?.month.revenue ?? 0) + Number(data.appointments?.month.amount ?? 0);
   const custom = isCustomPeriod(data);
-  const revenuePrevious = !custom && currentYear && index > 0 ? monthlyRevenue(data, index - 1) : 0;
+  const lastMonth = previousMonth(data.month);
+  const dayOfMonth = Number(data.date.slice(8, 10));
+  const previous = useDailyRevenue(custom ? null : lastMonth);
+  const revenuePrevious = custom
+    ? 0
+    : sumOf(previous.data?.salesAmount?.slice(0, dayOfMonth)) +
+      sumOf(previous.data?.appointmentAmount?.slice(0, dayOfMonth));
+  const sameDays = Math.min(dayOfMonth, previous.data?.days.length ?? dayOfMonth);
   const suffix = custom ? 'in period' : 'this month';
   const hasRevenue = Boolean(data.sales || data.appointments);
 
@@ -194,7 +207,7 @@ function KpiRow({ data }: { data: DashboardData }) {
           revenuePrevious > 0 ? (
             <>
               <Trend current={revenueNow} previous={revenuePrevious} />
-              from last month
+              vs 1–{sameDays} {monthName(lastMonth, 'MMM')}
             </>
           ) : (
             'Sales and appointment payments'
@@ -238,72 +251,122 @@ function KpiRow({ data }: { data: DashboardData }) {
 }
 
 type SeriesKey = keyof typeof SERIES;
-type ValueKey = SeriesKey | `${SeriesKey}Compare`;
-type RevenuePoint = { label: string; date?: string; compareDate?: string } & Partial<Record<ValueKey, number>>;
+type RevenuePoint = { label: string; dates: (string | undefined)[]; values: Partial<Record<string, number>> };
+type DailyQuery = ReturnType<typeof useDailyRevenue>;
 
 const MONTH_NUMBERS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+const MONTH_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+  'var(--chart-6)',
+  'var(--chart-2)',
+];
 const monthName = (month: string, pattern = 'MMMM yyyy') => formatDate(`${month}-01`, pattern);
 const sumOf = (values: string[] | undefined) => (values ?? []).reduce((sum, v) => sum + Number(v), 0);
+const monthColor = (index: number) => MONTH_COLORS[index % MONTH_COLORS.length] ?? 'var(--chart-1)';
+const lineId = (key: SeriesKey, index: number) => `${key}-${index}`;
+const seriesOf = (query: DailyQuery, key: SeriesKey) =>
+  key === 'sales' ? query.data?.salesAmount : query.data?.appointmentAmount;
 
-function compareOptions(year: number, exclude: string) {
+function compareOptions(year: number, exclude: string[]) {
   const current = isoDate().slice(0, 7);
   return [year, year - 1]
     .flatMap((y) => [...MONTH_NUMBERS].reverse().map((m) => `${y}-${m}`))
-    .filter((m) => m !== exclude && m <= current);
+    .filter((m) => !exclude.includes(m) && m <= current);
 }
 
 function SeriesToggle({
   series,
   checked,
+  byStyle,
   onChange,
 }: {
   series: SeriesKey;
   checked: boolean;
+  byStyle: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-2 text-xs font-medium select-none">
       <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
-      <span className="size-2.5 rounded-full" style={{ background: SERIES[series].color }} />
+      {byStyle ? (
+        <span
+          className={cn(
+            'w-5 border-t-2 border-foreground',
+            series === 'appointments' ? 'border-dashed' : 'border-solid',
+          )}
+        />
+      ) : (
+        <span className="size-2.5 rounded-full" style={{ background: SERIES[series].color }} />
+      )}
       {SERIES[series].label}
     </label>
   );
 }
 
+function MonthChip({ month, color, onRemove }: { month: string; color: string; onRemove?: () => void }) {
+  return (
+    <span className="inline-flex h-7 items-center gap-1.5 rounded-full border bg-card pr-1 pl-2.5 text-xs font-medium">
+      <span className="size-2.5 rounded-full" style={{ background: color }} />
+      {monthName(month, 'MMM yyyy')}
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Remove ${monthName(month)}`}
+          className="flex size-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X className="size-3" />
+        </button>
+      ) : (
+        <span className="w-1.5" />
+      )}
+    </span>
+  );
+}
+
 function ComparisonSummary({
-  primary,
-  compare,
+  months,
   series,
-  daily,
-  previous,
+  total,
   days,
 }: {
-  primary: string;
-  compare: string;
+  months: string[];
   series: SeriesKey[];
-  daily: Partial<Record<SeriesKey, string[]>>;
-  previous: Partial<Record<SeriesKey, string[]>>;
+  total: (key: SeriesKey, index: number) => number;
   days: number;
 }) {
   const span = (month: string) => `1–${days} ${monthName(month, 'MMM yyyy')}`;
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       {series.map((key) => {
-        const now = sumOf(daily[key]?.slice(0, days));
-        const before = sumOf(previous[key]?.slice(0, days));
+        const now = total(key, 0);
         return (
           <div key={key} className="rounded-lg border bg-muted/30 px-4 py-3">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <span className="size-2.5 rounded-full" style={{ background: SERIES[key].color }} />
-              {SERIES[key].label}
+              <span className="size-2.5 rounded-full" style={{ background: monthColor(0) }} />
+              {SERIES[key].label} · {span(months[0] ?? '')}
             </div>
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-lg font-semibold tabular-nums">{formatMoney(now)}</span>
-              <Trend current={now} previous={before} />
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-              {span(primary)} vs {span(compare)} · {formatMoney(before)}
-            </div>
+            <div className="mt-2 text-lg font-semibold tabular-nums">{formatMoney(now)}</div>
+            <ul className="mt-2 space-y-1.5 border-t pt-2">
+              {months.slice(1).map((month, i) => {
+                const before = total(key, i + 1);
+                return (
+                  <li key={month} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <span className="size-2 rounded-full" style={{ background: monthColor(i + 1) }} />
+                      {span(month)}
+                    </span>
+                    <span className="flex items-center gap-2 tabular-nums">
+                      {formatMoney(before)}
+                      <Trend current={now} previous={before} />
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         );
       })}
@@ -323,13 +386,17 @@ function RevenueChart({
   onYearChange: (year: number) => void;
 }) {
   const [monthNo, setMonthNo] = useState('all');
-  const [compare, setCompare] = useState('none');
+  const [compares, setCompares] = useState<string[]>([]);
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({ sales: true, appointments: true });
 
   const primary = monthNo === 'all' ? null : `${year}-${monthNo}`;
-  const comparing = primary && compare !== 'none' ? compare : null;
+  const comparing = primary ? compares.filter((m) => m !== primary) : [];
   const daily = useDailyRevenue(primary);
-  const previous = useDailyRevenue(comparing);
+  const others = useComparedRevenue(comparing);
+  const queries = primary ? [daily, ...others] : [];
+  const months = primary ? [primary, ...comparing] : [];
+  const multi = months.length > 1;
+  const addable = primary && comparing.length < MAX_COMPARISONS ? compareOptions(year, months) : [];
 
   const allowed = (['sales', 'appointments'] as const).filter((key) =>
     key === 'sales' ? data.charts.salesAmount : data.charts.appointmentAmount,
@@ -337,52 +404,48 @@ function RevenueChart({
   const shown = allowed.filter((key) => visible[key]);
   const field = (key: SeriesKey) => (key === 'sales' ? 'salesAmount' : 'appointmentAmount');
 
-  const dailySeries = {
-    sales: daily.data?.salesAmount,
-    appointments: daily.data?.appointmentAmount,
-  };
-  const previousSeries = {
-    sales: previous.data?.salesAmount,
-    appointments: previous.data?.appointmentAmount,
-  };
-
   const todayIso = isoDate();
   const thisMonth = todayIso.slice(0, 7);
-  let points: RevenuePoint[];
   const elapsed = (days: string[] | undefined) => (days ?? []).filter((d) => d <= todayIso).length;
-  const sharedDays = Math.min(elapsed(daily.data?.days), elapsed(previous.data?.days));
+  const sharedDays = Math.min(...queries.map((q) => elapsed(q.data?.days)));
+  let points: RevenuePoint[];
   if (primary) {
-    const length = Math.max(daily.data?.days.length ?? 0, comparing ? (previous.data?.days.length ?? 0) : 0);
-    const totals: Partial<Record<ValueKey, number>> = {};
-    const add = (key: ValueKey, value: number) => {
-      totals[key] = (totals[key] ?? 0) + value;
-      return totals[key];
-    };
+    const length = Math.max(0, ...queries.map((q) => q.data?.days.length ?? 0));
+    const totals: Record<string, number> = {};
     points = Array.from({ length }, (_, i) => {
-      const date = daily.data?.days[i];
-      const compareDate = comparing ? previous.data?.days[i] : undefined;
-      const point: RevenuePoint = { label: String(i + 1), date, compareDate };
-      for (const key of allowed) {
-        if (date && date <= todayIso) point[key] = add(key, Number(dailySeries[key]?.[i] ?? 0));
-        if (compareDate && compareDate <= todayIso)
-          point[`${key}Compare`] = add(`${key}Compare`, Number(previousSeries[key]?.[i] ?? 0));
-      }
+      const dates = queries.map((q) => q.data?.days[i]);
+      const point: RevenuePoint = { label: String(i + 1), dates, values: {} };
+      queries.forEach((query, m) => {
+        const date = dates[m];
+        if (!date || date > todayIso) return;
+        for (const key of allowed) {
+          const id = lineId(key, m);
+          totals[id] = (totals[id] ?? 0) + Number(seriesOf(query, key)?.[i] ?? 0);
+          point.values[id] = totals[id];
+        }
+      });
       return point;
     });
   } else {
     points = data.charts.months.map((month, i) => {
-      const point: RevenuePoint = { label: formatDate(`${month}-01`, 'MMM') };
+      const point: RevenuePoint = { label: formatDate(`${month}-01`, 'MMM'), dates: [], values: {} };
       if (month <= thisMonth)
-        for (const key of allowed) point[key] = Number(data.charts[field(key)]?.[i] ?? 0);
+        for (const key of allowed) point.values[lineId(key, 0)] = Number(data.charts[field(key)]?.[i] ?? 0);
       return point;
     });
   }
 
-  const failed = primary ? (daily.error ?? (comparing ? previous.error : undefined)) : undefined;
-  const loading = Boolean(primary && (daily.isFetching || (comparing && previous.isFetching)));
-  const empty =
-    !loading &&
-    points.every((p) => shown.every((key) => !p[key] && !p[`${key}Compare`]));
+  const lines = (primary ? months : [String(year)]).flatMap((month, m) =>
+    shown.map((key) => ({
+      id: lineId(key, m),
+      key,
+      month,
+      color: multi ? monthColor(m) : SERIES[key].color,
+    })),
+  );
+  const failed = queries.find((q) => q.error)?.error;
+  const loading = queries.some((q) => q.isFetching);
+  const empty = !loading && points.every((p) => lines.every((line) => !p.values[line.id]));
   const periodText = primary ? monthName(primary) : String(year);
   const dot = (color: string, r: number) => ({ r, fill: color, stroke: 'var(--card)', strokeWidth: 2 });
 
@@ -391,7 +454,7 @@ function RevenueChart({
       title={primary ? 'Running revenue' : 'Monthly revenue'}
       description={
         primary
-          ? `Total received from the 1st up to each day · ${monthName(primary)}${comparing ? ` compared with ${monthName(comparing)}` : ''}`
+          ? `Total received from the 1st up to each day · ${monthName(primary)}${multi ? ` compared with ${comparing.map((m) => monthName(m, 'MMM yyyy')).join(', ')}` : ''}`
           : 'Payments received per month'
       }
       className="xl:col-span-2"
@@ -413,8 +476,7 @@ function RevenueChart({
             value={monthNo}
             onValueChange={(v) => {
               setMonthNo(v);
-              if (v === 'all') setCompare('none');
-              else if (compare === `${year}-${v}`) setCompare('none');
+              if (v === 'all') setCompares([]);
             }}
           >
             <SelectTrigger size="sm" className="w-32" aria-label="Month">
@@ -429,21 +491,6 @@ function RevenueChart({
               ))}
             </SelectContent>
           </Select>
-          {primary ? (
-            <Select value={compare} onValueChange={setCompare}>
-              <SelectTrigger size="sm" className="w-40" aria-label="Compare with">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No comparison</SelectItem>
-                {compareOptions(year, primary).map((m) => (
-                  <SelectItem key={m} value={m}>
-                    vs {monthName(m, 'MMM yyyy')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
         </div>
       }
     >
@@ -454,32 +501,51 @@ function RevenueChart({
               key={key}
               series={key}
               checked={visible[key]}
+              byStyle={multi}
               onChange={(checked) => setVisible((v) => ({ ...v, [key]: checked }))}
             />
           ))}
         </div>
-        {comparing ? (
-          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <span className="h-0.5 w-5 rounded-full bg-foreground" />
-              {monthName(primary!, 'MMM yyyy')}
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-5 border-t-2 border-dashed border-muted-foreground" />
-              {monthName(comparing, 'MMM yyyy')}
-            </span>
+        {primary ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {multi
+              ? months.map((month, m) => (
+                  <MonthChip
+                    key={month}
+                    month={month}
+                    color={monthColor(m)}
+                    onRemove={m === 0 ? undefined : () => setCompares((c) => c.filter((x) => x !== month))}
+                  />
+                ))
+              : null}
+            {addable.length ? (
+              <Select
+                value=""
+                onValueChange={(m) => setCompares((c) => [...c.filter((x) => x !== primary), m])}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="h-7 gap-1 px-2.5 text-xs"
+                  aria-label="Add a month to compare"
+                >
+                  <Plus className="size-3.5" />
+                  Compare
+                </SelectTrigger>
+                <SelectContent>
+                  {addable.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {monthName(m, 'MMM yyyy')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
           </div>
         ) : null}
       </div>
       <div className="relative h-72">
         {failed ? (
-          <ErrorState
-            error={failed}
-            onRetry={() => {
-              void daily.refetch();
-              if (comparing) void previous.refetch();
-            }}
-          />
+          <ErrorState error={failed} onRetry={() => queries.forEach((q) => void q.refetch())} />
         ) : loading ? (
           <Skeleton className="absolute inset-0 rounded-lg" />
         ) : (
@@ -508,42 +574,28 @@ function RevenueChart({
                 labelFormatter={(label, payload) => {
                   const point = payload?.[0]?.payload as RevenuePoint | undefined;
                   if (!primary || !point) return String(label);
-                  const main = point.date ? formatDate(point.date, 'dd MMM yyyy') : '';
-                  const other = point.compareDate ? formatDate(point.compareDate, 'dd MMM yyyy') : '';
-                  return other ? `${main || '—'} vs ${other}` : main;
+                  return point.dates.map((d) => (d ? formatDate(d, 'dd MMM yyyy') : '—')).join(' vs ');
                 }}
                 formatter={(value, name) => [formatMoney(Number(value)), String(name)]}
               />
-              {shown.map((key) => (
+              {lines.map((line) => (
                 <Line
-                  key={key}
+                  key={line.id}
                   type="monotone"
-                  dataKey={key}
-                  name={comparing ? `${SERIES[key].label} · ${monthName(primary!, 'MMM yyyy')}` : SERIES[key].label}
-                  stroke={SERIES[key].color}
+                  dataKey={(p: RevenuePoint) => p.values[line.id]}
+                  name={
+                    multi
+                      ? `${SERIES[line.key].label} · ${monthName(line.month, 'MMM yyyy')}`
+                      : SERIES[line.key].label
+                  }
+                  stroke={line.color}
                   strokeWidth={2}
-                  dot={primary ? false : dot(SERIES[key].color, 4)}
-                  activeDot={dot(SERIES[key].color, 5)}
+                  strokeDasharray={multi && line.key === 'appointments' ? '5 4' : undefined}
+                  dot={primary ? false : dot(line.color, 4)}
+                  activeDot={dot(line.color, primary ? 4 : 5)}
                   connectNulls={false}
                 />
               ))}
-              {comparing
-                ? shown.map((key) => (
-                    <Line
-                      key={`${key}Compare`}
-                      type="monotone"
-                      dataKey={`${key}Compare`}
-                      name={`${SERIES[key].label} · ${monthName(comparing, 'MMM yyyy')}`}
-                      stroke={SERIES[key].color}
-                      strokeOpacity={0.55}
-                      strokeWidth={2}
-                      strokeDasharray="5 4"
-                      dot={false}
-                      activeDot={dot(SERIES[key].color, 4)}
-                      connectNulls={false}
-                    />
-                  ))
-                : null}
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -557,14 +609,15 @@ function RevenueChart({
           </p>
         ) : null}
       </div>
-      {comparing && !loading && !failed && shown.length ? (
+      {multi && !loading && !failed && shown.length ? (
         <ComparisonSummary
-          primary={primary!}
-          compare={comparing}
+          months={months}
           series={shown}
-          daily={dailySeries}
-          previous={previousSeries}
           days={sharedDays}
+          total={(key, m) => {
+            const query = queries[m];
+            return query ? sumOf(seriesOf(query, key)?.slice(0, sharedDays)) : 0;
+          }}
         />
       ) : null}
     </ChartCard>

@@ -69,6 +69,7 @@
   --chart-3: oklch(0.72 0.14 75);
   --chart-4: oklch(0.6 0.15 320);
   --chart-5: oklch(0.62 0.13 155);
+  --chart-6: oklch(0.6 0.15 35);
   --chart-grid: oklch(0.93 0.006 var(--brand-hue));
   --blood-1: #3461ff;
   --blood-2: #cf4393;
@@ -169,6 +170,7 @@
   --chart-3: oklch(0.67 0.13 75);
   --chart-4: oklch(0.6 0.15 320);
   --chart-5: oklch(0.64 0.13 155);
+  --chart-6: oklch(0.66 0.14 35);
   --chart-grid: oklch(0.27 0.012 var(--brand-hue));
   --blood-1: #6b8cff;
   --blood-2: #e06aaa;
@@ -252,6 +254,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
   --color-chart-grid: var(--chart-grid);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);

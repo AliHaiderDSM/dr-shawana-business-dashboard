@@ -55,6 +55,17 @@ export function useDailyRevenue(month: string | null) {
   return useGetDailyRevenueQuery(month ?? '', { skip: !month });
 }
 
+export const MAX_COMPARISONS = 5;
+
+export function useComparedRevenue(months: string[]) {
+  const first = useDailyRevenue(months[0] ?? null);
+  const second = useDailyRevenue(months[1] ?? null);
+  const third = useDailyRevenue(months[2] ?? null);
+  const fourth = useDailyRevenue(months[3] ?? null);
+  const fifth = useDailyRevenue(months[4] ?? null);
+  return [first, second, third, fourth, fifth].slice(0, Math.min(months.length, MAX_COMPARISONS));
+}
+
 export function useTopProducts(range: TopProductsRange) {
   return useGetTopProductsQuery(range, {
     pollingInterval: 60_000,
