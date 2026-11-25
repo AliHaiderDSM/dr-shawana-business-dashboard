@@ -4,7 +4,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { doctorsApi } from '@redux/features/doctors';
+import { useAllBranchesDoctorOptions } from '@redux/features/doctors';
 import { useBranchOptions } from '@redux/features/branches';
 import { useListState } from '@/hooks/use-list-state';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -93,7 +93,7 @@ export function AllAppointmentsPage() {
   const list = useListState({ defaultSort: '-date' });
   const query = useAllBranchesAppointments(list.query);
   const branches = useBranchOptions(true);
-  const doctors = doctorsApi.useOptions();
+  const doctors = useAllBranchesDoctorOptions();
 
   const openAppointment = (a: AllBranchesAppointment) => {
     if (a.branch) setBranchId(a.branch.id);
@@ -133,8 +133,11 @@ export function AllAppointmentsPage() {
               list={list}
               name="doctorId"
               allLabel="All doctors"
-              className="w-44"
-              options={(doctors.data ?? []).map((d) => ({ value: d.id, label: d.name }))}
+              className="w-48"
+              options={(doctors.data ?? []).map((d) => ({
+                value: d.id,
+                label: d.branchCode ? `${d.name} (${d.branchCode})` : d.name,
+              }))}
             />
             <FilterSelect
               list={list}

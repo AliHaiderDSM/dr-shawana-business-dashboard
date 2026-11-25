@@ -11,6 +11,7 @@ export interface DoctorOption {
   consultationFee: string;
 }
 
+export type AllBranchesDoctorOption = ClinicGetResponse<'/admin/doctors/options'>['data'][number];
 export type MyDoctorProfile = ClinicGetResponse<'/branch/doctors/me'>['data'];
 export type DoctorSlots = ClinicGetResponse<'/branch/doctors/{id}/slots'>['data'];
 export type DoctorStaffMembers = ClinicGetResponse<'/branch/staff'>['data'];

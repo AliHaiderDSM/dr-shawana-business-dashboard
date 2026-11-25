@@ -5,6 +5,7 @@ import { api, unwrap, uploadForm } from '@/lib/api/client';
 import type {
   Doctor,
   DoctorInput,
+  AllBranchesDoctorOption,
   DoctorOption,
   DoctorSignatureUpload,
   DoctorSignatureUrl,
@@ -27,6 +28,13 @@ export const doctorsQueryApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getMyDoctorProfile: build.query<MyDoctorProfile, void>({
       queryFn: () => toApi<MyDoctorProfile>(() => unwrap(api.GET('/branch/doctors/me')).then((r) => r.data)),
+      providesTags: ['doctors'],
+    }),
+    getAllBranchesDoctorOptions: build.query<AllBranchesDoctorOption[], void>({
+      queryFn: () =>
+        fromApi<AllBranchesDoctorOption[]>(() =>
+          unwrap(api.GET('/admin/doctors/options')).then((r) => r.data),
+        ),
       providesTags: ['doctors'],
     }),
     getDoctorSlots: build.query<DoctorSlots, DoctorSlotsArg>({
@@ -73,6 +81,7 @@ export const doctorsQueryApi = baseApi.injectEndpoints({
 
 export const {
   useGetMyDoctorProfileQuery,
+  useGetAllBranchesDoctorOptionsQuery,
   useGetDoctorSlotsQuery,
   useGetDoctorStaffMembersQuery,
   useUploadDoctorSignatureMutation,
@@ -81,6 +90,10 @@ export const {
 
 export function useMyDoctorProfile(enabled: boolean) {
   return useGetMyDoctorProfileQuery(undefined, { skip: !enabled });
+}
+
+export function useAllBranchesDoctorOptions() {
+  return useGetAllBranchesDoctorOptionsQuery();
 }
 
 export function useDoctorSlots(doctorId: string | null | undefined, date: string) {
