@@ -343,18 +343,18 @@ function RevenueChart({
     appointments: previous.data?.appointmentAmount,
   };
 
+  const todayIso = isoDate();
+  const thisMonth = todayIso.slice(0, 7);
   let points: RevenuePoint[];
   if (primary) {
     const length = Math.max(daily.data?.days.length ?? 0, comparing ? (previous.data?.days.length ?? 0) : 0);
     points = Array.from({ length }, (_, i) => {
-      const point: RevenuePoint = {
-        label: String(i + 1),
-        date: daily.data?.days[i],
-        compareDate: comparing ? previous.data?.days[i] : undefined,
-      };
+      const date = daily.data?.days[i];
+      const compareDate = comparing ? previous.data?.days[i] : undefined;
+      const point: RevenuePoint = { label: String(i + 1), date, compareDate };
       for (const key of allowed) {
-        if (i < (daily.data?.days.length ?? 0)) point[key] = Number(dailySeries[key]?.[i] ?? 0);
-        if (comparing && i < (previous.data?.days.length ?? 0))
+        if (date && date <= todayIso) point[key] = Number(dailySeries[key]?.[i] ?? 0);
+        if (compareDate && compareDate <= todayIso)
           point[`${key}Compare`] = Number(previousSeries[key]?.[i] ?? 0);
       }
       return point;
@@ -362,11 +362,13 @@ function RevenueChart({
   } else {
     points = data.charts.months.map((month, i) => {
       const point: RevenuePoint = { label: formatDate(`${month}-01`, 'MMM') };
-      for (const key of allowed) point[key] = Number(data.charts[field(key)]?.[i] ?? 0);
+      if (month <= thisMonth)
+        for (const key of allowed) point[key] = Number(data.charts[field(key)]?.[i] ?? 0);
       return point;
     });
   }
 
+  const failed = primary ? (daily.error ?? (comparing ? previous.error : undefined)) : undefined;
   const loading = Boolean(primary && (daily.isFetching || (comparing && previous.isFetching)));
   const empty =
     !loading &&
@@ -462,7 +464,15 @@ function RevenueChart({
         ) : null}
       </div>
       <div className="relative h-72">
-        {loading ? (
+        {failed ? (
+          <ErrorState
+            error={failed}
+            onRetry={() => {
+              void daily.refetch();
+              if (comparing) void previous.refetch();
+            }}
+          />
+        ) : loading ? (
           <Skeleton className="absolute inset-0 rounded-lg" />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -529,7 +539,7 @@ function RevenueChart({
             </LineChart>
           </ResponsiveContainer>
         )}
-        {!loading && shown.length === 0 ? (
+        {failed ? null : !loading && shown.length === 0 ? (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
             Tick Sales or Appointments to show the chart.
           </p>
@@ -539,7 +549,7 @@ function RevenueChart({
           </p>
         ) : null}
       </div>
-      {comparing && !loading && shown.length ? (
+      {comparing && !loading && !failed && shown.length ? (
         <ComparisonSummary
           primary={primary!}
           compare={comparing}
