@@ -1,18 +1,31 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { CalendarCheck, CalendarClock, CircleCheck } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
+import { serialColumn } from '@/components/shared/serial-column';
+import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { useAllBranchesDoctorOptions } from '@redux/features/doctors';
 import { useBranchOptions } from '@redux/features/branches';
-import { useListState } from '@/hooks/use-list-state';
+import { useListState, type ListState } from '@/hooks/use-list-state';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatMoney } from '@/lib/format';
-import { useAllBranchesAppointments, type AllBranchesAppointment } from '@redux/features/appointments';
+import {
+  useAllBranchesAppointments,
+  useAllBranchesAppointmentsSummary,
+  type AllBranchesAppointment,
+} from '@redux/features/appointments';
 import { appointmentNumber, MODE_LABELS, STATUS_LABELS, timeLabel, VISIT_LABELS } from './constants';
 
-const columns: ColumnDef<AllBranchesAppointment, unknown>[] = [
+const columns = (list: ListState, total: number | undefined): ColumnDef<AllBranchesAppointment, unknown>[] => [
+  serialColumn<AllBranchesAppointment>({
+    page: list.page,
+    pageSize: list.pageSize,
+    total,
+    newestFirst: true,
+  }),
   {
     id: 'appointmentNo',
     header: 'Appointment #',
@@ -85,6 +98,17 @@ const columns: ColumnDef<AllBranchesAppointment, unknown>[] = [
     accessorKey: 'status',
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
+  {
+    id: 'entryBy',
+    header: 'Entry By',
+    accessorFn: (a) => a.createdByName ?? '',
+    cell: ({ row }) => (
+      <div className="whitespace-nowrap text-sm">
+        <div className="text-muted-foreground">{formatDate(row.original.createdAt)}</div>
+        <div>{row.original.createdByName ?? '—'}</div>
+      </div>
+    ),
+  },
 ];
 
 export function AllAppointmentsPage() {
@@ -92,6 +116,7 @@ export function AllAppointmentsPage() {
   const { setBranchId } = useAuth();
   const list = useListState({ defaultSort: '-date' });
   const query = useAllBranchesAppointments(list.query);
+  const summary = useAllBranchesAppointmentsSummary(list.query);
   const branches = useBranchOptions(true);
   const doctors = useAllBranchesDoctorOptions();
 
@@ -106,8 +131,23 @@ export function AllAppointmentsPage() {
         title="All appointments"
         description="Appointments across every branch. Filter by branch, date and more."
       />
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <StatCard
+          label="All appointments"
+          icon={CalendarCheck}
+          value={summary.data?.total ?? '—'}
+          hint="Across every branch, with the filters applied"
+        />
+        <StatCard label="Booked" icon={CalendarClock} value={summary.data?.booked ?? '—'} hint="Not yet completed" />
+        <StatCard
+          label="Completed"
+          icon={CircleCheck}
+          value={summary.data?.completed ?? '—'}
+          hint="Consultation done"
+        />
+      </div>
       <DataTable
-        columns={columns}
+        columns={columns(list, query.data?.meta?.total)}
         data={query.data?.data}
         meta={query.data?.meta}
         list={list}

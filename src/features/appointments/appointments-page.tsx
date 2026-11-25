@@ -27,6 +27,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { DateRangeFilter, enumOptions, FilterSelect } from '@/components/shared/list-filters';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
+import { serialColumn } from '@/components/shared/serial-column';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -155,6 +156,12 @@ export function AppointmentsPage() {
   };
 
   const columns: ColumnDef<Appointment, unknown>[] = [
+    serialColumn<Appointment>({
+      page: list.page,
+      pageSize: list.pageSize,
+      total: query.data?.meta?.total,
+      newestFirst: true,
+    }),
     {
       id: 'appointmentNo',
       header: 'Appointment #',

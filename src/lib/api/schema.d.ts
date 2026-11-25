@@ -12351,6 +12351,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/appointments/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Super Admin: appointment counts across every branch (total, booked, completed) */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    search?: string;
+                    sort?: "date" | "-date" | "createdAt" | "-createdAt" | "appointmentNo" | "-appointmentNo";
+                    doctorId?: string;
+                    patientId?: string;
+                    status?: "booked" | "completed" | "cancelled";
+                    mode?: "online" | "physical";
+                    bhrtStatus?: "none" | "on" | "off" | "recommended";
+                    /** @description All-branches view: filter by one branch */
+                    branchId?: string;
+                    from?: string;
+                    to?: string;
+                    visitType?: "new" | "followup";
+                    createdBy?: string;
+                    /** @description Booking date (posSoft "appointment date" filter) */
+                    createdOn?: string;
+                    /** @description true: only repeat visits, false: only main appointments */
+                    repeat?: "true" | "false";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AppointmentOverviewSummary"];
+                        };
+                    };
+                };
+                /** @description Validation error */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/branch/appointments/summary": {
         parameters: {
             query?: never;
@@ -35958,6 +36061,9 @@ export interface components {
             visitType: "new" | "followup";
             /** @example 1250.50 */
             fee: string;
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string | null;
             patient: {
                 /** Format: uuid */
                 id: string;
@@ -35976,6 +36082,12 @@ export interface components {
                 code: string;
                 name: string;
             } | null;
+        };
+        AppointmentOverviewSummary: {
+            total: number;
+            booked: number;
+            completed: number;
+            cancelled: number;
         };
         PatientLink: {
             token: string;
