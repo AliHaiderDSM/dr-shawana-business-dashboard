@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { appointmentNumber, timeLabel } from '@/features/appointments/constants';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCompactMoney, formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
@@ -322,6 +323,7 @@ function RevenueChart({
   const [monthNo, setMonthNo] = useState('all');
   const [compare, setCompare] = useState('none');
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({ sales: true, appointments: true });
+  const [mode, setMode] = useState<'daily' | 'running'>('daily');
 
   const primary = monthNo === 'all' ? null : `${year}-${monthNo}`;
   const comparing = primary && compare !== 'none' ? compare : null;
@@ -346,16 +348,23 @@ function RevenueChart({
   const todayIso = isoDate();
   const thisMonth = todayIso.slice(0, 7);
   let points: RevenuePoint[];
+  const running = Boolean(primary) && mode === 'running';
   if (primary) {
     const length = Math.max(daily.data?.days.length ?? 0, comparing ? (previous.data?.days.length ?? 0) : 0);
+    const totals: Partial<Record<ValueKey, number>> = {};
+    const add = (key: ValueKey, value: number) => {
+      if (!running) return value;
+      totals[key] = (totals[key] ?? 0) + value;
+      return totals[key];
+    };
     points = Array.from({ length }, (_, i) => {
       const date = daily.data?.days[i];
       const compareDate = comparing ? previous.data?.days[i] : undefined;
       const point: RevenuePoint = { label: String(i + 1), date, compareDate };
       for (const key of allowed) {
-        if (date && date <= todayIso) point[key] = Number(dailySeries[key]?.[i] ?? 0);
+        if (date && date <= todayIso) point[key] = add(key, Number(dailySeries[key]?.[i] ?? 0));
         if (compareDate && compareDate <= todayIso)
-          point[`${key}Compare`] = Number(previousSeries[key]?.[i] ?? 0);
+          point[`${key}Compare`] = add(`${key}Compare`, Number(previousSeries[key]?.[i] ?? 0));
       }
       return point;
     });
@@ -378,12 +387,10 @@ function RevenueChart({
 
   return (
     <ChartCard
-      title={primary ? 'Daily revenue' : 'Monthly revenue'}
+      title={running ? 'Running revenue' : primary ? 'Daily revenue' : 'Monthly revenue'}
       description={
         primary
-          ? comparing
-            ? `Payments received per day · ${monthName(primary)} compared with ${monthName(comparing)}`
-            : `Payments received per day · ${monthName(primary)}`
+          ? `${running ? 'Total received from the 1st up to each day' : 'Payments received per day'} · ${monthName(primary)}${comparing ? ` compared with ${monthName(comparing)}` : ''}`
           : 'Payments received per month'
       }
       className="xl:col-span-2"
@@ -449,6 +456,23 @@ function RevenueChart({
               onChange={(checked) => setVisible((v) => ({ ...v, [key]: checked }))}
             />
           ))}
+          {primary ? (
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={mode}
+              onValueChange={(value) => value && setMode(value as 'daily' | 'running')}
+              aria-label="Chart view"
+            >
+              <ToggleGroupItem value="daily" className="h-7 px-3 text-xs">
+                Per day
+              </ToggleGroupItem>
+              <ToggleGroupItem value="running" className="h-7 px-3 text-xs">
+                Running total
+              </ToggleGroupItem>
+            </ToggleGroup>
+          ) : null}
         </div>
         {comparing ? (
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
