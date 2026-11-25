@@ -31,6 +31,7 @@ export const AUTH_EXPIRED_EVENT = 'dsm:auth-expired';
 const BRANCHLESS_PREFIXES = ['/auth/', '/admin/', '/health', '/branch/reports/'];
 const OVERVIEW_PATHS = [
   '/branch/dashboard',
+  '/branch/dashboard/daily-revenue',
   '/branch/inventory/expiry-alerts',
   '/branch/sales',
   '/branch/sales/delivery-slips',
