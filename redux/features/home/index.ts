@@ -2,6 +2,7 @@ import { baseApi, fromApi } from '@redux/api/baseApi';
 import { BRANCH_OPTIONS_STALE_SECONDS, useGetBranchOptionsQuery } from '@redux/features/branches';
 import { api, unwrap } from '@/lib/api/client';
 import type {
+  DailyRevenueData,
   DashboardArgs,
   DashboardData,
   DashboardPeriod,
@@ -26,6 +27,15 @@ export const homeApi = baseApi.injectEndpoints({
         ),
       providesTags: ['dashboard'],
     }),
+    getDailyRevenue: build.query<DailyRevenueData, string>({
+      queryFn: (month) =>
+        fromApi<DailyRevenueData>(() =>
+          unwrap(api.GET('/branch/dashboard/daily-revenue', { params: { query: { month } } })).then(
+            (r) => r.data as unknown as DailyRevenueData,
+          ),
+        ),
+      providesTags: ['dashboard'],
+    }),
     getTopProducts: build.query<TopProductsData, TopProductsRange>({
       queryFn: (range) =>
         fromApi<TopProductsData>(() =>
@@ -39,7 +49,11 @@ export const homeApi = baseApi.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetDashboardQuery, useGetTopProductsQuery } = homeApi;
+export const { useGetDashboardQuery, useGetTopProductsQuery, useGetDailyRevenueQuery } = homeApi;
+
+export function useDailyRevenue(month: string | null) {
+  return useGetDailyRevenueQuery(month ?? '', { skip: !month });
+}
 
 export function useTopProducts(range: TopProductsRange) {
   return useGetTopProductsQuery(range, {

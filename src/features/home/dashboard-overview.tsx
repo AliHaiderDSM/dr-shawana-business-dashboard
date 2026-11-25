@@ -30,6 +30,7 @@ import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { ErrorState } from '@/components/shared/error-state';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { appointmentNumber, timeLabel } from '@/features/appointments/constants';
@@ -37,7 +38,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { formatCompactMoney, formatCount, formatDate, formatMoney, isoDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAppointmentList, type Appointment } from '@redux/features/appointments';
-import { useDashboard, type DashboardData } from '@redux/features/home';
+import { useDailyRevenue, useDashboard, type DashboardData } from '@redux/features/home';
 import { isCustomPeriod, periodLabel } from './constants';
 import { BranchComparison, PendingDeliveries, StockAlerts, TopProducts } from './dashboard-insights';
 
@@ -236,6 +237,77 @@ function KpiRow({ data }: { data: DashboardData }) {
   );
 }
 
+type SeriesKey = keyof typeof SERIES;
+type ValueKey = SeriesKey | `${SeriesKey}Compare`;
+type RevenuePoint = { label: string; date?: string; compareDate?: string } & Partial<Record<ValueKey, number>>;
+
+const MONTH_NUMBERS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+const monthName = (month: string, pattern = 'MMMM yyyy') => formatDate(`${month}-01`, pattern);
+const sumOf = (values: string[] | undefined) => (values ?? []).reduce((sum, v) => sum + Number(v), 0);
+
+function compareOptions(year: number, exclude: string) {
+  const current = isoDate().slice(0, 7);
+  return [year, year - 1]
+    .flatMap((y) => [...MONTH_NUMBERS].reverse().map((m) => `${y}-${m}`))
+    .filter((m) => m !== exclude && m <= current);
+}
+
+function SeriesToggle({
+  series,
+  checked,
+  onChange,
+}: {
+  series: SeriesKey;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-xs font-medium select-none">
+      <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+      <span className="size-2.5 rounded-full" style={{ background: SERIES[series].color }} />
+      {SERIES[series].label}
+    </label>
+  );
+}
+
+function ComparisonSummary({
+  primary,
+  compare,
+  series,
+  daily,
+  previous,
+}: {
+  primary: string;
+  compare: string;
+  series: SeriesKey[];
+  daily: Partial<Record<SeriesKey, string[]>>;
+  previous: Partial<Record<SeriesKey, string[]>>;
+}) {
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {series.map((key) => {
+        const now = sumOf(daily[key]);
+        const before = sumOf(previous[key]);
+        return (
+          <div key={key} className="rounded-lg border bg-muted/30 px-4 py-3">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <span className="size-2.5 rounded-full" style={{ background: SERIES[key].color }} />
+              {SERIES[key].label}
+            </div>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-lg font-semibold tabular-nums">{formatMoney(now)}</span>
+              <Trend current={now} previous={before} />
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+              {monthName(primary, 'MMM yyyy')} vs {monthName(compare, 'MMM yyyy')} · {formatMoney(before)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RevenueChart({
   data,
   year,
@@ -247,89 +319,235 @@ function RevenueChart({
   years: number[];
   onYearChange: (year: number) => void;
 }) {
-  const showSales = Boolean(data.charts.salesAmount);
-  const showAppointments = Boolean(data.charts.appointmentAmount);
-  const points = data.charts.months.map((month, i) => ({
-    month: formatDate(`${month}-01`, 'MMM'),
-    sales: Number(data.charts.salesAmount?.[i] ?? 0),
-    appointments: Number(data.charts.appointmentAmount?.[i] ?? 0),
-  }));
-  const empty = points.every((p) => p.sales === 0 && p.appointments === 0);
+  const [monthNo, setMonthNo] = useState('all');
+  const [compare, setCompare] = useState('none');
+  const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({ sales: true, appointments: true });
+
+  const primary = monthNo === 'all' ? null : `${year}-${monthNo}`;
+  const comparing = primary && compare !== 'none' ? compare : null;
+  const daily = useDailyRevenue(primary);
+  const previous = useDailyRevenue(comparing);
+
+  const allowed = (['sales', 'appointments'] as const).filter((key) =>
+    key === 'sales' ? data.charts.salesAmount : data.charts.appointmentAmount,
+  );
+  const shown = allowed.filter((key) => visible[key]);
+  const field = (key: SeriesKey) => (key === 'sales' ? 'salesAmount' : 'appointmentAmount');
+
+  const dailySeries = {
+    sales: daily.data?.salesAmount,
+    appointments: daily.data?.appointmentAmount,
+  };
+  const previousSeries = {
+    sales: previous.data?.salesAmount,
+    appointments: previous.data?.appointmentAmount,
+  };
+
+  let points: RevenuePoint[];
+  if (primary) {
+    const length = Math.max(daily.data?.days.length ?? 0, comparing ? (previous.data?.days.length ?? 0) : 0);
+    points = Array.from({ length }, (_, i) => {
+      const point: RevenuePoint = {
+        label: String(i + 1),
+        date: daily.data?.days[i],
+        compareDate: comparing ? previous.data?.days[i] : undefined,
+      };
+      for (const key of allowed) {
+        if (i < (daily.data?.days.length ?? 0)) point[key] = Number(dailySeries[key]?.[i] ?? 0);
+        if (comparing && i < (previous.data?.days.length ?? 0))
+          point[`${key}Compare`] = Number(previousSeries[key]?.[i] ?? 0);
+      }
+      return point;
+    });
+  } else {
+    points = data.charts.months.map((month, i) => {
+      const point: RevenuePoint = { label: formatDate(`${month}-01`, 'MMM') };
+      for (const key of allowed) point[key] = Number(data.charts[field(key)]?.[i] ?? 0);
+      return point;
+    });
+  }
+
+  const loading = Boolean(primary && (daily.isFetching || (comparing && previous.isFetching)));
+  const empty =
+    !loading &&
+    points.every((p) => shown.every((key) => !p[key] && !p[`${key}Compare`]));
+  const periodText = primary ? monthName(primary) : String(year);
+  const dot = (color: string, r: number) => ({ r, fill: color, stroke: 'var(--card)', strokeWidth: 2 });
 
   return (
     <ChartCard
-      title="Monthly revenue"
-      description="Payments received per month"
+      title={primary ? 'Daily revenue' : 'Monthly revenue'}
+      description={
+        primary
+          ? comparing
+            ? `Payments received per day · ${monthName(primary)} compared with ${monthName(comparing)}`
+            : `Payments received per day · ${monthName(primary)}`
+          : 'Payments received per month'
+      }
       className="xl:col-span-2"
       actions={
-        <Select value={String(year)} onValueChange={(v) => onYearChange(Number(v))}>
-          <SelectTrigger size="sm" className="w-24" aria-label="Year">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((y) => (
-              <SelectItem key={y} value={String(y)}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Select value={String(year)} onValueChange={(v) => onYearChange(Number(v))}>
+            <SelectTrigger size="sm" className="w-24" aria-label="Year">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={monthNo}
+            onValueChange={(v) => {
+              setMonthNo(v);
+              if (v === 'all') setCompare('none');
+              else if (compare === `${year}-${v}`) setCompare('none');
+            }}
+          >
+            <SelectTrigger size="sm" className="w-32" aria-label="Month">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All months</SelectItem>
+              {MONTH_NUMBERS.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {formatDate(`${year}-${m}-01`, 'MMMM')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {primary ? (
+            <Select value={compare} onValueChange={setCompare}>
+              <SelectTrigger size="sm" className="w-40" aria-label="Compare with">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No comparison</SelectItem>
+                {compareOptions(year, primary).map((m) => (
+                  <SelectItem key={m} value={m}>
+                    vs {monthName(m, 'MMM yyyy')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
       }
     >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          {allowed.map((key) => (
+            <SeriesToggle
+              key={key}
+              series={key}
+              checked={visible[key]}
+              onChange={(checked) => setVisible((v) => ({ ...v, [key]: checked }))}
+            />
+          ))}
+        </div>
+        {comparing ? (
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <span className="h-0.5 w-5 rounded-full bg-foreground" />
+              {monthName(primary!, 'MMM yyyy')}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="w-5 border-t-2 border-dashed border-muted-foreground" />
+              {monthName(comparing, 'MMM yyyy')}
+            </span>
+          </div>
+        ) : null}
+      </div>
       <div className="relative h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
-            <XAxis dataKey="month" tick={AXIS_TICK} tickLine={false} axisLine={false} />
-            <YAxis
-              tick={AXIS_TICK}
-              tickLine={false}
-              axisLine={false}
-              width={64}
-              tickFormatter={(v: number) => formatCompactMoney(v)}
-              domain={[0, (max: number) => Math.max(max, 1000)]}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }}
-              formatter={(value, name) => [formatMoney(Number(value)), String(name)]}
-            />
-            <Legend
-              verticalAlign="top"
-              align="right"
-              iconType="circle"
-              wrapperStyle={{ fontSize: 12, paddingBottom: 12 }}
-            />
-            {showSales ? (
-              <Line
-                type="monotone"
-                dataKey="sales"
-                name={SERIES.sales.label}
-                stroke={SERIES.sales.color}
-                strokeWidth={2}
-                dot={{ r: 4, fill: SERIES.sales.color, stroke: 'var(--card)', strokeWidth: 2 }}
-                activeDot={{ r: 5, stroke: 'var(--card)', strokeWidth: 2 }}
+        {loading ? (
+          <Skeleton className="absolute inset-0 rounded-lg" />
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
+              <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                interval={primary ? 'preserveStartEnd' : 0}
+                minTickGap={primary ? 8 : 0}
               />
-            ) : null}
-            {showAppointments ? (
-              <Line
-                type="monotone"
-                dataKey="appointments"
-                name={SERIES.appointments.label}
-                stroke={SERIES.appointments.color}
-                strokeWidth={2}
-                dot={{ r: 4, fill: SERIES.appointments.color, stroke: 'var(--card)', strokeWidth: 2 }}
-                activeDot={{ r: 5, stroke: 'var(--card)', strokeWidth: 2 }}
+              <YAxis
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                width={64}
+                tickFormatter={(v: number) => formatCompactMoney(v)}
+                domain={[0, (max: number) => Math.max(max, 1000)]}
               />
-            ) : null}
-          </LineChart>
-        </ResponsiveContainer>
-        {empty ? (
+              <Tooltip
+                contentStyle={TOOLTIP_STYLE}
+                cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }}
+                labelFormatter={(label, payload) => {
+                  const point = payload?.[0]?.payload as RevenuePoint | undefined;
+                  if (!primary || !point) return String(label);
+                  const main = point.date ? formatDate(point.date, 'dd MMM yyyy') : '';
+                  const other = point.compareDate ? formatDate(point.compareDate, 'dd MMM yyyy') : '';
+                  return other ? `${main || '—'} vs ${other}` : main;
+                }}
+                formatter={(value, name) => [formatMoney(Number(value)), String(name)]}
+              />
+              {shown.map((key) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  name={comparing ? `${SERIES[key].label} · ${monthName(primary!, 'MMM yyyy')}` : SERIES[key].label}
+                  stroke={SERIES[key].color}
+                  strokeWidth={2}
+                  dot={primary ? false : dot(SERIES[key].color, 4)}
+                  activeDot={dot(SERIES[key].color, 5)}
+                  connectNulls={false}
+                />
+              ))}
+              {comparing
+                ? shown.map((key) => (
+                    <Line
+                      key={`${key}Compare`}
+                      type="monotone"
+                      dataKey={`${key}Compare`}
+                      name={`${SERIES[key].label} · ${monthName(comparing, 'MMM yyyy')}`}
+                      stroke={SERIES[key].color}
+                      strokeOpacity={0.55}
+                      strokeWidth={2}
+                      strokeDasharray="5 4"
+                      dot={false}
+                      activeDot={dot(SERIES[key].color, 4)}
+                      connectNulls={false}
+                    />
+                  ))
+                : null}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+        {!loading && shown.length === 0 ? (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-            No payments recorded in {year}.
+            Tick Sales or Appointments to show the chart.
+          </p>
+        ) : !loading && empty ? (
+          <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            No payments recorded in {periodText}.
           </p>
         ) : null}
       </div>
+      {comparing && !loading && shown.length ? (
+        <ComparisonSummary
+          primary={primary!}
+          compare={comparing}
+          series={shown}
+          daily={dailySeries}
+          previous={previousSeries}
+        />
+      ) : null}
     </ChartCard>
   );
 }
