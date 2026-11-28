@@ -61,7 +61,7 @@ const entryOf = (r: AppointmentMoneyEntry): { label: string; tone: Tone } =>
 const DUE = { label: 'Due', tone: 'warning' as Tone };
 
 const PAID_AHEAD = { label: 'Paid in advance', tone: 'success' as Tone };
-const AFTER_VISIT_TABS: Tab[] = ['gdn', 'completed', 'due', 'sameDay', 'dues'];
+const AFTER_VISIT_TABS: Tab[] = ['gdn', 'due', 'sameDay', 'dues'];
 
 const stateIn = (r: AppointmentMoneyEntry, tab: Tab) => {
   if (tab === 'advance' && r.stateAfter === 'paid') return PAID_AHEAD;
@@ -80,7 +80,6 @@ const groupOf = (r: AppointmentMoneyEntry): Group =>
       : r.kind;
 
 interface TabContext {
-  completed: Set<number>;
   gdn: Set<number>;
   due: Set<number>;
 }
@@ -122,12 +121,6 @@ function tabContext(
   }
   const gdn = [...visitLine.values()];
   return {
-    completed: new Set(
-      latestPerAppointment(
-        [...rows, ...visits],
-        (r) => isCompleted(r) && inPeriod(r.appointment.visitDate),
-      ).map((r) => r.sr),
-    ),
     gdn: new Set(gdn.map((r) => r.sr)),
     due: new Set(
       latestPerAppointment([...rows, ...visits], (r) => isCompleted(r) && owedNow(r) > 0).map((r) => r.sr),
@@ -135,7 +128,7 @@ function tabContext(
   };
 }
 
-type Tab = 'all' | Group | 'sameDay' | 'dues' | 'completed' | 'gdn' | 'due';
+type Tab = 'all' | Group | 'sameDay' | 'dues' | 'gdn' | 'due';
 const TABS: {
   key: Tab;
   label: string;
@@ -155,11 +148,6 @@ const TABS: {
   },
   { key: 'sameDay', label: 'Paid on visit day', match: (r) => isCompleted(r) && isSameDay(r) },
   { key: 'dues', label: 'Received from previous visits', match: (r) => isCompleted(r) && isDues(r) },
-  {
-    key: 'completed',
-    label: 'Completed appointments',
-    match: (r, ctx) => ctx.completed.has(r.sr),
-  },
   { key: 'due', label: 'Remaining due', match: (r, ctx) => ctx.due.has(r.sr) },
   { key: 'refund', label: 'Refunds', match: (r) => r.kind === 'refund' },
 ];
@@ -181,7 +169,7 @@ const tint = (appointmentNo: number, percent: number): CSSProperties => ({
   backgroundColor: `color-mix(in oklch, ${colorOf(appointmentNo)} ${percent}%, transparent)`,
 });
 const amount = (value: string) => (Number(value) ? formatAmount(value) : '—');
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 15;
 
 function linksOf(rows: AppointmentMoneyEntry[]) {
   const byAppointment = new Map<string, AppointmentMoneyEntry[]>();
@@ -444,7 +432,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Received from previous visits is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is one line per visit completed in this period, taken on the day it was completed."
+        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Received from previous visits is money for an earlier visit (part or full; click Fully paid for the breakdown), Remaining due still owe part of the fee, and GDN is one line per visit completed in this period, taken on the day it was completed."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
