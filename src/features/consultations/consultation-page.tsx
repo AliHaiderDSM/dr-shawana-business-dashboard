@@ -72,8 +72,8 @@ function navItems(consultation: Consultation, canPrescribe: boolean): NavItem[] 
     { key: 'clinical', label: 'Clinical remarks', done: saved('clinical_assessment') },
     has('referral') && { key: 'referral', label: 'Referred to specialist', done: saved('referral') },
     canPrescribe && { key: 'prescriptions', label: 'Prescription' },
-    { key: 'treatment', label: 'Treatment history' },
     { key: 'plans', label: 'Educational resources', done: saved('plans') },
+    { key: 'treatment', label: 'Treatment history' },
   ];
   return items.filter((item): item is NavItem => Boolean(item));
 }
@@ -381,7 +381,7 @@ function Workspace({
       case 'prescriptions':
         return <ConsultationPrescriptions consultation={consultation} />;
       case 'treatment':
-        return <TreatmentPlansPanel patientId={consultation.patientId} />;
+        return <TreatmentPlansPanel patientId={consultation.patientId} withPrescriptions={canPrescribe} />;
       case 'basic_info':
         return (
           <div className="space-y-6">
