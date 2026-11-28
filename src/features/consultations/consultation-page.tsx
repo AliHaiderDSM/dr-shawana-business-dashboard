@@ -6,6 +6,7 @@ import {
   FileHeart,
   History,
   Loader2,
+  NotebookPen,
   Printer,
   RotateCcw,
   Stethoscope,
@@ -26,6 +27,7 @@ import { BloodWorkPanel } from '@/features/clinical/blood-work-panel';
 import { ReportSelectionProvider } from '@/features/clinical/report-selection';
 import { MedicalRecordsPanel } from '@/features/clinical/medical-records-panel';
 import { MrsChart } from '@/features/clinical/mrs-chart';
+import { TreatmentPlansPanel } from '@/features/clinical/treatment-plans-panel';
 import { MrsSymptomsHistory } from '@/features/clinical/visit-history';
 import { patientsApi, usePatientSummary } from '@redux/features/patients';
 import { BhrtBadge } from '@/features/patients/bhrt-badge';
@@ -50,7 +52,7 @@ import { SECTIONS, type FormValues } from './clinical-fields';
 import { type PreviousEntry } from './field-history';
 import { SectionForm } from './section-form';
 
-type PanelKey = SectionKey | 'records' | 'clinical' | 'prescriptions';
+type PanelKey = SectionKey | 'records' | 'clinical' | 'prescriptions' | 'treatment';
 
 interface NavItem {
   key: PanelKey;
@@ -70,6 +72,7 @@ function navItems(consultation: Consultation, canPrescribe: boolean): NavItem[] 
     { key: 'clinical', label: 'Clinical remarks', done: saved('clinical_assessment') },
     has('referral') && { key: 'referral', label: 'Referred to specialist', done: saved('referral') },
     canPrescribe && { key: 'prescriptions', label: 'Prescription' },
+    { key: 'treatment', label: 'Treatment history' },
     { key: 'plans', label: 'Educational resources', done: saved('plans') },
   ];
   return items.filter((item): item is NavItem => Boolean(item));
@@ -377,6 +380,8 @@ function Workspace({
         );
       case 'prescriptions':
         return <ConsultationPrescriptions consultation={consultation} />;
+      case 'treatment':
+        return <TreatmentPlansPanel patientId={consultation.patientId} />;
       case 'basic_info':
         return (
           <div className="space-y-6">
@@ -422,6 +427,8 @@ function Workspace({
                   {item.done === undefined ? (
                     item.key === 'prescriptions' ? (
                       <FileHeart className="size-4" />
+                    ) : item.key === 'treatment' ? (
+                      <NotebookPen className="size-4" />
                     ) : (
                       <History className="size-4" />
                     )
