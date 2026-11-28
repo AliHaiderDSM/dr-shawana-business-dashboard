@@ -390,17 +390,25 @@ export function StoreReceiptsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-xs text-muted-foreground">
                   <tr>
+                    <th className="w-14 px-4 py-2 text-left font-medium">Sr.</th>
                     <th className="px-4 py-2 text-left font-medium">Product</th>
                     <th className="px-4 py-2 text-right font-medium">Entered</th>
                     <th className="px-4 py-2 text-right font-medium">Received</th>
                     <th className="px-4 py-2 text-left font-medium">Batch</th>
+                    <th className="w-16 px-4 py-2 text-right font-medium">
+                      <span className="sr-only">Print labels</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {r.lines.map((l) => {
+                  {r.lines.map((l, index) => {
                     const short = l.receivedQty !== null && Number(l.receivedQty) < Number(l.qty);
+                    const labelled = l.serials.length > 0;
                     return (
                       <tr key={l.id}>
+                        <td className="px-4 py-2 text-muted-foreground tabular-nums">
+                          {r.lines.length - index}
+                        </td>
                         <td className="px-4 py-2">
                           <div className="font-medium">{l.productName}</div>
                           {l.receiptNote ? (
@@ -433,6 +441,30 @@ export function StoreReceiptsPage() {
                         <td className="px-4 py-2 text-muted-foreground">
                           {l.batch ?? '—'}
                           {l.expiryDate ? ` · ${formatDate(l.expiryDate)}` : ''}
+                        </td>
+                        <td className="px-4 py-1.5 text-right">
+                          {labelled ? (
+                            <Button asChild variant="ghost" size="icon" className="size-8">
+                              <Link
+                                to={`/print/labels?source=stock_in&sourceIds=${l.id}`}
+                                title={`Print the ${l.serials.length} labels of ${l.productName}${l.batch ? ` · ${l.batch}` : ''}`}
+                                aria-label={`Print labels of ${l.productName}${l.batch ? ` batch ${l.batch}` : ''}`}
+                              >
+                                <Printer />
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8"
+                              disabled
+                              title="This line has no labels"
+                              aria-label={`${l.productName} has no labels`}
+                            >
+                              <Printer />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );
