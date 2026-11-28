@@ -11,7 +11,7 @@ import { useAllBranchesDoctorOptions } from '@redux/features/doctors';
 import { useBranchOptions } from '@redux/features/branches';
 import { useListState, type ListState } from '@/hooks/use-list-state';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 import {
   useAllBranchesAppointments,
   useAllBranchesAppointmentsSummary,
@@ -104,7 +104,7 @@ const columns = (list: ListState, total: number | undefined): ColumnDef<AllBranc
     accessorFn: (a) => a.createdByName ?? '',
     cell: ({ row }) => (
       <div className="whitespace-nowrap text-sm">
-        <div className="text-muted-foreground">{formatDate(row.original.createdAt)}</div>
+        <div className="text-muted-foreground">{formatDateTime(row.original.createdAt)}</div>
         <div>{row.original.createdByName ?? '—'}</div>
       </div>
     ),

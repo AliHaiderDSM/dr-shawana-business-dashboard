@@ -39,7 +39,7 @@ import { patientsApi } from '@redux/features/patients';
 import { useListState } from '@/hooks/use-list-state';
 import { toastError } from '@/lib/api/errors';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 import {
   appointmentsApi,
   patientLink,
@@ -267,7 +267,7 @@ export function AppointmentsPage() {
       cell: ({ row }) => (
         <div className="whitespace-nowrap">
           <div>{row.original.createdByName ?? '—'}</div>
-          <div className="text-xs text-muted-foreground">{formatDate(row.original.createdAt)}</div>
+          <div className="text-xs text-muted-foreground">{formatDateTime(row.original.createdAt)}</div>
         </div>
       ),
     },
