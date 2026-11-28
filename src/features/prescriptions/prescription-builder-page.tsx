@@ -76,6 +76,20 @@ function groupCatalog(items: CatalogItem[], categories: string[]) {
   return [...groups.entries()];
 }
 
+function splitGroup(entries: CatalogItem[]) {
+  const isStartOption = (e: CatalogItem) =>
+    e.category === 'bhrt' && !e.defaultDose && Boolean(e.defaultInstructions);
+  const choices = entries.filter((e) => !isStartOption(e));
+  const howToUse = [
+    ...new Set(
+      choices
+        .filter((e) => e.category === 'bhrt' && e.defaultInstructions)
+        .map((e) => e.defaultInstructions!),
+    ),
+  ];
+  return { choices, startOptions: entries.filter(isStartOption), howToUse };
+}
+
 function CatalogItemRow({ item }: { item: CatalogItem }) {
   const form = useFormContext<Values>();
   const state = useWatch({ control: form.control, name: `items.${item.id}` }) as ItemState | undefined;
@@ -104,6 +118,8 @@ function CatalogItemRow({ item }: { item: CatalogItem }) {
           <span className="font-medium">{item.name}</span>
           {item.defaultDose && !selected ? (
             <span className="block text-xs text-muted-foreground">{item.defaultDose}</span>
+          ) : !item.defaultDose && item.category === 'bhrt' && item.defaultInstructions && !selected ? (
+            <span className="block text-xs text-muted-foreground">{item.defaultInstructions}</span>
           ) : null}
         </span>
       </label>
@@ -334,23 +350,42 @@ function Builder({
           return (
             <Panel key={section.key} title={section.title}>
               <div className="space-y-5">
-                {groups.map(([groupName, entries]) => (
-                  <div key={groupName} className="space-y-2">
-                    <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      {groupName}
+                {groups.map(([groupName, entries]) => {
+                  const { choices, startOptions, howToUse } = splitGroup(entries);
+                  const grid = cn(
+                    'grid gap-2',
+                    section.key === 'bhrt' ? 'md:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3',
+                  );
+                  return (
+                    <div key={groupName} className="space-y-2">
+                      <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        {groupName}
+                      </div>
+                      <div className={grid}>
+                        {choices.map((entry) => (
+                          <CatalogItemRow key={entry.id} item={entry} />
+                        ))}
+                      </div>
+                      {howToUse.length || startOptions.length ? (
+                        <div className="space-y-2 rounded-md bg-muted/40 px-3 py-2.5">
+                          <div className="text-sm font-semibold">How to use:</div>
+                          {howToUse.map((text) => (
+                            <p key={text} className="text-sm text-muted-foreground">
+                              {text}
+                            </p>
+                          ))}
+                          {startOptions.length ? (
+                            <div className={grid}>
+                              {startOptions.map((entry) => (
+                                <CatalogItemRow key={entry.id} item={entry} />
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
-                    <div
-                      className={cn(
-                        'grid gap-2',
-                        section.key === 'bhrt' ? 'md:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3',
-                      )}
-                    >
-                      {entries.map((entry) => (
-                        <CatalogItemRow key={entry.id} item={entry} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {section.note ? (
                   <TextareaField
                     control={form.control}
