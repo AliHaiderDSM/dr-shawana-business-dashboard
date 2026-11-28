@@ -6,21 +6,10 @@ import { prescriptionFileName, useDocumentTitle } from '@/hooks/use-document-tit
 import { formatDate } from '@/lib/format';
 import {
   usePrescriptionPrint,
-  type CatalogCategory,
   type NoteKey,
   type PrescriptionPrintData,
 } from '@redux/features/prescriptions';
-import { NOTE_LABELS } from './constants';
-
-const PRINT_ORDER: { title: string; categories: CatalogCategory[]; note?: NoteKey }[] = [
-  { title: 'Blood work', categories: ['lab'], note: 'blood' },
-  { title: 'Imaging', categories: ['imaging', 'genetic'], note: 'imaging' },
-  { title: 'Supplements', categories: ['supplement', 'medicine', 'glp'], note: 'supplements' },
-  { title: 'Skin care', categories: ['skin_care'], note: 'skinCare' },
-  { title: 'Hair care', categories: ['hair_care'], note: 'hairCare' },
-  { title: 'Treatments', categories: ['bhrt'] },
-  { title: 'Symptoms', categories: ['symptom'] },
-];
+import { NOTE_LABELS, PRINT_ORDER } from './constants';
 
 type Section = PrescriptionPrintData['sections'][number];
 type Item = Section['groups'][number]['items'][number];

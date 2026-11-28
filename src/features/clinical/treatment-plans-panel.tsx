@@ -21,7 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useTreatmentPlans, type TreatmentPlan } from '@redux/features/clinical';
-import { prescriptionsApi, type Prescription } from '@redux/features/prescriptions';
+import { NOTE_LABELS, PRINT_ORDER } from '@/features/prescriptions/constants';
+import { prescriptionsApi, type NoteKey, type Prescription } from '@redux/features/prescriptions';
 
 const wasEdited = (plan: TreatmentPlan) =>
   new Date(plan.updatedAt).getTime() - new Date(plan.createdAt).getTime() > 5000;
@@ -116,6 +117,77 @@ function Timeline<T>({
 const updatedBadge = (plan: TreatmentPlan) =>
   wasEdited(plan) ? <StatusBadge tone="info">Updated {formatDate(plan.updatedAt)}</StatusBadge> : null;
 
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="border-b pb-1 text-sm font-semibold tracking-wide text-primary uppercase">{children}</h4>
+  );
+}
+
+function PrescriptionBody({ prescription }: { prescription: Prescription }) {
+  const notes = (prescription.notes ?? {}) as Partial<Record<NoteKey, string | null>>;
+  const hasPlan = !richTextIsEmpty(prescription.planTreatment);
+  return (
+    <div className="space-y-4 text-sm">
+      {prescription.diagnosis ? (
+        <div className="grid gap-1 rounded-md bg-muted/40 px-3 py-2 sm:grid-cols-[6rem_1fr]">
+          <span className="text-muted-foreground">Diagnosis</span>
+          <span className="whitespace-pre-line">{prescription.diagnosis}</span>
+        </div>
+      ) : null}
+      {PRINT_ORDER.map((block) => {
+        const items = prescription.items.filter((i) => block.categories.includes(i.category));
+        const note = block.note ? notes[block.note] : null;
+        if (items.length === 0 && !note) return null;
+        const groups = new Map<string, typeof items>();
+        for (const item of items) groups.set(item.groupName, [...(groups.get(item.groupName) ?? []), item]);
+        return (
+          <section key={block.title} className="space-y-2">
+            <SectionTitle>{block.title}</SectionTitle>
+            {[...groups.entries()].map(([groupName, groupItems]) => (
+              <div key={groupName}>
+                <div className="text-xs font-medium text-muted-foreground">{groupName}</div>
+                <ul className="mt-1 list-disc space-y-1 pl-5">
+                  {groupItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="font-medium">{item.name}</span>
+                      {item.dose ? <span> — {item.dose}</span> : null}
+                      {block.categories.includes('bhrt') && item.instructions ? (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          How to use: {item.instructions}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {note ? (
+              <p>
+                <span className="text-muted-foreground">
+                  {block.note ? NOTE_LABELS[block.note] : 'Note'}:
+                </span>{' '}
+                {note}
+              </p>
+            ) : null}
+          </section>
+        );
+      })}
+      {hasPlan || prescription.followupDate ? (
+        <section className="space-y-2">
+          <SectionTitle>Plan of treatment</SectionTitle>
+          {hasPlan ? <RichTextView value={prescription.planTreatment} /> : null}
+          {prescription.followupDate ? (
+            <p>
+              <span className="font-semibold">Follow up date: </span>
+              {formatDate(prescription.followupDate, 'dd-MM-yyyy')}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
 function PrescriptionEntry({ prescription, index }: { prescription: Prescription; index: number }) {
   return (
     <Entry
@@ -133,28 +205,7 @@ function PrescriptionEntry({ prescription, index }: { prescription: Prescription
         </Button>
       }
     >
-      {prescription.diagnosis ? (
-        <div className="text-sm">
-          <span className="font-medium">Diagnosis: </span>
-          {prescription.diagnosis}
-        </div>
-      ) : null}
-      {!richTextIsEmpty(prescription.planTreatment) ? (
-        <RichTextView value={prescription.planTreatment} />
-      ) : null}
-      {prescription.items.length ? (
-        <ul className="list-disc space-y-1 pl-5 text-sm">
-          {prescription.items.map((item) => (
-            <li key={item.id}>
-              <span className="font-medium">{item.name}</span>
-              {item.dose ? <span> — {item.dose}</span> : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {prescription.followupDate ? (
-        <div className="text-xs text-muted-foreground">Follow-up {formatDate(prescription.followupDate)}</div>
-      ) : null}
+      <PrescriptionBody prescription={prescription} />
     </Entry>
   );
 }

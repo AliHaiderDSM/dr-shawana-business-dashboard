@@ -32,6 +32,16 @@ export const BUILDER_SECTIONS: {
   { key: 'bhrt', title: 'Treatments (BHRT)', categories: ['bhrt'] },
 ];
 
+export const PRINT_ORDER: { title: string; categories: CatalogCategory[]; note?: NoteKey }[] = [
+  { title: 'Blood work', categories: ['lab'], note: 'blood' },
+  { title: 'Imaging', categories: ['imaging', 'genetic'], note: 'imaging' },
+  { title: 'Supplements', categories: ['supplement', 'medicine', 'glp'], note: 'supplements' },
+  { title: 'Skin care', categories: ['skin_care'], note: 'skinCare' },
+  { title: 'Hair care', categories: ['hair_care'], note: 'hairCare' },
+  { title: 'Treatments', categories: ['bhrt'] },
+  { title: 'Symptoms', categories: ['symptom'] },
+];
+
 export const NOTE_LABELS: Record<NoteKey, string> = {
   blood: 'Additional notes (blood work)',
   imaging: 'Additional notes (imaging)',
