@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, Loader2, PackageCheck, Pencil, Printer } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, PackageCheck, Pencil, Printer, Tags } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -368,6 +368,19 @@ export function StoreReceiptsPage() {
                       Print GRN
                     </Link>
                   </Button>
+                  {r.lines.some((l) => l.serials.length > 0) ? (
+                    <Button asChild variant="outline">
+                      <Link
+                        to={`/print/labels?source=stock_in&sourceIds=${r.lines
+                          .filter((l) => l.serials.length > 0)
+                          .map((l) => l.id)
+                          .join(',')}`}
+                      >
+                        <Tags />
+                        Print labels
+                      </Link>
+                    </Button>
+                  ) : null}
                   {(canEdit || lab) && r.pendingEdit ? (
                     <StatusBadge tone="warning">
                       <Clock className="size-3.5" />
