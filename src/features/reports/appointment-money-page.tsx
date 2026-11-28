@@ -111,9 +111,16 @@ function tabContext(
   period: { from: string; to: string } | null,
 ): TabContext {
   const inPeriod = (day: string) => !period || (day >= period.from && day <= period.to);
-  const gdn = [...rows, ...visits].filter(
-    (r) => isCompleted(r) && (inPeriod(r.appointment.visitDate) || isDues(r)),
-  );
+  const visitLine = new Map<string, AppointmentMoneyEntry>();
+  for (const r of [...rows, ...visits]) {
+    if (!isCompleted(r) || !inPeriod(r.appointment.visitDate)) continue;
+    const seen = visitLine.get(r.appointment.id);
+    const onVisitDay = r.date === r.appointment.visitDate;
+    const seenOnVisitDay = seen?.date === seen?.appointment.visitDate;
+    if (!seen || (onVisitDay && !seenOnVisitDay) || (onVisitDay === seenOnVisitDay && r.sr > seen.sr))
+      visitLine.set(r.appointment.id, r);
+  }
+  const gdn = [...visitLine.values()];
   return {
     completed: new Set(
       latestPerAppointment(
@@ -437,7 +444,7 @@ export function AppointmentMoneyPage() {
       <PageHeader
         className="print:hidden"
         title="Appointment payments"
-        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Received from previous visits is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is the completed visits with their money lines."
+        description="Every booking, payment and refund as its own line; lines of one appointment share a colour, and Status is the payment state after that line. Bookings have no payment yet, Advance is money for a visit that is not completed yet, Paid on visit day is money taken on the visit date, Received from previous visits is money for an earlier visit (part or full; click Fully paid for the breakdown), Completed appointments are the visits of this period, Remaining due still owe part of the fee, and GDN is one line per visit completed in this period, taken on the day it was completed."
       />
       <div className="-mt-2 flex flex-wrap items-center gap-2 print:hidden">
         <ToggleGroup
